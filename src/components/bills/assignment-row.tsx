@@ -96,7 +96,7 @@ export function AssignmentRow({
             <div
               key={participant._id}
               className={cn(
-                'flex h-8 items-center gap-0.5 rounded-full border border-primary bg-primary pl-1 pr-1 text-primary-foreground',
+                'flex h-8 items-center gap-0.5 rounded-full border border-primary/50 bg-primary/15 pl-1 pr-1 text-foreground dark:border-primary/40 dark:bg-primary/20',
               )}
             >
               <button
@@ -109,11 +109,11 @@ export function AssignmentRow({
                     units: units - 1,
                   })
                 }
-                className="flex size-6 items-center justify-center rounded-full hover:bg-primary-foreground/20"
+                className="flex size-6 items-center justify-center rounded-full hover:bg-foreground/10"
               >
                 <MinusIcon className="size-3.5" />
               </button>
-              <span className="min-w-12 px-1 text-center text-xs font-medium">
+              <span className="min-w-12 px-1.5 text-center text-xs font-medium">
                 {label} ×{units}
               </span>
               <button
@@ -126,7 +126,7 @@ export function AssignmentRow({
                     units: units + 1,
                   })
                 }
-                className="flex size-6 items-center justify-center rounded-full hover:bg-primary-foreground/20"
+                className="flex size-6 items-center justify-center rounded-full hover:bg-foreground/10"
               >
                 <PlusIcon className="size-3.5" />
               </button>
@@ -135,7 +135,7 @@ export function AssignmentRow({
         })}
       </div>
       {unitsMismatch && (
-        <p className="text-xs font-medium text-amber-600">
+        <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
           Разпределени {assignedUnitsTotal} от {itemQuantity} броя
         </p>
       )}
@@ -145,9 +145,9 @@ export function AssignmentRow({
 
 function chipClassName(isAssigned: boolean) {
   return cn(
-    'flex h-8 items-center rounded-full border px-3 text-xs font-medium transition-colors',
+    'flex h-8 items-center rounded-full border px-3.5 text-xs font-medium transition-colors',
     isAssigned
-      ? 'border-primary bg-primary text-primary-foreground'
-      : 'border-input bg-transparent text-muted-foreground',
+      ? 'border-primary/50 bg-primary/15 text-foreground dark:border-primary/40 dark:bg-primary/20'
+      : 'border-input bg-background/60 text-muted-foreground hover:bg-accent/50',
   )
 }

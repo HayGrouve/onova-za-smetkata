@@ -11,6 +11,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 
 import ConvexProvider from '../integrations/convex/provider'
 import { AppShell } from '../components/layout/app-shell.tsx'
+import { ThemeProvider } from '../components/theme-provider.tsx'
 import { Toaster } from '../components/ui/sonner'
 import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
@@ -85,28 +86,36 @@ function RootLayout() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="bg">
+    <html lang="bg" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
       <body>
-        <ConvexProvider>
-          {children}
-          <Toaster />
-          {import.meta.env.DEV && (
-            <TanStackDevtools
-              config={{
-                position: 'bottom-right',
-              }}
-              plugins={[
-                {
-                  name: 'Tanstack Router',
-                  render: <TanStackRouterDevtoolsPanel />,
-                },
-              ]}
-            />
-          )}
-        </ConvexProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          storageKey="onova-theme"
+          disableTransitionOnChange
+        >
+          <ConvexProvider>
+            {children}
+            <Toaster />
+            {import.meta.env.DEV && (
+              <TanStackDevtools
+                config={{
+                  position: 'bottom-right',
+                }}
+                plugins={[
+                  {
+                    name: 'Tanstack Router',
+                    render: <TanStackRouterDevtoolsPanel />,
+                  },
+                ]}
+              />
+            )}
+          </ConvexProvider>
+        </ThemeProvider>
         <Scripts />
       </body>
     </html>

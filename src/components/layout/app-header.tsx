@@ -5,6 +5,7 @@ import {
   usePaymentSettingsConfigured,
 } from '#/components/bills/payment-settings-open-button.tsx'
 import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
+import { ThemeToggle } from '#/components/layout/theme-toggle.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -79,20 +80,21 @@ export function AppHeader() {
         <h1 className="min-w-0 flex-1 truncate text-base font-semibold">
           {title}
         </h1>
-        {paymentSettingsConfigured ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="shrink-0 tap-feedback"
-            aria-label="Настройки за плащане"
-            onClick={openPaymentSettings}
-          >
-            <CogIcon className="size-5" />
-          </Button>
-        ) : (
-          <div className="size-9 shrink-0" aria-hidden />
-        )}
+        <div className="flex shrink-0 items-center">
+          <ThemeToggle />
+          {paymentSettingsConfigured ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="shrink-0 tap-feedback"
+              aria-label="Настройки за плащане"
+              onClick={openPaymentSettings}
+            >
+              <CogIcon className="size-5" />
+            </Button>
+          ) : null}
+        </div>
       </div>
     </header>
   )

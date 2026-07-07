@@ -197,7 +197,8 @@ export function ReceiptScanReviewSheet({
               key={index}
               className={cn(
                 'flex items-start gap-2 rounded-lg border p-3',
-                row.confidence === 'low' && 'border-amber-400 bg-amber-50',
+                row.confidence === 'low' &&
+                  'border-amber-400 bg-amber-50 dark:border-amber-500 dark:bg-amber-950/40',
               )}
             >
               <Checkbox
@@ -216,7 +217,7 @@ export function ReceiptScanReviewSheet({
                   {row.confidence === 'low' && (
                     <Badge
                       variant="outline"
-                      className="border-amber-500 text-amber-700"
+                      className="border-amber-500 text-amber-700 dark:text-amber-300"
                     >
                       ?
                     </Badge>

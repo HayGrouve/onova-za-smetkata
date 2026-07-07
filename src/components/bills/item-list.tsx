@@ -104,7 +104,7 @@ export function ItemList({
             key={item._id}
             id={item._id === firstUnassignedItemId ? 'first-unassigned-item' : undefined}
             className={cn(
-              'flex flex-col gap-2 rounded-lg border p-3',
+              'flex flex-col gap-3 rounded-lg border p-4',
               isUnassigned && 'border-l-4 border-amber-500',
             )}
           >
@@ -120,7 +120,7 @@ export function ItemList({
         )
       })}
 
-      <div className="flex flex-col gap-2 rounded-lg border border-dashed p-3">
+      <div className="flex flex-col gap-3 rounded-lg border border-dashed p-4">
         <Input
           value={newName}
           onChange={(e) => setNewName(e.target.value)}

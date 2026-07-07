@@ -63,6 +63,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --sea-ink: #d7ece8;
   --sea-ink-soft: #afcdc8;
   --lagoon: #60d7cf;
@@ -210,6 +211,35 @@ body::after {
   mask-image: radial-gradient(circle at 50% 30%, black, transparent 78%);
 }
 
+.dark body {
+  color: var(--sea-ink);
+  background:
+    radial-gradient(1100px 620px at -8% -10%, var(--hero-a), transparent 58%),
+    radial-gradient(1050px 620px at 112% -12%, var(--hero-b), transparent 62%),
+    radial-gradient(720px 380px at 50% 115%, rgba(96, 215, 207, 0.08), transparent 68%),
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--sand) 40%, black) 0%,
+      var(--foam) 44%,
+      var(--bg-base) 100%
+    );
+}
+
+.dark body::before {
+  opacity: 0.16;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(141, 229, 219, 0.12), transparent 34%),
+    radial-gradient(circle at 78% 26%, rgba(96, 215, 207, 0.1), transparent 42%),
+    radial-gradient(circle at 42% 82%, rgba(110, 200, 154, 0.08), transparent 36%);
+}
+
+.dark body::after {
+  opacity: 0.06;
+  background-image:
+    linear-gradient(rgba(141, 229, 219, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(141, 229, 219, 0.04) 1px, transparent 1px);
+}
+
 a {
   color: var(--lagoon-deep);
   text-decoration-color: rgba(50, 143, 151, 0.4);
@@ -355,6 +385,11 @@ a {
   .page-container {
     @apply mx-auto max-w-lg px-4 pt-4;
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 3rem);
+  }
+
+  /* Matches StickyTotalsBar: preview link (h-11) + totals row + safe area + gap */
+  .sticky-totals-bar-spacer {
+    height: calc(7.125rem + env(safe-area-inset-bottom, 0px) + 1rem);
   }
 
   .tap-feedback {
