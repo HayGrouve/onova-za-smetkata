@@ -173,12 +173,14 @@ export const update = mutation({
     receiptStorageId: v.optional(v.id('_storage')),
   },
   handler: async (ctx, args) => {
-    const { billId, ...fields } = args
-    const patch: Record<string, unknown> = { updatedAt: Date.now() }
-    for (const [key, value] of Object.entries(fields)) {
-      if (value !== undefined) patch[key] = value
-    }
-    await ctx.db.patch(billId, patch)
+    const { billId, restaurantName, date, note, receiptStorageId } = args
+    await ctx.db.patch(billId, {
+      updatedAt: Date.now(),
+      ...(restaurantName !== undefined ? { restaurantName } : {}),
+      ...(date !== undefined ? { date } : {}),
+      ...(note !== undefined ? { note } : {}),
+      ...(receiptStorageId !== undefined ? { receiptStorageId } : {}),
+    })
   },
 })
 

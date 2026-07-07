@@ -40,12 +40,12 @@ export const update = mutation({
     const item = await ctx.db.get(args.itemId)
     if (!item) return
 
-    const { itemId, ...fields } = args
-    const patch: Record<string, unknown> = {}
-    for (const [key, value] of Object.entries(fields)) {
-      if (value !== undefined) {
-        patch[key] = key === 'name' && typeof value === 'string' ? value.trim() : value
-      }
+    const { itemId, name, unitPriceCents, quantity, note } = args
+    const patch = {
+      ...(name !== undefined ? { name: name.trim() } : {}),
+      ...(unitPriceCents !== undefined ? { unitPriceCents } : {}),
+      ...(quantity !== undefined ? { quantity } : {}),
+      ...(note !== undefined ? { note } : {}),
     }
     if (Object.keys(patch).length > 0) {
       await ctx.db.patch(itemId, patch)
