@@ -2,7 +2,9 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { ParticipantDetailSheet } from '#/components/bills/participant-detail-sheet.tsx'
 import { PaymentRow } from '#/components/bills/payment-row.tsx'
+import { ReceiptPreviewCard } from '#/components/bills/receipt-preview-card.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import {
@@ -24,6 +26,7 @@ import { Separator } from '#/components/ui/separator.tsx'
 import {
   calculateBillTotals,
   validateBillForFinalize,
+  type BillBreakdownInput,
 } from '#/lib/bill-calculations.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
@@ -49,6 +52,8 @@ function BillSummary() {
   const removeBill = useMutation(api.bills.remove)
   const [isFinalizing, setIsFinalizing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [detailParticipantId, setDetailParticipantId] =
+    useState<Id<'participants'> | null>(null)
 
   const calcInputs = useMemo(() => {
     if (!data) return null
@@ -65,7 +70,9 @@ function BillSummary() {
       assignments: data.assignments.map((a) => ({
         itemId: a.itemId,
         participantId: a.participantId,
+        units: a.units,
       })),
+      tipCents: data.bill.tipCents ?? 0,
     }
   }, [data])
 
@@ -89,6 +96,28 @@ function BillSummary() {
     () => (data ? buildParticipantLabels(data.participants) : {}),
     [data],
   )
+
+  const breakdownInput = useMemo((): BillBreakdownInput | null => {
+    if (!data) return null
+    return {
+      participants: data.participants.map((p) => ({
+        id: p._id,
+        sortOrder: p.sortOrder,
+      })),
+      items: data.items.map((i) => ({
+        id: i._id,
+        name: i.name,
+        unitPriceCents: i.unitPriceCents,
+        quantity: i.quantity,
+      })),
+      assignments: data.assignments.map((a) => ({
+        itemId: a.itemId,
+        participantId: a.participantId,
+        units: a.units,
+      })),
+      tipCents: data.bill.tipCents ?? 0,
+    }
+  }, [data])
 
   if (data === undefined) {
     return (
@@ -165,6 +194,10 @@ function BillSummary() {
           </CardContent>
         </Card>
 
+        {bill.receiptStorageId && (
+          <ReceiptPreviewCard storageId={bill.receiptStorageId} />
+        )}
+
         {isDraft && errors.length > 0 && (
           <Card className="border-destructive/50">
             <CardHeader>
@@ -209,6 +242,7 @@ function BillSummary() {
                   participantId={participant._id}
                   label={labels[participant._id] ?? participant.name}
                   totals={participantTotals}
+                  onOpenDetail={() => setDetailParticipantId(participant._id)}
                 />
               )
             })}
@@ -253,6 +287,20 @@ function BillSummary() {
             </DialogContent>
           </Dialog>
         </div>
+
+        {detailParticipantId && breakdownInput && (
+          <ParticipantDetailSheet
+            open={detailParticipantId !== null}
+            onOpenChange={(open) => {
+              if (!open) setDetailParticipantId(null)
+            }}
+            billId={billId}
+            participantId={detailParticipantId}
+            label={labels[detailParticipantId] ?? 'Участник'}
+            breakdownInput={breakdownInput}
+            totals={totals.byParticipant[detailParticipantId]}
+          />
+        )}
       </div>
     </div>
   )
