@@ -1,6 +1,13 @@
 import { defineSchema, defineTable } from 'convex/server'
 import { v } from 'convex/values'
 
+const extractedItemValidator = v.object({
+  name: v.string(),
+  unitPriceCents: v.number(),
+  quantity: v.number(),
+  confidence: v.union(v.literal('high'), v.literal('low')),
+})
+
 export default defineSchema({
   bills: defineTable({
     restaurantName: v.string(),
@@ -42,5 +49,23 @@ export default defineSchema({
     amountCents: v.number(),
     note: v.optional(v.string()),
     paidAt: v.number(),
+  }).index('by_billId', ['billId']),
+
+  receiptScans: defineTable({
+    billId: v.id('bills'),
+    storageId: v.id('_storage'),
+    status: v.union(
+      v.literal('pending'),
+      v.literal('processing'),
+      v.literal('done'),
+      v.literal('failed'),
+    ),
+    extractedRestaurantName: v.optional(v.string()),
+    extractedItems: v.optional(v.array(extractedItemValidator)),
+    receiptTotalCents: v.optional(v.number()),
+    itemsTotalCents: v.optional(v.number()),
+    totalsMismatch: v.optional(v.boolean()),
+    errorMessage: v.optional(v.string()),
+    createdAt: v.number(),
   }).index('by_billId', ['billId']),
 })
