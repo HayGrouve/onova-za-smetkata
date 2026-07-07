@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { PlusIcon, SearchIcon } from 'lucide-react'
 import { BillCard } from '#/components/bills/bill-card.tsx'
 import {
@@ -38,6 +39,8 @@ function Home() {
     try {
       const billId = await createBill()
       await navigate({ to: '/bills/$billId', params: { billId } })
+    } catch {
+      toast.error('Неуспешно създаване на сметка')
     } finally {
       setIsCreating(false)
     }

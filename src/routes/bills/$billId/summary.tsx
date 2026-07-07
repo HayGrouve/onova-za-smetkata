@@ -167,6 +167,8 @@ function BillSummary() {
     try {
       await finalizeBill({ billId })
       toast.success('Сметката е завършена')
+    } catch {
+      toast.error('Неуспешно завършване на сметката')
     } finally {
       setIsFinalizing(false)
     }
@@ -177,6 +179,8 @@ function BillSummary() {
     try {
       await removeBill({ billId })
       await navigate({ to: '/' })
+    } catch {
+      toast.error('Неуспешно изтриване на сметката')
     } finally {
       setIsDeleting(false)
     }

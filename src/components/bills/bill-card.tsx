@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { useMutation } from 'convex/react'
 import { MoreVerticalIcon } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { Card, CardContent } from '#/components/ui/card.tsx'
@@ -52,6 +53,8 @@ export function BillCard({
     try {
       await removeBill({ billId: bill._id })
       setDeleteOpen(false)
+    } catch {
+      toast.error('Неуспешно изтриване на сметката')
     } finally {
       setIsDeleting(false)
     }
