@@ -1,4 +1,8 @@
 import { Badge } from '#/components/ui/badge.tsx'
+import {
+  copyRemainingAmount,
+  ParticipantPayActions,
+} from '#/components/bills/participant-pay-actions.tsx'
 import { PaymentActions } from '#/components/bills/payment-actions.tsx'
 import type {
   ParticipantTotals,
@@ -75,11 +79,25 @@ export function PaymentRow({
         </div>
         <div>
           <p className="text-xs">Остатък</p>
-          <p className="tabular-nums text-foreground">
-            {formatEur(remainingCents)}
-          </p>
+          {remainingCents > 0 ? (
+            <button
+              type="button"
+              onClick={() => copyRemainingAmount(remainingCents)}
+              className="tap-feedback cursor-pointer tabular-nums text-foreground"
+              aria-label="Копирай сумата"
+            >
+              {formatEur(remainingCents)}
+            </button>
+          ) : (
+            <p className="tabular-nums text-foreground">
+              {formatEur(remainingCents)}
+            </p>
+          )}
         </div>
       </div>
+      {remainingCents > 0 ? (
+        <ParticipantPayActions remainingCents={remainingCents} label={label} />
+      ) : null}
       <PaymentActions
         billId={billId}
         participantId={participantId}

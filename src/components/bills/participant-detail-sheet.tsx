@@ -16,6 +16,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '#/components/ui/sheet.tsx'
+import { ParticipantPayActions } from '#/components/bills/participant-pay-actions.tsx'
 import { PaymentActions } from '#/components/bills/payment-actions.tsx'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -118,6 +119,13 @@ export function ParticipantDetailSheet({
               <p className="tabular-nums font-medium">{formatEur(remainingCents)}</p>
             </div>
           </div>
+
+          {remainingCents > 0 ? (
+            <ParticipantPayActions
+              remainingCents={remainingCents}
+              label={label}
+            />
+          ) : null}
 
           <PaymentActions
             billId={billId}
