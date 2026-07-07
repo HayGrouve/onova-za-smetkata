@@ -237,9 +237,7 @@ function BillEditorContent({
   }
 
   return (
-    <div className="mx-auto max-w-lg px-4 pt-6 pb-32">
-      <h1 className="mb-4 text-xl font-bold">Редактиране на сметка</h1>
-
+    <div className="mx-auto max-w-lg px-4 pt-4 pb-32">
       <div className="flex flex-col gap-4">
         <Card>
           <CardHeader>
@@ -323,7 +321,7 @@ function BillEditorContent({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="flex h-11 items-center justify-center gap-2 rounded-md border border-dashed text-sm text-muted-foreground disabled:opacity-50"
+                className="tap-feedback flex h-11 cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed text-sm text-muted-foreground disabled:opacity-50"
               >
                 <CameraIcon className="size-4" />
                 {isUploading

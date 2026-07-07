@@ -37,11 +37,7 @@ function Home() {
   }
 
   return (
-    <div className="mx-auto min-h-dvh max-w-lg px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
-      <header className="mb-5 flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Онова за сметката</h1>
-      </header>
-
+    <div className="mx-auto min-h-dvh max-w-lg px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
       <Button
         className="mb-4 h-11 w-full"
         onClick={handleCreateBill}

@@ -162,16 +162,11 @@ function BillSummary() {
   }
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-6 pb-[calc(env(safe-area-inset-bottom)+2rem)]">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold">
-            {bill.restaurantName.trim() || 'Без име'}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {dateFormatter.format(new Date(bill.date))}
-          </p>
-        </div>
+    <div className="mx-auto max-w-lg px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+2rem)]">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          {dateFormatter.format(new Date(bill.date))}
+        </p>
         {isDraft ? (
           <Badge variant="secondary">Чернова</Badge>
         ) : (
