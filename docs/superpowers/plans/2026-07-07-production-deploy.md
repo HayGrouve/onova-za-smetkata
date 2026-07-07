@@ -592,8 +592,6 @@ git push origin main          # triggers Netlify build
 - [Shadcn UI](https://ui.shadcn.com) + Tailwind CSS
 ```
 
-(Fix typo: `сметkata` → `сметката` in the README heading.)
-
 - [ ] **Step 3: Create `docs/DEPLOY.md`**
 
 ```markdown
