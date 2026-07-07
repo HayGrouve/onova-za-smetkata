@@ -46,7 +46,8 @@ export function ReceiptPreviewCard({ storageId }: ReceiptPreviewCardProps) {
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="w-full rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="tap-feedback w-full rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            data-interactive="true"
           >
             <img
               src={receiptUrl}

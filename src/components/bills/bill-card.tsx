@@ -26,8 +26,13 @@ export function BillCard({
   const to = isDraft ? '/bills/$billId' : '/bills/$billId/summary'
 
   return (
-    <Link to={to} params={{ billId: bill._id }} className="block">
-      <Card className="gap-3 py-4 transition-colors active:bg-accent">
+    <Link
+      to={to}
+      params={{ billId: bill._id }}
+      className="block tap-feedback"
+      data-interactive="true"
+    >
+      <Card className="gap-3 py-4 transition-colors interactive-hover active:bg-accent">
         <CardContent className="flex items-center justify-between gap-3 px-4">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">

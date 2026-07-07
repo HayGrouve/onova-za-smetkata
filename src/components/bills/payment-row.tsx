@@ -45,7 +45,7 @@ export function PaymentRow({
         <button
           type="button"
           onClick={onOpenDetail}
-          className="flex items-center justify-between gap-2 text-left"
+          className="tap-feedback flex items-center justify-between gap-2 text-left"
         >
           <p className="font-medium">{label}</p>
           <Badge variant={statusVariants[totals.status]}>

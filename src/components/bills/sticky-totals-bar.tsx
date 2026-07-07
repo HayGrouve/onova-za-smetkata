@@ -82,7 +82,7 @@ export function StickyTotalsBar({
           <Link
             to="/bills/$billId/summary"
             params={{ billId }}
-            className="flex h-11 items-center justify-center gap-1 border-b text-sm font-medium text-primary"
+            className="tap-feedback flex h-11 cursor-pointer items-center justify-center gap-1 border-b text-sm font-medium text-primary"
           >
             Преглед
             <ChevronRightIcon className="size-4" />
@@ -90,7 +90,7 @@ export function StickyTotalsBar({
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="flex w-full items-center gap-3 px-4 py-3 text-left"
+            className="tap-feedback flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left"
           >
             <div className="shrink-0">
               <p className="text-xs text-muted-foreground">Общо</p>
