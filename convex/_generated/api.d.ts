@@ -12,9 +12,12 @@ import type * as assignments from "../assignments.js";
 import type * as bills from "../bills.js";
 import type * as files from "../files.js";
 import type * as items from "../items.js";
+import type * as lib_geminiReceipt from "../lib/geminiReceipt.js";
 import type * as lib_touchBill from "../lib/touchBill.js";
 import type * as participants from "../participants.js";
 import type * as payments from "../payments.js";
+import type * as receiptScan from "../receiptScan.js";
+import type * as receiptScanAction from "../receiptScanAction.js";
 
 import type {
   ApiFromModules,
@@ -27,9 +30,12 @@ declare const fullApi: ApiFromModules<{
   bills: typeof bills;
   files: typeof files;
   items: typeof items;
+  "lib/geminiReceipt": typeof lib_geminiReceipt;
   "lib/touchBill": typeof lib_touchBill;
   participants: typeof participants;
   payments: typeof payments;
+  receiptScan: typeof receiptScan;
+  receiptScanAction: typeof receiptScanAction;
 }>;
 
 /**

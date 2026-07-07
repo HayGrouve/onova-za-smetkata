@@ -1,7 +1,7 @@
 import { defineSchema, defineTable } from 'convex/server'
 import { v } from 'convex/values'
 
-const extractedItemValidator = v.object({
+export const extractedItemValidator = v.object({
   name: v.string(),
   unitPriceCents: v.number(),
   quantity: v.number(),
