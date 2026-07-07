@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from 'convex/react'
 import { UserPlusIcon, XIcon } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
@@ -20,6 +20,7 @@ export function ParticipantList({
   labels,
 }: ParticipantListProps) {
   const [name, setName] = useState('')
+  const nameInputRef = useRef<HTMLInputElement>(null)
   const addParticipant = useMutation(api.participants.add)
   const removeParticipant = useMutation(api.participants.remove)
   const recentNames = useQuery(api.participants.listRecentNames, { limit: 12 })
@@ -37,6 +38,12 @@ export function ParticipantList({
     if (!trimmed) return
     setName('')
     await addParticipant({ billId, name: trimmed })
+    nameInputRef.current?.focus()
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    void handleAdd()
   }
 
   async function handleRemove(participant: Doc<'participants'>) {
@@ -93,28 +100,20 @@ export function ParticipantList({
           ))}
         </div>
       )}
-      <div className="flex gap-2">
+      <form className="flex gap-2" onSubmit={handleSubmit}>
         <Input
+          ref={nameInputRef}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              void handleAdd()
-            }
-          }}
           placeholder="Име на участник"
           className="h-11 flex-1"
+          autoComplete="off"
         />
-        <Button
-          className="h-11"
-          onClick={() => void handleAdd()}
-          disabled={!name.trim()}
-        >
+        <Button type="submit" className="h-11" disabled={!name.trim()}>
           <UserPlusIcon className={ICON.button} aria-hidden />
           Добави
         </Button>
-      </div>
+      </form>
     </div>
   )
 }
