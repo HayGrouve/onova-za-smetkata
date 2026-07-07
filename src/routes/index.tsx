@@ -3,6 +3,7 @@ import { useMutation, useQuery } from 'convex/react'
 import { useMemo, useState } from 'react'
 import { PlusIcon, SearchIcon } from 'lucide-react'
 import { BillCard } from '#/components/bills/bill-card.tsx'
+import { PaymentSettingsSheet } from '#/components/bills/payment-settings-sheet.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { api } from '../../convex/_generated/api'
@@ -15,6 +16,7 @@ function Home() {
   const createBill = useMutation(api.bills.create)
   const [search, setSearch] = useState('')
   const [isCreating, setIsCreating] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const filteredBills = useMemo(() => {
     if (!bills) return null
@@ -38,6 +40,17 @@ function Home() {
 
   return (
     <div className="mx-auto min-h-dvh max-w-lg px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
+      <Button
+        type="button"
+        variant="ghost"
+        className="mb-2 h-10 w-full text-muted-foreground"
+        onClick={() => setSettingsOpen(true)}
+      >
+        Настройки за плащане
+      </Button>
+
+      <PaymentSettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+
       <Button
         className="mb-4 h-11 w-full"
         onClick={handleCreateBill}
