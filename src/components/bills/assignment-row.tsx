@@ -1,22 +1,26 @@
 import { useMutation } from 'convex/react'
+import { MinusIcon, PlusIcon } from 'lucide-react'
 import { cn } from '#/lib/utils.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
 
 export interface AssignmentRowProps {
   itemId: Id<'items'>
+  itemQuantity: number
   participants: Doc<'participants'>[]
   labels: Record<string, string>
-  assignedParticipantIds: Set<Id<'participants'>>
+  itemAssignments: Doc<'itemAssignments'>[]
 }
 
 export function AssignmentRow({
   itemId,
+  itemQuantity,
   participants,
   labels,
-  assignedParticipantIds,
+  itemAssignments,
 }: AssignmentRowProps) {
   const toggleAssignment = useMutation(api.assignments.toggle)
+  const setUnits = useMutation(api.assignments.setUnits)
 
   if (participants.length === 0) {
     return (
@@ -26,28 +30,124 @@ export function AssignmentRow({
     )
   }
 
+  const unitsByParticipant = new Map(
+    itemAssignments.map((assignment) => [
+      assignment.participantId,
+      assignment.units ?? 0,
+    ]),
+  )
+  const assignedUnitsTotal = itemAssignments.reduce(
+    (sum, assignment) => sum + (assignment.units ?? 0),
+    0,
+  )
+  const unitsMismatch =
+    itemQuantity > 1 &&
+    itemAssignments.length > 0 &&
+    assignedUnitsTotal !== itemQuantity
+
+  if (itemQuantity === 1) {
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {participants.map((participant) => {
+          const isAssigned = itemAssignments.some(
+            (assignment) => assignment.participantId === participant._id,
+          )
+          return (
+            <button
+              key={participant._id}
+              type="button"
+              onClick={() =>
+                void toggleAssignment({ itemId, participantId: participant._id })
+              }
+              className={chipClassName(isAssigned)}
+            >
+              {labels[participant._id] ?? participant.name}
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {participants.map((participant) => {
-        const isAssigned = assignedParticipantIds.has(participant._id)
-        return (
-          <button
-            key={participant._id}
-            type="button"
-            onClick={() =>
-              void toggleAssignment({ itemId, participantId: participant._id })
-            }
-            className={cn(
-              'flex h-8 items-center rounded-full border px-3 text-xs font-medium transition-colors',
-              isAssigned
-                ? 'border-primary bg-primary text-primary-foreground'
-                : 'border-input bg-transparent text-muted-foreground',
-            )}
-          >
-            {labels[participant._id] ?? participant.name}
-          </button>
-        )
-      })}
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-1.5">
+        {participants.map((participant) => {
+          const units = unitsByParticipant.get(participant._id) ?? 0
+          const isAssigned = units > 0
+          const label = labels[participant._id] ?? participant.name
+
+          if (!isAssigned) {
+            return (
+              <button
+                key={participant._id}
+                type="button"
+                onClick={() =>
+                  void toggleAssignment({ itemId, participantId: participant._id })
+                }
+                className={chipClassName(false)}
+              >
+                {label}
+              </button>
+            )
+          }
+
+          return (
+            <div
+              key={participant._id}
+              className={cn(
+                'flex h-8 items-center gap-0.5 rounded-full border border-primary bg-primary pl-1 pr-1 text-primary-foreground',
+              )}
+            >
+              <button
+                type="button"
+                aria-label={`Намали ${label}`}
+                onClick={() =>
+                  void setUnits({
+                    itemId,
+                    participantId: participant._id,
+                    units: units - 1,
+                  })
+                }
+                className="flex size-6 items-center justify-center rounded-full hover:bg-primary-foreground/20"
+              >
+                <MinusIcon className="size-3.5" />
+              </button>
+              <span className="min-w-12 px-1 text-center text-xs font-medium">
+                {label} ×{units}
+              </span>
+              <button
+                type="button"
+                aria-label={`Увеличи ${label}`}
+                onClick={() =>
+                  void setUnits({
+                    itemId,
+                    participantId: participant._id,
+                    units: units + 1,
+                  })
+                }
+                className="flex size-6 items-center justify-center rounded-full hover:bg-primary-foreground/20"
+              >
+                <PlusIcon className="size-3.5" />
+              </button>
+            </div>
+          )
+        })}
+      </div>
+      {unitsMismatch && (
+        <p className="text-xs font-medium text-amber-600">
+          Разпределени {assignedUnitsTotal} от {itemQuantity} броя
+        </p>
+      )}
     </div>
+  )
+}
+
+function chipClassName(isAssigned: boolean) {
+  return cn(
+    'flex h-8 items-center rounded-full border px-3 text-xs font-medium transition-colors',
+    isAssigned
+      ? 'border-primary bg-primary text-primary-foreground'
+      : 'border-input bg-transparent text-muted-foreground',
   )
 }

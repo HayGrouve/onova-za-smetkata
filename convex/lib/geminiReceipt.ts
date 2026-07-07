@@ -1,11 +1,11 @@
-// Used only from a "use node" action file — calls the Gemini REST API directly via fetch.
-const GEMINI_MODEL = 'gemini-2.0-flash'
+// gemini-2.0-flash was shut down 2026-06-01; override via GEMINI_MODEL in Convex env if needed.
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.5-flash'
 
 const RESPONSE_SCHEMA = {
   type: 'object',
   properties: {
     restaurantName: { type: 'string' },
-    receiptTotalCents: { type: 'number' },
+    receiptTotalEur: { type: 'number' },
     items: {
       type: 'array',
       items: {
@@ -32,7 +32,7 @@ interface GeminiRawItem {
 
 interface GeminiRawResponse {
   restaurantName?: string
-  receiptTotalCents?: number
+  receiptTotalEur?: number
   items: GeminiRawItem[]
 }
 
@@ -64,7 +64,7 @@ export async function scanReceiptImage(
           {
             parts: [
               {
-                text: `Extract line items from this restaurant receipt. Receipt may be Bulgarian (Cyrillic) or English; amounts in EUR. Return purchasable food/drink items only. EXCLUDE totals, tax (ДДС/VAT), tips (бакшиш), payment lines. Default quantity 1. Mark uncertain lines confidence "low". Prices as EUR decimals in unitPriceEur.`,
+                text: `Extract line items from this restaurant receipt. Receipt may be Bulgarian (Cyrillic) or English; amounts in EUR. Return purchasable food/drink items only. EXCLUDE totals, tax (ДДС/VAT), tips (бакшиш), payment lines. Default quantity 1. Mark uncertain lines confidence "low". Prices as EUR decimals in unitPriceEur. If a grand total is visible, set receiptTotalEur as EUR decimal (e.g. 328.21), not cents.`,
               },
               { inline_data: { mime_type: mimeType, data: imageBase64 } },
             ],
@@ -88,9 +88,10 @@ export async function scanReceiptImage(
   const parsed = JSON.parse(text) as GeminiRawResponse
   return {
     restaurantName: parsed.restaurantName,
-    receiptTotalCents: parsed.receiptTotalCents
-      ? Math.round(parsed.receiptTotalCents * 100)
-      : undefined,
+    receiptTotalCents:
+      parsed.receiptTotalEur !== undefined
+        ? Math.round(parsed.receiptTotalEur * 100)
+        : undefined,
     items: parsed.items.map((i) => ({
       name: i.name.trim(),
       unitPriceCents: Math.round(i.unitPriceEur * 100),

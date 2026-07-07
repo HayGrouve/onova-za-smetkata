@@ -49,10 +49,11 @@ export const listWithSummary = query({
           .withIndex('by_billId', (q) => q.eq('billId', bill._id))
           .collect()
 
-        const billTotalCents = items.reduce(
-          (sum, item) => sum + item.unitPriceCents * item.quantity,
-          0,
-        )
+        const billTotalCents =
+          items.reduce(
+            (sum, item) => sum + item.unitPriceCents * item.quantity,
+            0,
+          ) + (bill.tipCents ?? 0)
 
         let totalOutstandingCents: number | null = null
 
@@ -66,10 +67,23 @@ export const listWithSummary = query({
 
           for (const item of items) {
             const lineTotalCents = item.unitPriceCents * item.quantity
+            const itemAssignments = assignments.filter((a) => a.itemId === item._id)
+            const usesUnits = itemAssignments.some((a) => a.units !== undefined)
+
+            if (usesUnits) {
+              for (const assignment of itemAssignments) {
+                const units = assignment.units ?? 0
+                owedByParticipant.set(
+                  assignment.participantId,
+                  (owedByParticipant.get(assignment.participantId) ?? 0) +
+                    units * item.unitPriceCents,
+                )
+              }
+              continue
+            }
+
             const assignedIds = new Set(
-              assignments
-                .filter((a) => a.itemId === item._id)
-                .map((a) => a.participantId),
+              itemAssignments.map((a) => a.participantId),
             )
             const sortedAssignedIds = sortedParticipantIds.filter((id) =>
               assignedIds.has(id),
@@ -94,6 +108,19 @@ export const listWithSummary = query({
               (paidByParticipant.get(payment.participantId) ?? 0) +
                 payment.amountCents,
             )
+          }
+
+          const tipCents = bill.tipCents ?? 0
+          if (tipCents > 0 && sortedParticipantIds.length > 0) {
+            const base = Math.floor(tipCents / sortedParticipantIds.length)
+            const remainder = tipCents % sortedParticipantIds.length
+            sortedParticipantIds.forEach((id, index) => {
+              const share = base + (index < remainder ? 1 : 0)
+              owedByParticipant.set(
+                id,
+                (owedByParticipant.get(id) ?? 0) + share,
+              )
+            })
           }
 
           totalOutstandingCents = sortedParticipantIds.reduce((sum, id) => {
@@ -171,15 +198,18 @@ export const update = mutation({
     date: v.optional(v.number()),
     note: v.optional(v.string()),
     receiptStorageId: v.optional(v.id('_storage')),
+    tipCents: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const { billId, restaurantName, date, note, receiptStorageId } = args
+    const { billId, restaurantName, date, note, receiptStorageId, tipCents } =
+      args
     await ctx.db.patch(billId, {
       updatedAt: Date.now(),
       ...(restaurantName !== undefined ? { restaurantName } : {}),
       ...(date !== undefined ? { date } : {}),
       ...(note !== undefined ? { note } : {}),
       ...(receiptStorageId !== undefined ? { receiptStorageId } : {}),
+      ...(tipCents !== undefined ? { tipCents } : {}),
     })
   },
 })

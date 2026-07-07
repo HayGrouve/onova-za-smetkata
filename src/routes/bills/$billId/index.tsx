@@ -26,6 +26,7 @@ import {
 import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
+import { parseEurInput } from '#/lib/format-currency.ts'
 import { prepareReceiptImage } from '#/lib/prepare-receipt-image.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
@@ -47,6 +48,11 @@ function toDateInputValue(ms: number): string {
 function fromDateInputValue(value: string): number {
   const [year, month, day] = value.split('-').map(Number)
   return new Date(year, month - 1, day).getTime()
+}
+
+function formatEurInputValue(cents: number): string {
+  if (cents === 0) return ''
+  return (cents / 100).toFixed(2).replace('.', ',')
 }
 
 function BillEditor() {
@@ -156,6 +162,7 @@ function BillEditorContent({
   const [restaurantName, setRestaurantName] = useState(bill.restaurantName)
   const [date, setDate] = useState(() => toDateInputValue(bill.date))
   const [note, setNote] = useState(bill.note ?? '')
+  const [tip, setTip] = useState(() => formatEurInputValue(bill.tipCents ?? 0))
   const initializedBillId = useRef(bill._id)
 
   useEffect(() => {
@@ -164,12 +171,18 @@ function BillEditorContent({
       setRestaurantName(bill.restaurantName)
       setDate(toDateInputValue(bill.date))
       setNote(bill.note ?? '')
+      setTip(formatEurInputValue(bill.tipCents ?? 0))
     }
   }, [bill])
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   function scheduleSave(
-    patch: Partial<{ restaurantName: string; date: number; note: string }>,
+    patch: Partial<{
+      restaurantName: string
+      date: number
+      note: string
+      tipCents: number
+    }>,
   ) {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     saveTimeoutRef.current = setTimeout(() => {
@@ -273,6 +286,23 @@ function BillEditorContent({
               />
             </div>
             <div className="flex flex-col gap-1.5">
+              <Label htmlFor="tip">Бакшиш</Label>
+              <Input
+                id="tip"
+                inputMode="decimal"
+                value={tip}
+                onChange={(e) => {
+                  setTip(e.target.value)
+                  scheduleSave({ tipCents: parseEurInput(e.target.value) })
+                }}
+                placeholder="0,00"
+                className="h-11"
+              />
+              <p className="text-xs text-muted-foreground">
+                Разделя се поравно между всички участници.
+              </p>
+            </div>
+            <div className="flex flex-col gap-1.5">
               <Label>Снимка на касова бележка</Label>
               {receiptUrl && (
                 <img
@@ -341,7 +371,7 @@ function BillEditorContent({
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <p className="text-xs text-muted-foreground">
-              Добавете данък и бакшиш като отделни артикули.
+              Добавете данък като отделен артикул. Бакшишът се въвежда по-горе.
             </p>
             <ItemList
               billId={billId}
@@ -356,6 +386,7 @@ function BillEditorContent({
 
       <StickyTotalsBar
         billId={billId}
+        tipCents={parseEurInput(tip)}
         participants={participants}
         items={items}
         assignments={assignments}

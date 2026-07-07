@@ -13,6 +13,7 @@ import type * as bills from "../bills.js";
 import type * as files from "../files.js";
 import type * as items from "../items.js";
 import type * as lib_geminiReceipt from "../lib/geminiReceipt.js";
+import type * as lib_splitUnits from "../lib/splitUnits.js";
 import type * as lib_touchBill from "../lib/touchBill.js";
 import type * as participants from "../participants.js";
 import type * as payments from "../payments.js";
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   files: typeof files;
   items: typeof items;
   "lib/geminiReceipt": typeof lib_geminiReceipt;
+  "lib/splitUnits": typeof lib_splitUnits;
   "lib/touchBill": typeof lib_touchBill;
   participants: typeof participants;
   payments: typeof payments;

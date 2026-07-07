@@ -22,6 +22,7 @@ const statusLabels = {
 
 export interface StickyTotalsBarProps {
   billId: Id<'bills'>
+  tipCents?: number
   participants: Doc<'participants'>[]
   items: Doc<'items'>[]
   assignments: Doc<'itemAssignments'>[]
@@ -30,6 +31,7 @@ export interface StickyTotalsBarProps {
 
 export function StickyTotalsBar({
   billId,
+  tipCents = 0,
   participants,
   items,
   assignments,
@@ -57,13 +59,15 @@ export function StickyTotalsBar({
         assignments: assignments.map((a) => ({
           itemId: a.itemId,
           participantId: a.participantId,
+          units: a.units,
         })),
         payments: payments.map((p) => ({
           participantId: p.participantId,
           amountCents: p.amountCents,
         })),
+        tipCents,
       }),
-    [participants, items, assignments, payments],
+    [participants, items, assignments, payments, tipCents],
   )
 
   const sortedParticipants = useMemo(

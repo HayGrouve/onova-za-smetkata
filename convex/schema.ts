@@ -15,6 +15,7 @@ export default defineSchema({
     note: v.optional(v.string()),
     receiptStorageId: v.optional(v.id('_storage')),
     status: v.union(v.literal('draft'), v.literal('final')),
+    tipCents: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -39,6 +40,7 @@ export default defineSchema({
   itemAssignments: defineTable({
     itemId: v.id('items'),
     participantId: v.id('participants'),
+    units: v.optional(v.number()),
   })
     .index('by_itemId', ['itemId'])
     .index('by_participantId', ['participantId']),

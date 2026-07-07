@@ -1,6 +1,56 @@
+import type { Id } from './_generated/dataModel'
+import type { MutationCtx } from './_generated/server'
 import { mutation } from './_generated/server'
 import { v } from 'convex/values'
+import { splitUnits } from './lib/splitUnits'
 import { touchBill } from './lib/touchBill'
+
+async function getSortedParticipantIds(
+  ctx: MutationCtx,
+  billId: Id<'bills'>,
+  participantIds: Id<'participants'>[],
+): Promise<Id<'participants'>[]> {
+  const participants = await ctx.db
+    .query('participants')
+    .withIndex('by_billId', (q) => q.eq('billId', billId))
+    .collect()
+  const order = new Map(
+    participants.map((participant) => [participant._id, participant.sortOrder]),
+  )
+  return [...participantIds].sort(
+    (a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0),
+  )
+}
+
+async function syncEvenAssignments(
+  ctx: MutationCtx,
+  item: { _id: Id<'items'>; billId: Id<'bills'>; quantity: number },
+  participantIds: Id<'participants'>[],
+) {
+  const existing = await ctx.db
+    .query('itemAssignments')
+    .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
+    .collect()
+  for (const assignment of existing) {
+    await ctx.db.delete(assignment._id)
+  }
+
+  if (participantIds.length === 0) return
+
+  const sortedIds = await getSortedParticipantIds(ctx, item.billId, participantIds)
+  const units = splitUnits(item.quantity, sortedIds.length)
+
+  for (let index = 0; index < sortedIds.length; index++) {
+    const participantId = sortedIds[index]
+    const unitCount = units[index] ?? 0
+    if (!participantId || unitCount <= 0) continue
+    await ctx.db.insert('itemAssignments', {
+      itemId: item._id,
+      participantId,
+      units: unitCount,
+    })
+  }
+}
 
 export const toggle = mutation({
   args: {
@@ -15,14 +65,56 @@ export const toggle = mutation({
       .query('itemAssignments')
       .withIndex('by_itemId', (q) => q.eq('itemId', args.itemId))
       .collect()
-    const match = existing.find((a) => a.participantId === args.participantId)
+    const isAssigned = existing.some(
+      (assignment) => assignment.participantId === args.participantId,
+    )
+
+    const nextParticipantIds = isAssigned
+      ? existing
+          .filter((assignment) => assignment.participantId !== args.participantId)
+          .map((assignment) => assignment.participantId)
+      : [...existing.map((assignment) => assignment.participantId), args.participantId]
+
+    await syncEvenAssignments(ctx, item, nextParticipantIds)
+    await touchBill(ctx, item.billId)
+  },
+})
+
+export const setUnits = mutation({
+  args: {
+    itemId: v.id('items'),
+    participantId: v.id('participants'),
+    units: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const item = await ctx.db.get(args.itemId)
+    if (!item) return
+
+    const clampedUnits = Math.max(
+      0,
+      Math.min(item.quantity, Math.round(args.units)),
+    )
+    const existing = await ctx.db
+      .query('itemAssignments')
+      .withIndex('by_itemId', (q) => q.eq('itemId', args.itemId))
+      .collect()
+    const match = existing.find(
+      (assignment) => assignment.participantId === args.participantId,
+    )
+
+    if (clampedUnits === 0) {
+      if (match) await ctx.db.delete(match._id)
+      await touchBill(ctx, item.billId)
+      return
+    }
 
     if (match) {
-      await ctx.db.delete(match._id)
+      await ctx.db.patch(match._id, { units: clampedUnits })
     } else {
       await ctx.db.insert('itemAssignments', {
         itemId: args.itemId,
         participantId: args.participantId,
+        units: clampedUnits,
       })
     }
 
@@ -45,6 +137,10 @@ export const assignAll = mutation({
       .withIndex('by_billId', (q) => q.eq('billId', args.billId))
       .collect()
 
+    const participantIds = participants
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((participant) => participant._id)
+
     for (const item of items) {
       const existing = await ctx.db
         .query('itemAssignments')
@@ -52,13 +148,7 @@ export const assignAll = mutation({
         .collect()
       if (args.mode === 'unassigned_only' && existing.length > 0) continue
 
-      for (const a of existing) await ctx.db.delete(a._id)
-      for (const p of participants) {
-        await ctx.db.insert('itemAssignments', {
-          itemId: item._id,
-          participantId: p._id,
-        })
-      }
+      await syncEvenAssignments(ctx, item, participantIds)
     }
     await touchBill(ctx, args.billId)
   },

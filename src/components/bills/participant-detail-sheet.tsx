@@ -1,5 +1,6 @@
 import type {
   BillBreakdownInput,
+  ParticipantBreakdownLine,
   ParticipantTotals,
   PaymentStatus,
 } from '#/lib/bill-calculations.ts'
@@ -24,11 +25,19 @@ const statusLabels: Record<PaymentStatus, string> = {
   paid: 'платено',
 }
 
-function formatLineSuffix(line: {
-  sharedWithCount?: number
-  units?: number
-  totalUnits?: number
-}): string {
+function formatLineLabel(
+  line: ParticipantBreakdownLine,
+  participantCount: number,
+): string {
+  if (line.kind === 'tip') {
+    return participantCount > 1
+      ? `Бакшиш (1/${participantCount})`
+      : 'Бакшиш'
+  }
+  return line.label
+}
+
+function formatLineSuffix(line: ParticipantBreakdownLine): string {
   if (line.units !== undefined && line.totalUnits !== undefined) {
     return ` · ${line.units} от ${line.totalUnits}`
   }
@@ -62,6 +71,7 @@ export function ParticipantDetailSheet({
     participantId,
   )
   const remainingCents = Math.max(0, totals.balanceCents)
+  const participantCount = breakdownInput.participants.length
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -84,8 +94,8 @@ export function ParticipantDetailSheet({
                 className="flex items-start justify-between gap-3 text-sm"
               >
                 <p className="text-muted-foreground">
-                  {line.label}
-                  {formatLineSuffix(line)}
+                  {formatLineLabel(line, participantCount)}
+                  {line.kind === 'item' ? formatLineSuffix(line) : ''}
                 </p>
                 <p className="shrink-0 tabular-nums">{formatEur(line.amountCents)}</p>
               </div>

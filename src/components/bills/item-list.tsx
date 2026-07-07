@@ -87,12 +87,8 @@ export function ItemList({
       )}
 
       {items.map((item) => {
-        const assignedParticipantIds = new Set(
-          assignments
-            .filter((a) => a.itemId === item._id)
-            .map((a) => a.participantId),
-        )
-        const isUnassigned = !assignedItemIds.has(item._id)
+        const itemAssignments = assignments.filter((a) => a.itemId === item._id)
+        const isUnassigned = itemAssignments.length === 0
         return (
           <div
             key={item._id}
@@ -105,9 +101,10 @@ export function ItemList({
             <ItemRow item={item} onDelete={() => void handleDelete(item)} />
             <AssignmentRow
               itemId={item._id}
+              itemQuantity={item.quantity}
               participants={participants}
               labels={labels}
-              assignedParticipantIds={assignedParticipantIds}
+              itemAssignments={itemAssignments}
             />
           </div>
         )
