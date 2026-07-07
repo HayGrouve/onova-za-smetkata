@@ -32,6 +32,7 @@ export interface PaymentRowProps {
   label: string
   totals: ParticipantTotals
   onOpenDetail?: () => void
+  onOpenPaymentSettings?: () => void
 }
 
 export function PaymentRow({
@@ -40,6 +41,7 @@ export function PaymentRow({
   label,
   totals,
   onOpenDetail,
+  onOpenPaymentSettings,
 }: PaymentRowProps) {
   const remainingCents = Math.max(0, totals.balanceCents)
 
@@ -96,7 +98,11 @@ export function PaymentRow({
         </div>
       </div>
       {remainingCents > 0 ? (
-        <ParticipantPayActions remainingCents={remainingCents} label={label} />
+        <ParticipantPayActions
+          remainingCents={remainingCents}
+          label={label}
+          onOpenSettings={onOpenPaymentSettings}
+        />
       ) : null}
       <PaymentActions
         billId={billId}

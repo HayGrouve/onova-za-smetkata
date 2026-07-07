@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { Button } from '#/components/ui/button.tsx'
 import type { ParticipantTotals } from '#/lib/bill-calculations.ts'
 import { formatBillShareText, shareOrCopyText } from '#/lib/bill-share.ts'
+import { cn } from '#/lib/utils.ts'
 
 export interface ShareBillParticipant {
   label: string
@@ -15,6 +16,7 @@ export interface ShareBillButtonProps {
   date: Date
   billTotalCents: number
   participants: ShareBillParticipant[]
+  className?: string
 }
 
 export function ShareBillButton({
@@ -22,6 +24,7 @@ export function ShareBillButton({
   date,
   billTotalCents,
   participants,
+  className,
 }: ShareBillButtonProps) {
   async function handleShare() {
     const sorted = [...participants].sort((a, b) => a.sortOrder - b.sortOrder)
@@ -51,7 +54,11 @@ export function ShareBillButton({
   }
 
   return (
-    <Button type="button" className="h-11 w-full" onClick={handleShare}>
+    <Button
+      type="button"
+      className={cn('h-11 w-full', className)}
+      onClick={handleShare}
+    >
       <ShareIcon className="size-4" />
       Сподели сметка
     </Button>

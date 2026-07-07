@@ -3,7 +3,11 @@ import { useMutation, useQuery } from 'convex/react'
 import { useMemo, useState } from 'react'
 import { PlusIcon, SearchIcon } from 'lucide-react'
 import { BillCard } from '#/components/bills/bill-card.tsx'
-import { PaymentSettingsSheet } from '#/components/bills/payment-settings-sheet.tsx'
+import {
+  PaymentSettingsOpenButton,
+  usePaymentSettingsConfigured,
+} from '#/components/bills/payment-settings-open-button.tsx'
+import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { api } from '../../convex/_generated/api'
@@ -16,7 +20,8 @@ function Home() {
   const createBill = useMutation(api.bills.create)
   const [search, setSearch] = useState('')
   const [isCreating, setIsCreating] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const paymentSettingsConfigured = usePaymentSettingsConfigured()
+  const { openPaymentSettings } = usePaymentSettingsSheet()
 
   const filteredBills = useMemo(() => {
     if (!bills) return null
@@ -39,17 +44,12 @@ function Home() {
   }
 
   return (
-    <div className="mx-auto min-h-dvh max-w-lg px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
-      <Button
-        type="button"
-        variant="ghost"
-        className="mb-2 h-10 w-full text-muted-foreground"
-        onClick={() => setSettingsOpen(true)}
-      >
-        Настройки за плащане
-      </Button>
-
-      <PaymentSettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+    <div className="page-container">
+      {!paymentSettingsConfigured ? (
+        <div className="mb-2">
+          <PaymentSettingsOpenButton onClick={openPaymentSettings} />
+        </div>
+      ) : null}
 
       <Button
         className="mb-4 h-11 w-full"

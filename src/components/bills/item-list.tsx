@@ -3,7 +3,7 @@ import { Trash2Icon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AssignmentRow } from '#/components/bills/assignment-row.tsx'
-import { AssignmentToolbar } from '#/components/bills/assignment-toolbar.tsx'
+import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { useDebouncedCallback } from '#/hooks/use-debounced-callback.ts'
@@ -42,6 +42,13 @@ export function ItemList({
     () => items.find((item) => !assignedItemIds.has(item._id))?._id,
     [items, assignedItemIds],
   )
+  const unassignedCount = items.length - assignedItemIds.size
+
+  function handleScrollToUnassigned() {
+    document
+      .getElementById('first-unassigned-item')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
 
   async function handleAdd() {
     const trimmed = newName.trim()
@@ -75,12 +82,13 @@ export function ItemList({
 
   return (
     <div className="flex flex-col gap-4">
-      <AssignmentToolbar
-        billId={billId}
-        items={items}
-        assignments={assignments}
-        participants={participants}
-      />
+      {unassignedCount > 0 && (
+        <button type="button" onClick={handleScrollToUnassigned}>
+          <Badge variant="destructive">
+            {unassignedCount} неразпределени
+          </Badge>
+        </button>
+      )}
 
       {items.length === 0 && (
         <p className="text-sm text-muted-foreground">Все още няма артикули.</p>

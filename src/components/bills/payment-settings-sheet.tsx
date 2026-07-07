@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { useMutation, useQuery } from 'convex/react'
+import { toast } from 'sonner'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
@@ -10,9 +12,10 @@ import {
   SheetTitle,
 } from '#/components/ui/sheet.tsx'
 import {
-  loadPaymentSettings,
-  savePaymentSettings,
+  clearLegacyPaymentSettings,
+  loadLegacyPaymentSettings,
 } from '#/lib/payment-settings.ts'
+import { api } from '../../../convex/_generated/api'
 
 export interface PaymentSettingsSheetProps {
   open: boolean
@@ -23,22 +26,48 @@ export function PaymentSettingsSheet({
   open,
   onOpenChange,
 }: PaymentSettingsSheetProps) {
+  const settings = useQuery(api.paymentSettings.get)
+  const saveSettings = useMutation(api.paymentSettings.save)
   const [revolutUsername, setRevolutUsername] = useState('')
   const [iban, setIban] = useState('')
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (!open) return
-    const settings = loadPaymentSettings()
-    setRevolutUsername(settings.revolutUsername ?? '')
-    setIban(settings.iban ?? '')
-  }, [open])
+    if (!open || settings === undefined) return
 
-  function handleSave() {
-    savePaymentSettings({
-      revolutUsername: revolutUsername.trim() || undefined,
-      iban: iban.trim() || undefined,
-    })
-    onOpenChange(false)
+    if (settings.revolutUsername || settings.iban) {
+      setRevolutUsername(settings.revolutUsername ?? '')
+      setIban(settings.iban ?? '')
+      return
+    }
+
+    const legacy = loadLegacyPaymentSettings()
+    if (legacy.revolutUsername || legacy.iban) {
+      setRevolutUsername(legacy.revolutUsername ?? '')
+      setIban(legacy.iban ?? '')
+      void saveSettings(legacy).then(() => clearLegacyPaymentSettings())
+      return
+    }
+
+    setRevolutUsername('')
+    setIban('')
+  }, [open, settings, saveSettings])
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      await saveSettings({
+        revolutUsername: revolutUsername.trim() || undefined,
+        iban: iban.trim() || undefined,
+      })
+      clearLegacyPaymentSettings()
+      toast.success('Настройките са запазени')
+      onOpenChange(false)
+    } catch {
+      toast.error('Неуспешно запазване')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -75,7 +104,12 @@ export function PaymentSettingsSheet({
         </div>
 
         <SheetFooter className="border-t">
-          <Button type="button" className="h-11 w-full" onClick={handleSave}>
+          <Button
+            type="button"
+            className="h-11 w-full"
+            onClick={handleSave}
+            disabled={saving || settings === undefined}
+          >
             Запази
           </Button>
         </SheetFooter>

@@ -16,6 +16,7 @@ import type * as lib_geminiReceipt from "../lib/geminiReceipt.js";
 import type * as lib_splitUnits from "../lib/splitUnits.js";
 import type * as lib_touchBill from "../lib/touchBill.js";
 import type * as participants from "../participants.js";
+import type * as paymentSettings from "../paymentSettings.js";
 import type * as payments from "../payments.js";
 import type * as receiptScan from "../receiptScan.js";
 import type * as receiptScanAction from "../receiptScanAction.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   "lib/splitUnits": typeof lib_splitUnits;
   "lib/touchBill": typeof lib_touchBill;
   participants: typeof participants;
+  paymentSettings: typeof paymentSettings;
   payments: typeof payments;
   receiptScan: typeof receiptScan;
   receiptScanAction: typeof receiptScanAction;

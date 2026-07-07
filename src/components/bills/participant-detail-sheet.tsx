@@ -39,7 +39,9 @@ function formatLineLabel(
 }
 
 function formatLineSuffix(line: ParticipantBreakdownLine): string {
+  if (line.kind !== 'item') return ''
   if (line.units !== undefined && line.totalUnits !== undefined) {
+    if (line.totalUnits <= 1 || line.units === line.totalUnits) return ''
     return ` · ${line.units} от ${line.totalUnits}`
   }
   if (line.sharedWithCount !== undefined && line.sharedWithCount > 0) {
@@ -56,6 +58,7 @@ export interface ParticipantDetailSheetProps {
   label: string
   breakdownInput: BillBreakdownInput
   totals: ParticipantTotals
+  onOpenPaymentSettings?: () => void
 }
 
 export function ParticipantDetailSheet({
@@ -66,6 +69,7 @@ export function ParticipantDetailSheet({
   label,
   breakdownInput,
   totals,
+  onOpenPaymentSettings,
 }: ParticipantDetailSheetProps) {
   const breakdown = calculateParticipantBreakdown(
     breakdownInput,
@@ -124,6 +128,7 @@ export function ParticipantDetailSheet({
             <ParticipantPayActions
               remainingCents={remainingCents}
               label={label}
+              onOpenSettings={onOpenPaymentSettings}
             />
           ) : null}
 

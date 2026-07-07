@@ -1,4 +1,5 @@
 import { useQuery } from 'convex/react'
+import { XIcon } from 'lucide-react'
 import { useState } from 'react'
 import {
   Card,
@@ -8,6 +9,7 @@ import {
 } from '#/components/ui/card.tsx'
 import {
   Dialog,
+  DialogClose,
   DialogContent,
 } from '#/components/ui/dialog.tsx'
 import { api } from '../../../convex/_generated/api'
@@ -62,12 +64,21 @@ export function ReceiptPreviewCard({ storageId }: ReceiptPreviewCardProps) {
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto p-2">
-          <img
-            src={receiptUrl}
-            alt="Касова бележка"
-            className="h-auto w-full object-contain"
-          />
+        <DialogContent
+          showCloseButton={false}
+          className="max-h-[90vh] max-w-[calc(100%-2rem)] overflow-y-auto border-0 bg-transparent p-0 shadow-none sm:max-w-lg"
+        >
+          <div className="relative">
+            <img
+              src={receiptUrl}
+              alt="Касова бележка"
+              className="max-h-[90vh] w-full rounded-lg object-contain"
+            />
+            <DialogClose className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded-md border border-white/20 bg-black/60 text-white shadow-md transition-colors hover:bg-black/75 focus:ring-2 focus:ring-white/50 focus:outline-none">
+              <XIcon className="size-4 shrink-0" />
+              <span className="sr-only">Затвори</span>
+            </DialogClose>
+          </div>
         </DialogContent>
       </Dialog>
     </>

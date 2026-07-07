@@ -5,7 +5,8 @@ import { toast } from 'sonner'
 import { ParticipantDetailSheet } from '#/components/bills/participant-detail-sheet.tsx'
 import { PaymentProgress } from '#/components/bills/payment-progress.tsx'
 import { PaymentRow } from '#/components/bills/payment-row.tsx'
-import { PaymentSettingsSheet } from '#/components/bills/payment-settings-sheet.tsx'
+import { PaymentSettingsOpenButton, usePaymentSettingsConfigured } from '#/components/bills/payment-settings-open-button.tsx'
+import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
 import { ReceiptPreviewCard } from '#/components/bills/receipt-preview-card.tsx'
 import { ShareBillButton } from '#/components/bills/share-bill-button.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
@@ -58,7 +59,8 @@ function BillSummary() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [detailParticipantId, setDetailParticipantId] =
     useState<Id<'participants'> | null>(null)
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const paymentSettingsConfigured = usePaymentSettingsConfigured()
+  const { openPaymentSettings } = usePaymentSettingsSheet()
 
   const calcInputs = useMemo(() => {
     if (!data) return null
@@ -181,7 +183,7 @@ function BillSummary() {
   }
 
   return (
-    <div className="mx-auto max-w-lg px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+2rem)]">
+    <div className="page-container">
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           {dateFormatter.format(new Date(bill.date))}
@@ -208,28 +210,21 @@ function BillSummary() {
           </CardContent>
         </Card>
 
-        <ShareBillButton
-          restaurantName={bill.restaurantName}
-          date={new Date(bill.date)}
-          billTotalCents={totals.billTotalCents}
-          participants={participants.map((p) => ({
-            label: labels[p._id] ?? p.name,
-            sortOrder: p.sortOrder,
-            totals: totals.byParticipant[p._id],
-          }))}
-        />
-        <Button
-          type="button"
-          variant="ghost"
-          className="h-10 w-full text-muted-foreground"
-          onClick={() => setSettingsOpen(true)}
-        >
-          Настройки за плащане
-        </Button>
-        <PaymentSettingsSheet
-          open={settingsOpen}
-          onOpenChange={setSettingsOpen}
-        />
+        <div className="flex flex-col gap-2">
+          <ShareBillButton
+            restaurantName={bill.restaurantName}
+            date={new Date(bill.date)}
+            billTotalCents={totals.billTotalCents}
+            participants={participants.map((p) => ({
+              label: labels[p._id] ?? p.name,
+              sortOrder: p.sortOrder,
+              totals: totals.byParticipant[p._id],
+            }))}
+          />
+          {!paymentSettingsConfigured ? (
+            <PaymentSettingsOpenButton onClick={openPaymentSettings} />
+          ) : null}
+        </div>
 
         {bill.receiptStorageId && (
           <ReceiptPreviewCard storageId={bill.receiptStorageId} />
@@ -288,6 +283,7 @@ function BillSummary() {
                   label={labels[participant._id] ?? participant.name}
                   totals={participantTotals}
                   onOpenDetail={() => setDetailParticipantId(participant._id)}
+                  onOpenPaymentSettings={openPaymentSettings}
                 />
               )
             })}
@@ -344,6 +340,7 @@ function BillSummary() {
             label={labels[detailParticipantId] ?? 'Участник'}
             breakdownInput={breakdownInput}
             totals={totals.byParticipant[detailParticipantId]}
+            onOpenPaymentSettings={openPaymentSettings}
           />
         )}
       </div>

@@ -53,6 +53,12 @@ export default defineSchema({
     paidAt: v.number(),
   }).index('by_billId', ['billId']),
 
+  paymentSettings: defineTable({
+    revolutUsername: v.optional(v.string()),
+    iban: v.optional(v.string()),
+    updatedAt: v.number(),
+  }),
+
   receiptScans: defineTable({
     billId: v.id('bills'),
     storageId: v.id('_storage'),

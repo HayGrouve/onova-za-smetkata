@@ -42,25 +42,27 @@ export function PaymentActions({
   if (remainingCents <= 0) return null
 
   return (
-    <div className="flex gap-2 pt-1">
-      <Button className="h-11 flex-1" onClick={handleMarkPaid}>
+    <div className="flex flex-col gap-2 pt-1">
+      <Button className="h-11 w-full" onClick={handleMarkPaid}>
         Платено
       </Button>
-      <Input
-        value={partialAmount}
-        onChange={(e) => setPartialAmount(e.target.value)}
-        inputMode="decimal"
-        placeholder="Частична сума"
-        className="h-11 w-32"
-      />
-      <Button
-        variant="outline"
-        className="h-11"
-        onClick={handlePartialPayment}
-        disabled={!partialAmount.trim()}
-      >
-        Плати
-      </Button>
+      <div className="flex gap-2">
+        <Input
+          value={partialAmount}
+          onChange={(e) => setPartialAmount(e.target.value)}
+          inputMode="decimal"
+          placeholder="Частична сума"
+          className="h-11 min-w-0 flex-1"
+        />
+        <Button
+          variant="outline"
+          className="h-11 shrink-0"
+          onClick={handlePartialPayment}
+          disabled={!partialAmount.trim()}
+        >
+          Плати
+        </Button>
+      </div>
     </div>
   )
 }

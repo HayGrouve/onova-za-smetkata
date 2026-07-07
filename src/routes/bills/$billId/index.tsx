@@ -237,7 +237,7 @@ function BillEditorContent({
   }
 
   return (
-    <div className="mx-auto max-w-lg px-4 pt-4 pb-32">
+    <div className="page-container pb-[calc(env(safe-area-inset-bottom,0px)+8.5rem)]">
       <div className="flex flex-col gap-4">
         <Card>
           <CardHeader>
