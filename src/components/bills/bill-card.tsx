@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { useMutation } from 'convex/react'
-import { MoreVerticalIcon } from 'lucide-react'
+import { MoreVerticalIcon, Trash2Icon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '#/components/ui/badge.tsx'
@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu.tsx'
 import { formatEur } from '#/lib/format-currency.ts'
+import { ICON } from '#/lib/app-icons.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc } from '../../../convex/_generated/dataModel'
 
@@ -117,6 +118,7 @@ export function BillCard({
                 setDeleteOpen(true)
               }}
             >
+              <Trash2Icon className={ICON.button} aria-hidden />
               Изтрий
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -138,6 +140,7 @@ export function BillCard({
               onClick={handleDelete}
               disabled={isDeleting}
             >
+              <Trash2Icon className={ICON.button} aria-hidden />
               Изтрий сметката
             </Button>
           </DialogFooter>

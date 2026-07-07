@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { formatBillShareText, formatCopyAmount } from './bill-share'
+import {
+  formatBillShareText,
+  formatBreakdownLineSuffix,
+  formatCopyAmount,
+} from './bill-share'
 
 describe('formatCopyAmount', () => {
   it('formats cents as decimal comma without symbol', () => {
@@ -8,20 +12,157 @@ describe('formatCopyAmount', () => {
   })
 })
 
+describe('formatBreakdownLineSuffix', () => {
+  it('describes shared and partial unit assignments', () => {
+    expect(
+      formatBreakdownLineSuffix({
+        kind: 'item',
+        label: 'Пици',
+        amountCents: 600,
+        sharedWithCount: 1,
+      }),
+    ).toBe(' · споделено с 1')
+
+    expect(
+      formatBreakdownLineSuffix({
+        kind: 'item',
+        label: 'Бира',
+        amountCents: 400,
+        units: 2,
+        totalUnits: 4,
+      }),
+    ).toBe(' · 2 от 4')
+  })
+})
+
 describe('formatBillShareText', () => {
-  it('builds bulgarian summary with statuses', () => {
+  const breakdown = {
+    participants: [
+      { id: 'p1', sortOrder: 0 },
+      { id: 'p2', sortOrder: 1 },
+    ],
+    items: [
+      {
+        id: 'i1',
+        name: 'Салата',
+        unitPriceCents: 1200,
+        quantity: 1,
+      },
+      {
+        id: 'i2',
+        name: 'Пици',
+        unitPriceCents: 2400,
+        quantity: 1,
+      },
+    ],
+    assignments: [
+      { itemId: 'i1', participantId: 'p1' },
+      { itemId: 'i1', participantId: 'p2' },
+      { itemId: 'i2', participantId: 'p1' },
+    ],
+    tipCents: 600,
+  }
+
+  it('includes items, assignees, per-person lines, and payment status', () => {
     const text = formatBillShareText({
       restaurantName: 'Механа',
       date: new Date('2026-07-07T12:00:00'),
-      billTotalCents: 3000,
+      note: 'Вечеря с приятели',
+      billTotalCents: 5400,
+      breakdown,
       participants: [
-        { label: 'Иван', owedCents: 1500, status: 'unpaid' as const },
-        { label: 'Мария', owedCents: 1500, status: 'paid' as const },
+        {
+          id: 'p1',
+          label: 'Иван',
+          sortOrder: 0,
+          totals: {
+            owedCents: 3900,
+            paidCents: 0,
+            balanceCents: 3900,
+            status: 'unpaid',
+          },
+        },
+        {
+          id: 'p2',
+          label: 'Мария',
+          sortOrder: 1,
+          totals: {
+            owedCents: 1500,
+            paidCents: 1500,
+            balanceCents: 0,
+            status: 'paid',
+          },
+        },
       ],
     })
-    expect(text).toContain('Механа')
-    expect(text).toContain('Иван')
+
+    expect(text).toContain('Сметка: Механа')
+    expect(text).toContain('Бележка: Вечеря с приятели')
+    expect(text).toContain('Артикули')
+    expect(text).toContain('Салата')
+    expect(text).toContain('Иван (6,00 EUR)')
+    expect(text).toContain('Мария (6,00 EUR)')
+    expect(text).toContain('Бакшиш — 6,00 EUR (поравно между 2)')
+    expect(text).toContain('▸ Иван')
+    expect(text).toContain('▸ Мария')
+    expect(text).toContain('Салата · споделено с 1 — 6,00 EUR')
     expect(text).toContain('неплатено')
     expect(text).toContain('платено')
+    expect(text).toContain('Общо: 54,00 EUR')
+  })
+
+  it('shows unit-based item ownership in the items section', () => {
+    const text = formatBillShareText({
+      restaurantName: 'Бар',
+      date: new Date('2026-07-07T12:00:00'),
+      billTotalCents: 1600,
+      breakdown: {
+        participants: [
+          { id: 'p1', sortOrder: 0 },
+          { id: 'p2', sortOrder: 1 },
+        ],
+        items: [
+          {
+            id: 'i1',
+            name: 'Бира',
+            unitPriceCents: 400,
+            quantity: 4,
+          },
+        ],
+        assignments: [
+          { itemId: 'i1', participantId: 'p1', units: 3 },
+          { itemId: 'i1', participantId: 'p2', units: 1 },
+        ],
+      },
+      participants: [
+        {
+          id: 'p1',
+          label: 'Иван',
+          sortOrder: 0,
+          totals: {
+            owedCents: 1200,
+            paidCents: 0,
+            balanceCents: 1200,
+            status: 'unpaid',
+          },
+        },
+        {
+          id: 'p2',
+          label: 'Мария',
+          sortOrder: 1,
+          totals: {
+            owedCents: 400,
+            paidCents: 0,
+            balanceCents: 400,
+            status: 'unpaid',
+          },
+        },
+      ],
+    })
+
+    expect(text).toContain('Бира ×4')
+    expect(text).toContain('Иван 3 бр. (12,00 EUR)')
+    expect(text).toContain('Мария 1 бр. (4,00 EUR)')
+    expect(text).toContain('Бира · 3 от 4 — 12,00 EUR')
   })
 })

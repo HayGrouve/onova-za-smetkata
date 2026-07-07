@@ -1,7 +1,8 @@
 import { useQuery } from 'convex/react'
-import { CogIcon } from 'lucide-react'
+import { CogIcon, WalletIcon } from 'lucide-react'
 import { Button } from '#/components/ui/button.tsx'
 import { isPaymentConfigured } from '#/lib/payment-settings.ts'
+import { ICON } from '#/lib/app-icons.ts'
 import { cn } from '#/lib/utils.ts'
 import { api } from '../../../convex/_generated/api'
 
@@ -44,6 +45,7 @@ export function PaymentSettingsOpenButton({
       className={cn('h-11 w-full', className)}
       onClick={onClick}
     >
+      <WalletIcon className={ICON.button} aria-hidden />
       Настройки за плащане (Revolut / IBAN)
     </Button>
   )

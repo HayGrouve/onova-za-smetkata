@@ -1,12 +1,15 @@
 import type {
   BillBreakdownInput,
-  ParticipantBreakdownLine,
   ParticipantTotals,
   PaymentStatus,
 } from '#/lib/bill-calculations.ts'
 import {
   calculateParticipantBreakdown,
 } from '#/lib/bill-calculations.ts'
+import {
+  formatBreakdownLineLabel,
+  formatBreakdownLineSuffix,
+} from '#/lib/bill-share.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Separator } from '#/components/ui/separator.tsx'
@@ -24,30 +27,6 @@ const statusLabels: Record<PaymentStatus, string> = {
   unpaid: 'неплатено',
   partial: 'частично',
   paid: 'платено',
-}
-
-function formatLineLabel(
-  line: ParticipantBreakdownLine,
-  participantCount: number,
-): string {
-  if (line.kind === 'tip') {
-    return participantCount > 1
-      ? `Бакшиш (1/${participantCount})`
-      : 'Бакшиш'
-  }
-  return line.label
-}
-
-function formatLineSuffix(line: ParticipantBreakdownLine): string {
-  if (line.kind !== 'item') return ''
-  if (line.units !== undefined && line.totalUnits !== undefined) {
-    if (line.totalUnits <= 1 || line.units === line.totalUnits) return ''
-    return ` · ${line.units} от ${line.totalUnits}`
-  }
-  if (line.sharedWithCount !== undefined && line.sharedWithCount > 0) {
-    return ` · споделено с ${line.sharedWithCount}`
-  }
-  return ''
 }
 
 export interface ParticipantDetailSheetProps {
@@ -99,8 +78,8 @@ export function ParticipantDetailSheet({
                 className="flex items-start justify-between gap-3 text-sm"
               >
                 <p className="text-muted-foreground">
-                  {formatLineLabel(line, participantCount)}
-                  {line.kind === 'item' ? formatLineSuffix(line) : ''}
+                  {formatBreakdownLineLabel(line, participantCount)}
+                  {line.kind === 'item' ? formatBreakdownLineSuffix(line) : ''}
                 </p>
                 <p className="shrink-0 tabular-nums">{formatEur(line.amountCents)}</p>
               </div>

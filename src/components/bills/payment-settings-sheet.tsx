@@ -1,3 +1,4 @@
+import { CopyIcon, SaveIcon, WalletIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
@@ -11,6 +12,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '#/components/ui/sheet.tsx'
+import { ICON } from '#/lib/app-icons.ts'
 import {
   clearLegacyPaymentSettings,
   loadLegacyPaymentSettings,
@@ -74,7 +76,10 @@ export function PaymentSettingsSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="mx-auto max-w-lg rounded-t-xl">
         <SheetHeader>
-          <SheetTitle>Настройки за плащане</SheetTitle>
+          <SheetTitle className="flex items-center gap-2">
+            <WalletIcon className={ICON.section} aria-hidden />
+            Настройки за плащане
+          </SheetTitle>
         </SheetHeader>
 
         <div className="flex flex-col gap-4 px-4">
@@ -92,14 +97,33 @@ export function PaymentSettingsSheet({
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="iban">IBAN</Label>
-            <Input
-              id="iban"
-              value={iban}
-              onChange={(e) => setIban(e.target.value)}
-              placeholder="BG00XXXX00000000000000"
-              className="h-11"
-              autoComplete="off"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="iban"
+                value={iban}
+                onChange={(e) => setIban(e.target.value)}
+                placeholder="BG00XXXX00000000000000"
+                className="h-11 min-w-0 flex-1"
+                autoComplete="off"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 shrink-0"
+                disabled={!iban.trim()}
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(iban.trim())
+                    toast.success('IBAN копиран')
+                  } catch {
+                    toast.error('Неуспешно копиране')
+                  }
+                }}
+              >
+                <CopyIcon className={ICON.button} aria-hidden />
+                Копирай
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -110,6 +134,7 @@ export function PaymentSettingsSheet({
             onClick={handleSave}
             disabled={saving || settings === undefined}
           >
+            <SaveIcon className={ICON.button} aria-hidden />
             Запази
           </Button>
         </SheetFooter>

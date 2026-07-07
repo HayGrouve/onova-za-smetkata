@@ -1,14 +1,17 @@
-import { Badge } from '#/components/ui/badge.tsx'
+import { CopyIcon } from 'lucide-react'
 import {
   copyRemainingAmount,
   ParticipantPayActions,
 } from '#/components/bills/participant-pay-actions.tsx'
 import { PaymentActions } from '#/components/bills/payment-actions.tsx'
+import { Badge } from '#/components/ui/badge.tsx'
 import type {
   ParticipantTotals,
   PaymentStatus,
 } from '#/lib/bill-calculations.ts'
 import { formatEur } from '#/lib/format-currency.ts'
+import { getPaymentRowBorderClass } from '#/lib/payment-row-styles.ts'
+import { cn } from '#/lib/utils.ts'
 import type { Id } from '../../../convex/_generated/dataModel'
 
 const statusLabels: Record<PaymentStatus, string> = {
@@ -46,7 +49,12 @@ export function PaymentRow({
   const remainingCents = Math.max(0, totals.balanceCents)
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border p-3">
+    <div
+      className={cn(
+        'flex flex-col gap-2 rounded-lg border p-3',
+        getPaymentRowBorderClass(totals.status),
+      )}
+    >
       {onOpenDetail ? (
         <button
           type="button"
@@ -80,7 +88,12 @@ export function PaymentRow({
           </p>
         </div>
         <div>
-          <p className="text-xs">Остатък</p>
+          <p className="flex items-center gap-1 text-xs">
+            Остатък
+            {remainingCents > 0 ? (
+              <CopyIcon className="size-3 text-muted-foreground" aria-hidden />
+            ) : null}
+          </p>
           {remainingCents > 0 ? (
             <button
               type="button"

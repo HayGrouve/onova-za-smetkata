@@ -1,3 +1,11 @@
+import {
+  AlertCircleIcon,
+  BanknoteIcon,
+  CheckCircleIcon,
+  CircleDollarSignIcon,
+  PencilIcon,
+  Trash2Icon,
+} from 'lucide-react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import { useMemo, useState } from 'react'
@@ -34,6 +42,7 @@ import {
   type PaymentStatus,
 } from '#/lib/bill-calculations.ts'
 import { formatEur } from '#/lib/format-currency.ts'
+import { ICON } from '#/lib/app-icons.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
@@ -202,33 +211,41 @@ function BillSummary() {
       <div className="flex flex-col gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Обща сума</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <CircleDollarSignIcon className={ICON.section} aria-hidden />
+              Обща сума
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold tabular-nums">
-              {formatEur(totals.billTotalCents)}
-            </p>
-            {bill.note && (
-              <p className="mt-1 text-sm text-muted-foreground">{bill.note}</p>
-            )}
+          <CardContent className="flex flex-col gap-4">
+            <div>
+              <p className="text-2xl font-bold tabular-nums">
+                {formatEur(totals.billTotalCents)}
+              </p>
+              {bill.note && (
+                <p className="mt-1 text-sm text-muted-foreground">{bill.note}</p>
+              )}
+            </div>
+            {breakdownInput ? (
+              <ShareBillButton
+                restaurantName={bill.restaurantName}
+                date={new Date(bill.date)}
+                note={bill.note}
+                billTotalCents={totals.billTotalCents}
+                breakdown={breakdownInput}
+                participants={participants.map((p) => ({
+                  id: p._id,
+                  label: labels[p._id] ?? p.name,
+                  sortOrder: p.sortOrder,
+                  totals: totals.byParticipant[p._id],
+                }))}
+              />
+            ) : null}
           </CardContent>
         </Card>
 
-        <div className="flex flex-col gap-2">
-          <ShareBillButton
-            restaurantName={bill.restaurantName}
-            date={new Date(bill.date)}
-            billTotalCents={totals.billTotalCents}
-            participants={participants.map((p) => ({
-              label: labels[p._id] ?? p.name,
-              sortOrder: p.sortOrder,
-              totals: totals.byParticipant[p._id],
-            }))}
-          />
-          {!paymentSettingsConfigured ? (
-            <PaymentSettingsOpenButton onClick={openPaymentSettings} />
-          ) : null}
-        </div>
+        {!paymentSettingsConfigured ? (
+          <PaymentSettingsOpenButton onClick={openPaymentSettings} />
+        ) : null}
 
         {bill.receiptStorageId && (
           <ReceiptPreviewCard storageId={bill.receiptStorageId} />
@@ -237,7 +254,8 @@ function BillSummary() {
         {isDraft && errors.length > 0 && (
           <Card className="border-destructive/50">
             <CardHeader>
-              <CardTitle className="text-destructive">
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertCircleIcon className={ICON.section} aria-hidden />
                 Сметката не може да бъде завършена
               </CardTitle>
             </CardHeader>
@@ -251,27 +269,19 @@ function BillSummary() {
           </Card>
         )}
 
-        {isDraft && errors.length === 0 && (
-          <Button
-            className="h-11"
-            onClick={handleFinalize}
-            disabled={isFinalizing}
-          >
-            Завърши сметка
-          </Button>
-        )}
-
-        <PaymentProgress
-          participants={participants.map((p) => ({
-            id: p._id,
-            sortOrder: p.sortOrder,
-          }))}
-          byParticipant={totals.byParticipant}
-        />
-
         <Card>
-          <CardHeader>
-            <CardTitle>Плащания</CardTitle>
+          <CardHeader className="gap-3">
+            <CardTitle className="flex items-center gap-2">
+              <BanknoteIcon className={ICON.section} aria-hidden />
+              Плащания
+            </CardTitle>
+            <PaymentProgress
+              participants={participants.map((p) => ({
+                id: p._id,
+                sortOrder: p.sortOrder,
+              }))}
+              byParticipant={totals.byParticipant}
+            />
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             {sortedParticipants.length === 0 && (
@@ -296,6 +306,17 @@ function BillSummary() {
 
         <Separator />
 
+        {isDraft && errors.length === 0 && (
+          <Button
+            className="h-11 w-full bg-emerald-800 text-white transition-colors duration-200 hover:bg-emerald-900 focus-visible:ring-emerald-800/30 dark:bg-emerald-900 dark:hover:bg-emerald-950"
+            onClick={handleFinalize}
+            disabled={isFinalizing}
+          >
+            <CheckCircleIcon className={ICON.button} aria-hidden />
+            Завърши сметка
+          </Button>
+        )}
+
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -304,11 +325,13 @@ function BillSummary() {
               void navigate({ to: '/bills/$billId', params: { billId } })
             }
           >
+            <PencilIcon className={ICON.button} aria-hidden />
             Редактирай
           </Button>
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="destructive" className="h-11 flex-1">
+                <Trash2Icon className={ICON.button} aria-hidden />
                 Изтрий
               </Button>
             </DialogTrigger>
@@ -326,6 +349,7 @@ function BillSummary() {
                   onClick={handleDelete}
                   disabled={isDeleting}
                 >
+                  <Trash2Icon className={ICON.button} aria-hidden />
                   Изтрий сметката
                 </Button>
               </DialogFooter>

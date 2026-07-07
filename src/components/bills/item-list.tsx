@@ -1,5 +1,5 @@
 import { useMutation } from 'convex/react'
-import { Trash2Icon } from 'lucide-react'
+import { AlertTriangleIcon, PlusIcon, Trash2Icon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AssignmentRow } from '#/components/bills/assignment-row.tsx'
@@ -8,6 +8,7 @@ import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { useDebouncedCallback } from '#/hooks/use-debounced-callback.ts'
 import { parseEurInput } from '#/lib/format-currency.ts'
+import { ICON } from '#/lib/app-icons.ts'
 import { cn } from '#/lib/utils.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
@@ -84,7 +85,8 @@ export function ItemList({
     <div className="flex flex-col gap-4">
       {unassignedCount > 0 && (
         <button type="button" onClick={handleScrollToUnassigned}>
-          <Badge variant="destructive">
+          <Badge variant="destructive" className="gap-1">
+            <AlertTriangleIcon className="size-3" aria-hidden />
             {unassignedCount} неразпределени
           </Badge>
         </button>
@@ -142,6 +144,7 @@ export function ItemList({
           />
         </div>
         <Button className="h-11" onClick={handleAdd} disabled={!newName.trim()}>
+          <PlusIcon className={ICON.button} aria-hidden />
           Добави артикул
         </Button>
       </div>

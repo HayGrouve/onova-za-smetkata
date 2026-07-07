@@ -1,5 +1,12 @@
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
+import { assertBillCanFinalize } from './lib/validateBillForFinalize'
+import {
+  cleanupBillReceiptStorage,
+  deleteReceiptScansForBill,
+  deleteReceiptStorageFile,
+  shouldDeleteReplacedReceiptStorage,
+} from './lib/receiptStorage'
 
 export const list = query({
   args: {},
@@ -203,6 +210,17 @@ export const update = mutation({
   handler: async (ctx, args) => {
     const { billId, restaurantName, date, note, receiptStorageId, tipCents } =
       args
+
+    const bill = await ctx.db.get(billId)
+    if (!bill) throw new Error('Bill not found')
+
+    const oldReceiptStorageId = shouldDeleteReplacedReceiptStorage(
+      bill.receiptStorageId,
+      receiptStorageId,
+    )
+      ? bill.receiptStorageId
+      : undefined
+
     await ctx.db.patch(billId, {
       updatedAt: Date.now(),
       ...(restaurantName !== undefined ? { restaurantName } : {}),
@@ -211,6 +229,10 @@ export const update = mutation({
       ...(receiptStorageId !== undefined ? { receiptStorageId } : {}),
       ...(tipCents !== undefined ? { tipCents } : {}),
     })
+
+    if (oldReceiptStorageId) {
+      await cleanupBillReceiptStorage(ctx, billId, oldReceiptStorageId)
+    }
   },
 })
 
@@ -219,9 +241,46 @@ export const finalize = mutation({
   handler: async (ctx, args) => {
     const bill = await ctx.db.get(args.billId)
     if (!bill) throw new Error('Bill not found')
-    if (!bill.restaurantName.trim()) {
-      throw new Error('Въведете име на ресторант.')
-    }
+
+    const participants = await ctx.db
+      .query('participants')
+      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
+      .collect()
+
+    const items = await ctx.db
+      .query('items')
+      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
+      .collect()
+
+    const assignments = (
+      await Promise.all(
+        items.map((item) =>
+          ctx.db
+            .query('itemAssignments')
+            .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
+            .collect(),
+        ),
+      )
+    ).flat()
+
+    assertBillCanFinalize({
+      restaurantName: bill.restaurantName,
+      participants: participants.map((p) => ({
+        id: p._id,
+        sortOrder: p.sortOrder,
+      })),
+      items: items.map((i) => ({
+        id: i._id,
+        unitPriceCents: i.unitPriceCents,
+        quantity: i.quantity,
+      })),
+      assignments: assignments.map((a) => ({
+        itemId: a.itemId,
+        participantId: a.participantId,
+        units: a.units,
+      })),
+    })
+
     await ctx.db.patch(args.billId, {
       status: 'final',
       updatedAt: Date.now(),
@@ -232,6 +291,13 @@ export const finalize = mutation({
 export const remove = mutation({
   args: { billId: v.id('bills') },
   handler: async (ctx, args) => {
+    const bill = await ctx.db.get(args.billId)
+    if (!bill) throw new Error('Bill not found')
+
+    const receiptStorageId = bill.receiptStorageId
+
+    await deleteReceiptScansForBill(ctx, args.billId)
+
     const participants = await ctx.db
       .query('participants')
       .withIndex('by_billId', (q) => q.eq('billId', args.billId))
@@ -256,5 +322,9 @@ export const remove = mutation({
     for (const p of participants) await ctx.db.delete(p._id)
     for (const pay of payments) await ctx.db.delete(pay._id)
     await ctx.db.delete(args.billId)
+
+    if (receiptStorageId) {
+      await deleteReceiptStorageFile(ctx, receiptStorageId)
+    }
   },
 })

@@ -1,5 +1,5 @@
 import { useQuery } from 'convex/react'
-import { XIcon } from 'lucide-react'
+import { ReceiptIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import {
   Card,
@@ -13,6 +13,7 @@ import {
   DialogContent,
 } from '#/components/ui/dialog.tsx'
 import { api } from '../../../convex/_generated/api'
+import { ICON } from '#/lib/app-icons.ts'
 import type { Id } from '../../../convex/_generated/dataModel'
 
 export interface ReceiptPreviewCardProps {
@@ -27,7 +28,10 @@ export function ReceiptPreviewCard({ storageId }: ReceiptPreviewCardProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Касова бележка</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <ReceiptIcon className={ICON.section} aria-hidden />
+            Касова бележка
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">Зареждане...</p>
@@ -42,7 +46,10 @@ export function ReceiptPreviewCard({ storageId }: ReceiptPreviewCardProps) {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Касова бележка</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <ReceiptIcon className={ICON.section} aria-hidden />
+            Касова бележка
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <button

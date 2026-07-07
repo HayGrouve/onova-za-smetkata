@@ -307,14 +307,17 @@ export function validateBillForFinalize(input: {
     })
   }
 
-  const unassigned = pricedItems.filter(
+  const unassigned = input.items.filter(
     (item) =>
       !input.assignments.some((a) => a.itemId === item.id),
   )
   if (unassigned.length > 0) {
     errors.push({
       code: 'unassigned_items',
-      message: 'Всички артикули трябва да имат поне един участник.',
+      message:
+        unassigned.length === 1
+          ? 'Има 1 неразпределен артикул.'
+          : `Има ${unassigned.length} неразпределени артикула.`,
     })
   }
 

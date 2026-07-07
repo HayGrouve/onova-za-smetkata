@@ -1,7 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import type { FunctionReturnType } from 'convex/server'
-import { CameraIcon } from 'lucide-react'
+import {
+  CameraIcon,
+  ReceiptIcon,
+  ScanLineIcon,
+  ShoppingBagIcon,
+  UsersIcon,
+} from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ItemList } from '#/components/bills/item-list.tsx'
@@ -27,6 +33,7 @@ import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import { parseEurInput } from '#/lib/format-currency.ts'
+import { ICON } from '#/lib/app-icons.ts'
 import { prepareReceiptImage } from '#/lib/prepare-receipt-image.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
@@ -241,7 +248,10 @@ function BillEditorContent({
       <div className="flex flex-col gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Данни за сметката</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <ReceiptIcon className={ICON.section} aria-hidden />
+              Данни за сметката
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
@@ -339,6 +349,7 @@ function BillEditorContent({
                     disabled={isScanning}
                     onClick={handleScanButtonClick}
                   >
+                    <ScanLineIcon className={ICON.button} aria-hidden />
                     {isScanning ? 'Разпознаване…' : 'Разпознай артикули'}
                   </Button>
                   <p className="text-center text-xs text-muted-foreground">
@@ -352,7 +363,10 @@ function BillEditorContent({
 
         <Card>
           <CardHeader>
-            <CardTitle>Участници</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <UsersIcon className={ICON.section} aria-hidden />
+              Участници
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ParticipantList
@@ -365,7 +379,10 @@ function BillEditorContent({
 
         <Card>
           <CardHeader>
-            <CardTitle>Артикули</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <ShoppingBagIcon className={ICON.section} aria-hidden />
+              Артикули
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <p className="text-xs text-muted-foreground">

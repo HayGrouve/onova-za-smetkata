@@ -1,8 +1,9 @@
 import { useMutation, useQuery } from 'convex/react'
-import { XIcon } from 'lucide-react'
+import { UserPlusIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button.tsx'
+import { ICON } from '#/lib/app-icons.ts'
 import { Input } from '#/components/ui/input.tsx'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
@@ -110,6 +111,7 @@ export function ParticipantList({
           onClick={() => void handleAdd()}
           disabled={!name.trim()}
         >
+          <UserPlusIcon className={ICON.button} aria-hidden />
           Добави
         </Button>
       </div>

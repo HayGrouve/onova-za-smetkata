@@ -1,9 +1,11 @@
+import { CheckIcon, CoinsIcon } from 'lucide-react'
 import { useMutation } from 'convex/react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import type { ParticipantTotals } from '#/lib/bill-calculations.ts'
+import { ICON } from '#/lib/app-icons.ts'
 import { formatEur, parseEurInput } from '#/lib/format-currency.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -44,6 +46,7 @@ export function PaymentActions({
   return (
     <div className="flex flex-col gap-2 pt-1">
       <Button className="h-11 w-full" onClick={handleMarkPaid}>
+        <CheckIcon className={ICON.button} aria-hidden />
         Платено
       </Button>
       <div className="flex gap-2">
@@ -60,6 +63,7 @@ export function PaymentActions({
           onClick={handlePartialPayment}
           disabled={!partialAmount.trim()}
         >
+          <CoinsIcon className={ICON.button} aria-hidden />
           Плати
         </Button>
       </div>

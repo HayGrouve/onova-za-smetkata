@@ -124,6 +124,38 @@ describe('validateBillForFinalize', () => {
       message: 'Въведете име на ресторант.',
     })
   })
+
+  it('blocks finalize when any item is unassigned, including zero-price items', () => {
+    const errors = validateBillForFinalize({
+      restaurantName: 'Механа',
+      participants: [{ id: 'p1', sortOrder: 0 }],
+      items: [
+        { id: 'i1', unitPriceCents: 1000, quantity: 1 },
+        { id: 'i2', unitPriceCents: 0, quantity: 1 },
+      ],
+      assignments: [{ itemId: 'i1', participantId: 'p1' }],
+    })
+    expect(errors).toContainEqual({
+      code: 'unassigned_items',
+      message: 'Има 1 неразпределен артикул.',
+    })
+  })
+
+  it('reports plural unassigned item count', () => {
+    const errors = validateBillForFinalize({
+      restaurantName: 'Механа',
+      participants: [{ id: 'p1', sortOrder: 0 }],
+      items: [
+        { id: 'i1', unitPriceCents: 1000, quantity: 1 },
+        { id: 'i2', unitPriceCents: 500, quantity: 1 },
+      ],
+      assignments: [],
+    })
+    expect(errors).toContainEqual({
+      code: 'unassigned_items',
+      message: 'Има 2 неразпределени артикула.',
+    })
+  })
 })
 
 describe('calculateParticipantBreakdown', () => {

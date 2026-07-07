@@ -1,3 +1,4 @@
+import { RefreshCwIcon } from 'lucide-react'
 import type { ErrorComponentProps } from '@tanstack/react-router'
 import {
   HeadContent,
@@ -12,6 +13,7 @@ import ConvexProvider from '../integrations/convex/provider'
 import { AppShell } from '../components/layout/app-shell.tsx'
 import { Toaster } from '../components/ui/sonner'
 import { Button } from '#/components/ui/button.tsx'
+import { ICON } from '#/lib/app-icons.ts'
 
 import appCss from '../styles.css?url'
 
@@ -28,6 +30,7 @@ function RootError({ error }: ErrorComponentProps) {
         ) : null}
       </div>
       <Button type="button" className="h-11" onClick={() => window.location.reload()}>
+        <RefreshCwIcon className={ICON.button} aria-hidden />
         Опитай отново
       </Button>
     </div>

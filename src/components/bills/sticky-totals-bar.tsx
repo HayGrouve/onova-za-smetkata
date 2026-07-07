@@ -1,9 +1,10 @@
 import { Link } from '@tanstack/react-router'
-import { ChevronRightIcon } from 'lucide-react'
+import { ChevronRightIcon, PieChartIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { calculateBillTotals } from '#/lib/bill-calculations.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
+import { ICON } from '#/lib/app-icons.ts'
 import {
   Sheet,
   SheetContent,
@@ -122,7 +123,10 @@ export function StickyTotalsBar({
 
       <SheetContent side="bottom" className="mx-auto max-w-lg rounded-t-xl">
         <SheetHeader>
-          <SheetTitle>Разбивка на сметката</SheetTitle>
+          <SheetTitle className="flex items-center gap-2">
+            <PieChartIcon className={ICON.section} aria-hidden />
+            Разбивка на сметката
+          </SheetTitle>
         </SheetHeader>
         <div className="flex flex-col gap-3 overflow-y-auto px-4 pb-4">
           <div className="flex items-center justify-between font-semibold">

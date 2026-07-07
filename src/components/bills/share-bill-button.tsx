@@ -1,11 +1,15 @@
 import { ShareIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button.tsx'
-import type { ParticipantTotals } from '#/lib/bill-calculations.ts'
+import type {
+  BillBreakdownInput,
+  ParticipantTotals,
+} from '#/lib/bill-calculations.ts'
 import { formatBillShareText, shareOrCopyText } from '#/lib/bill-share.ts'
 import { cn } from '#/lib/utils.ts'
 
 export interface ShareBillParticipant {
+  id: string
   label: string
   sortOrder: number
   totals: ParticipantTotals
@@ -14,7 +18,9 @@ export interface ShareBillParticipant {
 export interface ShareBillButtonProps {
   restaurantName: string
   date: Date
+  note?: string
   billTotalCents: number
+  breakdown: BillBreakdownInput
   participants: ShareBillParticipant[]
   className?: string
 }
@@ -22,21 +28,20 @@ export interface ShareBillButtonProps {
 export function ShareBillButton({
   restaurantName,
   date,
+  note,
   billTotalCents,
+  breakdown,
   participants,
   className,
 }: ShareBillButtonProps) {
   async function handleShare() {
-    const sorted = [...participants].sort((a, b) => a.sortOrder - b.sortOrder)
     const text = formatBillShareText({
       restaurantName,
       date,
+      note,
       billTotalCents,
-      participants: sorted.map((p) => ({
-        label: p.label,
-        owedCents: p.totals.owedCents,
-        status: p.totals.status,
-      })),
+      breakdown,
+      participants,
     })
 
     try {
