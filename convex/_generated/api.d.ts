@@ -11,9 +11,12 @@
 import type * as assignments from "../assignments.js";
 import type * as bills from "../bills.js";
 import type * as files from "../files.js";
+import type * as guestSessions from "../guestSessions.js";
 import type * as items from "../items.js";
 import type * as lib_assertAssignmentEditable from "../lib/assertAssignmentEditable.js";
+import type * as lib_clampParticipantUnits from "../lib/clampParticipantUnits.js";
 import type * as lib_geminiReceipt from "../lib/geminiReceipt.js";
+import type * as lib_guestSession from "../lib/guestSession.js";
 import type * as lib_receiptStorage from "../lib/receiptStorage.js";
 import type * as lib_splitUnits from "../lib/splitUnits.js";
 import type * as lib_touchBill from "../lib/touchBill.js";
@@ -34,9 +37,12 @@ declare const fullApi: ApiFromModules<{
   assignments: typeof assignments;
   bills: typeof bills;
   files: typeof files;
+  guestSessions: typeof guestSessions;
   items: typeof items;
   "lib/assertAssignmentEditable": typeof lib_assertAssignmentEditable;
+  "lib/clampParticipantUnits": typeof lib_clampParticipantUnits;
   "lib/geminiReceipt": typeof lib_geminiReceipt;
+  "lib/guestSession": typeof lib_guestSession;
   "lib/receiptStorage": typeof lib_receiptStorage;
   "lib/splitUnits": typeof lib_splitUnits;
   "lib/touchBill": typeof lib_touchBill;

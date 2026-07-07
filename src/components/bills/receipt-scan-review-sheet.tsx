@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from 'convex/react'
+import { XIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '#/components/ui/badge.tsx'
@@ -8,6 +9,7 @@ import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetFooter,
   SheetHeader,
@@ -146,17 +148,36 @@ export function ReceiptScanReviewSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="mx-auto flex h-[85vh] max-w-lg flex-col rounded-t-xl">
-        <SheetHeader>
-          <SheetTitle>Преглед на разпознатите артикули</SheetTitle>
-        </SheetHeader>
+      <SheetContent
+        side="bottom"
+        showCloseButton={false}
+        className="gap-0 border-0 bg-transparent p-0 shadow-none mb-16"
+      >
+        <div className="relative mx-auto flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl border-t bg-background shadow-lg">
+          <SheetClose className="absolute top-4 right-4 z-10 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
+            <XIcon className="size-4" />
+            <span className="sr-only">Close</span>
+          </SheetClose>
 
-        <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4">
-          {scanReady === undefined && (
-            <p className="text-sm text-muted-foreground">Зареждане...</p>
-          )}
+          <SheetHeader className="text-center">
+            <SheetTitle className="px-8 text-center">
+              Преглед на разпознатите артикули
+            </SheetTitle>
+          </SheetHeader>
 
-          {scanReady && (scanReady.extractedRestaurantName ?? '') !== '' && (
+          <div
+            className={cn(
+              'flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4',
+              scanReady === undefined && 'min-h-[40vh]',
+            )}
+          >
+            {scanReady === undefined && (
+              <div className="flex flex-1 items-center justify-center py-10">
+                <p className="text-sm text-muted-foreground">Зареждане...</p>
+              </div>
+            )}
+
+            {scanReady && (scanReady.extractedRestaurantName ?? '') !== '' && (
             <div className="flex flex-col gap-2 rounded-lg border p-3">
               <Label htmlFor="scan-restaurant-name">Ресторант</Label>
               <Input
@@ -173,26 +194,26 @@ export function ReceiptScanReviewSheet({
                 Обнови името на ресторанта
               </label>
             </div>
-          )}
+            )}
 
-          {scanReady && rows.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              Няма разпознати артикули.
-            </p>
-          )}
-
-          {rows.length > 0 && (
-            <div className="flex items-center justify-between">
+            {scanReady && rows.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                {rows.length} разпознати артикула
+                Няма разпознати артикули.
               </p>
-              <Button type="button" variant="ghost" size="sm" onClick={toggleSelectAll}>
-                {allChecked ? 'Размаркирай всички' : 'Маркирай всички'}
-              </Button>
-            </div>
-          )}
+            )}
 
-          {rows.map((row, index) => (
+            {rows.length > 0 && (
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {rows.length} разпознати артикула
+                </p>
+                <Button type="button" variant="ghost" size="sm" onClick={toggleSelectAll}>
+                  {allChecked ? 'Размаркирай всички' : 'Маркирай всички'}
+                </Button>
+              </div>
+            )}
+
+            {rows.map((row, index) => (
             <div
               key={index}
               className={cn(
@@ -244,51 +265,54 @@ export function ReceiptScanReviewSheet({
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <SheetFooter className="gap-3 border-t">
-          <div className="flex flex-col gap-1 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Сумата на артикулите</span>
-              <span className="font-medium tabular-nums">
-                {formatEur(itemsTotalCents)}
-              </span>
-            </div>
-            {receiptTotalCents !== undefined && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Общо на бележка</span>
-                <span className="font-medium tabular-nums">
-                  {formatEur(receiptTotalCents)}
-                </span>
+          {scanReady && (
+            <SheetFooter className="mt-0 gap-3 border-t">
+              <div className="flex flex-col gap-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Сумата на артикулите</span>
+                  <span className="font-medium tabular-nums">
+                    {formatEur(itemsTotalCents)}
+                  </span>
+                </div>
+                {receiptTotalCents !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Общо на бележка</span>
+                    <span className="font-medium tabular-nums">
+                      {formatEur(receiptTotalCents)}
+                    </span>
+                  </div>
+                )}
+                {mismatch && (
+                  <p className="text-xs font-medium text-amber-600">
+                    Сумите не съвпадат — проверете артикулите
+                  </p>
+                )}
               </div>
-            )}
-            {mismatch && (
-              <p className="text-xs font-medium text-amber-600">
-                Сумите не съвпадат — проверете артикулите
-              </p>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11 flex-1"
-              onClick={() => void handleCancel()}
-              disabled={isSubmitting}
-            >
-              Отказ
-            </Button>
-            <Button
-              type="button"
-              className="h-11 flex-1"
-              onClick={() => void handleImport()}
-              disabled={isSubmitting || checkedCount === 0}
-            >
-              Импортирай избраните ({checkedCount})
-            </Button>
-          </div>
-        </SheetFooter>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 flex-1"
+                  onClick={() => void handleCancel()}
+                  disabled={isSubmitting}
+                >
+                  Отказ
+                </Button>
+                <Button
+                  type="button"
+                  className="h-11 flex-1"
+                  onClick={() => void handleImport()}
+                  disabled={isSubmitting || checkedCount === 0}
+                >
+                  Импортирай избраните ({checkedCount})
+                </Button>
+              </div>
+            </SheetFooter>
+          )}
+        </div>
       </SheetContent>
     </Sheet>
   )

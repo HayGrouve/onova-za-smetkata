@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   clearStoredGuestParticipant,
+  createGuestSessionToken,
+  getStoredGuestSession,
   getStoredGuestParticipant,
+  setStoredGuestSession,
   setStoredGuestParticipant,
 } from './guest-participant-session.ts'
 
@@ -38,29 +41,60 @@ describe('guest-participant-session', () => {
   })
 
   it('returns null when nothing stored', () => {
+    expect(getStoredGuestSession('bill_a')).toBeNull()
     expect(getStoredGuestParticipant('bill_a')).toBeNull()
   })
 
-  it('stores and reads participant for bill', () => {
-    setStoredGuestParticipant('bill_a', 'participant_1')
+  it('stores and reads session for bill', () => {
+    setStoredGuestSession({
+      billId: 'bill_a',
+      participantId: 'participant_1',
+      sessionToken: 'token-1',
+    })
+    expect(getStoredGuestSession('bill_a')).toEqual({
+      billId: 'bill_a',
+      participantId: 'participant_1',
+      sessionToken: 'token-1',
+    })
     expect(getStoredGuestParticipant('bill_a')).toBe('participant_1')
   })
 
+  it('setStoredGuestParticipant creates a session token', () => {
+    setStoredGuestParticipant('bill_a', 'participant_1', 'token-abc')
+    expect(getStoredGuestSession('bill_a')?.sessionToken).toBe('token-abc')
+  })
+
+  it('createGuestSessionToken returns non-empty string', () => {
+    expect(createGuestSessionToken().length).toBeGreaterThan(0)
+  })
+
   it('clear removes session for matching bill only', () => {
-    setStoredGuestParticipant('bill_a', 'participant_1')
+    setStoredGuestSession({
+      billId: 'bill_a',
+      participantId: 'participant_1',
+      sessionToken: 'token-1',
+    })
     clearStoredGuestParticipant('bill_a')
-    expect(getStoredGuestParticipant('bill_a')).toBeNull()
+    expect(getStoredGuestSession('bill_a')).toBeNull()
   })
 
   it('new bill overwrites previous session', () => {
-    setStoredGuestParticipant('bill_a', 'participant_1')
-    setStoredGuestParticipant('bill_b', 'participant_2')
-    expect(getStoredGuestParticipant('bill_a')).toBeNull()
-    expect(getStoredGuestParticipant('bill_b')).toBe('participant_2')
+    setStoredGuestSession({
+      billId: 'bill_a',
+      participantId: 'participant_1',
+      sessionToken: 'token-1',
+    })
+    setStoredGuestSession({
+      billId: 'bill_b',
+      participantId: 'participant_2',
+      sessionToken: 'token-2',
+    })
+    expect(getStoredGuestSession('bill_a')).toBeNull()
+    expect(getStoredGuestSession('bill_b')?.participantId).toBe('participant_2')
   })
 
   it('ignores malformed json', () => {
     localStorage.setItem(STORAGE_KEY, '{not-json')
-    expect(getStoredGuestParticipant('bill_a')).toBeNull()
+    expect(getStoredGuestSession('bill_a')).toBeNull()
   })
 })

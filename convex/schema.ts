@@ -45,6 +45,17 @@ export default defineSchema({
     .index('by_itemId', ['itemId'])
     .index('by_participantId', ['participantId']),
 
+  guestSessions: defineTable({
+    billId: v.id('bills'),
+    participantId: v.id('participants'),
+    sessionToken: v.string(),
+    lastSeenAt: v.number(),
+    createdAt: v.number(),
+  })
+    .index('by_billId', ['billId'])
+    .index('by_sessionToken', ['sessionToken'])
+    .index('by_participantId', ['participantId']),
+
   payments: defineTable({
     billId: v.id('bills'),
     participantId: v.id('participants'),

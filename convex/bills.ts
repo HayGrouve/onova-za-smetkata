@@ -7,6 +7,7 @@ import {
   deleteReceiptStorageFile,
   shouldDeleteReplacedReceiptStorage,
 } from './lib/receiptStorage'
+import { deleteGuestSessionsForBill } from './guestSessions'
 
 export const list = query({
   args: {},
@@ -297,6 +298,7 @@ export const remove = mutation({
     const receiptStorageId = bill.receiptStorageId
 
     await deleteReceiptScansForBill(ctx, args.billId)
+    await deleteGuestSessionsForBill(ctx, args.billId)
 
     const participants = await ctx.db
       .query('participants')

@@ -1,17 +1,20 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useQuery } from 'convex/react'
-import { PieChartIcon } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { useMutation, useQuery } from 'convex/react'
+import { PieChartIcon, SearchIcon } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { GuestClaimFooter } from '#/components/bills/guest-claim-footer.tsx'
 import { GuestItemRow } from '#/components/bills/guest-item-row.tsx'
 import { ParticipantBreakdownContent } from '#/components/bills/participant-breakdown-content.tsx'
 import { Button } from '#/components/ui/button.tsx'
+import { Input } from '#/components/ui/input.tsx'
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '#/components/ui/card.tsx'
+import { useGuestSessionHeartbeat } from '#/hooks/use-guest-session-heartbeat.ts'
 import {
   calculateBillTotals,
   type BillBreakdownInput,
@@ -20,8 +23,9 @@ import { ICON } from '#/lib/app-icons.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import {
   clearStoredGuestParticipant,
-  getStoredGuestParticipant,
+  getStoredGuestSession,
 } from '#/lib/guest-participant-session.ts'
+import { sortGuestClaimItems, filterGuestClaimItemsBySearch } from '#/lib/guest-claim-items.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
 
@@ -34,17 +38,38 @@ function BillClaimPage() {
   const billId = billIdParam as Id<'bills'>
   const navigate = useNavigate()
   const data = useQuery(api.bills.get, { billId })
+  const releaseSession = useMutation(api.guestSessions.release)
+  const [search, setSearch] = useState('')
 
-  const storedParticipantId = useMemo(
-    () => getStoredGuestParticipant(billId),
-    [billId, data?.participants],
+  const storedSession = useMemo(
+    () => getStoredGuestSession(billId),
+    [billId, data?.assignments, data?.participants],
+  )
+
+  const handleSessionLost = useCallback(() => {
+    if (storedSession) {
+      void releaseSession({
+        billId,
+        sessionToken: storedSession.sessionToken,
+      })
+    }
+    clearStoredGuestParticipant(billId)
+    toast.error('Сесията изтече или името е заето. Изберете отново.')
+    void navigate({ to: '/bills/$billId/join', params: { billId } })
+  }, [billId, navigate, releaseSession, storedSession])
+
+  useGuestSessionHeartbeat(
+    data?.bill.status === 'final' ? null : storedSession,
+    handleSessionLost,
   )
 
   useEffect(() => {
-    if (storedParticipantId === null && data !== undefined) {
+    if (storedSession === null && data !== undefined) {
       void navigate({ to: '/bills/$billId/join', params: { billId } })
     }
-  }, [billId, navigate, storedParticipantId, data])
+  }, [billId, navigate, storedSession, data])
+
+  const storedParticipantId = storedSession?.participantId ?? null
 
   const totals = useMemo(() => {
     if (!data || !storedParticipantId) return null
@@ -93,7 +118,17 @@ function BillClaimPage() {
     }
   }, [data])
 
-  if (data === undefined || storedParticipantId === null) {
+  const visibleItems = useMemo(() => {
+    if (!data || !storedParticipantId) return []
+    const sorted = sortGuestClaimItems(
+      data.items,
+      data.assignments,
+      storedParticipantId as Id<'participants'>,
+    )
+    return filterGuestClaimItemsBySearch(sorted, search)
+  }, [data, search, storedParticipantId])
+
+  if (data === undefined || storedParticipantId === null || !storedSession) {
     return (
       <div className="page-container py-10 text-center text-muted-foreground">
         Зареждане...
@@ -119,10 +154,15 @@ function BillClaimPage() {
   const labels = buildParticipantLabels(data.participants)
   const label = labels[participant._id] ?? participant.name
   const readOnly = data.bill.status === 'final'
-  const sortedItems = [...data.items].sort((a, b) => a.sortOrder - b.sortOrder)
   const participantTotals = totals?.byParticipant[storedParticipantId]
+  const hasItems = data.items.length > 0
+  const hasSearchQuery = search.trim().length > 0
 
   function handleSwitchIdentity() {
+    void releaseSession({
+      billId,
+      sessionToken: storedSession.sessionToken,
+    })
     clearStoredGuestParticipant(billId)
     void navigate({ to: '/bills/$billId/join', params: { billId } })
   }
@@ -152,19 +192,39 @@ function BillClaimPage() {
           )}
         </div>
 
+        {hasItems && (
+          <div className="relative">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Търсене по артикул"
+              className="h-11 pl-9"
+            />
+          </div>
+        )}
+
         <div className="flex flex-col gap-3">
-          {sortedItems.length === 0 ? (
+          {!hasItems ? (
             <p className="text-sm text-muted-foreground">Все още няма артикули.</p>
+          ) : visibleItems.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {hasSearchQuery
+                ? 'Няма артикули, съответстващи на търсенето.'
+                : 'Все още няма артикули.'}
+            </p>
           ) : (
-            sortedItems.map((item) => (
+            visibleItems.map((item) => (
               <GuestItemRow
                 key={item._id}
                 item={item}
-                participantId={storedParticipantId}
+                participantId={storedParticipantId as Id<'participants'>}
                 itemAssignments={data.assignments.filter(
                   (assignment) => assignment.itemId === item._id,
                 )}
+                participantLabels={labels}
                 readOnly={readOnly}
+                onItemSelected={() => setSearch('')}
               />
             ))
           )}
@@ -181,7 +241,7 @@ function BillClaimPage() {
             <CardContent>
               <ParticipantBreakdownContent
                 billId={billId}
-                participantId={storedParticipantId}
+                participantId={storedParticipantId as Id<'participants'>}
                 label={label}
                 breakdownInput={breakdownInput}
                 totals={participantTotals}

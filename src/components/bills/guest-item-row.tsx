@@ -1,7 +1,13 @@
 import { useMutation } from 'convex/react'
 import { CheckIcon, MinusIcon, PlusIcon } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from '#/lib/utils.ts'
 import { formatEur } from '#/lib/format-currency.ts'
+import {
+  getGuestClaimItemState,
+  getOtherClaimantLabels,
+} from '#/lib/guest-claim-items.ts'
+import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
 
@@ -9,53 +15,89 @@ export interface GuestItemRowProps {
   item: Doc<'items'>
   participantId: Id<'participants'>
   itemAssignments: Doc<'itemAssignments'>[]
+  participantLabels: Record<string, string>
   readOnly: boolean
+  onItemSelected?: () => void
 }
 
 export function GuestItemRow({
   item,
   participantId,
   itemAssignments,
+  participantLabels,
   readOnly,
+  onItemSelected,
 }: GuestItemRowProps) {
   const toggleAssignment = useMutation(api.assignments.toggle)
   const setUnits = useMutation(api.assignments.setUnits)
 
-  const myAssignment = itemAssignments.find(
-    (assignment) => assignment.participantId === participantId,
+  const { myUnits, assignedUnitsTotal, remainingUnits, isSelectedByMe, isUnavailableToMe } =
+    getGuestClaimItemState(item, itemAssignments, participantId)
+  const otherClaimants = getOtherClaimantLabels(
+    itemAssignments,
+    participantId,
+    participantLabels,
   )
-  const myUnits = myAssignment?.units ?? 0
-  const assignedUnitsTotal = itemAssignments.reduce(
-    (sum, assignment) => sum + (assignment.units ?? 0),
-    0,
-  )
-  const otherAssigneeCount = itemAssignments.filter(
-    (assignment) =>
-      assignment.participantId !== participantId && (assignment.units ?? 0) > 0,
-  ).length
   const lineTotalCents = item.unitPriceCents * item.quantity
+  const interactionDisabled = readOnly || isUnavailableToMe
 
-  const cardClassName = (selected: boolean) =>
-    cn(
-      'guest-claim-card tap-feedback flex flex-col gap-1 rounded-lg border p-4 text-left',
-      selected
-        ? 'guest-claim-card--selected border-primary/50 bg-primary/10 dark:border-primary/40 dark:bg-primary/15'
+  async function handleToggle() {
+    if (interactionDisabled) return
+    const wasSelected = isSelectedByMe
+    try {
+      await toggleAssignment({ itemId: item._id, participantId })
+      if (!wasSelected) onItemSelected?.()
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
+    }
+  }
+
+  async function handleSetUnits(units: number) {
+    if (readOnly) return
+    try {
+      await setUnits({ itemId: item._id, participantId, units })
+      if (units > myUnits) onItemSelected?.()
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
+    }
+  }
+
+  const cardClassName = cn(
+    'guest-claim-card flex flex-col gap-1 rounded-lg border p-4 text-left',
+    isSelectedByMe
+      ? 'guest-claim-card--selected border-primary/50 bg-primary/10 dark:border-primary/40 dark:bg-primary/15'
+      : isUnavailableToMe
+        ? 'guest-claim-card--unavailable border-border/60 bg-muted/30'
         : 'border-border bg-card',
-      readOnly && 'opacity-80',
+    !interactionDisabled && 'tap-feedback',
+    readOnly && !isUnavailableToMe && 'opacity-80',
+  )
+
+  function renderClaimantHint() {
+    if (otherClaimants.length === 0) return null
+
+    if (isUnavailableToMe) {
+      return (
+        <p className="text-xs font-medium text-muted-foreground">
+          Заето от {otherClaimants.join(', ')}
+        </p>
+      )
+    }
+
+    return (
+      <p className="text-xs text-muted-foreground">
+        {otherClaimants.join(', ')} · {assignedUnitsTotal}/{item.quantity} разпределени
+      </p>
     )
+  }
 
   if (item.quantity === 1) {
-    const isClaimed = itemAssignments.some(
-      (assignment) => assignment.participantId === participantId,
-    )
     return (
       <button
         type="button"
-        disabled={readOnly}
-        onClick={() =>
-          void toggleAssignment({ itemId: item._id, participantId })
-        }
-        className={cardClassName(isClaimed)}
+        disabled={interactionDisabled}
+        onClick={() => void handleToggle()}
+        className={cn(cardClassName, 'text-left')}
       >
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -66,20 +108,16 @@ export function GuestItemRow({
           </div>
           <p className="font-medium tabular-nums">{formatEur(lineTotalCents)}</p>
         </div>
-        {otherAssigneeCount > 0 && (
-          <p className="text-xs text-muted-foreground">
-            +{otherAssigneeCount} други
-          </p>
-        )}
-        {!readOnly && (
+        {renderClaimantHint()}
+        {!readOnly && !isUnavailableToMe && (
           <p
-            key={isClaimed ? 'claimed' : 'open'}
+            key={isSelectedByMe ? 'claimed' : 'open'}
             className={cn(
               'guest-status-in flex items-center gap-1 text-xs font-medium',
-              isClaimed ? 'text-primary' : 'text-muted-foreground',
+              isSelectedByMe ? 'text-primary' : 'text-muted-foreground',
             )}
           >
-            {isClaimed ? (
+            {isSelectedByMe ? (
               <>
                 <CheckIcon className="size-3.5" aria-hidden />
                 Отбелязано
@@ -93,11 +131,8 @@ export function GuestItemRow({
     )
   }
 
-  const remainingUnits = Math.max(0, item.quantity - assignedUnitsTotal + myUnits)
-  const hasClaimedUnits = myUnits > 0
-
   return (
-    <div className={cn(cardClassName(hasClaimedUnits), 'gap-2')}>
+    <div className={cn(cardClassName, 'gap-2')}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-medium">{item.name}</p>
@@ -107,13 +142,8 @@ export function GuestItemRow({
         </div>
         <p className="font-medium tabular-nums">{formatEur(lineTotalCents)}</p>
       </div>
-      {otherAssigneeCount > 0 && (
-        <p className="text-xs text-muted-foreground">
-          +{otherAssigneeCount} други · {assignedUnitsTotal}/{item.quantity}{' '}
-          разпределени
-        </p>
-      )}
-      {!readOnly && (
+      {renderClaimantHint()}
+      {!readOnly && !isUnavailableToMe && (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-muted/40 px-3 py-2.5 dark:border-input dark:bg-input/40">
           <span className="text-sm font-medium text-foreground">Ваши бройки</span>
           <div className="flex items-center gap-1 rounded-full border border-primary/50 bg-background/80 pl-1 pr-1 dark:border-primary/40 dark:bg-background/60">
@@ -121,13 +151,7 @@ export function GuestItemRow({
               type="button"
               aria-label="Намали"
               disabled={myUnits <= 0}
-              onClick={() =>
-                void setUnits({
-                  itemId: item._id,
-                  participantId,
-                  units: myUnits - 1,
-                })
-              }
+              onClick={() => void handleSetUnits(myUnits - 1)}
               className="tap-feedback flex size-8 items-center justify-center rounded-full text-foreground hover:bg-foreground/10 disabled:opacity-40"
             >
               <MinusIcon className="size-4" />
@@ -142,13 +166,7 @@ export function GuestItemRow({
               type="button"
               aria-label="Увеличи"
               disabled={myUnits >= remainingUnits}
-              onClick={() =>
-                void setUnits({
-                  itemId: item._id,
-                  participantId,
-                  units: myUnits + 1,
-                })
-              }
+              onClick={() => void handleSetUnits(myUnits + 1)}
               className="tap-feedback flex size-8 items-center justify-center rounded-full text-foreground hover:bg-foreground/10 disabled:opacity-40"
             >
               <PlusIcon className="size-4" />

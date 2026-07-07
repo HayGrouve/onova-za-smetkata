@@ -1,6 +1,7 @@
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 import { touchBill } from './lib/touchBill'
+import { deleteGuestSessionsForParticipant } from './guestSessions'
 
 export const listRecentNames = query({
   args: { limit: v.optional(v.number()) },
@@ -70,6 +71,8 @@ export const remove = mutation({
     )) {
       await ctx.db.delete(p._id)
     }
+
+    await deleteGuestSessionsForParticipant(ctx, args.participantId)
 
     await ctx.db.delete(args.participantId)
     await touchBill(ctx, participant.billId)

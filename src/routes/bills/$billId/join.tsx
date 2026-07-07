@@ -1,11 +1,16 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useQuery } from 'convex/react'
-import { useEffect } from 'react'
+import { useMutation, useQuery } from 'convex/react'
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
+import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import {
-  getStoredGuestParticipant,
-  setStoredGuestParticipant,
+  clearStoredGuestParticipant,
+  createGuestSessionToken,
+  getConvexErrorMessage,
+  getStoredGuestSession,
+  setStoredGuestSession,
 } from '#/lib/guest-participant-session.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
@@ -19,15 +24,57 @@ function BillJoinPage() {
   const billId = billIdParam as Id<'bills'>
   const navigate = useNavigate()
   const data = useQuery(api.bills.get, { billId })
+  const activeSessions = useQuery(api.guestSessions.listActiveForBill, { billId })
+  const claimSession = useMutation(api.guestSessions.claim)
+  const [claimingId, setClaimingId] = useState<Id<'participants'> | null>(null)
+  const [resuming, setResuming] = useState(true)
+
+  const storedSession = useMemo(
+    () => getStoredGuestSession(billId),
+    [billId, activeSessions],
+  )
+
+  const takenParticipantIds = useMemo(() => {
+    if (!activeSessions) return new Set<string>()
+    const ownId = storedSession?.participantId
+    return new Set(
+      activeSessions
+        .filter((session) => session.participantId !== ownId)
+        .map((session) => session.participantId),
+    )
+  }, [activeSessions, storedSession?.participantId])
 
   useEffect(() => {
-    const stored = getStoredGuestParticipant(billId)
-    if (stored) {
-      void navigate({ to: '/bills/$billId/claim', params: { billId } })
+    if (data === undefined || activeSessions === undefined) return
+    const stored = getStoredGuestSession(billId)
+    if (!stored) {
+      setResuming(false)
+      return
     }
-  }, [billId, navigate])
 
-  if (data === undefined) {
+    let cancelled = false
+    void (async () => {
+      try {
+        await claimSession({
+          billId,
+          participantId: stored.participantId as Id<'participants'>,
+          sessionToken: stored.sessionToken,
+        })
+        if (!cancelled) {
+          void navigate({ to: '/bills/$billId/claim', params: { billId } })
+        }
+      } catch {
+        clearStoredGuestParticipant(billId)
+        if (!cancelled) setResuming(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [billId, claimSession, data, activeSessions, navigate])
+
+  if (data === undefined || activeSessions === undefined || resuming) {
     return (
       <div className="page-container py-10 text-center text-muted-foreground">
         Зареждане...
@@ -53,9 +100,20 @@ function BillJoinPage() {
     year: 'numeric',
   }).format(new Date(bill.date))
 
-  function handlePick(participantId: Id<'participants'>) {
-    setStoredGuestParticipant(billId, participantId)
-    void navigate({ to: '/bills/$billId/claim', params: { billId } })
+  async function handlePick(participantId: Id<'participants'>) {
+    if (takenParticipantIds.has(participantId)) return
+
+    const sessionToken = createGuestSessionToken()
+    setClaimingId(participantId)
+    try {
+      await claimSession({ billId, participantId, sessionToken })
+      setStoredGuestSession({ billId, participantId, sessionToken })
+      void navigate({ to: '/bills/$billId/claim', params: { billId } })
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
+    } finally {
+      setClaimingId(null)
+    }
   }
 
   return (
@@ -68,14 +126,26 @@ function BillJoinPage() {
       {bill.status === 'final' ? (
         <div className="flex flex-col gap-3">
           <p className="text-sm text-muted-foreground">Сметката е приключена.</p>
-          <Button
-            className="h-11"
-            onClick={() =>
-              void navigate({ to: '/bills/$billId/claim', params: { billId } })
-            }
-          >
-            Виж моя дял
-          </Button>
+          <p className="text-xs text-muted-foreground">
+            Изберете името си, за да видите разбивката.
+          </p>
+          <div className="flex flex-col gap-2">
+            {sorted.map((participant) => {
+              const label = labels[participant._id] ?? participant.name
+              return (
+                <Button
+                  key={participant._id}
+                  type="button"
+                  variant="outline"
+                  className="h-12 justify-start text-base"
+                  disabled={claimingId !== null}
+                  onClick={() => void handlePick(participant._id)}
+                >
+                  {label}
+                </Button>
+              )
+            })}
+          </div>
         </div>
       ) : sorted.length === 0 ? (
         <p className="text-sm text-muted-foreground">
@@ -84,18 +154,35 @@ function BillJoinPage() {
       ) : (
         <div className="flex flex-col gap-3">
           <h3 className="text-lg font-medium">Кой сте вие?</h3>
+          <p className="text-xs text-muted-foreground">
+            Всяко име може да се използва от един телефон. Заетите имена са
+            маркирани по-долу.
+          </p>
           <div className="flex flex-col gap-2">
-            {sorted.map((participant) => (
-              <Button
-                key={participant._id}
-                type="button"
-                variant="outline"
-                className="h-12 justify-start text-base"
-                onClick={() => handlePick(participant._id)}
-              >
-                {labels[participant._id] ?? participant.name}
-              </Button>
-            ))}
+            {sorted.map((participant) => {
+              const isTaken = takenParticipantIds.has(participant._id)
+              const isClaiming = claimingId === participant._id
+              const label = labels[participant._id] ?? participant.name
+              return (
+                <Button
+                  key={participant._id}
+                  type="button"
+                  variant="outline"
+                  disabled={isTaken || isClaiming || claimingId !== null}
+                  className="h-12 justify-between text-base"
+                  onClick={() => void handlePick(participant._id)}
+                >
+                  <span>{label}</span>
+                  {isTaken ? (
+                    <Badge variant="secondary" className="font-normal">
+                      Заето
+                    </Badge>
+                  ) : isClaiming ? (
+                    <span className="text-xs text-muted-foreground">...</span>
+                  ) : null}
+                </Button>
+              )
+            })}
           </div>
         </div>
       )}

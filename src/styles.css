@@ -421,6 +421,11 @@ a {
       box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 40%, transparent);
     }
 
+    .guest-claim-card--unavailable {
+      opacity: 0.72;
+      cursor: not-allowed;
+    }
+
     @keyframes guest-count-pop {
       0% {
         transform: scale(1);

@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { LinkIcon, QrCodeIcon } from 'lucide-react'
+import { Share2Icon, QrCodeIcon } from 'lucide-react'
 import QRCode from 'qrcode'
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button.tsx'
-import { Input } from '#/components/ui/input.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 import { buildBillJoinUrl, resolveAppOrigin } from '#/lib/bill-join-url.ts'
-import { copyToClipboard } from '#/lib/copy-to-clipboard.ts'
+import { shareLink } from '#/lib/share-link.ts'
 import type { Id } from '../../../convex/_generated/dataModel'
 
 export interface BillInviteCardProps {
@@ -30,14 +29,24 @@ export function BillInviteCard({ billId, disabled }: BillInviteCardProps) {
     })
   }, [billId, disabled])
 
-  async function handleCopyLink() {
+  async function handleShareLink() {
     if (!joinUrl) return
-    const copied = await copyToClipboard(joinUrl)
-    if (copied) {
+    const result = await shareLink({
+      url: joinUrl,
+      title: 'Онова за сметката',
+      text: 'Присъедини се към сметката и отбележи какво си консумирал.',
+    })
+
+    if (result === 'shared') {
+      toast.success('Линкът е споделен')
+      return
+    }
+    if (result === 'copied') {
       toast.success('Линкът е копиран')
       return
     }
-    toast.error('Неуспешно копиране — маркирайте линка по-долу ръчно')
+    if (result === 'cancelled') return
+    toast.error('Неуспешно споделяне на линка')
   }
 
   return (
@@ -61,23 +70,14 @@ export function BillInviteCard({ billId, disabled }: BillInviteCardProps) {
             Приятелите сканират QR кода, избират името си и отбелязват какво са
             консумирали. Използвайте само с хора на масата.
           </p>
-          {joinUrl ? (
-            <Input
-              readOnly
-              value={joinUrl}
-              aria-label="Линк за присъединяване"
-              className="h-10 text-xs"
-              onFocus={(event) => event.currentTarget.select()}
-            />
-          ) : null}
           <Button
             type="button"
             variant="outline"
             className="h-11 w-full"
-            onClick={handleCopyLink}
+            onClick={() => void handleShareLink()}
           >
-            <LinkIcon className={ICON.button} aria-hidden />
-            Копирай линк
+            <Share2Icon className={ICON.button} aria-hidden />
+            Сподели линк
           </Button>
         </>
       )}

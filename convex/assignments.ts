@@ -3,6 +3,7 @@ import type { MutationCtx } from './_generated/server'
 import { mutation } from './_generated/server'
 import { v } from 'convex/values'
 import { assertAssignmentEditable } from './lib/assertAssignmentEditable'
+import { clampParticipantUnits } from './lib/clampParticipantUnits'
 import { splitUnits } from './lib/splitUnits'
 import { touchBill } from './lib/touchBill'
 
@@ -109,14 +110,20 @@ export const setUnits = mutation({
       participantBillId: participant?.billId,
     })
 
-    const clampedUnits = Math.max(
-      0,
-      Math.min(item.quantity, Math.round(args.units)),
-    )
     const existing = await ctx.db
       .query('itemAssignments')
       .withIndex('by_itemId', (q) => q.eq('itemId', args.itemId))
       .collect()
+
+    const clampedUnits = clampParticipantUnits({
+      itemQuantity: item.quantity,
+      requestedUnits: args.units,
+      existingAssignments: existing.map((assignment) => ({
+        participantId: assignment.participantId,
+        units: assignment.units,
+      })),
+      participantId: args.participantId,
+    })
     const match = existing.find(
       (assignment) => assignment.participantId === args.participantId,
     )
