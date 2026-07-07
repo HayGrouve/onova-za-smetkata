@@ -1,12 +1,14 @@
 import { useMutation } from 'convex/react'
 import { Trash2Icon } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AssignmentRow } from '#/components/bills/assignment-row.tsx'
+import { AssignmentToolbar } from '#/components/bills/assignment-toolbar.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { useDebouncedCallback } from '#/hooks/use-debounced-callback.ts'
 import { parseEurInput } from '#/lib/format-currency.ts'
+import { cn } from '#/lib/utils.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
 
@@ -31,6 +33,15 @@ export function ItemList({
   const [newName, setNewName] = useState('')
   const [newPrice, setNewPrice] = useState('')
   const [newQuantity, setNewQuantity] = useState('1')
+
+  const assignedItemIds = useMemo(
+    () => new Set(assignments.map((a) => a.itemId)),
+    [assignments],
+  )
+  const firstUnassignedItemId = useMemo(
+    () => items.find((item) => !assignedItemIds.has(item._id))?._id,
+    [items, assignedItemIds],
+  )
 
   async function handleAdd() {
     const trimmed = newName.trim()
@@ -64,6 +75,13 @@ export function ItemList({
 
   return (
     <div className="flex flex-col gap-4">
+      <AssignmentToolbar
+        billId={billId}
+        items={items}
+        assignments={assignments}
+        participants={participants}
+      />
+
       {items.length === 0 && (
         <p className="text-sm text-muted-foreground">Все още няма артикули.</p>
       )}
@@ -74,10 +92,15 @@ export function ItemList({
             .filter((a) => a.itemId === item._id)
             .map((a) => a.participantId),
         )
+        const isUnassigned = !assignedItemIds.has(item._id)
         return (
           <div
             key={item._id}
-            className="flex flex-col gap-2 rounded-lg border p-3"
+            id={item._id === firstUnassignedItemId ? 'first-unassigned-item' : undefined}
+            className={cn(
+              'flex flex-col gap-2 rounded-lg border p-3',
+              isUnassigned && 'border-l-4 border-amber-500',
+            )}
           >
             <ItemRow item={item} onDelete={() => void handleDelete(item)} />
             <AssignmentRow
@@ -102,7 +125,7 @@ export function ItemList({
             value={newPrice}
             onChange={(e) => setNewPrice(e.target.value)}
             inputMode="decimal"
-            placeholder="Цена (лв)"
+            placeholder="Цена (€)"
             className="h-11 flex-1"
           />
           <Input
@@ -162,7 +185,7 @@ function ItemRow({
               debouncedSave({ unitPriceCents: parseEurInput(e.target.value) })
             }}
             inputMode="decimal"
-            placeholder="Цена (лв)"
+            placeholder="Цена (€)"
             className="h-11 flex-1"
           />
           <span className="text-muted-foreground">×</span>

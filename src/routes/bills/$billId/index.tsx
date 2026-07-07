@@ -6,13 +6,23 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ItemList } from '#/components/bills/item-list.tsx'
 import { ParticipantList } from '#/components/bills/participant-list.tsx'
+import { ReceiptScanReviewSheet } from '#/components/bills/receipt-scan-review-sheet.tsx'
 import { StickyTotalsBar } from '#/components/bills/sticky-totals-bar.tsx'
+import { Button } from '#/components/ui/button.tsx'
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '#/components/ui/card.tsx'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '#/components/ui/dialog.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
@@ -73,6 +83,7 @@ function BillEditorContent({
   const { bill, participants, items, assignments, payments } = data
   const updateBill = useMutation(api.bills.update)
   const generateUploadUrl = useMutation(api.files.generateUploadUrl)
+  const startScan = useMutation(api.receiptScan.startScan)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
 
@@ -80,6 +91,67 @@ function BillEditorContent({
     api.files.getUrl,
     bill.receiptStorageId ? { storageId: bill.receiptStorageId } : 'skip',
   )
+
+  const latestScan = useQuery(api.receiptScan.getLatestScan, { billId })
+  const isScanning =
+    latestScan?.status === 'pending' || latestScan?.status === 'processing'
+  const [preScanDialogOpen, setPreScanDialogOpen] = useState(false)
+  const [replaceConfirmOpen, setReplaceConfirmOpen] = useState(false)
+  const [importMode, setImportMode] = useState<'add' | 'replace'>('add')
+  const [reviewSheetOpen, setReviewSheetOpen] = useState(false)
+  const [activeScanId, setActiveScanId] = useState<Id<'receiptScans'> | null>(
+    null,
+  )
+  const handledScanIdRef = useRef<Id<'receiptScans'> | null>(null)
+  const erroredScanIdRef = useRef<Id<'receiptScans'> | null>(null)
+
+  useEffect(() => {
+    if (!latestScan) return
+    if (
+      latestScan.status === 'done' &&
+      handledScanIdRef.current !== latestScan._id
+    ) {
+      handledScanIdRef.current = latestScan._id
+      setActiveScanId(latestScan._id)
+      setReviewSheetOpen(true)
+    }
+    if (
+      latestScan.status === 'failed' &&
+      erroredScanIdRef.current !== latestScan._id
+    ) {
+      erroredScanIdRef.current = latestScan._id
+      toast.error(
+        latestScan.errorMessage ?? 'Неуспешно разпознаване на бележката',
+      )
+    }
+  }, [latestScan])
+
+  function beginScan(mode: 'add' | 'replace') {
+    setImportMode(mode)
+    void startScan({ billId })
+  }
+
+  function handleScanButtonClick() {
+    if (items.length > 0) {
+      setPreScanDialogOpen(true)
+    } else {
+      beginScan('add')
+    }
+  }
+
+  function handlePreScanChoice(mode: 'add' | 'replace') {
+    setPreScanDialogOpen(false)
+    if (mode === 'replace' && assignments.length > 0) {
+      setReplaceConfirmOpen(true)
+      return
+    }
+    beginScan(mode)
+  }
+
+  function handleReplaceConfirm() {
+    setReplaceConfirmOpen(false)
+    beginScan('replace')
+  }
 
   const [restaurantName, setRestaurantName] = useState(bill.restaurantName)
   const [date, setDate] = useState(() => toDateInputValue(bill.date))
@@ -230,6 +302,22 @@ function BillEditorContent({
                     ? 'Смени снимката'
                     : 'Добави снимка'}
               </button>
+              {bill.receiptStorageId && (
+                <div className="flex flex-col gap-1.5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-11"
+                    disabled={isScanning}
+                    onClick={handleScanButtonClick}
+                  >
+                    {isScanning ? 'Разпознаване…' : 'Разпознай артикули'}
+                  </Button>
+                  <p className="text-center text-xs text-muted-foreground">
+                    Използва AI (~€0.01 на scan)
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -273,6 +361,67 @@ function BillEditorContent({
         assignments={assignments}
         payments={payments}
       />
+
+      <Dialog open={preScanDialogOpen} onOpenChange={setPreScanDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Вече има артикули в сметката</DialogTitle>
+            <DialogDescription>
+              Искате ли да добавите разпознатите артикули към
+              съществуващите, или да ги замените?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPreScanDialogOpen(false)}
+            >
+              Отказ
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handlePreScanChoice('replace')}
+            >
+              Замени
+            </Button>
+            <Button onClick={() => handlePreScanChoice('add')}>Добави</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={replaceConfirmOpen} onOpenChange={setReplaceConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ще изтриете съществуващите артикули</DialogTitle>
+            <DialogDescription>
+              Артикулите имат разпределения между участници. Замяната ще
+              изтрие съществуващите артикули и разпределенията им.
+              Продължавате ли?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setReplaceConfirmOpen(false)}
+            >
+              Отказ
+            </Button>
+            <Button variant="destructive" onClick={handleReplaceConfirm}>
+              Замени
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {activeScanId && (
+        <ReceiptScanReviewSheet
+          open={reviewSheetOpen}
+          onOpenChange={setReviewSheetOpen}
+          billId={billId}
+          importMode={importMode}
+          scanId={activeScanId}
+        />
+      )}
     </div>
   )
 }
