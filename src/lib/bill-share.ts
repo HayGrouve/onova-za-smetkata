@@ -28,7 +28,7 @@ export function formatCopyAmount(cents: number): string {
 }
 
 export function formatRevolutAmount(cents: number): string {
-  return (cents / 100).toFixed(2)
+  return String(cents)
 }
 
 export interface ShareParticipantLine {

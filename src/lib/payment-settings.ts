@@ -28,9 +28,8 @@ export function clearLegacyPaymentSettings(): void {
 
 export function buildRevolutUrl(username: string, remainingCents: number): string {
   const clean = username.replace(/^@/, '').trim()
-  const amount = (remainingCents / 100).toFixed(2)
   const params = new URLSearchParams({
-    amount,
+    amount: String(remainingCents),
     currency: 'EUR',
   })
   return `https://revolut.me/${encodeURIComponent(clean)}?${params.toString()}`
