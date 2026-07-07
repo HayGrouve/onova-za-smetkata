@@ -3,6 +3,7 @@ import { useMutation, useQuery } from 'convex/react'
 import type { FunctionReturnType } from 'convex/server'
 import { CameraIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { ItemList } from '#/components/bills/item-list.tsx'
 import { ParticipantList } from '#/components/bills/participant-list.tsx'
 import { StickyTotalsBar } from '#/components/bills/sticky-totals-bar.tsx'
@@ -15,6 +16,7 @@ import {
 import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
+import { prepareReceiptImage } from '#/lib/prepare-receipt-image.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
 
@@ -118,16 +120,31 @@ function BillEditorContent({
     if (!file) return
     setIsUploading(true)
     try {
+      const { blob, contentType } = await prepareReceiptImage(file)
       const uploadUrl = await generateUploadUrl()
       const result = await fetch(uploadUrl, {
         method: 'POST',
-        headers: { 'Content-Type': file.type },
-        body: file,
+        headers: { 'Content-Type': contentType },
+        body: blob,
       })
+      if (!result.ok) {
+        const errorText = await result.text()
+        throw new Error(errorText || `Upload failed (${result.status})`)
+      }
       const { storageId } = (await result.json()) as {
         storageId: Id<'_storage'>
       }
+      if (!storageId) {
+        throw new Error('Upload succeeded but no storageId returned')
+      }
       await updateBill({ billId, receiptStorageId: storageId })
+      toast.success('Снимката е качена')
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Неуспешно качване на снимката.'
+      toast.error(message)
     } finally {
       setIsUploading(false)
       e.target.value = ''
@@ -195,7 +212,7 @@ function BillEditorContent({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,.heic,.heif"
                 capture="environment"
                 className="hidden"
                 onChange={handleReceiptChange}
