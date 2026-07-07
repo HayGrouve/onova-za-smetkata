@@ -5,6 +5,7 @@ import {
   splitUnits,
   calculateBillTotals,
   calculateParticipantBreakdown,
+  validateBillForFinalize,
   type BillBreakdownInput,
 } from './bill-calculations'
 
@@ -107,6 +108,21 @@ describe('calculateBillTotals', () => {
     expect(totals.byParticipant.p1.owedCents).toBe(550)
     expect(totals.byParticipant.p2.owedCents).toBe(550)
     expect(totals.byParticipant.p3.owedCents).toBe(100)
+  })
+})
+
+describe('validateBillForFinalize', () => {
+  it('returns missing_restaurant when restaurant name is empty', () => {
+    const errors = validateBillForFinalize({
+      restaurantName: '   ',
+      participants: [{ id: 'p1', sortOrder: 0 }],
+      items: [{ id: 'i1', unitPriceCents: 1000, quantity: 1 }],
+      assignments: [{ itemId: 'i1', participantId: 'p1' }],
+    })
+    expect(errors).toContainEqual({
+      code: 'missing_restaurant',
+      message: 'Въведете име на ресторант.',
+    })
   })
 })
 

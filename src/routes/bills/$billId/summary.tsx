@@ -93,9 +93,12 @@ function BillSummary() {
   }, [data, calcInputs])
 
   const errors = useMemo(() => {
-    if (!calcInputs) return []
-    return validateBillForFinalize(calcInputs)
-  }, [calcInputs])
+    if (!calcInputs || !data) return []
+    return validateBillForFinalize({
+      ...calcInputs,
+      restaurantName: data.bill.restaurantName,
+    })
+  }, [calcInputs, data])
 
   const labels = useMemo(
     () => (data ? buildParticipantLabels(data.participants) : {}),

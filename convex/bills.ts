@@ -217,6 +217,11 @@ export const update = mutation({
 export const finalize = mutation({
   args: { billId: v.id('bills') },
   handler: async (ctx, args) => {
+    const bill = await ctx.db.get(args.billId)
+    if (!bill) throw new Error('Bill not found')
+    if (!bill.restaurantName.trim()) {
+      throw new Error('Въведете име на ресторант.')
+    }
     await ctx.db.patch(args.billId, {
       status: 'final',
       updatedAt: Date.now(),

@@ -1,4 +1,4 @@
-import { useMutation } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import { XIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -21,9 +21,18 @@ export function ParticipantList({
   const [name, setName] = useState('')
   const addParticipant = useMutation(api.participants.add)
   const removeParticipant = useMutation(api.participants.remove)
+  const recentNames = useQuery(api.participants.listRecentNames, { limit: 12 })
 
-  async function handleAdd() {
-    const trimmed = name.trim()
+  const currentNames = new Set(
+    participants.map((p) => p.name.trim().toLowerCase()),
+  )
+  const quickAddNames =
+    recentNames?.filter(
+      (recentName) => !currentNames.has(recentName.trim().toLowerCase()),
+    ) ?? []
+
+  async function handleAdd(participantName?: string) {
+    const trimmed = (participantName ?? name).trim()
     if (!trimmed) return
     setName('')
     await addParticipant({ billId, name: trimmed })
@@ -67,6 +76,22 @@ export function ParticipantList({
           </span>
         ))}
       </div>
+      {quickAddNames.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {quickAddNames.map((recentName) => (
+            <Button
+              key={recentName}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-full"
+              onClick={() => void handleAdd(recentName)}
+            >
+              {recentName}
+            </Button>
+          ))}
+        </div>
+      )}
       <div className="flex gap-2">
         <Input
           value={name}
@@ -80,7 +105,11 @@ export function ParticipantList({
           placeholder="Име на участник"
           className="h-11 flex-1"
         />
-        <Button className="h-11" onClick={handleAdd} disabled={!name.trim()}>
+        <Button
+          className="h-11"
+          onClick={() => void handleAdd()}
+          disabled={!name.trim()}
+        >
           Добави
         </Button>
       </div>

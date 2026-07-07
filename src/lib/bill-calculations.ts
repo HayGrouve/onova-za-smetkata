@@ -268,16 +268,29 @@ export function calculateParticipantBreakdown(
 }
 
 export interface ValidationError {
-  code: 'no_participants' | 'no_items' | 'unassigned_items' | 'units_mismatch'
+  code:
+    | 'no_participants'
+    | 'no_items'
+    | 'unassigned_items'
+    | 'units_mismatch'
+    | 'missing_restaurant'
   message: string
 }
 
 export function validateBillForFinalize(input: {
+  restaurantName: string
   participants: ParticipantInput[]
   items: ItemInput[]
   assignments: AssignmentInput[]
 }): ValidationError[] {
   const errors: ValidationError[] = []
+
+  if (!input.restaurantName.trim()) {
+    errors.push({
+      code: 'missing_restaurant',
+      message: 'Въведете име на ресторант.',
+    })
+  }
 
   if (input.participants.length === 0) {
     errors.push({
