@@ -12,6 +12,108 @@ export const list = query({
   },
 })
 
+export const listWithSummary = query({
+  args: {},
+  handler: async (ctx) => {
+    const bills = await ctx.db
+      .query('bills')
+      .withIndex('by_updatedAt')
+      .order('desc')
+      .collect()
+
+    return await Promise.all(
+      bills.map(async (bill) => {
+        const participants = await ctx.db
+          .query('participants')
+          .withIndex('by_billId', (q) => q.eq('billId', bill._id))
+          .collect()
+
+        const items = await ctx.db
+          .query('items')
+          .withIndex('by_billId', (q) => q.eq('billId', bill._id))
+          .collect()
+
+        const assignments = (
+          await Promise.all(
+            items.map((item) =>
+              ctx.db
+                .query('itemAssignments')
+                .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
+                .collect(),
+            ),
+          )
+        ).flat()
+
+        const payments = await ctx.db
+          .query('payments')
+          .withIndex('by_billId', (q) => q.eq('billId', bill._id))
+          .collect()
+
+        const billTotalCents = items.reduce(
+          (sum, item) => sum + item.unitPriceCents * item.quantity,
+          0,
+        )
+
+        let totalOutstandingCents: number | null = null
+
+        if (bill.status === 'final') {
+          const sortedParticipantIds = [...participants]
+            .sort((a, b) => a.sortOrder - b.sortOrder)
+            .map((p) => p._id)
+
+          const owedByParticipant = new Map<string, number>()
+          for (const id of sortedParticipantIds) owedByParticipant.set(id, 0)
+
+          for (const item of items) {
+            const lineTotalCents = item.unitPriceCents * item.quantity
+            const assignedIds = new Set(
+              assignments
+                .filter((a) => a.itemId === item._id)
+                .map((a) => a.participantId),
+            )
+            const sortedAssignedIds = sortedParticipantIds.filter((id) =>
+              assignedIds.has(id),
+            )
+            const n = sortedAssignedIds.length
+            if (n === 0) continue
+            const base = Math.floor(lineTotalCents / n)
+            const remainder = lineTotalCents % n
+            sortedAssignedIds.forEach((id, index) => {
+              const share = base + (index < remainder ? 1 : 0)
+              owedByParticipant.set(
+                id,
+                (owedByParticipant.get(id) ?? 0) + share,
+              )
+            })
+          }
+
+          const paidByParticipant = new Map<string, number>()
+          for (const payment of payments) {
+            paidByParticipant.set(
+              payment.participantId,
+              (paidByParticipant.get(payment.participantId) ?? 0) +
+                payment.amountCents,
+            )
+          }
+
+          totalOutstandingCents = sortedParticipantIds.reduce((sum, id) => {
+            const owed = owedByParticipant.get(id) ?? 0
+            const paid = paidByParticipant.get(id) ?? 0
+            return sum + Math.max(0, owed - paid)
+          }, 0)
+        }
+
+        return {
+          bill,
+          participantNames: participants.map((p) => p.name),
+          billTotalCents,
+          totalOutstandingCents,
+        }
+      }),
+    )
+  },
+})
+
 export const get = query({
   args: { billId: v.id('bills') },
   handler: async (ctx, args) => {

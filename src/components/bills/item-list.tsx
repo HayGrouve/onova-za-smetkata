@@ -1,0 +1,200 @@
+import { useMutation } from 'convex/react'
+import { Trash2Icon } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { AssignmentRow } from '#/components/bills/assignment-row.tsx'
+import { Button } from '#/components/ui/button.tsx'
+import { Input } from '#/components/ui/input.tsx'
+import { useDebouncedCallback } from '#/hooks/use-debounced-callback.ts'
+import { parseEurInput } from '#/lib/format-currency.ts'
+import { api } from '../../../convex/_generated/api'
+import type { Doc, Id } from '../../../convex/_generated/dataModel'
+
+export interface ItemListProps {
+  billId: Id<'bills'>
+  items: Doc<'items'>[]
+  participants: Doc<'participants'>[]
+  assignments: Doc<'itemAssignments'>[]
+  labels: Record<string, string>
+}
+
+export function ItemList({
+  billId,
+  items,
+  participants,
+  assignments,
+  labels,
+}: ItemListProps) {
+  const addItem = useMutation(api.items.add)
+  const removeItem = useMutation(api.items.remove)
+
+  const [newName, setNewName] = useState('')
+  const [newPrice, setNewPrice] = useState('')
+  const [newQuantity, setNewQuantity] = useState('1')
+
+  async function handleAdd() {
+    const trimmed = newName.trim()
+    if (!trimmed) return
+    const unitPriceCents = parseEurInput(newPrice)
+    const quantity = Math.max(1, Number.parseInt(newQuantity, 10) || 1)
+    setNewName('')
+    setNewPrice('')
+    setNewQuantity('1')
+    await addItem({ billId, name: trimmed, unitPriceCents, quantity })
+  }
+
+  async function handleDelete(item: Doc<'items'>) {
+    await removeItem({ itemId: item._id })
+    toast('Артикулът е изтрит', {
+      duration: 5000,
+      action: {
+        label: 'Отмени',
+        onClick: () => {
+          void addItem({
+            billId,
+            name: item.name,
+            unitPriceCents: item.unitPriceCents,
+            quantity: item.quantity,
+            note: item.note,
+          })
+        },
+      },
+    })
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {items.length === 0 && (
+        <p className="text-sm text-muted-foreground">Все още няма артикули.</p>
+      )}
+
+      {items.map((item) => {
+        const assignedParticipantIds = new Set(
+          assignments
+            .filter((a) => a.itemId === item._id)
+            .map((a) => a.participantId),
+        )
+        return (
+          <div
+            key={item._id}
+            className="flex flex-col gap-2 rounded-lg border p-3"
+          >
+            <ItemRow item={item} onDelete={() => void handleDelete(item)} />
+            <AssignmentRow
+              itemId={item._id}
+              participants={participants}
+              labels={labels}
+              assignedParticipantIds={assignedParticipantIds}
+            />
+          </div>
+        )
+      })}
+
+      <div className="flex flex-col gap-2 rounded-lg border border-dashed p-3">
+        <Input
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          placeholder="Наименование на артикул"
+          className="h-11"
+        />
+        <div className="flex gap-2">
+          <Input
+            value={newPrice}
+            onChange={(e) => setNewPrice(e.target.value)}
+            inputMode="decimal"
+            placeholder="Цена (лв)"
+            className="h-11 flex-1"
+          />
+          <Input
+            value={newQuantity}
+            onChange={(e) => setNewQuantity(e.target.value)}
+            inputMode="numeric"
+            placeholder="Бр."
+            className="h-11 w-16"
+          />
+        </div>
+        <Button className="h-11" onClick={handleAdd} disabled={!newName.trim()}>
+          Добави артикул
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function ItemRow({
+  item,
+  onDelete,
+}: {
+  item: Doc<'items'>
+  onDelete: () => void
+}) {
+  const updateItem = useMutation(api.items.update)
+  const [name, setName] = useState(item.name)
+  const [price, setPrice] = useState(() =>
+    formatEurInputValue(item.unitPriceCents),
+  )
+  const [quantity, setQuantity] = useState(String(item.quantity))
+
+  const debouncedSave = useDebouncedCallback(
+    (patch: { name?: string; unitPriceCents?: number; quantity?: number }) => {
+      void updateItem({ itemId: item._id, ...patch })
+    },
+    500,
+  )
+
+  return (
+    <div className="flex items-start gap-2">
+      <div className="flex flex-1 flex-col gap-2">
+        <Input
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value)
+            debouncedSave({ name: e.target.value })
+          }}
+          placeholder="Наименование"
+          className="h-11"
+        />
+        <div className="flex items-center gap-2">
+          <Input
+            value={price}
+            onChange={(e) => {
+              setPrice(e.target.value)
+              debouncedSave({ unitPriceCents: parseEurInput(e.target.value) })
+            }}
+            inputMode="decimal"
+            placeholder="Цена (лв)"
+            className="h-11 flex-1"
+          />
+          <span className="text-muted-foreground">×</span>
+          <Input
+            value={quantity}
+            onChange={(e) => {
+              setQuantity(e.target.value)
+              const parsed = Math.max(
+                1,
+                Number.parseInt(e.target.value, 10) || 1,
+              )
+              debouncedSave({ quantity: parsed })
+            }}
+            inputMode="numeric"
+            placeholder="Бр."
+            className="h-11 w-16"
+          />
+        </div>
+      </div>
+      <Button
+        variant="ghost"
+        size="icon-lg"
+        aria-label={`Изтрий ${item.name}`}
+        onClick={onDelete}
+        className="text-muted-foreground hover:text-destructive"
+      >
+        <Trash2Icon className="size-4" />
+      </Button>
+    </div>
+  )
+}
+
+function formatEurInputValue(cents: number): string {
+  return (cents / 100).toFixed(2).replace('.', ',')
+}
