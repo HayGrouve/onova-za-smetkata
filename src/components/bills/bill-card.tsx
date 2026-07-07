@@ -1,7 +1,26 @@
 import { Link } from '@tanstack/react-router'
+import { useMutation } from 'convex/react'
+import { MoreVerticalIcon } from 'lucide-react'
+import { useState } from 'react'
 import { Badge } from '#/components/ui/badge.tsx'
+import { Button } from '#/components/ui/button.tsx'
 import { Card, CardContent } from '#/components/ui/card.tsx'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '#/components/ui/dialog.tsx'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '#/components/ui/dropdown-menu.tsx'
 import { formatEur } from '#/lib/format-currency.ts'
+import { api } from '../../../convex/_generated/api'
 import type { Doc } from '../../../convex/_generated/dataModel'
 
 const dateFormatter = new Intl.DateTimeFormat('bg-BG', {
@@ -22,18 +41,31 @@ export function BillCard({
   billTotalCents,
   totalOutstandingCents,
 }: BillSummary) {
+  const removeBill = useMutation(api.bills.remove)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const isDraft = bill.status === 'draft'
   const to = isDraft ? '/bills/$billId' : '/bills/$billId/summary'
 
+  async function handleDelete() {
+    setIsDeleting(true)
+    try {
+      await removeBill({ billId: bill._id })
+      setDeleteOpen(false)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   return (
-    <Link
-      to={to}
-      params={{ billId: bill._id }}
-      className="block tap-feedback"
-      data-interactive="true"
-    >
-      <Card className="gap-3 py-4 transition-colors interactive-hover active:bg-accent">
-        <CardContent className="flex items-center justify-between gap-3 px-4">
+    <Card className="gap-3 py-4 transition-colors interactive-hover active:bg-accent">
+      <CardContent className="flex items-center gap-3 px-4">
+        <Link
+          to={to}
+          params={{ billId: bill._id }}
+          className="flex min-w-0 flex-1 items-center justify-between gap-3 tap-feedback"
+          data-interactive="true"
+        >
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="truncate font-semibold">
@@ -57,8 +89,57 @@ export function BillCard({
               </p>
             )}
           </div>
-        </CardContent>
-      </Card>
-    </Link>
+        </Link>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0"
+              aria-label="Опции за сметка"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+              }}
+            >
+              <MoreVerticalIcon />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              variant="destructive"
+              onSelect={(e) => {
+                e.preventDefault()
+                setDeleteOpen(true)
+              }}
+            >
+              Изтрий
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </CardContent>
+
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Изтриване на сметка</DialogTitle>
+            <DialogDescription>
+              Това действие е необратимо. Всички участници, артикули и
+              плащания ще бъдат изтрити заедно със сметката.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              Изтрий сметката
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
   )
 }
