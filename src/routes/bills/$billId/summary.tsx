@@ -3,8 +3,11 @@ import { useMutation, useQuery } from 'convex/react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { ParticipantDetailSheet } from '#/components/bills/participant-detail-sheet.tsx'
+import { PaymentProgress } from '#/components/bills/payment-progress.tsx'
 import { PaymentRow } from '#/components/bills/payment-row.tsx'
+import { PaymentSettingsSheet } from '#/components/bills/payment-settings-sheet.tsx'
 import { ReceiptPreviewCard } from '#/components/bills/receipt-preview-card.tsx'
+import { ShareBillButton } from '#/components/bills/share-bill-button.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import {
@@ -27,6 +30,7 @@ import {
   calculateBillTotals,
   validateBillForFinalize,
   type BillBreakdownInput,
+  type PaymentStatus,
 } from '#/lib/bill-calculations.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
@@ -54,6 +58,7 @@ function BillSummary() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [detailParticipantId, setDetailParticipantId] =
     useState<Id<'participants'> | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const calcInputs = useMemo(() => {
     if (!data) return null
@@ -136,9 +141,20 @@ function BillSummary() {
   }
 
   const { bill, participants } = data
-  const sortedParticipants = [...participants].sort(
-    (a, b) => a.sortOrder - b.sortOrder,
-  )
+
+  const statusOrder: Record<PaymentStatus, number> = {
+    unpaid: 0,
+    partial: 1,
+    paid: 2,
+  }
+
+  const sortedParticipants = [...participants].sort((a, b) => {
+    const statusA = totals.byParticipant[a._id]?.status ?? 'unpaid'
+    const statusB = totals.byParticipant[b._id]?.status ?? 'unpaid'
+    const statusDiff = statusOrder[statusA] - statusOrder[statusB]
+    if (statusDiff !== 0) return statusDiff
+    return a.sortOrder - b.sortOrder
+  })
   const isDraft = bill.status === 'draft'
 
   async function handleFinalize() {
@@ -189,6 +205,29 @@ function BillSummary() {
           </CardContent>
         </Card>
 
+        <ShareBillButton
+          restaurantName={bill.restaurantName}
+          date={new Date(bill.date)}
+          billTotalCents={totals.billTotalCents}
+          participants={participants.map((p) => ({
+            label: labels[p._id] ?? p.name,
+            sortOrder: p.sortOrder,
+            totals: totals.byParticipant[p._id],
+          }))}
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-10 w-full text-muted-foreground"
+          onClick={() => setSettingsOpen(true)}
+        >
+          Настройки за плащане
+        </Button>
+        <PaymentSettingsSheet
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+        />
+
         {bill.receiptStorageId && (
           <ReceiptPreviewCard storageId={bill.receiptStorageId} />
         )}
@@ -219,6 +258,14 @@ function BillSummary() {
             Завърши сметка
           </Button>
         )}
+
+        <PaymentProgress
+          participants={participants.map((p) => ({
+            id: p._id,
+            sortOrder: p.sortOrder,
+          }))}
+          byParticipant={totals.byParticipant}
+        />
 
         <Card>
           <CardHeader>
