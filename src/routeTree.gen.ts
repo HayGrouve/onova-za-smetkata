@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BillsBillIdIndexRouteImport } from './routes/bills/$billId/index'
 import { Route as BillsBillIdSummaryRouteImport } from './routes/bills/$billId/summary'
+import { Route as BillsBillIdJoinRouteImport } from './routes/bills/$billId/join'
+import { Route as BillsBillIdClaimRouteImport } from './routes/bills/$billId/claim'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,33 +30,67 @@ const BillsBillIdSummaryRoute = BillsBillIdSummaryRouteImport.update({
   path: '/bills/$billId/summary',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BillsBillIdJoinRoute = BillsBillIdJoinRouteImport.update({
+  id: '/bills/$billId/join',
+  path: '/bills/$billId/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BillsBillIdClaimRoute = BillsBillIdClaimRouteImport.update({
+  id: '/bills/$billId/claim',
+  path: '/bills/$billId/claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/bills/$billId/claim': typeof BillsBillIdClaimRoute
+  '/bills/$billId/join': typeof BillsBillIdJoinRoute
   '/bills/$billId/summary': typeof BillsBillIdSummaryRoute
   '/bills/$billId/': typeof BillsBillIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/bills/$billId/claim': typeof BillsBillIdClaimRoute
+  '/bills/$billId/join': typeof BillsBillIdJoinRoute
   '/bills/$billId/summary': typeof BillsBillIdSummaryRoute
   '/bills/$billId': typeof BillsBillIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/bills/$billId/claim': typeof BillsBillIdClaimRoute
+  '/bills/$billId/join': typeof BillsBillIdJoinRoute
   '/bills/$billId/summary': typeof BillsBillIdSummaryRoute
   '/bills/$billId/': typeof BillsBillIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/bills/$billId/summary' | '/bills/$billId/'
+  fullPaths:
+    | '/'
+    | '/bills/$billId/claim'
+    | '/bills/$billId/join'
+    | '/bills/$billId/summary'
+    | '/bills/$billId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/bills/$billId/summary' | '/bills/$billId'
-  id: '__root__' | '/' | '/bills/$billId/summary' | '/bills/$billId/'
+  to:
+    | '/'
+    | '/bills/$billId/claim'
+    | '/bills/$billId/join'
+    | '/bills/$billId/summary'
+    | '/bills/$billId'
+  id:
+    | '__root__'
+    | '/'
+    | '/bills/$billId/claim'
+    | '/bills/$billId/join'
+    | '/bills/$billId/summary'
+    | '/bills/$billId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BillsBillIdClaimRoute: typeof BillsBillIdClaimRoute
+  BillsBillIdJoinRoute: typeof BillsBillIdJoinRoute
   BillsBillIdSummaryRoute: typeof BillsBillIdSummaryRoute
   BillsBillIdIndexRoute: typeof BillsBillIdIndexRoute
 }
@@ -82,11 +118,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BillsBillIdSummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bills/$billId/join': {
+      id: '/bills/$billId/join'
+      path: '/bills/$billId/join'
+      fullPath: '/bills/$billId/join'
+      preLoaderRoute: typeof BillsBillIdJoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bills/$billId/claim': {
+      id: '/bills/$billId/claim'
+      path: '/bills/$billId/claim'
+      fullPath: '/bills/$billId/claim'
+      preLoaderRoute: typeof BillsBillIdClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BillsBillIdClaimRoute: BillsBillIdClaimRoute,
+  BillsBillIdJoinRoute: BillsBillIdJoinRoute,
   BillsBillIdSummaryRoute: BillsBillIdSummaryRoute,
   BillsBillIdIndexRoute: BillsBillIdIndexRoute,
 }

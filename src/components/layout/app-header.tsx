@@ -22,7 +22,10 @@ function useHeaderConfig() {
 
   const isHome = pathname === '/'
   const isSummary = pathname.endsWith('/summary')
-  const isEditor = billId !== undefined && !isSummary
+  const isJoin = pathname.endsWith('/join')
+  const isClaim = pathname.endsWith('/claim')
+  const isEditor =
+    billId !== undefined && !isSummary && !isJoin && !isClaim
 
   const restaurantName =
     billData?.bill.restaurantName.trim() || 'Без име'
@@ -40,6 +43,22 @@ function useHeaderConfig() {
       title: billData === undefined ? 'Зареждане…' : restaurantName,
       backTo: '/bills/$billId' as const,
       backParams: { billId },
+    }
+  }
+
+  if (isJoin && billId) {
+    return {
+      title: 'Присъедини се',
+      backTo: null,
+      backParams: undefined,
+    }
+  }
+
+  if (isClaim && billId) {
+    return {
+      title: 'Моят дял',
+      backTo: null,
+      backParams: undefined,
     }
   }
 

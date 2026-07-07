@@ -11,6 +11,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ItemList } from '#/components/bills/item-list.tsx'
+import { BillInviteCard } from '#/components/bills/bill-invite-card.tsx'
 import { ParticipantList } from '#/components/bills/participant-list.tsx'
 import { ReceiptScanReviewSheet } from '#/components/bills/receipt-scan-review-sheet.tsx'
 import { StickyTotalsBar } from '#/components/bills/sticky-totals-bar.tsx'
@@ -374,6 +375,12 @@ function BillEditorContent({
               participants={participants}
               labels={labels}
             />
+            <div className="mt-4">
+              <BillInviteCard
+                billId={billId}
+                disabled={participants.length === 0}
+              />
+            </div>
           </CardContent>
         </Card>
 

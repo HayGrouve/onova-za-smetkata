@@ -5,6 +5,7 @@ import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 import { formatCopyAmount } from '#/lib/bill-share.ts'
 import { buildRevolutUrl } from '#/lib/payment-settings.ts'
+import { copyToClipboard } from '#/lib/copy-to-clipboard.ts'
 import { api } from '../../../convex/_generated/api'
 
 export interface ParticipantPayActionsProps {
@@ -14,16 +15,13 @@ export interface ParticipantPayActionsProps {
 }
 
 async function copyAmount(cents: number, options?: { silent?: boolean }): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(formatCopyAmount(cents))
-    if (!options?.silent) {
-      toast.success('Копирано')
-    }
-    return true
-  } catch {
+  const copied = await copyToClipboard(formatCopyAmount(cents))
+  if (copied && !options?.silent) {
+    toast.success('Копирано')
+  } else if (!copied && !options?.silent) {
     toast.error('Неуспешно копиране')
-    return false
   }
+  return copied
 }
 
 export async function copyRemainingAmount(cents: number): Promise<void> {
@@ -45,8 +43,7 @@ export function ParticipantPayActions({
       onOpenSettings?.()
       return
     }
-    const copied = await copyAmount(remainingCents, { silent: true })
-    if (!copied) return
+    void copyAmount(remainingCents, { silent: true })
     window.open(buildRevolutUrl(revolutUsername, remainingCents))
     toast.success('Отворен Revolut')
   }

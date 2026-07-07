@@ -2,6 +2,7 @@ import type { Id } from './_generated/dataModel'
 import type { MutationCtx } from './_generated/server'
 import { mutation } from './_generated/server'
 import { v } from 'convex/values'
+import { assertAssignmentEditable } from './lib/assertAssignmentEditable'
 import { splitUnits } from './lib/splitUnits'
 import { touchBill } from './lib/touchBill'
 
@@ -61,6 +62,15 @@ export const toggle = mutation({
     const item = await ctx.db.get(args.itemId)
     if (!item) return
 
+    const bill = await ctx.db.get(item.billId)
+    if (!bill) return
+    const participant = await ctx.db.get(args.participantId)
+    assertAssignmentEditable({
+      billStatus: bill.status,
+      itemBillId: item.billId,
+      participantBillId: participant?.billId,
+    })
+
     const existing = await ctx.db
       .query('itemAssignments')
       .withIndex('by_itemId', (q) => q.eq('itemId', args.itemId))
@@ -89,6 +99,15 @@ export const setUnits = mutation({
   handler: async (ctx, args) => {
     const item = await ctx.db.get(args.itemId)
     if (!item) return
+
+    const bill = await ctx.db.get(item.billId)
+    if (!bill) return
+    const participant = await ctx.db.get(args.participantId)
+    assertAssignmentEditable({
+      billStatus: bill.status,
+      itemBillId: item.billId,
+      participantBillId: participant?.billId,
+    })
 
     const clampedUnits = Math.max(
       0,

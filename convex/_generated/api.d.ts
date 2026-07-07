@@ -12,6 +12,7 @@ import type * as assignments from "../assignments.js";
 import type * as bills from "../bills.js";
 import type * as files from "../files.js";
 import type * as items from "../items.js";
+import type * as lib_assertAssignmentEditable from "../lib/assertAssignmentEditable.js";
 import type * as lib_geminiReceipt from "../lib/geminiReceipt.js";
 import type * as lib_receiptStorage from "../lib/receiptStorage.js";
 import type * as lib_splitUnits from "../lib/splitUnits.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   bills: typeof bills;
   files: typeof files;
   items: typeof items;
+  "lib/assertAssignmentEditable": typeof lib_assertAssignmentEditable;
   "lib/geminiReceipt": typeof lib_geminiReceipt;
   "lib/receiptStorage": typeof lib_receiptStorage;
   "lib/splitUnits": typeof lib_splitUnits;
