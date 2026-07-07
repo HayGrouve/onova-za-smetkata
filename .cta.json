@@ -1,0 +1,24 @@
+{
+  "projectName": "onova-za-smetkata",
+  "mode": "file-router",
+  "typescript": true,
+  "packageManager": "npm",
+  "includeExamples": false,
+  "tailwind": true,
+  "addOnOptions": {},
+  "envVarValues": {
+    "CONVEX_DEPLOYMENT": "coordinated-warbler-782",
+    "VITE_CONVEX_URL": "https://coordinated-warbler-782.convex.cloud"
+  },
+  "git": false,
+  "install": true,
+  "routerOnly": false,
+  "version": 1,
+  "framework": "react",
+  "chosenAddOns": [
+    "eslint",
+    "netlify",
+    "convex",
+    "shadcn"
+  ]
+}
