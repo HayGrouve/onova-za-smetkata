@@ -1,7 +1,10 @@
 import { useQuery } from 'convex/react'
 import { CogIcon, WalletIcon } from 'lucide-react'
 import { Button } from '#/components/ui/button.tsx'
-import { isPaymentConfigured } from '#/lib/payment-settings.ts'
+import {
+  getPaymentSettingsStatus,
+  type PaymentSettingsStatus,
+} from '#/lib/payment-settings.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { cn } from '#/lib/utils.ts'
 import { api } from '../../../convex/_generated/api'
@@ -11,9 +14,13 @@ export interface PaymentSettingsOpenButtonProps {
   className?: string
 }
 
-export function usePaymentSettingsConfigured(): boolean {
+export function usePaymentSettingsStatus(): PaymentSettingsStatus {
   const settings = useQuery(api.paymentSettings.get)
-  return isPaymentConfigured(settings)
+  return getPaymentSettingsStatus(settings)
+}
+
+export function usePaymentSettingsConfigured(): boolean {
+  return usePaymentSettingsStatus() === 'configured'
 }
 
 export function PaymentSettingsOpenButton({
@@ -21,9 +28,11 @@ export function PaymentSettingsOpenButton({
   className,
 }: PaymentSettingsOpenButtonProps) {
   const settings = useQuery(api.paymentSettings.get)
-  const configured = isPaymentConfigured(settings)
+  const status = getPaymentSettingsStatus(settings)
 
-  if (configured) {
+  if (status === 'loading') return null
+
+  if (status === 'configured') {
     return (
       <Button
         type="button"

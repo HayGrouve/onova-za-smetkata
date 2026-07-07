@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { buildRevolutUrl } from './payment-settings.ts'
+import { buildRevolutUrl, getPaymentSettingsStatus } from './payment-settings.ts'
+
+describe('getPaymentSettingsStatus', () => {
+  it('returns loading while settings are unresolved', () => {
+    expect(getPaymentSettingsStatus(undefined)).toBe('loading')
+  })
+
+  it('returns configured when revolut or iban is set', () => {
+    expect(getPaymentSettingsStatus({ revolutUsername: 'user' })).toBe('configured')
+    expect(getPaymentSettingsStatus({ iban: 'BG00TEST' })).toBe('configured')
+  })
+
+  it('returns unconfigured for empty settings', () => {
+    expect(getPaymentSettingsStatus(null)).toBe('unconfigured')
+    expect(getPaymentSettingsStatus({})).toBe('unconfigured')
+  })
+})
 
 describe('buildRevolutUrl', () => {
   it('builds revolut.me link with amount in cents and EUR currency', () => {

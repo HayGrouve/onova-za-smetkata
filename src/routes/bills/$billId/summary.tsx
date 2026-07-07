@@ -13,7 +13,7 @@ import { toast } from 'sonner'
 import { ParticipantDetailSheet } from '#/components/bills/participant-detail-sheet.tsx'
 import { PaymentProgress } from '#/components/bills/payment-progress.tsx'
 import { PaymentRow } from '#/components/bills/payment-row.tsx'
-import { PaymentSettingsOpenButton, usePaymentSettingsConfigured } from '#/components/bills/payment-settings-open-button.tsx'
+import { PaymentSettingsOpenButton, usePaymentSettingsStatus } from '#/components/bills/payment-settings-open-button.tsx'
 import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
 import { ReceiptPreviewCard } from '#/components/bills/receipt-preview-card.tsx'
 import { ShareBillButton } from '#/components/bills/share-bill-button.tsx'
@@ -68,7 +68,7 @@ function BillSummary() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [detailParticipantId, setDetailParticipantId] =
     useState<Id<'participants'> | null>(null)
-  const paymentSettingsConfigured = usePaymentSettingsConfigured()
+  const paymentSettingsStatus = usePaymentSettingsStatus()
   const { openPaymentSettings } = usePaymentSettingsSheet()
 
   const calcInputs = useMemo(() => {
@@ -243,7 +243,7 @@ function BillSummary() {
           </CardContent>
         </Card>
 
-        {!paymentSettingsConfigured ? (
+        {paymentSettingsStatus === 'unconfigured' ? (
           <PaymentSettingsOpenButton onClick={openPaymentSettings} />
         ) : null}
 

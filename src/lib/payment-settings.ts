@@ -8,6 +8,16 @@ export function isPaymentConfigured(settings: PaymentSettings | undefined): bool
   return Boolean(settings.revolutUsername?.trim() || settings.iban?.trim())
 }
 
+export type PaymentSettingsStatus = 'loading' | 'configured' | 'unconfigured'
+
+export function getPaymentSettingsStatus(
+  settings: PaymentSettings | null | undefined,
+): PaymentSettingsStatus {
+  if (settings === undefined) return 'loading'
+  if (isPaymentConfigured(settings)) return 'configured'
+  return 'unconfigured'
+}
+
 const LEGACY_STORAGE_KEY = 'onova-payment-settings'
 
 export function loadLegacyPaymentSettings(): PaymentSettings {

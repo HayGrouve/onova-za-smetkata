@@ -6,7 +6,7 @@ import { PlusIcon, SearchIcon } from 'lucide-react'
 import { BillCard } from '#/components/bills/bill-card.tsx'
 import {
   PaymentSettingsOpenButton,
-  usePaymentSettingsConfigured,
+  usePaymentSettingsStatus,
 } from '#/components/bills/payment-settings-open-button.tsx'
 import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
 import { Button } from '#/components/ui/button.tsx'
@@ -21,7 +21,7 @@ function Home() {
   const createBill = useMutation(api.bills.create)
   const [search, setSearch] = useState('')
   const [isCreating, setIsCreating] = useState(false)
-  const paymentSettingsConfigured = usePaymentSettingsConfigured()
+  const paymentSettingsStatus = usePaymentSettingsStatus()
   const { openPaymentSettings } = usePaymentSettingsSheet()
 
   const filteredBills = useMemo(() => {
@@ -48,7 +48,7 @@ function Home() {
 
   return (
     <div className="page-container">
-      {!paymentSettingsConfigured ? (
+      {paymentSettingsStatus === 'unconfigured' ? (
         <div className="mb-2">
           <PaymentSettingsOpenButton onClick={openPaymentSettings} />
         </div>
