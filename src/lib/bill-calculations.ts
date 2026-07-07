@@ -14,6 +14,7 @@ export interface ItemInput {
 export interface AssignmentInput {
   itemId: string
   participantId: string
+  units?: number
 }
 
 export interface PaymentInput {
@@ -26,6 +27,7 @@ export interface BillCalculationInput {
   items: ItemInput[]
   assignments: AssignmentInput[]
   payments: PaymentInput[]
+  tipCents?: number
 }
 
 export interface ParticipantTotals {
@@ -42,6 +44,18 @@ export interface BillTotals {
 
 export function lineTotalCents(item: ItemInput): number {
   return item.unitPriceCents * item.quantity
+}
+
+export function splitUnits(
+  quantity: number,
+  count: number,
+): number[] {
+  if (count <= 0) return []
+  const base = Math.floor(quantity / count)
+  const remainder = quantity % count
+  return Array.from({ length: count }, (_, index) =>
+    base + (index < remainder ? 1 : 0),
+  )
 }
 
 export function splitLineTotal(
@@ -75,9 +89,20 @@ export function calculateBillTotals(input: BillCalculationInput): BillTotals {
     const total = lineTotalCents(item)
     billTotalCents += total
 
-    const assignedIds = input.assignments
-      .filter((a) => a.itemId === item.id)
-      .map((a) => a.participantId)
+    const itemAssignments = input.assignments.filter((a) => a.itemId === item.id)
+    const usesUnits = itemAssignments.some((a) => a.units !== undefined)
+
+    if (usesUnits) {
+      for (const assignment of itemAssignments) {
+        const units = assignment.units ?? 0
+        owedByParticipant[assignment.participantId] =
+          (owedByParticipant[assignment.participantId] ?? 0) +
+          units * item.unitPriceCents
+      }
+      continue
+    }
+
+    const assignedIds = itemAssignments.map((a) => a.participantId)
 
     const sortedIds = [...assignedIds].sort((a, b) => {
       const orderA =
@@ -88,6 +113,18 @@ export function calculateBillTotals(input: BillCalculationInput): BillTotals {
     })
 
     for (const portion of splitLineTotal(total, sortedIds)) {
+      owedByParticipant[portion.id] =
+        (owedByParticipant[portion.id] ?? 0) + portion.cents
+    }
+  }
+
+  const tipCents = input.tipCents ?? 0
+  if (tipCents > 0) {
+    billTotalCents += tipCents
+    const sortedParticipantIds = [...input.participants]
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((p) => p.id)
+    for (const portion of splitLineTotal(tipCents, sortedParticipantIds)) {
       owedByParticipant[portion.id] =
         (owedByParticipant[portion.id] ?? 0) + portion.cents
     }
@@ -118,8 +155,120 @@ export function calculateBillTotals(input: BillCalculationInput): BillTotals {
   return { billTotalCents, byParticipant }
 }
 
+export interface ItemBreakdownInput extends ItemInput {
+  name: string
+}
+
+export interface BillBreakdownInput {
+  participants: ParticipantInput[]
+  items: ItemBreakdownInput[]
+  assignments: AssignmentInput[]
+  tipCents?: number
+}
+
+export type ParticipantBreakdownLine =
+  | {
+      kind: 'item'
+      label: string
+      amountCents: number
+      sharedWithCount?: number
+      units?: number
+      totalUnits?: number
+    }
+  | {
+      kind: 'tip'
+      amountCents: number
+    }
+
+export interface ParticipantBreakdown {
+  itemsSubtotalCents: number
+  tipCents: number
+  owedCents: number
+  lines: ParticipantBreakdownLine[]
+}
+
+export function calculateParticipantBreakdown(
+  input: BillBreakdownInput,
+  participantId: string,
+): ParticipantBreakdown {
+  const lines: ParticipantBreakdownLine[] = []
+  let itemsSubtotalCents = 0
+
+  for (const item of input.items) {
+    const itemAssignments = input.assignments.filter((a) => a.itemId === item.id)
+    const usesUnits = itemAssignments.some((a) => a.units !== undefined)
+
+    if (usesUnits) {
+      const assignment = itemAssignments.find(
+        (a) => a.participantId === participantId,
+      )
+      if (!assignment) continue
+      const units = assignment.units ?? 0
+      const amountCents = units * item.unitPriceCents
+      itemsSubtotalCents += amountCents
+      lines.push({
+        kind: 'item',
+        label: item.name,
+        amountCents,
+        units,
+        totalUnits: item.quantity,
+      })
+      continue
+    }
+
+    const assignedIds = itemAssignments.map((a) => a.participantId)
+    if (!assignedIds.includes(participantId)) continue
+
+    const sortedIds = [...assignedIds].sort((a, b) => {
+      const orderA =
+        input.participants.find((p) => p.id === a)?.sortOrder ?? 0
+      const orderB =
+        input.participants.find((p) => p.id === b)?.sortOrder ?? 0
+      return orderA - orderB
+    })
+
+    const total = lineTotalCents(item)
+    const portion = splitLineTotal(total, sortedIds).find(
+      (p) => p.id === participantId,
+    )
+    if (!portion) continue
+
+    itemsSubtotalCents += portion.cents
+    lines.push({
+      kind: 'item',
+      label: item.name,
+      amountCents: portion.cents,
+      sharedWithCount: sortedIds.length - 1,
+    })
+  }
+
+  let tipCents = 0
+  const tipTotal = input.tipCents ?? 0
+  if (tipTotal > 0) {
+    const sortedParticipantIds = [...input.participants]
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((p) => p.id)
+    const tipPortion = splitLineTotal(tipTotal, sortedParticipantIds).find(
+      (p) => p.id === participantId,
+    )
+    if (tipPortion) {
+      tipCents = tipPortion.cents
+      lines.push({ kind: 'tip', amountCents: tipCents })
+    }
+  }
+
+  const owedCents = itemsSubtotalCents + tipCents
+
+  return {
+    itemsSubtotalCents,
+    tipCents,
+    owedCents,
+    lines,
+  }
+}
+
 export interface ValidationError {
-  code: 'no_participants' | 'no_items' | 'unassigned_items'
+  code: 'no_participants' | 'no_items' | 'unassigned_items' | 'units_mismatch'
   message: string
 }
 
@@ -154,6 +303,25 @@ export function validateBillForFinalize(input: {
       code: 'unassigned_items',
       message: 'Всички артикули трябва да имат поне един участник.',
     })
+  }
+
+  for (const item of pricedItems) {
+    const itemAssignments = input.assignments.filter((a) => a.itemId === item.id)
+    if (itemAssignments.length === 0) continue
+    const usesUnits = itemAssignments.some((a) => a.units !== undefined)
+    if (!usesUnits) continue
+    const assignedUnits = itemAssignments.reduce(
+      (sum, assignment) => sum + (assignment.units ?? 0),
+      0,
+    )
+    if (assignedUnits !== item.quantity) {
+      errors.push({
+        code: 'units_mismatch',
+        message:
+          'Разпределеният брой не съвпада с количеството на някой артикул.',
+      })
+      break
+    }
   }
 
   return errors
