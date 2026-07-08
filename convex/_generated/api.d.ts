@@ -30,6 +30,7 @@ import type * as paymentSettings from "../paymentSettings.js";
 import type * as payments from "../payments.js";
 import type * as receiptScan from "../receiptScan.js";
 import type * as receiptScanAction from "../receiptScanAction.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -60,6 +61,7 @@ declare const fullApi: ApiFromModules<{
   payments: typeof payments;
   receiptScan: typeof receiptScan;
   receiptScanAction: typeof receiptScanAction;
+  users: typeof users;
 }>;
 
 /**

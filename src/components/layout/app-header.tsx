@@ -100,6 +100,7 @@ export function AppHeader() {
     pathname.endsWith('/join') || pathname.endsWith('/claim')
   const isLogin = pathname === '/login'
   const showHostActions = isAuthenticated && !isGuestRoute && !isLogin
+  const viewer = useQuery(api.users.viewer, showHostActions ? {} : 'skip')
 
   async function handleSignOut() {
     await signOut()
@@ -126,7 +127,15 @@ export function AppHeader() {
         <h1 className="min-w-0 flex-1 truncate text-base font-semibold">
           {title}
         </h1>
-        <div className="flex shrink-0 items-center">
+        <div className="flex shrink-0 items-center gap-1">
+          {showHostActions && viewer?.label ? (
+            <span
+              className="max-w-[5.5rem] truncate text-xs text-muted-foreground sm:max-w-[8rem]"
+              title={viewer.email ?? viewer.label}
+            >
+              {viewer.label}
+            </span>
+          ) : null}
           <ThemeToggle />
           {showHostActions && paymentSettingsConfigured ? (
             <Button
