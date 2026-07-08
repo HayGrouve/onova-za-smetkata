@@ -73,7 +73,9 @@ export function validateBillForFinalize(input: {
   }
 
   for (const item of pricedItems) {
-    const itemAssignments = input.assignments.filter((a) => a.itemId === item.id)
+    const itemAssignments = input.assignments.filter(
+      (a) => a.itemId === item.id,
+    )
     if (itemAssignments.length === 0) continue
     const usesUnits = itemAssignments.some((a) => a.units !== undefined)
     if (!usesUnits) continue

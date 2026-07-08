@@ -8,6 +8,7 @@ import {
 } from './_generated/server'
 import { extractedItemValidator } from './schema'
 import { requireBillOwner } from './lib/auth'
+import { assertRateLimit } from './lib/rateLimit'
 import { touchBill } from './lib/touchBill'
 
 const editedItemValidator = v.object({
@@ -20,6 +21,7 @@ export const startScan = mutation({
   args: { billId: v.id('bills') },
   handler: async (ctx, args) => {
     const bill = await requireBillOwner(ctx, args.billId)
+    await assertRateLimit(ctx, `ocr:${args.billId}`, 10, 3_600_000)
     if (!bill.receiptStorageId) {
       throw new Error('Няма прикачена снимка на бележка за тази сметка')
     }
@@ -164,4 +166,3 @@ export const markFailed = internalMutation({
     })
   },
 })
-

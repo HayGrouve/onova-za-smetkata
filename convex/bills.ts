@@ -11,6 +11,7 @@ import {
   shouldDeleteReplacedReceiptStorage,
 } from './lib/receiptStorage'
 import { deleteGuestSessionsForBill } from './guestSessions'
+import { isGuestSessionActive } from './lib/guestSession'
 
 async function loadBillRelations(ctx: QueryCtx, billId: Id<'bills'>) {
   const participants = await ctx.db
@@ -23,16 +24,10 @@ async function loadBillRelations(ctx: QueryCtx, billId: Id<'bills'>) {
     .withIndex('by_billId', (q) => q.eq('billId', billId))
     .collect()
 
-  const assignments = (
-    await Promise.all(
-      items.map((item) =>
-        ctx.db
-          .query('itemAssignments')
-          .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
-          .collect(),
-      ),
-    )
-  ).flat()
+  const assignments = await ctx.db
+    .query('itemAssignments')
+    .withIndex('by_billId', (q) => q.eq('billId', billId))
+    .collect()
 
   const payments = await ctx.db
     .query('payments')
@@ -101,8 +96,7 @@ export const listWithSummary = query({
 
         let totalOutstandingCents: number | null = null
 
-        if (bill.status === 'final') {
-          const sortedParticipantIds = [...participants]
+        const sortedParticipantIds = [...participants]
             .sort((a, b) => a.sortOrder - b.sortOrder)
             .map((p) => p._id)
 
@@ -111,7 +105,9 @@ export const listWithSummary = query({
 
           for (const item of items) {
             const lineTotalCents = item.unitPriceCents * item.quantity
-            const itemAssignments = assignments.filter((a) => a.itemId === item._id)
+            const itemAssignments = assignments.filter(
+              (a) => a.itemId === item._id,
+            )
             const usesUnits = itemAssignments.some((a) => a.units !== undefined)
 
             if (usesUnits) {
@@ -172,7 +168,6 @@ export const listWithSummary = query({
             const paid = paidByParticipant.get(id) ?? 0
             return sum + Math.max(0, owed - paid)
           }, 0)
-        }
 
         return {
           bill,
@@ -195,17 +190,37 @@ export const get = query({
 })
 
 export const getForGuest = query({
-  args: { billId: v.id('bills') },
+  args: {
+    billId: v.id('bills'),
+    sessionToken: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
     const bill = await ctx.db.get(args.billId)
     if (!bill?.ownerId) return null
 
-    const { participants, items, assignments, payments } = await loadBillRelations(
-      ctx,
-      args.billId,
-    )
+    const { participants, items, assignments, payments } =
+      await loadBillRelations(ctx, args.billId)
 
-    return { bill, participants, items, assignments, payments }
+    let myPayments: typeof payments = []
+    if (args.sessionToken) {
+      const session = await ctx.db
+        .query('guestSessions')
+        .withIndex('by_sessionToken', (q) =>
+          q.eq('sessionToken', args.sessionToken!),
+        )
+        .first()
+      if (
+        session &&
+        session.billId === args.billId &&
+        isGuestSessionActive(session.lastSeenAt)
+      ) {
+        myPayments = payments.filter(
+          (payment) => payment.participantId === session.participantId,
+        )
+      }
+    }
+
+    return { bill, participants, items, assignments, myPayments }
   },
 })
 

@@ -43,12 +43,20 @@ export default defineSchema({
   }).index('by_billId', ['billId']),
 
   itemAssignments: defineTable({
+    billId: v.id('bills'),
     itemId: v.id('items'),
     participantId: v.id('participants'),
     units: v.optional(v.number()),
   })
     .index('by_itemId', ['itemId'])
-    .index('by_participantId', ['participantId']),
+    .index('by_participantId', ['participantId'])
+    .index('by_billId', ['billId']),
+
+  rateLimitBuckets: defineTable({
+    key: v.string(),
+    windowStart: v.number(),
+    count: v.number(),
+  }).index('by_key', ['key']),
 
   guestSessions: defineTable({
     billId: v.id('bills'),

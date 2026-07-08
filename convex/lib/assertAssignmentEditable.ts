@@ -9,7 +9,10 @@ export function getAssignmentEditableError(input: {
   participantBillId: Id<'bills'> | null | undefined
 }): AssignmentEditableError | null {
   if (input.billStatus === 'final') return 'bill_final'
-  if (!input.participantBillId || input.participantBillId !== input.itemBillId) {
+  if (
+    !input.participantBillId ||
+    input.participantBillId !== input.itemBillId
+  ) {
     return 'participant_not_on_bill'
   }
   return null

@@ -3,20 +3,18 @@ import Resend from '@auth/core/providers/resend'
 import { Password } from '@convex-dev/auth/providers/Password'
 import { convexAuth } from '@convex-dev/auth/server'
 import type { AuthProviderConfig } from '@convex-dev/auth/server'
-import {
-  DEV_USER_EMAIL,
-  DEV_USER_NAME,
-  isDevMode,
-} from './lib/devMode'
+import { DEV_USER_EMAIL, DEV_USER_NAME, isDevModeEnabled } from './lib/devMode'
 
 const providers: AuthProviderConfig[] = [
   Google,
   Resend({
-    from: 'Онова за сметката <onboarding@resend.dev>',
+    from:
+      process.env.AUTH_RESEND_FROM ??
+      'Онова за сметката <onboarding@resend.dev>',
   }),
 ]
 
-if (isDevMode()) {
+if (isDevModeEnabled()) {
   providers.push(
     Password({
       profile: () => ({

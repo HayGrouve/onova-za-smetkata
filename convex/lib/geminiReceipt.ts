@@ -78,7 +78,9 @@ export async function scanReceiptImage(
     },
   )
   if (!response.ok) {
-    throw new Error(`Gemini API error: ${response.status} ${await response.text()}`)
+    throw new Error(
+      `Gemini API error: ${response.status} ${await response.text()}`,
+    )
   }
   const json = (await response.json()) as {
     candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>

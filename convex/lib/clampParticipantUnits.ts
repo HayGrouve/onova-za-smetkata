@@ -1,7 +1,10 @@
 export function sumAssignedUnits(
   assignments: ReadonlyArray<{ units?: number }>,
 ): number {
-  return assignments.reduce((sum, assignment) => sum + (assignment.units ?? 0), 0)
+  return assignments.reduce(
+    (sum, assignment) => sum + (assignment.units ?? 0),
+    0,
+  )
 }
 
 export function clampParticipantUnits(input: {

@@ -2,10 +2,9 @@ import { ConvexError, v } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import type { Id } from './_generated/dataModel'
 import type { MutationCtx } from './_generated/server'
-import {
-  GUEST_SESSION_TTL_MS,
-  isGuestSessionActive,
-} from './lib/guestSession'
+import { GUEST_SESSION_TTL_MS, isGuestSessionActive } from './lib/guestSession'
+import { requireGuestSession } from './lib/requireGuestSession'
+import { assertRateLimit } from './lib/rateLimit'
 
 async function purgeExpiredSessionsForBill(
   ctx: MutationCtx,
@@ -59,6 +58,7 @@ export const claim = mutation({
     sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
+    await assertRateLimit(ctx, `claim:${args.sessionToken}`, 20, 60_000)
     const now = Date.now()
     const bill = await ctx.db.get(args.billId)
     if (!bill) throw new ConvexError('Сметката не е намерена.')
@@ -69,7 +69,9 @@ export const claim = mutation({
     if (bill.status === 'final') {
       const existingTokenSession = await ctx.db
         .query('guestSessions')
-        .withIndex('by_sessionToken', (q) => q.eq('sessionToken', args.sessionToken))
+        .withIndex('by_sessionToken', (q) =>
+          q.eq('sessionToken', args.sessionToken),
+        )
         .first()
       if (existingTokenSession) await ctx.db.delete(existingTokenSession._id)
       await ctx.db.insert('guestSessions', {
@@ -103,7 +105,9 @@ export const claim = mutation({
 
     const existingTokenSession = await ctx.db
       .query('guestSessions')
-      .withIndex('by_sessionToken', (q) => q.eq('sessionToken', args.sessionToken))
+      .withIndex('by_sessionToken', (q) =>
+        q.eq('sessionToken', args.sessionToken),
+      )
       .first()
     if (existingTokenSession) {
       await ctx.db.delete(existingTokenSession._id)
@@ -127,28 +131,8 @@ export const heartbeat = mutation({
     sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
-    const now = Date.now()
-    await assertParticipantOnBill(ctx, args.billId, args.participantId)
-
-    const session = await ctx.db
-      .query('guestSessions')
-      .withIndex('by_sessionToken', (q) => q.eq('sessionToken', args.sessionToken))
-      .first()
-
-    if (
-      !session ||
-      session.billId !== args.billId ||
-      session.participantId !== args.participantId
-    ) {
-      throw new ConvexError('Сесията изтече. Изберете името си отново.')
-    }
-
-    if (!isGuestSessionActive(session.lastSeenAt, now)) {
-      await ctx.db.delete(session._id)
-      throw new ConvexError('Сесията изтече. Изберете името си отново.')
-    }
-
-    await ctx.db.patch(session._id, { lastSeenAt: now })
+    const { sessionId } = await requireGuestSession(ctx, args)
+    await ctx.db.patch(sessionId, { lastSeenAt: Date.now() })
     return { ok: true as const }
   },
 })
@@ -161,7 +145,9 @@ export const release = mutation({
   handler: async (ctx, args) => {
     const session = await ctx.db
       .query('guestSessions')
-      .withIndex('by_sessionToken', (q) => q.eq('sessionToken', args.sessionToken))
+      .withIndex('by_sessionToken', (q) =>
+        q.eq('sessionToken', args.sessionToken),
+      )
       .first()
     if (session && session.billId === args.billId) {
       await ctx.db.delete(session._id)

@@ -3,6 +3,7 @@ import type { MutationCtx } from './_generated/server'
 import { mutation } from './_generated/server'
 import { v } from 'convex/values'
 import { assertAssignmentEditable } from './lib/assertAssignmentEditable'
+import { assertCanMutateAssignment } from './lib/assertCanMutateAssignment'
 import { clampParticipantUnits } from './lib/clampParticipantUnits'
 import { requireBillOwner } from './lib/auth'
 import { splitUnits } from './lib/splitUnits'
@@ -40,7 +41,11 @@ async function syncEvenAssignments(
 
   if (participantIds.length === 0) return
 
-  const sortedIds = await getSortedParticipantIds(ctx, item.billId, participantIds)
+  const sortedIds = await getSortedParticipantIds(
+    ctx,
+    item.billId,
+    participantIds,
+  )
   const units = splitUnits(item.quantity, sortedIds.length)
 
   for (let index = 0; index < sortedIds.length; index++) {
@@ -48,6 +53,7 @@ async function syncEvenAssignments(
     const unitCount = units[index] ?? 0
     if (!participantId || unitCount <= 0) continue
     await ctx.db.insert('itemAssignments', {
+      billId: item.billId,
       itemId: item._id,
       participantId,
       units: unitCount,
@@ -59,6 +65,7 @@ export const toggle = mutation({
   args: {
     itemId: v.id('items'),
     participantId: v.id('participants'),
+    sessionToken: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const item = await ctx.db.get(args.itemId)
@@ -66,6 +73,13 @@ export const toggle = mutation({
 
     const bill = await ctx.db.get(item.billId)
     if (!bill) return
+
+    await assertCanMutateAssignment(ctx, {
+      billId: item.billId,
+      participantId: args.participantId,
+      sessionToken: args.sessionToken,
+    })
+
     const participant = await ctx.db.get(args.participantId)
     assertAssignmentEditable({
       billStatus: bill.status,
@@ -83,9 +97,14 @@ export const toggle = mutation({
 
     const nextParticipantIds = isAssigned
       ? existing
-          .filter((assignment) => assignment.participantId !== args.participantId)
+          .filter(
+            (assignment) => assignment.participantId !== args.participantId,
+          )
           .map((assignment) => assignment.participantId)
-      : [...existing.map((assignment) => assignment.participantId), args.participantId]
+      : [
+          ...existing.map((assignment) => assignment.participantId),
+          args.participantId,
+        ]
 
     await syncEvenAssignments(ctx, item, nextParticipantIds)
     await touchBill(ctx, item.billId)
@@ -97,6 +116,7 @@ export const setUnits = mutation({
     itemId: v.id('items'),
     participantId: v.id('participants'),
     units: v.number(),
+    sessionToken: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const item = await ctx.db.get(args.itemId)
@@ -104,6 +124,13 @@ export const setUnits = mutation({
 
     const bill = await ctx.db.get(item.billId)
     if (!bill) return
+
+    await assertCanMutateAssignment(ctx, {
+      billId: item.billId,
+      participantId: args.participantId,
+      sessionToken: args.sessionToken,
+    })
+
     const participant = await ctx.db.get(args.participantId)
     assertAssignmentEditable({
       billStatus: bill.status,
@@ -139,6 +166,7 @@ export const setUnits = mutation({
       await ctx.db.patch(match._id, { units: clampedUnits })
     } else {
       await ctx.db.insert('itemAssignments', {
+        billId: item.billId,
         itemId: args.itemId,
         participantId: args.participantId,
         units: clampedUnits,
