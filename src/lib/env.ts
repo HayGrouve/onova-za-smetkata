@@ -9,7 +9,7 @@ export function validateConvexUrlForBuild(options: {
 }): void {
   if (options.prod && !options.convexUrl) {
     throw new Error(
-      'Missing VITE_CONVEX_URL. Set it in Netlify environment variables before building for production.',
+      'Missing VITE_CONVEX_URL. Set it in Vercel environment variables before building for production.',
     )
   }
 }

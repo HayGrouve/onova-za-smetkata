@@ -14,3 +14,10 @@ todos.json
 
 # Local Netlify folder
 .netlify
+
+# Vercel build output
+.vercel
+
+# Playwright
+test-results/
+playwright-report/
