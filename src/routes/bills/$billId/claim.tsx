@@ -37,7 +37,7 @@ function BillClaimPage() {
   const { billId: billIdParam } = Route.useParams()
   const billId = billIdParam as Id<'bills'>
   const navigate = useNavigate()
-  const data = useQuery(api.bills.get, { billId })
+  const data = useQuery(api.bills.getForGuest, { billId })
   const releaseSession = useMutation(api.guestSessions.release)
   const [search, setSearch] = useState('')
 
@@ -255,6 +255,7 @@ function BillClaimPage() {
 
       {participantTotals && (
         <GuestClaimFooter
+          billId={billId}
           owedCents={participantTotals.owedCents}
           remainingCents={Math.max(0, participantTotals.balanceCents)}
         />

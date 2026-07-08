@@ -1,5 +1,8 @@
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
+import type { Id } from './_generated/dataModel'
+import type { QueryCtx } from './_generated/server'
+import { requireAuth, requireBillOwner } from './lib/auth'
 import { assertBillCanFinalize } from './lib/validateBillForFinalize'
 import {
   cleanupBillReceiptStorage,
@@ -9,12 +12,43 @@ import {
 } from './lib/receiptStorage'
 import { deleteGuestSessionsForBill } from './guestSessions'
 
+async function loadBillRelations(ctx: QueryCtx, billId: Id<'bills'>) {
+  const participants = await ctx.db
+    .query('participants')
+    .withIndex('by_billId', (q) => q.eq('billId', billId))
+    .collect()
+
+  const items = await ctx.db
+    .query('items')
+    .withIndex('by_billId', (q) => q.eq('billId', billId))
+    .collect()
+
+  const assignments = (
+    await Promise.all(
+      items.map((item) =>
+        ctx.db
+          .query('itemAssignments')
+          .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
+          .collect(),
+      ),
+    )
+  ).flat()
+
+  const payments = await ctx.db
+    .query('payments')
+    .withIndex('by_billId', (q) => q.eq('billId', billId))
+    .collect()
+
+  return { participants, items, assignments, payments }
+}
+
 export const list = query({
   args: {},
   handler: async (ctx) => {
+    const userId = await requireAuth(ctx)
     return await ctx.db
       .query('bills')
-      .withIndex('by_updatedAt')
+      .withIndex('by_ownerId_updatedAt', (q) => q.eq('ownerId', userId))
       .order('desc')
       .collect()
   },
@@ -23,39 +57,17 @@ export const list = query({
 export const listWithSummary = query({
   args: {},
   handler: async (ctx) => {
+    const userId = await requireAuth(ctx)
     const bills = await ctx.db
       .query('bills')
-      .withIndex('by_updatedAt')
+      .withIndex('by_ownerId_updatedAt', (q) => q.eq('ownerId', userId))
       .order('desc')
       .collect()
 
     return await Promise.all(
       bills.map(async (bill) => {
-        const participants = await ctx.db
-          .query('participants')
-          .withIndex('by_billId', (q) => q.eq('billId', bill._id))
-          .collect()
-
-        const items = await ctx.db
-          .query('items')
-          .withIndex('by_billId', (q) => q.eq('billId', bill._id))
-          .collect()
-
-        const assignments = (
-          await Promise.all(
-            items.map((item) =>
-              ctx.db
-                .query('itemAssignments')
-                .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
-                .collect(),
-            ),
-          )
-        ).flat()
-
-        const payments = await ctx.db
-          .query('payments')
-          .withIndex('by_billId', (q) => q.eq('billId', bill._id))
-          .collect()
+        const { participants, items, assignments, payments } =
+          await loadBillRelations(ctx, bill._id)
 
         const billTotalCents =
           items.reduce(
@@ -152,44 +164,34 @@ export const listWithSummary = query({
 export const get = query({
   args: { billId: v.id('bills') },
   handler: async (ctx, args) => {
+    const bill = await requireBillOwner(ctx, args.billId)
+    const relations = await loadBillRelations(ctx, args.billId)
+    return { bill, ...relations }
+  },
+})
+
+export const getForGuest = query({
+  args: { billId: v.id('bills') },
+  handler: async (ctx, args) => {
     const bill = await ctx.db.get(args.billId)
-    if (!bill) return null
+    if (!bill?.ownerId) return null
 
-    const participants = await ctx.db
-      .query('participants')
-      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
-      .collect()
+    const { participants, items, assignments } = await loadBillRelations(
+      ctx,
+      args.billId,
+    )
 
-    const items = await ctx.db
-      .query('items')
-      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
-      .collect()
-
-    const assignments = (
-      await Promise.all(
-        items.map((item) =>
-          ctx.db
-            .query('itemAssignments')
-            .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
-            .collect(),
-        ),
-      )
-    ).flat()
-
-    const payments = await ctx.db
-      .query('payments')
-      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
-      .collect()
-
-    return { bill, participants, items, assignments, payments }
+    return { bill, participants, items, assignments }
   },
 })
 
 export const create = mutation({
   args: {},
   handler: async (ctx) => {
+    const ownerId = await requireAuth(ctx)
     const now = Date.now()
     return await ctx.db.insert('bills', {
+      ownerId,
       restaurantName: '',
       date: now,
       status: 'draft',
@@ -212,8 +214,7 @@ export const update = mutation({
     const { billId, restaurantName, date, note, receiptStorageId, tipCents } =
       args
 
-    const bill = await ctx.db.get(billId)
-    if (!bill) throw new Error('Bill not found')
+    const bill = await requireBillOwner(ctx, billId)
 
     const oldReceiptStorageId = shouldDeleteReplacedReceiptStorage(
       bill.receiptStorageId,
@@ -240,29 +241,12 @@ export const update = mutation({
 export const finalize = mutation({
   args: { billId: v.id('bills') },
   handler: async (ctx, args) => {
-    const bill = await ctx.db.get(args.billId)
-    if (!bill) throw new Error('Bill not found')
+    const bill = await requireBillOwner(ctx, args.billId)
 
-    const participants = await ctx.db
-      .query('participants')
-      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
-      .collect()
-
-    const items = await ctx.db
-      .query('items')
-      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
-      .collect()
-
-    const assignments = (
-      await Promise.all(
-        items.map((item) =>
-          ctx.db
-            .query('itemAssignments')
-            .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
-            .collect(),
-        ),
-      )
-    ).flat()
+    const { participants, items, assignments } = await loadBillRelations(
+      ctx,
+      args.billId,
+    )
 
     assertBillCanFinalize({
       restaurantName: bill.restaurantName,
@@ -292,26 +276,17 @@ export const finalize = mutation({
 export const remove = mutation({
   args: { billId: v.id('bills') },
   handler: async (ctx, args) => {
-    const bill = await ctx.db.get(args.billId)
-    if (!bill) throw new Error('Bill not found')
+    const bill = await requireBillOwner(ctx, args.billId)
 
     const receiptStorageId = bill.receiptStorageId
 
     await deleteReceiptScansForBill(ctx, args.billId)
     await deleteGuestSessionsForBill(ctx, args.billId)
 
-    const participants = await ctx.db
-      .query('participants')
-      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
-      .collect()
-    const items = await ctx.db
-      .query('items')
-      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
-      .collect()
-    const payments = await ctx.db
-      .query('payments')
-      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
-      .collect()
+    const { participants, items, payments } = await loadBillRelations(
+      ctx,
+      args.billId,
+    )
 
     for (const item of items) {
       const assignments = await ctx.db

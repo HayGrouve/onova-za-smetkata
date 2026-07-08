@@ -1,4 +1,5 @@
 import { SendIcon } from 'lucide-react'
+import { useConvexAuth } from '@convex-dev/auth/react'
 import { useQuery } from 'convex/react'
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button.tsx'
@@ -32,7 +33,11 @@ export function ParticipantPayActions({
   remainingCents,
   onOpenSettings,
 }: ParticipantPayActionsProps) {
-  const settings = useQuery(api.paymentSettings.get)
+  const { isAuthenticated } = useConvexAuth()
+  const settings = useQuery(
+    api.paymentSettings.get,
+    isAuthenticated ? {} : 'skip',
+  )
 
   if (remainingCents <= 0) return null
 

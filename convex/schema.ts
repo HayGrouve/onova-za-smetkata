@@ -1,4 +1,5 @@
 import { defineSchema, defineTable } from 'convex/server'
+import { authTables } from '@convex-dev/auth/server'
 import { v } from 'convex/values'
 
 export const extractedItemValidator = v.object({
@@ -9,7 +10,10 @@ export const extractedItemValidator = v.object({
 })
 
 export default defineSchema({
+  ...authTables,
+
   bills: defineTable({
+    ownerId: v.id('users'),
     restaurantName: v.string(),
     date: v.number(),
     note: v.optional(v.string()),
@@ -20,7 +24,8 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index('by_status', ['status'])
-    .index('by_updatedAt', ['updatedAt']),
+    .index('by_updatedAt', ['updatedAt'])
+    .index('by_ownerId_updatedAt', ['ownerId', 'updatedAt']),
 
   participants: defineTable({
     billId: v.id('bills'),
@@ -65,10 +70,11 @@ export default defineSchema({
   }).index('by_billId', ['billId']),
 
   paymentSettings: defineTable({
+    userId: v.id('users'),
     revolutUsername: v.optional(v.string()),
     iban: v.optional(v.string()),
     updatedAt: v.number(),
-  }),
+  }).index('by_userId', ['userId']),
 
   receiptScans: defineTable({
     billId: v.id('bills'),

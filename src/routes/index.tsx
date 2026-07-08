@@ -11,13 +11,18 @@ import {
 import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
+import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
 import { api } from '../../convex/_generated/api'
 
 export const Route = createFileRoute('/')({ component: Home })
 
 function Home() {
   const navigate = useNavigate()
-  const bills = useQuery(api.bills.listWithSummary)
+  const { isAuthenticated, isLoading } = useRequireHostAuth('/')
+  const bills = useQuery(
+    api.bills.listWithSummary,
+    isAuthenticated ? {} : 'skip',
+  )
   const createBill = useMutation(api.bills.create)
   const [search, setSearch] = useState('')
   const [isCreating, setIsCreating] = useState(false)
@@ -33,6 +38,14 @@ function Home() {
       return participantNames.some((name) => name.toLowerCase().includes(query))
     })
   }, [bills, search])
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="page-container py-10 text-center text-muted-foreground">
+        Зареждане...
+      </div>
+    )
+  }
 
   async function handleCreateBill() {
     setIsCreating(true)

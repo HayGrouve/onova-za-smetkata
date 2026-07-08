@@ -1,5 +1,6 @@
 import { mutation } from './_generated/server'
 import { v } from 'convex/values'
+import { requireBillOwner } from './lib/auth'
 import { touchBill } from './lib/touchBill'
 
 export const add = mutation({
@@ -11,6 +12,7 @@ export const add = mutation({
     note: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireBillOwner(ctx, args.billId)
     const existing = await ctx.db
       .query('items')
       .withIndex('by_billId', (q) => q.eq('billId', args.billId))
@@ -40,6 +42,8 @@ export const update = mutation({
     const item = await ctx.db.get(args.itemId)
     if (!item) return
 
+    await requireBillOwner(ctx, item.billId)
+
     const { itemId, name, unitPriceCents, quantity, note } = args
     const patch = {
       ...(name !== undefined ? { name: name.trim() } : {}),
@@ -59,6 +63,8 @@ export const remove = mutation({
   handler: async (ctx, args) => {
     const item = await ctx.db.get(args.itemId)
     if (!item) return
+
+    await requireBillOwner(ctx, item.billId)
 
     const assignments = await ctx.db
       .query('itemAssignments')

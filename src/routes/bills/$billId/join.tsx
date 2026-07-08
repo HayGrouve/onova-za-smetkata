@@ -23,7 +23,7 @@ function BillJoinPage() {
   const { billId: billIdParam } = Route.useParams()
   const billId = billIdParam as Id<'bills'>
   const navigate = useNavigate()
-  const data = useQuery(api.bills.get, { billId })
+  const data = useQuery(api.bills.getForGuest, { billId })
   const activeSessions = useQuery(api.guestSessions.listActiveForBill, { billId })
   const claimSession = useMutation(api.guestSessions.claim)
   const [claimingId, setClaimingId] = useState<Id<'participants'> | null>(null)

@@ -1,4 +1,4 @@
-import { ConvexProvider } from 'convex/react'
+import { ConvexAuthProvider } from '@convex-dev/auth/react'
 import { ConvexQueryClient } from '@convex-dev/react-query'
 import { assertConvexUrlForBuild } from '#/lib/env.ts'
 
@@ -27,9 +27,9 @@ export default function AppConvexProvider({
     return <MissingConvexConfig />
   }
 
+  const client = convexQueryClient.convexClient
+
   return (
-    <ConvexProvider client={convexQueryClient.convexClient}>
-      {children}
-    </ConvexProvider>
+    <ConvexAuthProvider client={client}>{children}</ConvexAuthProvider>
   )
 }

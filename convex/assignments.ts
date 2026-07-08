@@ -4,6 +4,7 @@ import { mutation } from './_generated/server'
 import { v } from 'convex/values'
 import { assertAssignmentEditable } from './lib/assertAssignmentEditable'
 import { clampParticipantUnits } from './lib/clampParticipantUnits'
+import { requireBillOwner } from './lib/auth'
 import { splitUnits } from './lib/splitUnits'
 import { touchBill } from './lib/touchBill'
 
@@ -154,6 +155,7 @@ export const assignAll = mutation({
     mode: v.union(v.literal('all_items'), v.literal('unassigned_only')),
   },
   handler: async (ctx, args) => {
+    await requireBillOwner(ctx, args.billId)
     const participants = await ctx.db
       .query('participants')
       .withIndex('by_billId', (q) => q.eq('billId', args.billId))

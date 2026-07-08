@@ -8,17 +8,20 @@ import { formatEur } from '#/lib/format-currency.ts'
 import { buildRevolutUrl } from '#/lib/payment-settings.ts'
 import { copyToClipboard } from '#/lib/copy-to-clipboard.ts'
 import { api } from '../../../convex/_generated/api'
+import type { Id } from '../../../convex/_generated/dataModel'
 
 export interface GuestClaimFooterProps {
+  billId: Id<'bills'>
   owedCents: number
   remainingCents: number
 }
 
 export function GuestClaimFooter({
+  billId,
   owedCents,
   remainingCents,
 }: GuestClaimFooterProps) {
-  const settings = useQuery(api.paymentSettings.get)
+  const settings = useQuery(api.paymentSettings.getForGuest, { billId })
   const revolutUsername = settings?.revolutUsername?.trim()
 
   async function handleRevolut() {

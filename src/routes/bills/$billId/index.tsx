@@ -36,6 +36,7 @@ import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import { parseEurInput } from '#/lib/format-currency.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { prepareReceiptImage } from '#/lib/prepare-receipt-image.ts'
+import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
 
@@ -66,7 +67,21 @@ function formatEurInputValue(cents: number): string {
 function BillEditor() {
   const params = Route.useParams()
   const billId = params.billId as Id<'bills'>
-  const data = useQuery(api.bills.get, { billId })
+  const { isAuthenticated, isLoading: authLoading } = useRequireHostAuth(
+    `/bills/${billId}`,
+  )
+  const data = useQuery(
+    api.bills.get,
+    isAuthenticated ? { billId } : 'skip',
+  )
+
+  if (authLoading || !isAuthenticated) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-10 text-center text-muted-foreground">
+        Зареждане...
+      </div>
+    )
+  }
 
   if (data === undefined) {
     return (

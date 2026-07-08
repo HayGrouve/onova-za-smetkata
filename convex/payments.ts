@@ -1,5 +1,6 @@
 import { mutation } from './_generated/server'
 import { v } from 'convex/values'
+import { requireBillOwner } from './lib/auth'
 import { touchBill } from './lib/touchBill'
 
 export const add = mutation({
@@ -10,6 +11,7 @@ export const add = mutation({
     note: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireBillOwner(ctx, args.billId)
     const id = await ctx.db.insert('payments', {
       billId: args.billId,
       participantId: args.participantId,

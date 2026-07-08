@@ -44,6 +44,7 @@ import {
 import { formatEur } from '#/lib/format-currency.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
+import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
 
@@ -61,7 +62,13 @@ function BillSummary() {
   const params = Route.useParams()
   const billId = params.billId as Id<'bills'>
   const navigate = useNavigate()
-  const data = useQuery(api.bills.get, { billId })
+  const { isAuthenticated, isLoading: authLoading } = useRequireHostAuth(
+    `/bills/${billId}/summary`,
+  )
+  const data = useQuery(
+    api.bills.get,
+    isAuthenticated ? { billId } : 'skip',
+  )
   const finalizeBill = useMutation(api.bills.finalize)
   const removeBill = useMutation(api.bills.remove)
   const [isFinalizing, setIsFinalizing] = useState(false)
@@ -137,6 +144,14 @@ function BillSummary() {
       tipCents: data.bill.tipCents ?? 0,
     }
   }, [data])
+
+  if (authLoading || !isAuthenticated) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-10 text-center text-muted-foreground">
+        Зареждане...
+      </div>
+    )
+  }
 
   if (data === undefined) {
     return (

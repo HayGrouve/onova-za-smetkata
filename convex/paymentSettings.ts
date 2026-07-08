@@ -1,16 +1,35 @@
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
+import { requireAuth } from './lib/auth'
 
 export const get = query({
   args: {},
   handler: async (ctx) => {
-    const row = await ctx.db.query('paymentSettings').first()
-    if (!row) {
-      return { revolutUsername: undefined, iban: undefined }
-    }
+    const userId = await requireAuth(ctx)
+    const row = await ctx.db
+      .query('paymentSettings')
+      .withIndex('by_userId', (q) => q.eq('userId', userId))
+      .unique()
     return {
-      revolutUsername: row.revolutUsername,
-      iban: row.iban,
+      revolutUsername: row?.revolutUsername,
+      iban: row?.iban,
+    }
+  },
+})
+
+export const getForGuest = query({
+  args: { billId: v.id('bills') },
+  handler: async (ctx, args) => {
+    const bill = await ctx.db.get(args.billId)
+    if (!bill?.ownerId) return null
+
+    const row = await ctx.db
+      .query('paymentSettings')
+      .withIndex('by_userId', (q) => q.eq('userId', bill.ownerId))
+      .unique()
+
+    return {
+      revolutUsername: row?.revolutUsername,
     }
   },
 })
@@ -21,6 +40,7 @@ export const save = mutation({
     iban: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const userId = await requireAuth(ctx)
     const revolutUsername = args.revolutUsername?.trim() || undefined
     const iban = args.iban?.trim() || undefined
     const data = {
@@ -29,11 +49,15 @@ export const save = mutation({
       updatedAt: Date.now(),
     }
 
-    const existing = await ctx.db.query('paymentSettings').first()
+    const existing = await ctx.db
+      .query('paymentSettings')
+      .withIndex('by_userId', (q) => q.eq('userId', userId))
+      .unique()
+
     if (existing) {
       await ctx.db.patch(existing._id, data)
     } else {
-      await ctx.db.insert('paymentSettings', data)
+      await ctx.db.insert('paymentSettings', { userId, ...data })
     }
   },
 })

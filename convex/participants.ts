@@ -1,15 +1,17 @@
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
+import { requireAuth, requireBillOwner } from './lib/auth'
 import { touchBill } from './lib/touchBill'
 import { deleteGuestSessionsForParticipant } from './guestSessions'
 
 export const listRecentNames = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
+    const userId = await requireAuth(ctx)
     const max = args.limit ?? 12
     const bills = await ctx.db
       .query('bills')
-      .withIndex('by_updatedAt')
+      .withIndex('by_ownerId_updatedAt', (q) => q.eq('ownerId', userId))
       .order('desc')
       .collect()
     const seen = new Set<string>()
@@ -34,6 +36,7 @@ export const listRecentNames = query({
 export const add = mutation({
   args: { billId: v.id('bills'), name: v.string() },
   handler: async (ctx, args) => {
+    await requireBillOwner(ctx, args.billId)
     const existing = await ctx.db
       .query('participants')
       .withIndex('by_billId', (q) => q.eq('billId', args.billId))
@@ -53,6 +56,8 @@ export const remove = mutation({
   handler: async (ctx, args) => {
     const participant = await ctx.db.get(args.participantId)
     if (!participant) return
+
+    await requireBillOwner(ctx, participant.billId)
 
     const assignments = await ctx.db
       .query('itemAssignments')

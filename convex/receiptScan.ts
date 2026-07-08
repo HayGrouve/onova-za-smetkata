@@ -7,6 +7,7 @@ import {
   query,
 } from './_generated/server'
 import { extractedItemValidator } from './schema'
+import { requireBillOwner } from './lib/auth'
 import { touchBill } from './lib/touchBill'
 
 const editedItemValidator = v.object({
@@ -18,8 +19,7 @@ const editedItemValidator = v.object({
 export const startScan = mutation({
   args: { billId: v.id('bills') },
   handler: async (ctx, args) => {
-    const bill = await ctx.db.get(args.billId)
-    if (!bill) throw new Error('Сметката не е намерена')
+    const bill = await requireBillOwner(ctx, args.billId)
     if (!bill.receiptStorageId) {
       throw new Error('Няма прикачена снимка на бележка за тази сметка')
     }
@@ -42,6 +42,7 @@ export const startScan = mutation({
 export const getLatestScan = query({
   args: { billId: v.id('bills') },
   handler: async (ctx, args) => {
+    await requireBillOwner(ctx, args.billId)
     return await ctx.db
       .query('receiptScans')
       .withIndex('by_billId', (q) => q.eq('billId', args.billId))
@@ -62,6 +63,8 @@ export const importScannedItems = mutation({
   handler: async (ctx, args) => {
     const scan = await ctx.db.get(args.scanId)
     if (!scan) throw new Error('Сканирането не е намерено')
+
+    await requireBillOwner(ctx, scan.billId)
 
     const selectedIndexSet = new Set(args.selectedIndexes)
     const itemsToImport =
@@ -115,6 +118,7 @@ export const dismissScan = mutation({
   handler: async (ctx, args) => {
     const scan = await ctx.db.get(args.scanId)
     if (!scan) return
+    await requireBillOwner(ctx, scan.billId)
     await ctx.db.delete(args.scanId)
   },
 })
