@@ -7,6 +7,7 @@ import { Input } from '#/components/ui/input.tsx'
 import type { ParticipantTotals } from '#/lib/bill-calculations.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { formatEur, parseEurInput } from '#/lib/format-currency.ts'
+import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -29,16 +30,24 @@ export function PaymentActions({
 
   async function handleMarkPaid() {
     if (remainingCents <= 0) return
-    await addPayment({ billId, participantId, amountCents: remainingCents })
-    toast.success(`${label} плати ${formatEur(remainingCents)}`)
+    try {
+      await addPayment({ billId, participantId, amountCents: remainingCents })
+      toast.success(`${label} плати ${formatEur(remainingCents)}`)
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
+    }
   }
 
   async function handlePartialPayment() {
     const amountCents = parseEurInput(partialAmount)
     if (amountCents <= 0) return
     setPartialAmount('')
-    await addPayment({ billId, participantId, amountCents })
-    toast.success(`${label} плати ${formatEur(amountCents)}`)
+    try {
+      await addPayment({ billId, participantId, amountCents })
+      toast.success(`${label} плати ${formatEur(amountCents)}`)
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
+    }
   }
 
   if (remainingCents <= 0) return null

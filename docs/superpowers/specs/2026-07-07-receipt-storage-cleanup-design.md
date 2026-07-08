@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-07  
 **Project:** onova-za-smetkata  
-**Status:** Approved  
+**Status:** Approved
 
 ## Summary
 
@@ -10,13 +10,13 @@ Automatically delete Convex file storage for receipt images when a bill is delet
 
 ## Decisions
 
-| Decision | Choice |
-|----------|--------|
-| Bill deleted | Delete `receiptScans` for bill, then delete `bills.receiptStorageId` from storage |
-| Receipt replaced | Patch bill with new ID first, delete all `receiptScans` for bill, delete old storage file |
-| Dismiss scan only | No storage delete (bill still uses image) |
-| Implementation | Shared helper in `convex/lib/receiptStorage.ts` |
-| Orphan sweeper | Out of scope |
+| Decision          | Choice                                                                                    |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| Bill deleted      | Delete `receiptScans` for bill, then delete `bills.receiptStorageId` from storage         |
+| Receipt replaced  | Patch bill with new ID first, delete all `receiptScans` for bill, delete old storage file |
+| Dismiss scan only | No storage delete (bill still uses image)                                                 |
+| Implementation    | Shared helper in `convex/lib/receiptStorage.ts`                                           |
+| Orphan sweeper    | Out of scope                                                                              |
 
 ## Delete order
 

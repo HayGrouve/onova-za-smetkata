@@ -46,15 +46,13 @@ export function lineTotalCents(item: ItemInput): number {
   return item.unitPriceCents * item.quantity
 }
 
-export function splitUnits(
-  quantity: number,
-  count: number,
-): number[] {
+export function splitUnits(quantity: number, count: number): number[] {
   if (count <= 0) return []
   const base = Math.floor(quantity / count)
   const remainder = quantity % count
-  return Array.from({ length: count }, (_, index) =>
-    base + (index < remainder ? 1 : 0),
+  return Array.from(
+    { length: count },
+    (_, index) => base + (index < remainder ? 1 : 0),
   )
 }
 
@@ -89,7 +87,9 @@ export function calculateBillTotals(input: BillCalculationInput): BillTotals {
     const total = lineTotalCents(item)
     billTotalCents += total
 
-    const itemAssignments = input.assignments.filter((a) => a.itemId === item.id)
+    const itemAssignments = input.assignments.filter(
+      (a) => a.itemId === item.id,
+    )
     const usesUnits = itemAssignments.some((a) => a.units !== undefined)
 
     if (usesUnits) {
@@ -105,10 +105,8 @@ export function calculateBillTotals(input: BillCalculationInput): BillTotals {
     const assignedIds = itemAssignments.map((a) => a.participantId)
 
     const sortedIds = [...assignedIds].sort((a, b) => {
-      const orderA =
-        input.participants.find((p) => p.id === a)?.sortOrder ?? 0
-      const orderB =
-        input.participants.find((p) => p.id === b)?.sortOrder ?? 0
+      const orderA = input.participants.find((p) => p.id === a)?.sortOrder ?? 0
+      const orderB = input.participants.find((p) => p.id === b)?.sortOrder ?? 0
       return orderA - orderB
     })
 
@@ -196,7 +194,9 @@ export function calculateParticipantBreakdown(
   let itemsSubtotalCents = 0
 
   for (const item of input.items) {
-    const itemAssignments = input.assignments.filter((a) => a.itemId === item.id)
+    const itemAssignments = input.assignments.filter(
+      (a) => a.itemId === item.id,
+    )
     const usesUnits = itemAssignments.some((a) => a.units !== undefined)
 
     if (usesUnits) {
@@ -222,10 +222,8 @@ export function calculateParticipantBreakdown(
     if (!assignedIds.includes(participantId)) continue
 
     const sortedIds = [...assignedIds].sort((a, b) => {
-      const orderA =
-        input.participants.find((p) => p.id === a)?.sortOrder ?? 0
-      const orderB =
-        input.participants.find((p) => p.id === b)?.sortOrder ?? 0
+      const orderA = input.participants.find((p) => p.id === a)?.sortOrder ?? 0
+      const orderB = input.participants.find((p) => p.id === b)?.sortOrder ?? 0
       return orderA - orderB
     })
 
@@ -311,8 +309,7 @@ export function validateBillForFinalize(input: {
   }
 
   const unassigned = input.items.filter(
-    (item) =>
-      !input.assignments.some((a) => a.itemId === item.id),
+    (item) => !input.assignments.some((a) => a.itemId === item.id),
   )
   if (unassigned.length > 0) {
     errors.push({
@@ -325,7 +322,9 @@ export function validateBillForFinalize(input: {
   }
 
   for (const item of pricedItems) {
-    const itemAssignments = input.assignments.filter((a) => a.itemId === item.id)
+    const itemAssignments = input.assignments.filter(
+      (a) => a.itemId === item.id,
+    )
     if (itemAssignments.length === 0) continue
     const usesUnits = itemAssignments.some((a) => a.units !== undefined)
     if (!usesUnits) continue

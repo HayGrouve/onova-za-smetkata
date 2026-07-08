@@ -7,11 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '#/components/ui/card.tsx'
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-} from '#/components/ui/dialog.tsx'
+import { Dialog, DialogClose, DialogContent } from '#/components/ui/dialog.tsx'
 import { api } from '../../../convex/_generated/api'
 import { ICON } from '#/lib/app-icons.ts'
 import type { Id } from '../../../convex/_generated/dataModel'

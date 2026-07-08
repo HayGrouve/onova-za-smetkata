@@ -130,8 +130,8 @@ export function BillCard({
           <DialogHeader>
             <DialogTitle>Изтриване на сметка</DialogTitle>
             <DialogDescription>
-              Това действие е необратимо. Всички участници, артикули и
-              плащания ще бъдат изтрити заедно със сметката.
+              Това действие е необратимо. Всички участници, артикули и плащания
+              ще бъдат изтрити заедно със сметката.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

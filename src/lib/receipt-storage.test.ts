@@ -21,8 +21,8 @@ describe('shouldDeleteReplacedReceiptStorage', () => {
     expect(
       shouldDeleteReplacedReceiptStorage('storage_old' as never, undefined),
     ).toBe(false)
-    expect(shouldDeleteReplacedReceiptStorage(undefined, 'storage_new' as never)).toBe(
-      false,
-    )
+    expect(
+      shouldDeleteReplacedReceiptStorage(undefined, 'storage_new' as never),
+    ).toBe(false)
   })
 })

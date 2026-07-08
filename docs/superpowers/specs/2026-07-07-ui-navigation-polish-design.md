@@ -11,13 +11,13 @@ Add a sticky top navigation bar with sensible back navigation across all screens
 
 ## Decisions
 
-| Decision | Choice |
-|----------|--------|
-| Nav placement | Sticky top bar |
+| Decision          | Choice                                                |
+| ----------------- | ----------------------------------------------------- |
+| Nav placement     | Sticky top bar                                        |
 | Bill screen title | Back + restaurant name only (no screen label or tabs) |
-| Animation level | Subtle (~150ms, light scale/opacity on press) |
-| Editor bottom bar | Keep sticky totals + „Преглед“ unchanged |
-| Summary actions | Keep „Редактирай“ at bottom; header back → editor |
+| Animation level   | Subtle (~150ms, light scale/opacity on press)         |
+| Editor bottom bar | Keep sticky totals + „Преглед“ unchanged              |
+| Summary actions   | Keep „Редактирай“ at bottom; header back → editor     |
 
 ## Architecture
 
@@ -36,15 +36,16 @@ Add a sticky top navigation bar with sensible back navigation across all screens
 
 ## Navigation behavior
 
-| Route | Back button | Back destination | Title |
-|-------|-------------|------------------|-------|
-| `/` | Hidden | — | „Онова за сметката“ |
-| `/bills/$billId` | Visible | `/` (Home) | `bill.restaurantName` or „Без име“ |
-| `/bills/$billId/summary` | Visible | `/bills/$billId` (Editor) | Same restaurant name |
+| Route                    | Back button | Back destination          | Title                              |
+| ------------------------ | ----------- | ------------------------- | ---------------------------------- |
+| `/`                      | Hidden      | —                         | „Онова за сметката“                |
+| `/bills/$billId`         | Visible     | `/` (Home)                | `bill.restaurantName` or „Без име“ |
+| `/bills/$billId/summary` | Visible     | `/bills/$billId` (Editor) | Same restaurant name               |
 
 **Title display:** Single line, truncated with ellipsis (`truncate`) when long. While bill data loads on bill routes, show „Зареждане…“ or skeleton in title area.
 
 **Duplicate headings removed:**
+
 - Home: remove standalone `<h1>` (header shows app title)
 - Editor: remove „Редактиране на сметка“ `<h1>`
 - Summary: remove top restaurant name block (header shows name + date can stay as subtitle below header OR move date into page content only — keep date under header in page body as muted text)
@@ -75,14 +76,18 @@ Add utility classes and base-layer rules:
 
 ```css
 .tap-feedback {
-  transition: transform 150ms ease, opacity 150ms ease;
+  transition:
+    transform 150ms ease,
+    opacity 150ms ease;
 }
 .tap-feedback:active:not(:disabled) {
   transform: scale(0.98);
   opacity: 0.92;
 }
 .interactive-hover {
-  transition: background-color 150ms ease, border-color 150ms ease;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
 }
 ```
 
@@ -90,15 +95,15 @@ Base cursor rules for `button`, `a`, `[role="button"]`, `[data-interactive]:not(
 
 ### Component audit (add `cursor-pointer`, `tap-feedback`, `interactive-hover` where missing)
 
-| Component / area | Change |
-|------------------|--------|
-| `Button` (ui/button.tsx) | Add `cursor-pointer` to base cva |
-| `BillCard` | `tap-feedback`, `interactive-hover`, ensure pointer |
-| `StickyTotalsBar` | Tap areas (expand, Преглед link) |
-| `PaymentRow` | Tappable header button |
-| `ReceiptPreviewCard` | Thumbnail button |
-| Assignment chips / item rows | Tappable toggles |
-| Raw `<button>` in editor (receipt upload) | `cursor-pointer tap-feedback` |
+| Component / area                          | Change                                              |
+| ----------------------------------------- | --------------------------------------------------- |
+| `Button` (ui/button.tsx)                  | Add `cursor-pointer` to base cva                    |
+| `BillCard`                                | `tap-feedback`, `interactive-hover`, ensure pointer |
+| `StickyTotalsBar`                         | Tap areas (expand, Преглед link)                    |
+| `PaymentRow`                              | Tappable header button                              |
+| `ReceiptPreviewCard`                      | Thumbnail button                                    |
+| Assignment chips / item rows              | Tappable toggles                                    |
+| Raw `<button>` in editor (receipt upload) | `cursor-pointer tap-feedback`                       |
 
 **Principle:** Any element that responds to click/tap gets pointer cursor and subtle active feedback. Form inputs keep `cursor-text` / default.
 

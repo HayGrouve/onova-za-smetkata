@@ -10,7 +10,9 @@ describe('copyToClipboard', () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     vi.stubGlobal('navigator', { clipboard: { writeText } })
 
-    await expect(copyToClipboard('https://example.com/join')).resolves.toBe(true)
+    await expect(copyToClipboard('https://example.com/join')).resolves.toBe(
+      true,
+    )
     expect(writeText).toHaveBeenCalledWith('https://example.com/join')
   })
 

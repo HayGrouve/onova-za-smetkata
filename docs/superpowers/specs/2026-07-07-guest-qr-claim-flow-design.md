@@ -13,17 +13,17 @@ This shifts the product from pure solo-operator to **host + guest phones at the 
 
 ## Decisions
 
-| Decision | Choice |
-|----------|--------|
-| Guest identity | Pick from host’s pre-added participant list |
-| Guest powers | Claim items + see personal total + Revolut button |
-| Host powers | Setup, QR, live watch, manual fixes, finalize, mark payments |
-| Host workflow | Setup (OCR + names + QR), then hand off; small fixes only |
-| Finalize timing | When host is ready to leave; host assigns stragglers manually |
-| QR model | One QR per bill → join page → name picker |
-| Security | Trust model (no auth); same as current public Convex deployment |
-| Live dashboard | Reuse existing editor realtime updates (no separate dashboard v1) |
-| After finalize | Guest view read-only |
+| Decision        | Choice                                                            |
+| --------------- | ----------------------------------------------------------------- |
+| Guest identity  | Pick from host’s pre-added participant list                       |
+| Guest powers    | Claim items + see personal total + Revolut button                 |
+| Host powers     | Setup, QR, live watch, manual fixes, finalize, mark payments      |
+| Host workflow   | Setup (OCR + names + QR), then hand off; small fixes only         |
+| Finalize timing | When host is ready to leave; host assigns stragglers manually     |
+| QR model        | One QR per bill → join page → name picker                         |
+| Security        | Trust model (no auth); same as current public Convex deployment   |
+| Live dashboard  | Reuse existing editor realtime updates (no separate dashboard v1) |
+| After finalize  | Guest view read-only                                              |
 
 ## Architecture
 
@@ -64,9 +64,9 @@ This shifts the product from pure solo-operator to **host + guest phones at the 
 
 ### New routes
 
-| Route | Purpose |
-|-------|---------|
-| `/bills/$billId/join` | Name picker; entry point encoded in QR |
+| Route                  | Purpose                                              |
+| ---------------------- | ---------------------------------------------------- |
+| `/bills/$billId/join`  | Name picker; entry point encoded in QR               |
 | `/bills/$billId/claim` | Guest claim + pay view (requires stored participant) |
 
 ### Join page (`/bills/$billId/join`)
@@ -74,6 +74,7 @@ This shifts the product from pure solo-operator to **host + guest phones at the 
 **When shown:** Friend scans QR or opens copied link.
 
 **Content:**
+
 - Bill context: restaurant name (if set), date
 - Title: **„Кой сте вие?“**
 - Grid/list of participant name buttons (sorted by `sortOrder`)
@@ -81,6 +82,7 @@ This shifts the product from pure solo-operator to **host + guest phones at the 
 - If no participants: „Очаква се домакинът да добави участници“
 
 **On name tap:**
+
 1. Save `{ billId, participantId }` to `localStorage` key `onova-guest-participant`
 2. Navigate to `/bills/$billId/claim`
 
@@ -91,21 +93,25 @@ This shifts the product from pure solo-operator to **host + guest phones at the 
 **Guard:** If no stored participant for this bill → redirect to join page.
 
 **Header:**
+
 - Restaurant name, optional date
 - **„Вие сте: {label}“** with **„Не съм {name}“** → clears storage, back to join
 
 **Item list** (sorted by `sortOrder`):
+
 - Each row: item name, unit price × qty, line total
 - **Qty = 1:** single toggle — tap row or checkbox to claim/unclaim self (uses `assignments.toggle`)
 - **Qty > 1:** show unit stepper for self only (uses `assignments.setUnits`); read-only hint if all units assigned to others
 - Show subtle indicator when others share the item (e.g. „+2 други“) — read-only, no other names editable
 
 **Sticky footer:**
+
 - **„Вашият дял“** + owed amount (includes tip share via existing `calculateBillTotals`)
 - **Revolut** button — `buildRevolutUrl(revolutUsername, owedCents)` from global `paymentSettings`; copy amount to clipboard first (same as host summary)
 - Disabled if Revolut username not configured — show „Попитайте домакина за Revolut“
 
 **Draft vs final:**
+
 - `draft`: full claim/unclaim
 - `final`: read-only list + totals + Revolut (no toggles)
 
@@ -118,14 +124,17 @@ This shifts the product from pure solo-operator to **host + guest phones at the 
 **Title:** **„Покани приятели“** (UsersIcon or QrCodeIcon)
 
 **Content:**
+
 - QR code (~200×200px) encoding absolute join URL
 - **„Копирай линк“** button
 - Short hint: „Приятелите сканират QR кода, избират името си и отбелязват какво са консумирали.“
 
 **Join URL format:**
+
 ```
 {origin}/bills/{billId}/join
 ```
+
 Use `window.location.origin` at runtime; for SSR/build safety, read from env `VITE_APP_ORIGIN` if set (optional, fallback to `window.location.origin` on client).
 
 **QR library:** Add lightweight client-side generator (e.g. `qrcode` npm package) — render to `<canvas>` or data URL in `BillInviteCard`.
@@ -143,10 +152,12 @@ Assignment rows continue to work; Convex subscriptions update as guests claim. U
 ### Mutations
 
 **Reuse existing:**
+
 - `assignments.toggle({ itemId, participantId })`
 - `assignments.setUnits({ itemId, participantId, units })`
 
 **Add server guards** (in existing handlers or thin wrappers):
+
 - Reject assignment changes when `bill.status === 'final'`
 - Verify `participantId` belongs to the same bill as `itemId`
 - Verify item belongs to bill (implicit via item lookup)
@@ -169,21 +180,21 @@ Unchanged: tip split evenly across all participants in `calculateBillTotals`. Gu
 
 ## Section 4: Edge cases & error handling
 
-| Scenario | Behavior |
-|----------|----------|
-| Friend picks wrong name | **„Не съм {name}“** → re-pick on join page |
-| Two phones pick same name | Last write wins on assignments; both see same participant view — acceptable; host can fix |
-| Guest claims item others also share | Existing even-split math via `toggle` |
-| Item qty > 1, units exhausted | Stepper capped; show „X/Y разпределени“ |
-| Host edits items while guests claim | Allowed (draft); realtime sync; guest may see item disappear — rare, host fixes |
-| Host removes participant guest selected | Claim view redirect to join; clear invalid storage |
-| Bill deleted | Query returns null → „Сметката не е намерена“ |
-| No Revolut username configured | Guest Revolut button disabled with hint |
-| OCR not run yet | Join/claim still work if items added manually |
-| Straggler didn’t claim | Host assigns manually in editor before finalize |
-| Finalize with unassigned items | **Blocked** (existing validation) — host must assign all items first |
-| Bill finalized while guest on page | UI switches to read-only on next query update |
-| Invalid billId in URL | Standard not-found message |
+| Scenario                                | Behavior                                                                                  |
+| --------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Friend picks wrong name                 | **„Не съм {name}“** → re-pick on join page                                                |
+| Two phones pick same name               | Last write wins on assignments; both see same participant view — acceptable; host can fix |
+| Guest claims item others also share     | Existing even-split math via `toggle`                                                     |
+| Item qty > 1, units exhausted           | Stepper capped; show „X/Y разпределени“                                                   |
+| Host edits items while guests claim     | Allowed (draft); realtime sync; guest may see item disappear — rare, host fixes           |
+| Host removes participant guest selected | Claim view redirect to join; clear invalid storage                                        |
+| Bill deleted                            | Query returns null → „Сметката не е намерена“                                             |
+| No Revolut username configured          | Guest Revolut button disabled with hint                                                   |
+| OCR not run yet                         | Join/claim still work if items added manually                                             |
+| Straggler didn’t claim                  | Host assigns manually in editor before finalize                                           |
+| Finalize with unassigned items          | **Blocked** (existing validation) — host must assign all items first                      |
+| Bill finalized while guest on page      | UI switches to read-only on next query update                                             |
+| Invalid billId in URL                   | Standard not-found message                                                                |
 
 ### Validation at finalize (unchanged)
 
@@ -219,19 +230,19 @@ All items assigned, restaurant name set, ≥1 participant, ≥1 priced item. Hos
 
 ## File plan (implementation reference)
 
-| Action | File |
-|--------|------|
-| Create | `src/routes/bills/$billId/join.tsx` |
-| Create | `src/routes/bills/$billId/claim.tsx` |
-| Create | `src/components/bills/bill-invite-card.tsx` |
-| Create | `src/components/bills/guest-item-row.tsx` |
-| Create | `src/components/bills/guest-claim-footer.tsx` |
-| Create | `src/lib/bill-join-url.ts` |
-| Create | `src/lib/guest-participant-session.ts` |
-| Modify | `src/routes/bills/$billId/index.tsx` — add BillInviteCard |
-| Modify | `convex/assignments.ts` — final-bill + bill-participant guards |
-| Modify | `package.json` — QR dependency |
-| Test | `src/lib/bill-join-url.test.ts`, `src/lib/guest-participant-session.test.ts` |
+| Action | File                                                                         |
+| ------ | ---------------------------------------------------------------------------- |
+| Create | `src/routes/bills/$billId/join.tsx`                                          |
+| Create | `src/routes/bills/$billId/claim.tsx`                                         |
+| Create | `src/components/bills/bill-invite-card.tsx`                                  |
+| Create | `src/components/bills/guest-item-row.tsx`                                    |
+| Create | `src/components/bills/guest-claim-footer.tsx`                                |
+| Create | `src/lib/bill-join-url.ts`                                                   |
+| Create | `src/lib/guest-participant-session.ts`                                       |
+| Modify | `src/routes/bills/$billId/index.tsx` — add BillInviteCard                    |
+| Modify | `convex/assignments.ts` — final-bill + bill-participant guards               |
+| Modify | `package.json` — QR dependency                                               |
+| Test   | `src/lib/bill-join-url.test.ts`, `src/lib/guest-participant-session.test.ts` |
 
 ## Spec self-review
 

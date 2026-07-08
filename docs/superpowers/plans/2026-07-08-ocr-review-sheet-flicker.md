@@ -15,6 +15,7 @@
 ### Task 1: Hide sticky footer during OCR review
 
 **Files:**
+
 - Modify: `src/routes/bills/$billId/index.tsx`
 
 - [ ] **Step 1:** Wrap `StickyTotalsBar` so it only renders when `!reviewSheetOpen`
@@ -26,6 +27,7 @@
 ### Task 2: Opaque sheet + empty-state guard
 
 **Files:**
+
 - Modify: `src/components/bills/receipt-scan-review-sheet.tsx`
 
 - [ ] **Step 1:** Replace transparent outer `SheetContent` (`bg-transparent`, `mb-16`) with opaque `bg-background` panel covering the bottom safe area

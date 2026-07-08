@@ -3,7 +3,9 @@ export interface PaymentSettings {
   iban?: string
 }
 
-export function isPaymentConfigured(settings: PaymentSettings | undefined): boolean {
+export function isPaymentConfigured(
+  settings: PaymentSettings | undefined,
+): boolean {
   if (!settings) return false
   return Boolean(settings.revolutUsername?.trim() || settings.iban?.trim())
 }
@@ -36,7 +38,10 @@ export function clearLegacyPaymentSettings(): void {
   localStorage.removeItem(LEGACY_STORAGE_KEY)
 }
 
-export function buildRevolutUrl(username: string, remainingCents: number): string {
+export function buildRevolutUrl(
+  username: string,
+  remainingCents: number,
+): string {
   const clean = username.replace(/^@/, '').trim()
   const params = new URLSearchParams({
     amount: String(remainingCents),

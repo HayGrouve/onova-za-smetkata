@@ -38,7 +38,10 @@ export function ParticipantDetailSheet({
 }: ParticipantDetailSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="mx-auto max-h-[85vh] max-w-lg rounded-t-xl">
+      <SheetContent
+        side="bottom"
+        className="mx-auto max-h-[85vh] max-w-lg rounded-t-xl"
+      >
         <SheetHeader>
           <SheetTitle className="pr-8">{label}</SheetTitle>
         </SheetHeader>

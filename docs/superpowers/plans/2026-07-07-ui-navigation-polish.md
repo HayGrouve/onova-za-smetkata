@@ -14,27 +14,28 @@
 
 ## File Map
 
-| File | Responsibility |
-|------|----------------|
-| `src/components/layout/app-shell.tsx` | Page wrapper + main padding |
-| `src/components/layout/app-header.tsx` | Sticky nav, back, title |
-| `src/routes/__root.tsx` | Wire `AppShell` + `Outlet` |
-| `src/styles.css` | `tap-feedback`, cursor base rules |
-| `src/components/ui/button.tsx` | `cursor-pointer` on buttons |
-| `src/routes/index.tsx` | Remove duplicate h1; adjust padding |
-| `src/routes/bills/$billId/index.tsx` | Remove duplicate h1; adjust padding |
-| `src/routes/bills/$billId/summary.tsx` | Remove duplicate title block; keep date |
-| `src/components/bills/bill-card.tsx` | tap-feedback classes |
-| `src/components/bills/sticky-totals-bar.tsx` | pointer + tap on tap areas |
-| `src/components/bills/payment-row.tsx` | pointer on header button |
-| `src/components/bills/receipt-preview-card.tsx` | tap-feedback on thumbnail |
-| `src/routes/bills/$billId/index.tsx` | receipt upload button polish |
+| File                                            | Responsibility                          |
+| ----------------------------------------------- | --------------------------------------- |
+| `src/components/layout/app-shell.tsx`           | Page wrapper + main padding             |
+| `src/components/layout/app-header.tsx`          | Sticky nav, back, title                 |
+| `src/routes/__root.tsx`                         | Wire `AppShell` + `Outlet`              |
+| `src/styles.css`                                | `tap-feedback`, cursor base rules       |
+| `src/components/ui/button.tsx`                  | `cursor-pointer` on buttons             |
+| `src/routes/index.tsx`                          | Remove duplicate h1; adjust padding     |
+| `src/routes/bills/$billId/index.tsx`            | Remove duplicate h1; adjust padding     |
+| `src/routes/bills/$billId/summary.tsx`          | Remove duplicate title block; keep date |
+| `src/components/bills/bill-card.tsx`            | tap-feedback classes                    |
+| `src/components/bills/sticky-totals-bar.tsx`    | pointer + tap on tap areas              |
+| `src/components/bills/payment-row.tsx`          | pointer on header button                |
+| `src/components/bills/receipt-preview-card.tsx` | tap-feedback on thumbnail               |
+| `src/routes/bills/$billId/index.tsx`            | receipt upload button polish            |
 
 ---
 
 ### Task 1: Global interaction CSS
 
 **Files:**
+
 - Modify: `src/styles.css`
 - Modify: `src/components/ui/button.tsx`
 
@@ -101,6 +102,7 @@ EOF
 ### Task 2: AppShell and AppHeader
 
 **Files:**
+
 - Create: `src/components/layout/app-header.tsx`
 - Create: `src/components/layout/app-shell.tsx`
 
@@ -220,6 +222,7 @@ EOF
 ### Task 3: Wire root layout
 
 **Files:**
+
 - Modify: `src/routes/__root.tsx`
 
 - [ ] **Step 1: Add root component with Outlet**
@@ -263,6 +266,7 @@ EOF
 ### Task 4: Clean up page layouts
 
 **Files:**
+
 - Modify: `src/routes/index.tsx`
 - Modify: `src/routes/bills/$billId/index.tsx`
 - Modify: `src/routes/bills/$billId/summary.tsx`
@@ -270,6 +274,7 @@ EOF
 - [ ] **Step 1: Home — remove header h1**
 
 Remove:
+
 ```tsx
 <header className="mb-5 flex items-center justify-between gap-3">
   <h1 className="text-2xl font-bold">Онова за сметката</h1>
@@ -293,7 +298,11 @@ Remove the `<h1>` restaurant name from the top flex block. Keep date + draft bad
   <p className="text-sm text-muted-foreground">
     {dateFormatter.format(new Date(bill.date))}
   </p>
-  {isDraft ? <Badge variant="secondary">Чернова</Badge> : <Badge>Завършена</Badge>}
+  {isDraft ? (
+    <Badge variant="secondary">Чернова</Badge>
+  ) : (
+    <Badge>Завършена</Badge>
+  )}
 </div>
 ```
 
@@ -319,6 +328,7 @@ EOF
 ### Task 5: Component interaction audit
 
 **Files:**
+
 - Modify: `src/components/bills/bill-card.tsx`
 - Modify: `src/components/bills/sticky-totals-bar.tsx`
 - Modify: `src/components/bills/payment-row.tsx`
@@ -339,6 +349,7 @@ EOF
 - [ ] **Step 2: StickyTotalsBar**
 
 Add `tap-feedback cursor-pointer` to:
+
 - The expand totals `<button>`
 - The „Преглед“ `<Link>` (add className)
 

@@ -79,10 +79,7 @@ export function StickyTotalsBar({
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       {/* In-flow spacer — fixed footer does not reserve layout space. */}
-      <div
-        aria-hidden
-        className="sticky-totals-bar-spacer"
-      />
+      <div aria-hidden className="sticky-totals-bar-spacer" />
       <div className="fixed inset-x-0 bottom-0 z-40 border-t sticky-surface pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto max-w-lg">
           <Link

@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  clampParticipantUnits,
-} from '../../convex/lib/clampParticipantUnits'
+import { clampParticipantUnits } from '../../convex/lib/clampParticipantUnits'
 
 describe('clampParticipantUnits', () => {
   it('caps units when others already claimed the pool', () => {

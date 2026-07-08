@@ -14,29 +14,30 @@
 
 ## File Map
 
-| File | Responsibility |
-|------|----------------|
-| `src/lib/bill-join-url.ts` | Build absolute join URL for QR/link copy |
-| `src/lib/bill-join-url.test.ts` | URL builder tests |
-| `src/lib/guest-participant-session.ts` | localStorage read/write/clear for guest participant |
-| `src/lib/guest-participant-session.test.ts` | Session storage tests |
-| `convex/lib/assertAssignmentEditable.ts` | Pure guard: draft bill + participant on same bill |
-| `src/lib/assert-assignment-editable.test.ts` | Guard tests (imports convex lib) |
-| `convex/assignments.ts` | Wire guards into `toggle` and `setUnits` |
-| `src/components/bills/bill-invite-card.tsx` | QR canvas + copy link (host editor) |
-| `src/components/bills/guest-item-row.tsx` | Self-scoped item claim row |
-| `src/components/bills/guest-claim-footer.tsx` | Sticky owed total + Revolut button |
-| `src/routes/bills/$billId/join.tsx` | Name picker page |
-| `src/routes/bills/$billId/claim.tsx` | Guest claim page |
-| `src/routes/bills/$billId/index.tsx` | Insert `BillInviteCard` after participants |
-| `src/components/layout/app-header.tsx` | Header titles/back for join + claim routes |
-| `.env.example` | Document optional `VITE_APP_ORIGIN` |
+| File                                          | Responsibility                                      |
+| --------------------------------------------- | --------------------------------------------------- |
+| `src/lib/bill-join-url.ts`                    | Build absolute join URL for QR/link copy            |
+| `src/lib/bill-join-url.test.ts`               | URL builder tests                                   |
+| `src/lib/guest-participant-session.ts`        | localStorage read/write/clear for guest participant |
+| `src/lib/guest-participant-session.test.ts`   | Session storage tests                               |
+| `convex/lib/assertAssignmentEditable.ts`      | Pure guard: draft bill + participant on same bill   |
+| `src/lib/assert-assignment-editable.test.ts`  | Guard tests (imports convex lib)                    |
+| `convex/assignments.ts`                       | Wire guards into `toggle` and `setUnits`            |
+| `src/components/bills/bill-invite-card.tsx`   | QR canvas + copy link (host editor)                 |
+| `src/components/bills/guest-item-row.tsx`     | Self-scoped item claim row                          |
+| `src/components/bills/guest-claim-footer.tsx` | Sticky owed total + Revolut button                  |
+| `src/routes/bills/$billId/join.tsx`           | Name picker page                                    |
+| `src/routes/bills/$billId/claim.tsx`          | Guest claim page                                    |
+| `src/routes/bills/$billId/index.tsx`          | Insert `BillInviteCard` after participants          |
+| `src/components/layout/app-header.tsx`        | Header titles/back for join + claim routes          |
+| `.env.example`                                | Document optional `VITE_APP_ORIGIN`                 |
 
 ---
 
 ### Task 1: Join URL helper
 
 **Files:**
+
 - Create: `src/lib/bill-join-url.ts`
 - Create: `src/lib/bill-join-url.test.ts`
 
@@ -107,6 +108,7 @@ git commit -m "feat: add bill join URL helpers for guest QR flow"
 ### Task 2: Guest participant session (localStorage)
 
 **Files:**
+
 - Create: `src/lib/guest-participant-session.ts`
 - Create: `src/lib/guest-participant-session.test.ts`
 
@@ -223,6 +225,7 @@ git commit -m "feat: persist guest participant selection in localStorage"
 ### Task 3: Assignment mutation guards
 
 **Files:**
+
 - Create: `convex/lib/assertAssignmentEditable.ts`
 - Create: `src/lib/assert-assignment-editable.test.ts`
 - Modify: `convex/assignments.ts`
@@ -286,7 +289,10 @@ export function getAssignmentEditableError(input: {
   participantBillId: Id<'bills'> | null | undefined
 }): AssignmentEditableError | null {
   if (input.billStatus === 'final') return 'bill_final'
-  if (!input.participantBillId || input.participantBillId !== input.itemBillId) {
+  if (
+    !input.participantBillId ||
+    input.participantBillId !== input.itemBillId
+  ) {
     return 'participant_not_on_bill'
   }
   return null
@@ -346,6 +352,7 @@ git commit -m "feat: block assignment changes on final bills or wrong participan
 ### Task 4: QR dependency + BillInviteCard
 
 **Files:**
+
 - Modify: `package.json` (add `qrcode` + `@types/qrcode`)
 - Create: `src/components/bills/bill-invite-card.tsx`
 - Modify: `.env.example`
@@ -451,10 +458,7 @@ In `src/routes/bills/$billId/index.tsx`:
 2. After `ParticipantList` card (before Items card), insert:
 
 ```tsx
-<BillInviteCard
-  billId={billId}
-  disabled={participants.length === 0}
-/>
+<BillInviteCard billId={billId} disabled={participants.length === 0} />
 ```
 
 Place inside the Participants `CardContent`, below `ParticipantList`.
@@ -476,6 +480,7 @@ git commit -m "feat: add QR invite card to bill editor"
 ### Task 5: Join page route
 
 **Files:**
+
 - Create: `src/routes/bills/$billId/join.tsx`
 - Modify: `src/components/layout/app-header.tsx`
 
@@ -552,7 +557,9 @@ function BillJoinPage() {
 
       {bill.status === 'final' ? (
         <div className="flex flex-col gap-3">
-          <p className="text-sm text-muted-foreground">Сметката е приключена.</p>
+          <p className="text-sm text-muted-foreground">
+            Сметката е приключена.
+          </p>
           <Button
             className="h-11"
             onClick={() =>
@@ -633,6 +640,7 @@ git commit -m "feat: add guest join page with participant name picker"
 ### Task 6: Guest item row component
 
 **Files:**
+
 - Create: `src/components/bills/guest-item-row.tsx`
 
 - [ ] **Step 1: Create component**
@@ -698,7 +706,9 @@ export function GuestItemRow({
               {formatEur(item.unitPriceCents)} × {item.quantity}
             </p>
           </div>
-          <p className="font-medium tabular-nums">{formatEur(lineTotalCents)}</p>
+          <p className="font-medium tabular-nums">
+            {formatEur(lineTotalCents)}
+          </p>
         </div>
         {otherAssigneeCount > 0 && (
           <p className="text-xs text-muted-foreground">
@@ -714,7 +724,10 @@ export function GuestItemRow({
     )
   }
 
-  const remainingUnits = Math.max(0, item.quantity - assignedUnitsTotal + myUnits)
+  const remainingUnits = Math.max(
+    0,
+    item.quantity - assignedUnitsTotal + myUnits,
+  )
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border p-4">
@@ -729,7 +742,8 @@ export function GuestItemRow({
       </div>
       {otherAssigneeCount > 0 && (
         <p className="text-xs text-muted-foreground">
-          +{otherAssigneeCount} други · {assignedUnitsTotal}/{item.quantity} разпределени
+          +{otherAssigneeCount} други · {assignedUnitsTotal}/{item.quantity}{' '}
+          разпределени
         </p>
       )}
       {!readOnly && (
@@ -789,6 +803,7 @@ git commit -m "feat: add guest item claim row component"
 ### Task 7: Guest claim footer
 
 **Files:**
+
 - Create: `src/components/bills/guest-claim-footer.tsx`
 
 - [ ] **Step 1: Create component**
@@ -855,7 +870,9 @@ export function GuestClaimFooter({
               Попитайте домакина за Revolut.
             </p>
           ) : remainingCents <= 0 ? (
-            <p className="text-xs text-muted-foreground">Няма оставащо за плащане.</p>
+            <p className="text-xs text-muted-foreground">
+              Няма оставащо за плащане.
+            </p>
           ) : null}
         </div>
       </div>
@@ -876,6 +893,7 @@ git commit -m "feat: add guest sticky footer with Revolut pay action"
 ### Task 8: Claim page route
 
 **Files:**
+
 - Create: `src/routes/bills/$billId/claim.tsx`
 
 - [ ] **Step 1: Create claim route**
@@ -962,7 +980,9 @@ function BillClaimPage() {
     )
   }
 
-  const participant = data.participants.find((p) => p._id === storedParticipantId)
+  const participant = data.participants.find(
+    (p) => p._id === storedParticipantId,
+  )
   if (!participant) {
     clearStoredGuestParticipant(billId)
     void navigate({ to: '/bills/$billId/join', params: { billId } })
@@ -1007,7 +1027,9 @@ function BillClaimPage() {
 
         <div className="flex flex-col gap-3">
           {sortedItems.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Все още няма артикули.</p>
+            <p className="text-sm text-muted-foreground">
+              Все още няма артикули.
+            </p>
           ) : (
             sortedItems.map((item) => (
               <GuestItemRow
@@ -1056,6 +1078,7 @@ git commit -m "feat: add guest claim page with item selection and Revolut pay"
 ### Task 9: Final verification
 
 **Files:**
+
 - Modify: `docs/superpowers/specs/2026-07-07-guest-qr-claim-flow-design.md` (status → Approved)
 
 - [ ] **Step 1: Manual smoke test**
@@ -1084,19 +1107,19 @@ git commit -m "docs: approve guest QR claim flow spec"
 
 ## Spec Coverage Checklist
 
-| Spec requirement | Task |
-|------------------|------|
-| Join route + name picker | Task 5 |
-| Claim route + item toggles | Tasks 6, 8 |
-| localStorage guest session | Task 2 |
-| QR + copy link on host editor | Task 4 |
-| Revolut on guest footer | Task 7 |
-| Draft-only assignment edits | Task 3 |
-| Read-only after finalize | Tasks 6, 8 (`readOnly` prop) |
-| Host unchanged assignment UI | No changes needed |
-| Invalid participant redirect | Task 8 |
-| Optional `VITE_APP_ORIGIN` | Task 4 |
-| Unit tests for URL + session + guards | Tasks 1, 2, 3 |
+| Spec requirement                      | Task                         |
+| ------------------------------------- | ---------------------------- |
+| Join route + name picker              | Task 5                       |
+| Claim route + item toggles            | Tasks 6, 8                   |
+| localStorage guest session            | Task 2                       |
+| QR + copy link on host editor         | Task 4                       |
+| Revolut on guest footer               | Task 7                       |
+| Draft-only assignment edits           | Task 3                       |
+| Read-only after finalize              | Tasks 6, 8 (`readOnly` prop) |
+| Host unchanged assignment UI          | No changes needed            |
+| Invalid participant redirect          | Task 8                       |
+| Optional `VITE_APP_ORIGIN`            | Task 4                       |
+| Unit tests for URL + session + guards | Tasks 1, 2, 3                |
 
 ## Out of Scope (confirmed not in plan)
 

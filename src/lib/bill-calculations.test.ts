@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import type { BillCalculationInput } from './bill-calculations'
 import {
   splitLineTotal,
   splitUnits,
   calculateBillTotals,
   calculateParticipantBreakdown,
   validateBillForFinalize,
-  type BillBreakdownInput,
 } from './bill-calculations'
+import type { BillBreakdownInput, BillCalculationInput } from './bill-calculations'
 
 describe('splitLineTotal', () => {
   it('assigns full amount to one person', () => {

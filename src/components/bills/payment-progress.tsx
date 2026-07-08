@@ -18,7 +18,7 @@ export function PaymentProgress({
 
   const totalCount = participants.length
   const paidCount = participants.filter(
-    (p) => byParticipant[p.id]?.status === 'paid',
+    (p) => byParticipant[p.id].status === 'paid',
   ).length
   const progressPercent = (paidCount / totalCount) * 100
 

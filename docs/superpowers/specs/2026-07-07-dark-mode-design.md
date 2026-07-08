@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-07  
 **Project:** onova-za-smetkata  
-**Status:** Approved  
+**Status:** Approved
 
 ## Summary
 
@@ -10,12 +10,12 @@ Enable dark mode across the app with **dark as the default**, and a header toggl
 
 ## Decisions
 
-| Decision | Choice |
-|----------|--------|
-| Default theme | Dark |
-| User control | Header dropdown: Светла / Тъмна / Системна |
-| Persistence | `localStorage` key `onova-theme` via `next-themes` |
-| Class strategy | `attribute="class"` on `<html>` |
+| Decision         | Choice                                                    |
+| ---------------- | --------------------------------------------------------- |
+| Default theme    | Dark                                                      |
+| User control     | Header dropdown: Светла / Тъмна / Системна                |
+| Persistence      | `localStorage` key `onova-theme` via `next-themes`        |
+| Class strategy   | `attribute="class"` on `<html>`                           |
 | Toggle placement | `AppHeader`, always visible, left of payment settings cog |
 
 ## Architecture
@@ -43,15 +43,15 @@ Sonner already uses `useTheme()` — works once provider is wired.
 
 ## Components
 
-| File | Change |
-|------|--------|
-| `src/components/theme-provider.tsx` | New — `next-themes` wrapper |
-| `src/components/layout/theme-toggle.tsx` | New — dropdown with 3 theme options |
-| `src/routes/__root.tsx` | ThemeProvider, `suppressHydrationWarning` on `<html>` |
-| `src/components/layout/app-header.tsx` | Theme toggle in header |
-| `src/styles.css` | Dark body gradient overrides |
-| `src/components/bills/receipt-scan-review-sheet.tsx` | Dark variants for amber highlights |
-| `public/manifest.json` | Dark background_color |
+| File                                                 | Change                                                |
+| ---------------------------------------------------- | ----------------------------------------------------- |
+| `src/components/theme-provider.tsx`                  | New — `next-themes` wrapper                           |
+| `src/components/layout/theme-toggle.tsx`             | New — dropdown with 3 theme options                   |
+| `src/routes/__root.tsx`                              | ThemeProvider, `suppressHydrationWarning` on `<html>` |
+| `src/components/layout/app-header.tsx`               | Theme toggle in header                                |
+| `src/styles.css`                                     | Dark body gradient overrides                          |
+| `src/components/bills/receipt-scan-review-sheet.tsx` | Dark variants for amber highlights                    |
+| `public/manifest.json`                               | Dark background_color                                 |
 
 ## Out of scope
 

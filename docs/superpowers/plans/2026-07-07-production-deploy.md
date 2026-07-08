@@ -14,33 +14,34 @@
 
 ## File Map
 
-| File | Responsibility |
-|------|----------------|
-| `netlify.toml` | Build command, publish dir, Node version |
-| `vite.config.ts` | Dev-only TanStack devtools plugin |
-| `package.json` | `preflight` script |
-| `src/lib/env.ts` | Build-time + runtime Convex URL helpers |
-| `src/lib/env.test.ts` | Tests for env helpers |
+| File                                   | Responsibility                                 |
+| -------------------------------------- | ---------------------------------------------- |
+| `netlify.toml`                         | Build command, publish dir, Node version       |
+| `vite.config.ts`                       | Dev-only TanStack devtools plugin              |
+| `package.json`                         | `preflight` script                             |
+| `src/lib/env.ts`                       | Build-time + runtime Convex URL helpers        |
+| `src/lib/env.test.ts`                  | Tests for env helpers                          |
 | `src/integrations/convex/provider.tsx` | Env validation import; missing-URL fallback UI |
-| `src/routes/__root.tsx` | Root error boundary; apple-touch-icon link |
-| `src/routes/index.tsx` | createBill error toast |
-| `src/routes/bills/$billId/summary.tsx` | finalize/delete error toasts |
-| `src/components/bills/bill-card.tsx` | delete error toast |
-| `scripts/generate-pwa-icons.mjs` | Generate PNG icons from SVG |
-| `public/icon.svg` | Source vector for icons |
-| `public/icon-192.png` | PWA icon |
-| `public/icon-512.png` | PWA icon |
-| `public/apple-touch-icon.png` | iOS home screen |
-| `public/manifest.json` | Updated icon entries |
-| `.env.example` | Netlify vs Convex env documentation |
-| `README.md` | Project-specific readme |
-| `docs/DEPLOY.md` | Deploy runbook + smoke test |
+| `src/routes/__root.tsx`                | Root error boundary; apple-touch-icon link     |
+| `src/routes/index.tsx`                 | createBill error toast                         |
+| `src/routes/bills/$billId/summary.tsx` | finalize/delete error toasts                   |
+| `src/components/bills/bill-card.tsx`   | delete error toast                             |
+| `scripts/generate-pwa-icons.mjs`       | Generate PNG icons from SVG                    |
+| `public/icon.svg`                      | Source vector for icons                        |
+| `public/icon-192.png`                  | PWA icon                                       |
+| `public/icon-512.png`                  | PWA icon                                       |
+| `public/apple-touch-icon.png`          | iOS home screen                                |
+| `public/manifest.json`                 | Updated icon entries                           |
+| `.env.example`                         | Netlify vs Convex env documentation            |
+| `README.md`                            | Project-specific readme                        |
+| `docs/DEPLOY.md`                       | Deploy runbook + smoke test                    |
 
 ---
 
 ### Task 1: Netlify build config and preflight script
 
 **Files:**
+
 - Modify: `netlify.toml`
 - Modify: `package.json`
 - Modify: `vite.config.ts`
@@ -111,6 +112,7 @@ git commit -m "Configure Netlify build and dev-only Vite devtools."
 ### Task 2: Environment validation
 
 **Files:**
+
 - Create: `src/lib/env.ts`
 - Create: `src/lib/env.test.ts`
 - Modify: `src/integrations/convex/provider.tsx`
@@ -265,6 +267,7 @@ git commit -m "Validate VITE_CONVEX_URL at build time and show fallback UI."
 ### Task 3: Root error boundary
 
 **Files:**
+
 - Modify: `src/routes/__root.tsx`
 
 - [ ] **Step 1: Add error component and apple-touch-icon link**
@@ -331,6 +334,7 @@ git commit -m "Add root error boundary and apple-touch-icon link."
 ### Task 4: Mutation error toasts
 
 **Files:**
+
 - Modify: `src/routes/index.tsx`
 - Modify: `src/routes/bills/$billId/summary.tsx`
 - Modify: `src/components/bills/bill-card.tsx`
@@ -430,6 +434,7 @@ git commit -m "Show toast errors when bill mutations fail."
 ### Task 5: PWA icons and manifest
 
 **Files:**
+
 - Create: `public/icon.svg`
 - Create: `scripts/generate-pwa-icons.mjs`
 - Modify: `package.json` (add sharp devDependency + generate-icons script)
@@ -528,6 +533,7 @@ git commit -m "Add branded PWA icons and update web manifest."
 ### Task 6: Environment example and documentation
 
 **Files:**
+
 - Modify: `.env.example`
 - Replace: `README.md`
 - Create: `docs/DEPLOY.md`
@@ -552,7 +558,7 @@ VITE_CONVEX_URL=https://your-deployment.convex.cloud
 
 - [ ] **Step 2: Replace README.md**
 
-```markdown
+````markdown
 # Онова за сметката
 
 Mobile web PWA for splitting restaurant bills in Bulgarian. Create bills, assign items to participants, scan receipts with OCR, track payments, and share totals.
@@ -565,6 +571,7 @@ cp .env.example .env.local   # fill in Convex values
 npx convex dev               # terminal 1
 npm run dev                  # terminal 2 — http://localhost:3000
 ```
+````
 
 ## Testing
 
@@ -590,7 +597,8 @@ git push origin main          # triggers Netlify build
 - [Convex](https://convex.dev) backend
 - [Netlify](https://netlify.com) hosting
 - [Shadcn UI](https://ui.shadcn.com) + Tailwind CSS
-```
+
+````
 
 - [ ] **Step 3: Create `docs/DEPLOY.md`**
 
@@ -621,9 +629,9 @@ Never put `GEMINI_API_KEY` in Netlify or the repo.
 
    ```bash
    npm run preflight
-   ```
+````
 
-   Requires `VITE_CONVEX_URL` in environment (or `.env.local`).
+Requires `VITE_CONVEX_URL` in environment (or `.env.local`).
 
 2. **Deploy Convex backend**
 
@@ -651,20 +659,21 @@ Never put `GEMINI_API_KEY` in Netlify or the repo.
 
 ## Troubleshooting
 
-| Symptom | Likely cause | Fix |
-|---------|--------------|-----|
-| Blank page / config message | Missing `VITE_CONVEX_URL` on Netlify | Set env var; redeploy |
-| Build fails on Netlify | Same | Set `VITE_CONVEX_URL` in Netlify build env |
-| OCR always fails | Missing `GEMINI_API_KEY` in Convex prod | Set in Convex Dashboard |
-| Data from wrong environment | Dev Convex URL in Netlify | Point Netlify at prod URL |
-```
+| Symptom                     | Likely cause                            | Fix                                        |
+| --------------------------- | --------------------------------------- | ------------------------------------------ |
+| Blank page / config message | Missing `VITE_CONVEX_URL` on Netlify    | Set env var; redeploy                      |
+| Build fails on Netlify      | Same                                    | Set `VITE_CONVEX_URL` in Netlify build env |
+| OCR always fails            | Missing `GEMINI_API_KEY` in Convex prod | Set in Convex Dashboard                    |
+| Data from wrong environment | Dev Convex URL in Netlify               | Point Netlify at prod URL                  |
+
+````
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add .env.example README.md docs/DEPLOY.md
 git commit -m "Add deploy runbook and project-specific README."
-```
+````
 
 ---
 
@@ -697,23 +706,23 @@ Only if verification required small fixes.
 
 ## Spec Coverage Checklist
 
-| Spec requirement | Task |
-|------------------|------|
-| netlify.toml + NODE_VERSION | Task 1 |
-| Dev-only vite devtools | Task 1 |
-| preflight script | Task 1 |
-| Build-time env validation | Task 2 |
-| Convex provider fallback UI | Task 2 |
-| Root error boundary | Task 3 |
-| apple-touch-icon link | Task 3 |
-| Mutation error toasts | Task 4 |
-| PWA icons 192/512/apple | Task 5 |
-| manifest.json update | Task 5 |
-| .env.example update | Task 6 |
-| README rewrite | Task 6 |
-| docs/DEPLOY.md | Task 6 |
+| Spec requirement                  | Task   |
+| --------------------------------- | ------ |
+| netlify.toml + NODE_VERSION       | Task 1 |
+| Dev-only vite devtools            | Task 1 |
+| preflight script                  | Task 1 |
+| Build-time env validation         | Task 2 |
+| Convex provider fallback UI       | Task 2 |
+| Root error boundary               | Task 3 |
+| apple-touch-icon link             | Task 3 |
+| Mutation error toasts             | Task 4 |
+| PWA icons 192/512/apple           | Task 5 |
+| manifest.json update              | Task 5 |
+| .env.example update               | Task 6 |
+| README rewrite                    | Task 6 |
+| docs/DEPLOY.md                    | Task 6 |
 | Post-deploy smoke test documented | Task 6 |
-| npm run preflight verification | Task 7 |
+| npm run preflight verification    | Task 7 |
 
 ## Out of scope (do not implement)
 

@@ -10,15 +10,15 @@ A personal mobile web PWA for splitting restaurant bills. One user creates bills
 
 ## Decisions
 
-| Decision | Choice |
-|----------|--------|
-| Platform | Mobile web PWA (TanStack Start + Convex) |
-| Auth | None — single personal deployment |
-| Currency | EUR (amounts stored as integer cents) |
-| Language | Bulgarian UI (hardcoded for MVP) |
-| Bill editor | Single scrolling page with sticky totals bar |
-| Draft handling | Auto-save on every change (debounced) |
-| Architecture | Convex-native (direct queries/mutations) |
+| Decision       | Choice                                       |
+| -------------- | -------------------------------------------- |
+| Platform       | Mobile web PWA (TanStack Start + Convex)     |
+| Auth           | None — single personal deployment            |
+| Currency       | EUR (amounts stored as integer cents)        |
+| Language       | Bulgarian UI (hardcoded for MVP)             |
+| Bill editor    | Single scrolling page with sticky totals bar |
+| Draft handling | Auto-save on every change (debounced)        |
+| Architecture   | Convex-native (direct queries/mutations)     |
 
 ## Architecture
 
@@ -65,6 +65,7 @@ Single scrolling page with sections:
 **Sticky totals bar** at bottom — per-person running totals; tap to expand breakdown.
 
 Actions:
+
 - „Преглед“ → navigate to summary (validation runs on summary)
 - Auto-save debounced (~500ms) on every change
 
@@ -92,46 +93,46 @@ Merged into Home. Search and list on home screen — no separate history route.
 
 ### `bills`
 
-| Field | Type | Notes |
-|-------|------|-------|
-| restaurantName | string | Required before finalize |
-| date | number | Unix ms timestamp |
-| note | string? | Optional |
-| receiptStorageId | Id<"_storage">? | Convex file storage |
-| status | "draft" \| "final" | |
-| createdAt | number | |
-| updatedAt | number | |
+| Field            | Type               | Notes                    |
+| ---------------- | ------------------ | ------------------------ |
+| restaurantName   | string             | Required before finalize |
+| date             | number             | Unix ms timestamp        |
+| note             | string?            | Optional                 |
+| receiptStorageId | Id<"_storage">?    | Convex file storage      |
+| status           | "draft" \| "final" |                          |
+| createdAt        | number             |                          |
+| updatedAt        | number             |                          |
 
 **Indexes:** `by_status`, `by_updatedAt`
 
 ### `participants`
 
-| Field | Type |
-|-------|------|
-| billId | Id<"bills"> |
-| name | string |
-| sortOrder | number |
+| Field     | Type        |
+| --------- | ----------- |
+| billId    | Id<"bills"> |
+| name      | string      |
+| sortOrder | number      |
 
 **Index:** `by_billId`
 
 ### `items`
 
-| Field | Type | Notes |
-|-------|------|-------|
-| billId | Id<"bills"> | |
-| name | string | |
-| unitPriceCents | number | EUR cents |
-| quantity | number | Default 1 |
-| note | string? | |
-| sortOrder | number | |
+| Field          | Type        | Notes     |
+| -------------- | ----------- | --------- |
+| billId         | Id<"bills"> |           |
+| name           | string      |           |
+| unitPriceCents | number      | EUR cents |
+| quantity       | number      | Default 1 |
+| note           | string?     |           |
+| sortOrder      | number      |           |
 
 **Index:** `by_billId`
 
 ### `itemAssignments`
 
-| Field | Type |
-|-------|------|
-| itemId | Id<"items"> |
+| Field         | Type               |
+| ------------- | ------------------ |
+| itemId        | Id<"items">        |
 | participantId | Id<"participants"> |
 
 Equal split computed at read time — no `assignedAmount` in MVP.
@@ -140,13 +141,13 @@ Equal split computed at read time — no `assignedAmount` in MVP.
 
 ### `payments`
 
-| Field | Type |
-|-------|------|
-| billId | Id<"bills"> |
+| Field         | Type               |
+| ------------- | ------------------ |
+| billId        | Id<"bills">        |
 | participantId | Id<"participants"> |
-| amountCents | number |
-| note | string? |
-| paidAt | number |
+| amountCents   | number             |
+| note          | string?            |
+| paidAt        | number             |
 
 **Index:** `by_billId`
 
@@ -180,15 +181,16 @@ balanceCents = owedCents - paidCents
 
 ### Payment status
 
-| Status | Condition |
-|--------|-----------|
-| неплатено | paidCents === 0 |
-| частично | 0 < paidCents < owedCents |
-| платено | balanceCents <= 0 |
+| Status    | Condition                 |
+| --------- | ------------------------- |
+| неплатено | paidCents === 0           |
+| частично  | 0 < paidCents < owedCents |
+| платено   | balanceCents <= 0         |
 
 ### Finalize validation
 
 Block finalize unless:
+
 - At least 1 participant
 - At least 1 item with `lineTotalCents > 0`
 - Every item has at least 1 assignment

@@ -47,11 +47,11 @@ Improve perceived speed, mobile polish, and release reliability without new prod
 
 ## Files (primary)
 
-| Area | Files |
-|------|-------|
-| Payment context | `payment-settings-provider.tsx`, `payment-settings-open-button.tsx`, consumers |
-| Header | `app-header.tsx`, new `bill-header-title.tsx` |
-| Skeletons | `ui/skeleton.tsx`, `index.tsx`, `bills/$billId/index.tsx`, `summary.tsx` |
-| Backend | `convex/bills.ts` |
-| CSS / bars | `styles.css`, `app-header.tsx`, `sticky-totals-bar.tsx`, `guest-claim-footer.tsx` |
-| Ops | `.github/workflows/ci.yml`, `netlify.toml`, `package.json`, `docs/DEPLOY.md` |
+| Area            | Files                                                                             |
+| --------------- | --------------------------------------------------------------------------------- |
+| Payment context | `payment-settings-provider.tsx`, `payment-settings-open-button.tsx`, consumers    |
+| Header          | `app-header.tsx`, new `bill-header-title.tsx`                                     |
+| Skeletons       | `ui/skeleton.tsx`, `index.tsx`, `bills/$billId/index.tsx`, `summary.tsx`          |
+| Backend         | `convex/bills.ts`                                                                 |
+| CSS / bars      | `styles.css`, `app-header.tsx`, `sticky-totals-bar.tsx`, `guest-claim-footer.tsx` |
+| Ops             | `.github/workflows/ci.yml`, `netlify.toml`, `package.json`, `docs/DEPLOY.md`      |

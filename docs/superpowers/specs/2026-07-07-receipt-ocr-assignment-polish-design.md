@@ -11,14 +11,14 @@ Add manual receipt scanning via Gemini 2.0 Flash (Convex Action), a human review
 
 ## Decisions
 
-| Decision | Choice |
-|----------|--------|
-| Scan trigger | Manual **„Разпознай артикули“** button (only when receipt photo exists) |
-| AI provider | Google Gemini 2.0 Flash via Convex Action |
-| API key storage | `GEMINI_API_KEY` in Convex environment variables |
-| Assignment UX | Keep participant chips; add bulk split helpers |
-| Re-import when items exist | Dialog: **Добави** / **Замени** / **Отказ** |
-| Import flow | Always review in sheet before writing to database |
+| Decision                   | Choice                                                                  |
+| -------------------------- | ----------------------------------------------------------------------- |
+| Scan trigger               | Manual **„Разпознай артикули“** button (only when receipt photo exists) |
+| AI provider                | Google Gemini 2.0 Flash via Convex Action                               |
+| API key storage            | `GEMINI_API_KEY` in Convex environment variables                        |
+| Assignment UX              | Keep participant chips; add bulk split helpers                          |
+| Re-import when items exist | Dialog: **Добави** / **Замени** / **Отказ**                             |
+| Import flow                | Always review in sheet before writing to database                       |
 
 ## Architecture
 
@@ -52,18 +52,18 @@ Add manual receipt scanning via Gemini 2.0 Flash (Convex Action), a human review
 
 ### New table: `receiptScans`
 
-| Field | Type | Notes |
-|-------|------|-------|
-| billId | Id<"bills"> | |
-| storageId | Id<"_storage"> | Receipt image scanned |
-| status | "pending" \| "processing" \| "done" \| "failed" | |
-| extractedRestaurantName | string? | |
-| extractedItems | array of objects | See schema below |
-| receiptTotalCents | number? | For validation hint |
-| itemsTotalCents | number? | Sum of extracted items |
-| totalsMismatch | boolean? | true if sums differ |
-| errorMessage | string? | On failure |
-| createdAt | number | |
+| Field                   | Type                                            | Notes                  |
+| ----------------------- | ----------------------------------------------- | ---------------------- |
+| billId                  | Id<"bills">                                     |                        |
+| storageId               | Id<"_storage">                                  | Receipt image scanned  |
+| status                  | "pending" \| "processing" \| "done" \| "failed" |                        |
+| extractedRestaurantName | string?                                         |                        |
+| extractedItems          | array of objects                                | See schema below       |
+| receiptTotalCents       | number?                                         | For validation hint    |
+| itemsTotalCents         | number?                                         | Sum of extracted items |
+| totalsMismatch          | boolean?                                        | true if sums differ    |
+| errorMessage            | string?                                         | On failure             |
+| createdAt               | number                                          |                        |
 
 **extractedItems element:**
 
@@ -72,7 +72,7 @@ Add manual receipt scanning via Gemini 2.0 Flash (Convex Action), a human review
   name: string
   unitPriceCents: number
   quantity: number
-  confidence: "high" | "low"
+  confidence: 'high' | 'low'
 }
 ```
 
@@ -86,13 +86,13 @@ Items, assignments, participants, bills schema unchanged. Import uses existing `
 
 ### `convex/receiptScan.ts`
 
-| Function | Type | Purpose |
-|----------|------|---------|
-| `startScan` | mutation | Creates `receiptScans` row (status: pending), schedules action |
-| `scanReceipt` | internal action | Calls Gemini, updates scan row |
-| `getLatestScan` | query | Latest scan for bill (for review UI) |
-| `importScannedItems` | mutation | Inserts checked items; replace mode deletes existing items first |
-| `dismissScan` | mutation | Marks scan dismissed / clears pending review |
+| Function             | Type            | Purpose                                                          |
+| -------------------- | --------------- | ---------------------------------------------------------------- |
+| `startScan`          | mutation        | Creates `receiptScans` row (status: pending), schedules action   |
+| `scanReceipt`        | internal action | Calls Gemini, updates scan row                                   |
+| `getLatestScan`      | query           | Latest scan for bill (for review UI)                             |
+| `importScannedItems` | mutation        | Inserts checked items; replace mode deletes existing items first |
+| `dismissScan`        | mutation        | Marks scan dismissed / clears pending review                     |
 
 ### Gemini integration
 
@@ -102,6 +102,7 @@ Items, assignments, participants, bills schema unchanged. Import uses existing `
 - **Runtime:** `"use node"` if needed for SDK; otherwise `fetch` to Gemini REST API from Convex action
 
 **Prompt requirements:**
+
 - Receipt may be Bulgarian (Cyrillic) or English; amounts in EUR
 - Return purchasable line items only
 - Exclude summary lines: ОБЩО, TOTAL, SUBTOTAL, ДДС, VAT, TAX, Бакшиш, TIP, payment/card lines
@@ -110,6 +111,7 @@ Items, assignments, participants, bills schema unchanged. Import uses existing `
 - Set `confidence: "low"` for ambiguous lines
 
 **Post-processing in action:**
+
 - Drop items with `unitPriceCents <= 0`
 - Compute `itemsTotalCents` and compare to `receiptTotalCents` if present
 - Set `totalsMismatch` when difference > 1 cent
@@ -117,6 +119,7 @@ Items, assignments, participants, bills schema unchanged. Import uses existing `
 ### `importScannedItems` mutation
 
 **Args:**
+
 - `scanId: Id<"receiptScans">`
 - `mode: "add" | "replace"`
 - `selectedIndexes: number[]` — indices into extractedItems
@@ -124,10 +127,12 @@ Items, assignments, participants, bills schema unchanged. Import uses existing `
 - `restaurantName?: string` — edited value from review UI
 
 **Replace mode:**
+
 1. Delete all existing items (cascade assignments via existing remove logic)
 2. Insert selected scanned items
 
 **Add mode:**
+
 1. Insert selected scanned items only
 
 Always update bill `restaurantName` if `updateRestaurantName` is true.
@@ -143,11 +148,11 @@ Add button below photo upload:
 
 **Pre-scan dialog** (when `items.length > 0`):
 
-| Button | Action |
-|--------|--------|
-| Добави | Scan → review → import in add mode |
+| Button | Action                                                                           |
+| ------ | -------------------------------------------------------------------------------- |
+| Добави | Scan → review → import in add mode                                               |
 | Замени | Scan → review → import in replace mode (extra confirm if items have assignments) |
-| Отказ | Close |
+| Отказ  | Close                                                                            |
 
 Store chosen mode in component state until import completes.
 
@@ -158,20 +163,24 @@ Opens automatically when scan status becomes `done`.
 **Header:** „Преглед на разпознатите артикули“
 
 **Restaurant (if detected):**
+
 - Input pre-filled with `extractedRestaurantName`
 - Checkbox: „Обнови името на ресторанта“ (default on if name was empty)
 
 **Item list:**
+
 - Each row: checkbox (default on), name input, price input (EUR), quantity input
 - Low-confidence rows: amber background + „?“ badge
 - Select all / deselect all toggle
 
 **Totals footer:**
+
 - „Сумата на артикулите: {formatEur(itemsTotalCents)}“
 - If receipt total detected: „Общо на бележка: {formatEur(receiptTotalCents)}“
 - If mismatch: warning „Сумите не съвпадат — проверете артикулите“
 
 **Actions:**
+
 - **„Импортирай избраните ({n})“** — calls import mutation
 - **„Отказ“** — dismiss sheet
 
@@ -181,11 +190,11 @@ On success: toast „{n} артикула добавени“, close sheet.
 
 New component above item list in bill editor: `AssignmentToolbar`
 
-| Control | Label | Behavior |
-|---------|-------|----------|
-| Button | Разпредели всички по равно | For every item, assign all participants (toggle on all chips) |
-| Button | Разпредели оставащите по равно | Only items with zero assignments → assign all participants |
-| Badge | {n} неразпределени | Visible when n > 0; tap scrolls to first unassigned item |
+| Control | Label                          | Behavior                                                      |
+| ------- | ------------------------------ | ------------------------------------------------------------- |
+| Button  | Разпредели всички по равно     | For every item, assign all participants (toggle on all chips) |
+| Button  | Разпредели оставащите по равно | Only items with zero assignments → assign all participants    |
+| Badge   | {n} неразпределени             | Visible when n > 0; tap scrolls to first unassigned item      |
 
 **Unassigned visual:** Items with no assignments show amber/red left border until assigned.
 
@@ -198,13 +207,13 @@ Implementation: batch calls to existing `assignments.toggle` or new `assignments
 
 ## Error Handling
 
-| Scenario | UX |
-|----------|-----|
-| No receipt photo | Button hidden/disabled |
-| Missing GEMINI_API_KEY | Action fails; toast: „AI не е конфигуриран“ |
-| Gemini timeout/error | Scan status `failed`; toast with retry hint |
-| Empty extraction | Review sheet shows „Няма разпознати артикули“ |
-| User cancels review | No DB changes |
+| Scenario                 | UX                                                                      |
+| ------------------------ | ----------------------------------------------------------------------- |
+| No receipt photo         | Button hidden/disabled                                                  |
+| Missing GEMINI_API_KEY   | Action fails; toast: „AI не е конфигуриран“                             |
+| Gemini timeout/error     | Scan status `failed`; toast with retry hint                             |
+| Empty extraction         | Review sheet shows „Няма разпознати артикули“                           |
+| User cancels review      | No DB changes                                                           |
 | Replace with assignments | Confirm dialog: „Ще изтриете съществуващите артикули и разпределенията“ |
 
 ## Business Rules
@@ -219,11 +228,13 @@ Implementation: batch calls to existing `assignments.toggle` or new `assignments
 ## Testing
 
 **Unit tests:**
+
 - Post-process filter (exclude zero/negative prices)
 - Totals mismatch detection
 - Import index selection logic (client helper)
 
 **Manual test plan:**
+
 1. Upload receipt → scan → review → import
 2. Scan with existing items → Add vs Replace dialog
 3. Bulk „Разпредели всички по равно“ → verify sticky totals

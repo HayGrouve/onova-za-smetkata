@@ -14,21 +14,22 @@
 
 ## File Map
 
-| File | Responsibility |
-|------|----------------|
-| `src/lib/bill-calculations.ts` | Add breakdown types + `calculateParticipantBreakdown` |
-| `src/lib/bill-calculations.test.ts` | Breakdown + invariant tests |
-| `src/components/bills/payment-actions.tsx` | Shared mark-paid / partial payment UI |
-| `src/components/bills/payment-row.tsx` | Use `PaymentActions`; tap row to open sheet |
-| `src/components/bills/receipt-preview-card.tsx` | Thumbnail + full-screen Dialog |
-| `src/components/bills/participant-detail-sheet.tsx` | Breakdown lines + totals + payment actions |
-| `src/routes/bills/$billId/summary.tsx` | Wire receipt card, sheet state, item names in calc input |
+| File                                                | Responsibility                                           |
+| --------------------------------------------------- | -------------------------------------------------------- |
+| `src/lib/bill-calculations.ts`                      | Add breakdown types + `calculateParticipantBreakdown`    |
+| `src/lib/bill-calculations.test.ts`                 | Breakdown + invariant tests                              |
+| `src/components/bills/payment-actions.tsx`          | Shared mark-paid / partial payment UI                    |
+| `src/components/bills/payment-row.tsx`              | Use `PaymentActions`; tap row to open sheet              |
+| `src/components/bills/receipt-preview-card.tsx`     | Thumbnail + full-screen Dialog                           |
+| `src/components/bills/participant-detail-sheet.tsx` | Breakdown lines + totals + payment actions               |
+| `src/routes/bills/$billId/summary.tsx`              | Wire receipt card, sheet state, item names in calc input |
 
 ---
 
 ### Task 1: Participant breakdown calculation
 
 **Files:**
+
 - Modify: `src/lib/bill-calculations.ts`
 - Modify: `src/lib/bill-calculations.test.ts`
 
@@ -150,7 +151,9 @@ export function calculateParticipantBreakdown(
   let itemsSubtotalCents = 0
 
   for (const item of input.items) {
-    const itemAssignments = input.assignments.filter((a) => a.itemId === item.id)
+    const itemAssignments = input.assignments.filter(
+      (a) => a.itemId === item.id,
+    )
     const usesUnits = itemAssignments.some((a) => a.units !== undefined)
 
     if (usesUnits) {
@@ -176,10 +179,8 @@ export function calculateParticipantBreakdown(
     if (!assignedIds.includes(participantId)) continue
 
     const sortedIds = [...assignedIds].sort((a, b) => {
-      const orderA =
-        input.participants.find((p) => p.id === a)?.sortOrder ?? 0
-      const orderB =
-        input.participants.find((p) => p.id === b)?.sortOrder ?? 0
+      const orderA = input.participants.find((p) => p.id === a)?.sortOrder ?? 0
+      const orderB = input.participants.find((p) => p.id === b)?.sortOrder ?? 0
       return orderA - orderB
     })
 
@@ -193,8 +194,7 @@ export function calculateParticipantBreakdown(
       kind: 'item',
       label: item.name,
       amountCents: share.cents,
-      sharedWithCount:
-        sortedIds.length > 1 ? sortedIds.length - 1 : undefined,
+      sharedWithCount: sortedIds.length > 1 ? sortedIds.length - 1 : undefined,
     })
   }
 
@@ -246,6 +246,7 @@ EOF
 ### Task 2: Extract shared payment actions
 
 **Files:**
+
 - Create: `src/components/bills/payment-actions.tsx`
 - Modify: `src/components/bills/payment-row.tsx`
 
@@ -371,6 +372,7 @@ EOF
 ### Task 3: Receipt preview card
 
 **Files:**
+
 - Create: `src/components/bills/receipt-preview-card.tsx`
 
 - [ ] **Step 1: Create component**
@@ -468,6 +470,7 @@ EOF
 ### Task 4: Participant detail sheet
 
 **Files:**
+
 - Create: `src/components/bills/participant-detail-sheet.tsx`
 
 - [ ] **Step 1: Create component**
@@ -613,6 +616,7 @@ EOF
 ### Task 5: Wire summary page
 
 **Files:**
+
 - Modify: `src/routes/bills/$billId/summary.tsx`
 
 - [ ] **Step 1: Add imports and state**

@@ -14,29 +14,30 @@
 
 ## File Map
 
-| File | Responsibility |
-|------|----------------|
-| `convex/schema.ts` | Table definitions and indexes |
-| `convex/bills.ts` | Bill CRUD, list, finalize, delete cascade |
-| `convex/participants.ts` | Participant add/remove/reorder |
-| `convex/items.ts` | Item CRUD |
-| `convex/assignments.ts` | Toggle assignment per item+participant |
-| `convex/payments.ts` | Record full/partial payments |
-| `convex/files.ts` | Receipt upload URL generation |
-| `src/lib/bill-calculations.ts` | Pure split/total logic |
-| `src/lib/format-currency.ts` | EUR formatting for bg-BG locale |
-| `src/hooks/use-debounced-callback.ts` | Debounce helper for auto-save |
-| `src/components/bills/` | Bill UI components |
-| `src/routes/index.tsx` | Home — list, search, new bill |
-| `src/routes/bills/$billId.tsx` | Bill editor |
-| `src/routes/bills/$billId/summary.tsx` | Summary, finalize, payments |
-| `public/manifest.json` | PWA config |
+| File                                   | Responsibility                            |
+| -------------------------------------- | ----------------------------------------- |
+| `convex/schema.ts`                     | Table definitions and indexes             |
+| `convex/bills.ts`                      | Bill CRUD, list, finalize, delete cascade |
+| `convex/participants.ts`               | Participant add/remove/reorder            |
+| `convex/items.ts`                      | Item CRUD                                 |
+| `convex/assignments.ts`                | Toggle assignment per item+participant    |
+| `convex/payments.ts`                   | Record full/partial payments              |
+| `convex/files.ts`                      | Receipt upload URL generation             |
+| `src/lib/bill-calculations.ts`         | Pure split/total logic                    |
+| `src/lib/format-currency.ts`           | EUR formatting for bg-BG locale           |
+| `src/hooks/use-debounced-callback.ts`  | Debounce helper for auto-save             |
+| `src/components/bills/`                | Bill UI components                        |
+| `src/routes/index.tsx`                 | Home — list, search, new bill             |
+| `src/routes/bills/$billId.tsx`         | Bill editor                               |
+| `src/routes/bills/$billId/summary.tsx` | Summary, finalize, payments               |
+| `public/manifest.json`                 | PWA config                                |
 
 ---
 
 ### Task 1: Bill calculation module
 
 **Files:**
+
 - Create: `src/lib/bill-calculations.ts`
 - Create: `src/lib/bill-calculations.test.ts`
 
@@ -192,10 +193,8 @@ export function calculateBillTotals(input: BillCalculationInput): BillTotals {
       .map((a) => a.participantId)
 
     const sortedIds = [...assignedIds].sort((a, b) => {
-      const orderA =
-        input.participants.find((p) => p.id === a)?.sortOrder ?? 0
-      const orderB =
-        input.participants.find((p) => p.id === b)?.sortOrder ?? 0
+      const orderA = input.participants.find((p) => p.id === a)?.sortOrder ?? 0
+      const orderB = input.participants.find((p) => p.id === b)?.sortOrder ?? 0
       return orderA - orderB
     })
 
@@ -258,8 +257,7 @@ export function validateBillForFinalize(input: {
   }
 
   const unassigned = pricedItems.filter(
-    (item) =>
-      !input.assignments.some((a) => a.itemId === item.id),
+    (item) => !input.assignments.some((a) => a.itemId === item.id),
   )
   if (unassigned.length > 0) {
     errors.push({
@@ -293,6 +291,7 @@ EOF
 ### Task 2: Currency formatting
 
 **Files:**
+
 - Create: `src/lib/format-currency.ts`
 - Create: `src/lib/format-currency.test.ts`
 
@@ -354,6 +353,7 @@ export function parseEurInput(value: string): number {
 ### Task 3: Convex schema
 
 **Files:**
+
 - Modify: `convex/schema.ts` (replace demo tables)
 
 - [ ] **Step 1: Replace schema**
@@ -424,6 +424,7 @@ Expected: Schema deploys without errors
 ### Task 4: Convex bills API
 
 **Files:**
+
 - Create: `convex/bills.ts`
 
 - [ ] **Step 1: Implement bills queries and mutations**
@@ -562,6 +563,7 @@ export const remove = mutation({
 ### Task 5: Convex participants, items, assignments, payments
 
 **Files:**
+
 - Create: `convex/participants.ts`
 - Create: `convex/items.ts`
 - Create: `convex/assignments.ts`
@@ -637,6 +639,7 @@ export const remove = mutation({
 ### Task 6: Receipt file upload
 
 **Files:**
+
 - Create: `convex/files.ts`
 
 - [ ] **Step 1: Implement generateUploadUrl mutation**
@@ -671,6 +674,7 @@ pnpm dlx shadcn@latest add button input label card badge dialog sheet toast sepa
 ### Task 8: App shell and PWA
 
 **Files:**
+
 - Modify: `src/routes/__root.tsx`
 - Modify: `public/manifest.json`
 
@@ -702,6 +706,7 @@ In `src/integrations/convex/provider.tsx`, change `CONVEX_URL` to `VITE_CONVEX_U
 ### Task 9: Home screen
 
 **Files:**
+
 - Modify: `src/routes/index.tsx`
 - Create: `src/components/bills/bill-card.tsx`
 
@@ -722,6 +727,7 @@ In `src/integrations/convex/provider.tsx`, change `CONVEX_URL` to `VITE_CONVEX_U
 ### Task 10: Bill editor page
 
 **Files:**
+
 - Create: `src/routes/bills/$billId.tsx`
 - Create: `src/components/bills/participant-list.tsx`
 - Create: `src/components/bills/item-list.tsx`
@@ -749,6 +755,7 @@ In `src/integrations/convex/provider.tsx`, change `CONVEX_URL` to `VITE_CONVEX_U
 ### Task 11: Sticky totals bar
 
 **Files:**
+
 - Create: `src/components/bills/sticky-totals-bar.tsx`
 
 - [ ] **Step 1: Compute totals client-side with calculateBillTotals from loaded bill data**
@@ -764,6 +771,7 @@ In `src/integrations/convex/provider.tsx`, change `CONVEX_URL` to `VITE_CONVEX_U
 ### Task 12: Summary and payments page
 
 **Files:**
+
 - Create: `src/routes/bills/$billId/summary.tsx`
 - Create: `src/components/bills/payment-row.tsx`
 - Create: `src/components/bills/participant-label.tsx` (handles duplicate name disambiguation)
@@ -787,6 +795,7 @@ In `src/integrations/convex/provider.tsx`, change `CONVEX_URL` to `VITE_CONVEX_U
 ### Task 13: Duplicate name disambiguation
 
 **Files:**
+
 - Create: `src/lib/participant-labels.ts`
 - Create: `src/lib/participant-labels.test.ts`
 
@@ -801,6 +810,7 @@ In `src/integrations/convex/provider.tsx`, change `CONVEX_URL` to `VITE_CONVEX_U
 ### Task 14: Delete undo toast
 
 **Files:**
+
 - Modify: item/participant delete handlers in editor components
 
 - [ ] **Step 1: On delete, store deleted entity snapshot in component state**

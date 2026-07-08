@@ -14,32 +14,33 @@
 
 ## File Map
 
-| File | Responsibility |
-|------|----------------|
-| `src/lib/bill-share.ts` | Share text + copy amount formatters |
-| `src/lib/bill-share.test.ts` | Tests |
-| `src/lib/payment-settings.ts` | localStorage CRUD |
-| `src/lib/bill-calculations.ts` | `missing_restaurant` validation |
-| `src/lib/bill-calculations.test.ts` | Validation test |
-| `convex/participants.ts` | `listRecentNames` query |
-| `convex/bills.ts` | Server finalize guard |
-| `src/components/bills/payment-settings-sheet.tsx` | Settings UI |
-| `src/components/bills/share-bill-button.tsx` | Share/copy button |
-| `src/components/bills/payment-progress.tsx` | Progress bar |
-| `src/components/bills/participant-pay-actions.tsx` | Copy/Revolut/IBAN |
-| `src/components/bills/payment-row.tsx` | Wire pay actions + tap copy |
-| `src/components/bills/participant-detail-sheet.tsx` | Wire pay actions |
-| `src/components/bills/participant-list.tsx` | Recent name chips |
-| `src/components/bills/bill-card.tsx` | Delete dropdown |
-| `src/routes/bills/$billId/summary.tsx` | Integrate all summary features |
-| `src/routes/index.tsx` | Settings button |
-| `src/routes/__root.tsx` | DEV-only devtools |
+| File                                                | Responsibility                      |
+| --------------------------------------------------- | ----------------------------------- |
+| `src/lib/bill-share.ts`                             | Share text + copy amount formatters |
+| `src/lib/bill-share.test.ts`                        | Tests                               |
+| `src/lib/payment-settings.ts`                       | localStorage CRUD                   |
+| `src/lib/bill-calculations.ts`                      | `missing_restaurant` validation     |
+| `src/lib/bill-calculations.test.ts`                 | Validation test                     |
+| `convex/participants.ts`                            | `listRecentNames` query             |
+| `convex/bills.ts`                                   | Server finalize guard               |
+| `src/components/bills/payment-settings-sheet.tsx`   | Settings UI                         |
+| `src/components/bills/share-bill-button.tsx`        | Share/copy button                   |
+| `src/components/bills/payment-progress.tsx`         | Progress bar                        |
+| `src/components/bills/participant-pay-actions.tsx`  | Copy/Revolut/IBAN                   |
+| `src/components/bills/payment-row.tsx`              | Wire pay actions + tap copy         |
+| `src/components/bills/participant-detail-sheet.tsx` | Wire pay actions                    |
+| `src/components/bills/participant-list.tsx`         | Recent name chips                   |
+| `src/components/bills/bill-card.tsx`                | Delete dropdown                     |
+| `src/routes/bills/$billId/summary.tsx`              | Integrate all summary features      |
+| `src/routes/index.tsx`                              | Settings button                     |
+| `src/routes/__root.tsx`                             | DEV-only devtools                   |
 
 ---
 
 ### Task 1: Share text and copy helpers
 
 **Files:**
+
 - Create: `src/lib/bill-share.ts`
 - Create: `src/lib/bill-share.test.ts`
 
@@ -128,7 +129,10 @@ export function formatBillShareText(input: BillShareInput): string {
   return [header, total, '', ...lines].join('\n')
 }
 
-export async function shareOrCopyText(text: string, title: string): Promise<'shared' | 'copied'> {
+export async function shareOrCopyText(
+  text: string,
+  title: string,
+): Promise<'shared' | 'copied'> {
   if (typeof navigator !== 'undefined' && navigator.share) {
     try {
       await navigator.share({ title, text })
@@ -162,6 +166,7 @@ EOF
 ### Task 2: Payment settings (localStorage)
 
 **Files:**
+
 - Create: `src/lib/payment-settings.ts`
 - Create: `src/components/bills/payment-settings-sheet.tsx`
 
@@ -190,7 +195,10 @@ export function savePaymentSettings(settings: PaymentSettings): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
 }
 
-export function buildRevolutUrl(username: string, remainingCents: number): string {
+export function buildRevolutUrl(
+  username: string,
+  remainingCents: number,
+): string {
   const clean = username.replace(/^@/, '').trim()
   const amount = (remainingCents / 100).toFixed(2)
   return `https://revolut.me/${encodeURIComponent(clean)}/${amount}`
@@ -221,6 +229,7 @@ EOF
 ### Task 3: Participant pay actions
 
 **Files:**
+
 - Create: `src/components/bills/participant-pay-actions.tsx`
 - Modify: `src/components/bills/payment-row.tsx`
 - Modify: `src/components/bills/participant-detail-sheet.tsx`
@@ -230,6 +239,7 @@ EOF
 Props: `remainingCents`, `label`. Load settings via `loadPaymentSettings()`.
 
 Buttons row (only when `remainingCents > 0`):
+
 - **Копирай** → clipboard `formatCopyAmount(remainingCents)` + toast
 - **Revolut** → copy amount + `window.open(buildRevolutUrl(...))` if username set
 - **IBAN** → copy IBAN if set
@@ -258,6 +268,7 @@ EOF
 ### Task 4: Share button and payment progress
 
 **Files:**
+
 - Create: `src/components/bills/share-bill-button.tsx`
 - Create: `src/components/bills/payment-progress.tsx`
 - Modify: `src/routes/bills/$billId/summary.tsx`
@@ -273,12 +284,14 @@ Props: `participants`, `totals.byParticipant`. Compute paid count, render bar + 
 - [ ] **Step 3: Wire summary page**
 
 After total card:
+
 ```tsx
 <ShareBillButton ... />
 <Button variant="ghost" onClick={() => setSettingsOpen(true)}>Настройки за плащане</Button>
 ```
 
 Before payments card:
+
 ```tsx
 <PaymentProgress ... />
 ```
@@ -303,6 +316,7 @@ EOF
 ### Task 5: Validation and recent names
 
 **Files:**
+
 - Modify: `src/lib/bill-calculations.ts`
 - Modify: `src/lib/bill-calculations.test.ts`
 - Modify: `convex/participants.ts`
@@ -390,6 +404,7 @@ EOF
 ### Task 6: Home delete and devtools
 
 **Files:**
+
 - Modify: `src/components/bills/bill-card.tsx`
 - Modify: `src/routes/index.tsx`
 - Modify: `src/routes/__root.tsx`

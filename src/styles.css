@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap');
+/* display=swap in the URL above avoids invisible text while fonts load */
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
@@ -176,8 +177,17 @@ body {
   background:
     radial-gradient(1100px 620px at -8% -10%, var(--hero-a), transparent 58%),
     radial-gradient(1050px 620px at 112% -12%, var(--hero-b), transparent 62%),
-    radial-gradient(720px 380px at 50% 115%, rgba(79, 184, 178, 0.1), transparent 68%),
-    linear-gradient(180deg, color-mix(in oklab, var(--sand) 68%, white) 0%, var(--foam) 44%, var(--bg-base) 100%);
+    radial-gradient(
+      720px 380px at 50% 115%,
+      rgba(79, 184, 178, 0.1),
+      transparent 68%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--sand) 68%, white) 0%,
+      var(--foam) 44%,
+      var(--bg-base) 100%
+    );
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-font-smoothing: antialiased;
@@ -192,8 +202,16 @@ body::before {
   z-index: -1;
   opacity: 0.28;
   background:
-    radial-gradient(circle at 20% 15%, rgba(255, 255, 255, 0.8), transparent 34%),
-    radial-gradient(circle at 78% 26%, rgba(79, 184, 178, 0.2), transparent 42%),
+    radial-gradient(
+      circle at 20% 15%,
+      rgba(255, 255, 255, 0.8),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 78% 26%,
+      rgba(79, 184, 178, 0.2),
+      transparent 42%
+    ),
     radial-gradient(circle at 42% 82%, rgba(47, 106, 74, 0.14), transparent 36%);
 }
 
@@ -216,7 +234,11 @@ body::after {
   background:
     radial-gradient(1100px 620px at -8% -10%, var(--hero-a), transparent 58%),
     radial-gradient(1050px 620px at 112% -12%, var(--hero-b), transparent 62%),
-    radial-gradient(720px 380px at 50% 115%, rgba(96, 215, 207, 0.08), transparent 68%),
+    radial-gradient(
+      720px 380px at 50% 115%,
+      rgba(96, 215, 207, 0.08),
+      transparent 68%
+    ),
     linear-gradient(
       180deg,
       color-mix(in oklab, var(--sand) 40%, black) 0%,
@@ -228,9 +250,21 @@ body::after {
 .dark body::before {
   opacity: 0.16;
   background:
-    radial-gradient(circle at 20% 15%, rgba(141, 229, 219, 0.12), transparent 34%),
-    radial-gradient(circle at 78% 26%, rgba(96, 215, 207, 0.1), transparent 42%),
-    radial-gradient(circle at 42% 82%, rgba(110, 200, 154, 0.08), transparent 36%);
+    radial-gradient(
+      circle at 20% 15%,
+      rgba(141, 229, 219, 0.12),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 78% 26%,
+      rgba(96, 215, 207, 0.1),
+      transparent 42%
+    ),
+    radial-gradient(
+      circle at 42% 82%,
+      rgba(110, 200, 154, 0.08),
+      transparent 36%
+    );
 }
 
 .dark body::after {
@@ -295,7 +329,11 @@ pre code {
 }
 
 .feature-card {
-  background: linear-gradient(165deg, color-mix(in oklab, var(--surface-strong) 93%, white 7%), var(--surface));
+  background: linear-gradient(
+    165deg,
+    color-mix(in oklab, var(--surface-strong) 93%, white 7%),
+    var(--surface)
+  );
   box-shadow:
     0 1px 0 var(--inset-glint) inset,
     0 18px 34px rgba(30, 90, 72, 0.1),
@@ -310,7 +348,10 @@ pre code {
 button,
 .island-shell,
 a {
-  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease,
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
     transform 180ms ease;
 }
 
@@ -501,7 +542,8 @@ a {
       }
       50% {
         border-color: color-mix(in oklab, var(--primary) 35%, var(--border));
-        box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 10%, transparent);
+        box-shadow: 0 0 0 3px
+          color-mix(in oklab, var(--primary) 10%, transparent);
       }
     }
 

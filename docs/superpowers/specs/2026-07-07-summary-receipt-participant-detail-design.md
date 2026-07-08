@@ -11,14 +11,14 @@ Enhance the bill summary page with a tappable receipt image (expand to full-scre
 
 ## Decisions
 
-| Decision | Choice |
-|----------|--------|
-| Participant detail UI | Bottom sheet (same pattern as editor sticky totals) |
-| Receipt on summary | Always visible thumbnail when uploaded |
-| Receipt expand | Tap thumbnail → full-screen Dialog/lightbox |
-| Payment actions | On summary row **and** repeated at bottom of participant sheet |
-| Breakdown calculation | Pure client-side function in `bill-calculations.ts` |
-| Entry point | Summary page only (not sticky bar on editor) |
+| Decision              | Choice                                                         |
+| --------------------- | -------------------------------------------------------------- |
+| Participant detail UI | Bottom sheet (same pattern as editor sticky totals)            |
+| Receipt on summary    | Always visible thumbnail when uploaded                         |
+| Receipt expand        | Tap thumbnail → full-screen Dialog/lightbox                    |
+| Payment actions       | On summary row **and** repeated at bottom of participant sheet |
+| Breakdown calculation | Pure client-side function in `bill-calculations.ts`            |
+| Entry point           | Summary page only (not sticky bar on editor)                   |
 
 ## Architecture
 
@@ -113,13 +113,13 @@ export interface ParticipantBreakdown {
 
 ### Rules (must mirror `calculateBillTotals`)
 
-| Case | Breakdown line |
-|------|----------------|
-| Unit assignment | One line per assigned item; amount = `units × unitPriceCents`; show units vs item quantity |
-| Equal multi-assign | One line; amount from `splitLineTotal`; show shared count |
-| Single assignee | One line; full line total |
-| Tip | One line per participant when tip > 0; amount from equal split among all participants |
-| Zero share | Omit line (participant not on item) |
+| Case               | Breakdown line                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------ |
+| Unit assignment    | One line per assigned item; amount = `units × unitPriceCents`; show units vs item quantity |
+| Equal multi-assign | One line; amount from `splitLineTotal`; show shared count                                  |
+| Single assignee    | One line; full line total                                                                  |
+| Tip                | One line per participant when tip > 0; amount from equal split among all participants      |
+| Zero share         | Omit line (participant not on item)                                                        |
 
 ### Invariant
 
@@ -127,13 +127,13 @@ For every participant: `sum(line.amountCents) === owedCents` from `calculateBill
 
 ## Components
 
-| Component | File | Responsibility |
-|-----------|------|------------------|
-| `ReceiptPreviewCard` | `src/components/bills/receipt-preview-card.tsx` | Thumbnail + expand Dialog |
-| `ParticipantDetailSheet` | `src/components/bills/participant-detail-sheet.tsx` | Breakdown sheet + payment actions |
-| `PaymentActions` | `src/components/bills/payment-actions.tsx` | Shared mark-paid / partial UI (extracted from `PaymentRow`) |
-| `PaymentRow` | modify | Tap-to-open sheet; use `PaymentActions` |
-| `BillSummary` | `src/routes/bills/$billId/summary.tsx` | Wire receipt card + sheet state |
+| Component                | File                                                | Responsibility                                              |
+| ------------------------ | --------------------------------------------------- | ----------------------------------------------------------- |
+| `ReceiptPreviewCard`     | `src/components/bills/receipt-preview-card.tsx`     | Thumbnail + expand Dialog                                   |
+| `ParticipantDetailSheet` | `src/components/bills/participant-detail-sheet.tsx` | Breakdown sheet + payment actions                           |
+| `PaymentActions`         | `src/components/bills/payment-actions.tsx`          | Shared mark-paid / partial UI (extracted from `PaymentRow`) |
+| `PaymentRow`             | modify                                              | Tap-to-open sheet; use `PaymentActions`                     |
+| `BillSummary`            | `src/routes/bills/$billId/summary.tsx`              | Wire receipt card + sheet state                             |
 
 ## Out of scope
 

@@ -11,14 +11,14 @@ Enhance the personal bill-splitter for a single operator who runs the bill while
 
 ## Decisions
 
-| Decision | Choice |
-|----------|--------|
-| Product direction | Solo operator — friends do not need the app |
-| Saved names | Derived recent names from past bills (no new contacts table) |
-| Payment handle storage | `localStorage` (Revolut username, optional IBAN) |
-| Share mechanism | Plain-text summary; Web Share API with clipboard fallback |
-| Progress metric | Count participants fully paid (`status === 'paid'`) |
-| Restaurant name | Required before finalize (client + server) |
+| Decision               | Choice                                                       |
+| ---------------------- | ------------------------------------------------------------ |
+| Product direction      | Solo operator — friends do not need the app                  |
+| Saved names            | Derived recent names from past bills (no new contacts table) |
+| Payment handle storage | `localStorage` (Revolut username, optional IBAN)             |
+| Share mechanism        | Plain-text summary; Web Share API with clipboard fallback    |
+| Progress metric        | Count participants fully paid (`status === 'paid'`)          |
+| Restaurant name        | Required before finalize (client + server)                   |
 
 ## Architecture
 
@@ -106,18 +106,20 @@ Key: `onova-payment-settings`
 
 ```typescript
 interface PaymentSettings {
-  revolutUsername?: string  // without @ or revolut.me prefix
-  iban?: string             // optional, copy-only
+  revolutUsername?: string // without @ or revolut.me prefix
+  iban?: string // optional, copy-only
 }
 ```
 
 ### Settings UI
 
 Sheet **„Настройки за плащане“** accessible from:
+
 - Home page: text button or icon in header area (below title row)
 - Summary page: link near share button
 
 Fields:
+
 - Revolut потребителско име (placeholder: `username`)
 - IBAN (optional, placeholder for manual transfers)
 
@@ -127,11 +129,11 @@ Save on blur or explicit „Запази“ button. Persist to localStorage.
 
 On `PaymentRow` and `ParticipantDetailSheet` when `remainingCents > 0`:
 
-| Action | Behavior |
-|--------|----------|
-| **Копирай** | Copy remaining amount (same as tap on остатък) |
+| Action      | Behavior                                                                                                                                                                                                                      |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Копирай** | Copy remaining amount (same as tap on остатък)                                                                                                                                                                                |
 | **Revolut** | Visible only if `revolutUsername` set. Opens `https://revolut.me/{username}/{amountInEur}` in new tab/window where amount is decimal EUR string (e.g. `12.50`). Also copy amount to clipboard first. Toast: „Отворен Revolut“ |
-| **IBAN** | Visible only if IBAN set. Copy IBAN to clipboard. Toast: „IBAN копиран“ |
+| **IBAN**    | Visible only if IBAN set. Copy IBAN to clipboard. Toast: „IBAN копиран“                                                                                                                                                       |
 
 Revolut URL amount: use `(remainingCents / 100).toFixed(2)` with dot separator per Revolut URL convention.
 
@@ -191,7 +193,10 @@ Empty state: hide chip row when no suggestions.
 
 ```typescript
 if (!restaurantName.trim()) {
-  errors.push({ code: 'missing_restaurant', message: 'Въведете име на ресторант.' })
+  errors.push({
+    code: 'missing_restaurant',
+    message: 'Въведете име на ресторант.',
+  })
 }
 ```
 
@@ -211,25 +216,25 @@ In `__root.tsx`, render `TanStackDevtools` only when `import.meta.env.DEV`.
 
 ## Components & files
 
-| File | Action |
-|------|--------|
-| `src/lib/bill-share.ts` | New: share text + copy amount formatters |
-| `src/lib/bill-share.test.ts` | Unit tests |
-| `src/lib/payment-settings.ts` | New: localStorage read/write |
-| `src/lib/bill-calculations.ts` | Extend validation |
-| `convex/participants.ts` | Add `listRecentNames` query |
-| `convex/bills.ts` | Server finalize guard |
-| `src/components/bills/share-bill-button.tsx` | New |
-| `src/components/bills/payment-progress.tsx` | New |
-| `src/components/bills/payment-settings-sheet.tsx` | New |
-| `src/components/bills/participant-pay-actions.tsx` | New (copy/revolut/iban) |
-| `src/components/bills/payment-row.tsx` | Wire pay actions + copy |
-| `src/components/bills/participant-detail-sheet.tsx` | Wire pay actions |
-| `src/components/bills/participant-list.tsx` | Recent chips |
-| `src/components/bills/bill-card.tsx` | Delete menu |
-| `src/routes/bills/$billId/summary.tsx` | Progress, share, settings link, sort |
-| `src/routes/index.tsx` | Settings entry |
-| `src/routes/__root.tsx` | DEV-only devtools |
+| File                                                | Action                                   |
+| --------------------------------------------------- | ---------------------------------------- |
+| `src/lib/bill-share.ts`                             | New: share text + copy amount formatters |
+| `src/lib/bill-share.test.ts`                        | Unit tests                               |
+| `src/lib/payment-settings.ts`                       | New: localStorage read/write             |
+| `src/lib/bill-calculations.ts`                      | Extend validation                        |
+| `convex/participants.ts`                            | Add `listRecentNames` query              |
+| `convex/bills.ts`                                   | Server finalize guard                    |
+| `src/components/bills/share-bill-button.tsx`        | New                                      |
+| `src/components/bills/payment-progress.tsx`         | New                                      |
+| `src/components/bills/payment-settings-sheet.tsx`   | New                                      |
+| `src/components/bills/participant-pay-actions.tsx`  | New (copy/revolut/iban)                  |
+| `src/components/bills/payment-row.tsx`              | Wire pay actions + copy                  |
+| `src/components/bills/participant-detail-sheet.tsx` | Wire pay actions                         |
+| `src/components/bills/participant-list.tsx`         | Recent chips                             |
+| `src/components/bills/bill-card.tsx`                | Delete menu                              |
+| `src/routes/bills/$billId/summary.tsx`              | Progress, share, settings link, sort     |
+| `src/routes/index.tsx`                              | Settings entry                           |
+| `src/routes/__root.tsx`                             | DEV-only devtools                        |
 
 ## Out of scope
 
@@ -243,12 +248,12 @@ In `__root.tsx`, render `TanStackDevtools` only when `import.meta.env.DEV`.
 
 ## Testing
 
-| Area | Test |
-|------|------|
-| `formatBillShareText` | Restaurant, totals, statuses in output |
-| `formatCopyAmount` | 1250 → `12,50` |
-| `validateBillForFinalize` | Empty restaurantName → error |
-| Manual | Share on mobile, Revolut link, recent chips, delete from home, finalize blocked without restaurant |
+| Area                      | Test                                                                                               |
+| ------------------------- | -------------------------------------------------------------------------------------------------- |
+| `formatBillShareText`     | Restaurant, totals, statuses in output                                                             |
+| `formatCopyAmount`        | 1250 → `12,50`                                                                                     |
+| `validateBillForFinalize` | Empty restaurantName → error                                                                       |
+| Manual                    | Share on mobile, Revolut link, recent chips, delete from home, finalize blocked without restaurant |
 
 ## Error handling
 

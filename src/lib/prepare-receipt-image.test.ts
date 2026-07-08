@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { needsHeicConversion, resolveUploadContentType } from './prepare-receipt-image'
+import {
+  needsHeicConversion,
+  resolveUploadContentType,
+} from './prepare-receipt-image'
 
 describe('needsHeicConversion', () => {
   it('detects HEIC mime type', () => {

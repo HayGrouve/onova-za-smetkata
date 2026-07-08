@@ -13,7 +13,10 @@ export interface ParticipantPayActionsProps {
   onOpenSettings?: () => void
 }
 
-async function copyAmount(cents: number, options?: { silent?: boolean }): Promise<boolean> {
+async function copyAmount(
+  cents: number,
+  options?: { silent?: boolean },
+): Promise<boolean> {
   const copied = await copyToClipboard(formatCopyAmount(cents))
   if (copied && !options?.silent) {
     toast.success('Копирано')
@@ -49,7 +52,12 @@ export function ParticipantPayActions({
 
   return (
     <div className="flex flex-col gap-2">
-      <Button variant="outline" size="sm" className="w-fit" onClick={handleRevolut}>
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-fit"
+        onClick={handleRevolut}
+      >
         <SendIcon className={ICON.button} aria-hidden />
         Revolut
       </Button>

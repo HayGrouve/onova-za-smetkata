@@ -1,9 +1,6 @@
 import { useAuthActions, useConvexAuth } from '@convex-dev/auth/react'
 import { useEffect, useRef } from 'react'
-import {
-  DEV_USER_EMAIL,
-  DEV_USER_PASSWORD,
-} from '#/lib/dev-user.ts'
+import { DEV_USER_EMAIL, DEV_USER_PASSWORD } from '#/lib/dev-user.ts'
 import { isClientDevMode } from '#/lib/dev-mode.ts'
 
 async function ensureDevSignIn(

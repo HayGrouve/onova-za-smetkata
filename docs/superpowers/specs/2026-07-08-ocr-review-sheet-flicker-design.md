@@ -33,7 +33,7 @@ Secondary: on first paint, review rows are seeded in `useEffect`, so `rows.lengt
 
 ## Files
 
-| File | Change |
-|------|--------|
-| `src/routes/bills/$billId/index.tsx` | Conditionally render `StickyTotalsBar` |
-| `src/components/bills/receipt-scan-review-sheet.tsx` | Opaque layout + empty-state guard |
+| File                                                 | Change                                 |
+| ---------------------------------------------------- | -------------------------------------- |
+| `src/routes/bills/$billId/index.tsx`                 | Conditionally render `StickyTotalsBar` |
+| `src/components/bills/receipt-scan-review-sheet.tsx` | Opaque layout + empty-state guard      |

@@ -15,25 +15,25 @@ Add **host authentication** so each signed-in user manages only their own bills 
 
 ## Decisions
 
-| Decision | Choice |
-|----------|--------|
-| Auth scope | Host routes only; guest `/join` and `/claim` remain public |
-| Security model | **Backend-enforced** (Convex guards) + UI redirects for UX |
-| User growth | Start minimal; architecture supports many users later |
-| Sign-in methods | Google OAuth + email magic link (Resend) |
-| Auth library | Convex Auth (`@convex-dev/auth`) |
-| Legacy data | **Ignore / wipe** — no migration, no orphan-bill support |
-| Guest Revolut | Read **bill owner's** payment settings via `getForGuest` |
-| SSR auth | Client-side route guards only (PWA; Convex Auth SSR still beta) |
+| Decision        | Choice                                                          |
+| --------------- | --------------------------------------------------------------- |
+| Auth scope      | Host routes only; guest `/join` and `/claim` remain public      |
+| Security model  | **Backend-enforced** (Convex guards) + UI redirects for UX      |
+| User growth     | Start minimal; architecture supports many users later           |
+| Sign-in methods | Google OAuth + email magic link (Resend)                        |
+| Auth library    | Convex Auth (`@convex-dev/auth`)                                |
+| Legacy data     | **Ignore / wipe** — no migration, no orphan-bill support        |
+| Guest Revolut   | Read **bill owner's** payment settings via `getForGuest`        |
+| SSR auth        | Client-side route guards only (PWA; Convex Auth SSR still beta) |
 
 ## Security model
 
 ### Two layers
 
-| Layer | Role | Sufficient alone? |
-|-------|------|-------------------|
-| **Convex functions** | `requireAuth`, `requireBillOwner` on host APIs | **Yes** — real enforcement |
-| **React routes** | Redirect unauthenticated users from host pages to `/login` | No — UX only |
+| Layer                | Role                                                       | Sufficient alone?          |
+| -------------------- | ---------------------------------------------------------- | -------------------------- |
+| **Convex functions** | `requireAuth`, `requireBillOwner` on host APIs             | **Yes** — real enforcement |
+| **React routes**     | Redirect unauthenticated users from host pages to `/login` | No — UX only               |
 
 An attacker with the Convex client can bypass the UI but **cannot** call host mutations without a valid auth token, and cannot access another user's bills even with a guessed bill ID on host endpoints.
 
@@ -65,14 +65,14 @@ They validate bill existence, draft status, and guest session rules — not host
 
 ### Route access matrix
 
-| Route | UI guard | Convex |
-|-------|----------|--------|
-| `/login` | Public | Auth HTTP routes |
-| `/` | Host | `listWithSummary` requires auth |
-| `/bills/$billId` | Host | `bills.get` requires owner |
-| `/bills/$billId/summary` | Host | same |
-| `/bills/$billId/join` | Public | `getForGuest` |
-| `/bills/$billId/claim` | Public | `getForGuest` + guest mutations |
+| Route                    | UI guard | Convex                          |
+| ------------------------ | -------- | ------------------------------- |
+| `/login`                 | Public   | Auth HTTP routes                |
+| `/`                      | Host     | `listWithSummary` requires auth |
+| `/bills/$billId`         | Host     | `bills.get` requires owner      |
+| `/bills/$billId/summary` | Host     | same                            |
+| `/bills/$billId/join`    | Public   | `getForGuest`                   |
+| `/bills/$billId/claim`   | Public   | `getForGuest` + guest mutations |
 
 ## Schema changes
 
@@ -120,25 +120,25 @@ Uses `getAuthUserId` from `@convex-dev/auth/server`. Throws `ConvexError` with B
 
 ### Host-only (require auth + owner where applicable)
 
-| Module | Functions |
-|--------|-----------|
-| `bills` | `list`, `listWithSummary`, `get`, `create`, `update`, `finalize`, `remove` |
-| `participants` | `add`, `remove`, `listRecentNames` |
-| `items` | `add`, `update`, `remove` |
-| `assignments` | `assignAll` |
-| `payments` | `add` |
-| `paymentSettings` | `get`, `save` |
-| `receiptScan` | all public exports |
-| `files` | `generateUploadUrl`, `getUrl` |
+| Module            | Functions                                                                  |
+| ----------------- | -------------------------------------------------------------------------- |
+| `bills`           | `list`, `listWithSummary`, `get`, `create`, `update`, `finalize`, `remove` |
+| `participants`    | `add`, `remove`, `listRecentNames`                                         |
+| `items`           | `add`, `update`, `remove`                                                  |
+| `assignments`     | `assignAll`                                                                |
+| `payments`        | `add`                                                                      |
+| `paymentSettings` | `get`, `save`                                                              |
+| `receiptScan`     | all public exports                                                         |
+| `files`           | `generateUploadUrl`, `getUrl`                                              |
 
 ### Guest-public
 
-| Module | Functions |
-|--------|-----------|
-| `bills` | **`getForGuest`** — bill must exist and have `ownerId` |
-| `paymentSettings` | **`getForGuest`** — resolves settings via bill owner |
-| `guestSessions` | all |
-| `assignments` | `toggle`, `setUnits` |
+| Module            | Functions                                              |
+| ----------------- | ------------------------------------------------------ |
+| `bills`           | **`getForGuest`** — bill must exist and have `ownerId` |
+| `paymentSettings` | **`getForGuest`** — resolves settings via bill owner   |
+| `guestSessions`   | all                                                    |
+| `assignments`     | `toggle`, `setUnits`                                   |
 
 ## Frontend changes
 
@@ -150,11 +150,11 @@ Uses `getAuthUserId` from `@convex-dev/auth/server`. Throws `ConvexError` with B
 
 ## External setup
 
-| Service | Convex env vars |
-|---------|-----------------|
-| Google OAuth | `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` |
-| Resend magic link | `AUTH_RESEND_KEY` |
-| Redirect base | `SITE_URL` (prod Netlify URL) |
+| Service           | Convex env vars                        |
+| ----------------- | -------------------------------------- |
+| Google OAuth      | `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` |
+| Resend magic link | `AUTH_RESEND_KEY`                      |
+| Redirect base     | `SITE_URL` (prod Netlify URL)          |
 
 Google redirect URI: `{CONVEX_SITE_URL}/api/auth/callback/google`
 

@@ -11,16 +11,16 @@ Make the app production-ready for Netlify deployment with Convex prod backend. S
 
 ## Decisions
 
-| Decision | Choice |
-|----------|--------|
-| Scope | Deploy + polish (not full CI/CD) |
-| Netlify + Convex | Both already provisioned |
-| Access control | Open URL — unlisted link only; no auth, no password, no `noindex` |
-| PWA icons | Generate from existing branding (sea-ink + lagoon on foam background) |
-| Service worker | None — online-only (unchanged from MVP) |
-| Package manager | npm for Netlify build (`package-lock.json` present); add `pnpm-lock.yaml` later if switching to pnpm |
-| Preflight | Local `npm run preflight` runs test + build before deploy |
-| Monitoring | None (no Sentry) |
+| Decision         | Choice                                                                                               |
+| ---------------- | ---------------------------------------------------------------------------------------------------- |
+| Scope            | Deploy + polish (not full CI/CD)                                                                     |
+| Netlify + Convex | Both already provisioned                                                                             |
+| Access control   | Open URL — unlisted link only; no auth, no password, no `noindex`                                    |
+| PWA icons        | Generate from existing branding (sea-ink + lagoon on foam background)                                |
+| Service worker   | None — online-only (unchanged from MVP)                                                              |
+| Package manager  | npm for Netlify build (`package-lock.json` present); add `pnpm-lock.yaml` later if switching to pnpm |
+| Preflight        | Local `npm run preflight` runs test + build before deploy                                            |
+| Monitoring       | None (no Sentry)                                                                                     |
 
 ## Architecture
 
@@ -42,11 +42,11 @@ GitHub (main branch)
 
 **Secret placement:**
 
-| Variable | Where |
-|----------|--------|
-| `VITE_CONVEX_URL` | Netlify env (build-time, public in client bundle) |
+| Variable            | Where                                                      |
+| ------------------- | ---------------------------------------------------------- |
+| `VITE_CONVEX_URL`   | Netlify env (build-time, public in client bundle)          |
 | `CONVEX_DEPLOYMENT` | Local `.env.local` + optional Netlify (CLI/deploy scripts) |
-| `GEMINI_API_KEY` | Convex Dashboard only — never Netlify or repo |
+| `GEMINI_API_KEY`    | Convex Dashboard only — never Netlify or repo              |
 
 **Security:** No authentication. Anyone with the URL can read and modify data. Acceptable for a personal unlisted deployment.
 
@@ -121,11 +121,11 @@ Document full steps in `docs/DEPLOY.md` and link from README.
 
 Create PNG icons using existing CSS brand tokens:
 
-| File | Size | Notes |
-|------|------|-------|
-| `public/icon-192.png` | 192×192 | Home screen |
-| `public/icon-512.png` | 512×512 | Splash / install |
-| `public/apple-touch-icon.png` | 180×180 | iOS |
+| File                          | Size    | Notes            |
+| ----------------------------- | ------- | ---------------- |
+| `public/icon-192.png`         | 192×192 | Home screen      |
+| `public/icon-512.png`         | 512×512 | Splash / install |
+| `public/apple-touch-icon.png` | 180×180 | iOS              |
 
 Visual: foam/off-white background (`#f3faf5`), rounded square, lagoon accent (`#4fb8b2`), sea-ink (`#173a40`) „С“ or receipt motif. Simple flat vector — no external design tool required (generate via script or SVG → PNG export).
 
@@ -226,21 +226,21 @@ Manual checklist after each production deploy:
 
 ## Files to create or modify
 
-| File | Action |
-|------|--------|
-| `netlify.toml` | Update build command to pnpm, add NODE_VERSION |
-| `vite.config.ts` | Conditional devtools plugin |
-| `package.json` | Add `preflight` script |
-| `src/lib/env.ts` | Build-time env validation (new) |
-| `src/integrations/convex/provider.tsx` | Import env validation; runtime fallback UI |
-| `src/routes/__root.tsx` | Error boundary; apple-touch-icon link |
-| `public/manifest.json` | New icon entries |
-| `public/icon-192.png` | New |
-| `public/icon-512.png` | New |
-| `public/apple-touch-icon.png` | New |
-| `.env.example` | Clarify Netlify vs Convex env split |
-| `README.md` | Replace boilerplate |
-| `docs/DEPLOY.md` | New deploy runbook |
+| File                                   | Action                                         |
+| -------------------------------------- | ---------------------------------------------- |
+| `netlify.toml`                         | Update build command to pnpm, add NODE_VERSION |
+| `vite.config.ts`                       | Conditional devtools plugin                    |
+| `package.json`                         | Add `preflight` script                         |
+| `src/lib/env.ts`                       | Build-time env validation (new)                |
+| `src/integrations/convex/provider.tsx` | Import env validation; runtime fallback UI     |
+| `src/routes/__root.tsx`                | Error boundary; apple-touch-icon link          |
+| `public/manifest.json`                 | New icon entries                               |
+| `public/icon-192.png`                  | New                                            |
+| `public/icon-512.png`                  | New                                            |
+| `public/apple-touch-icon.png`          | New                                            |
+| `.env.example`                         | Clarify Netlify vs Convex env split            |
+| `README.md`                            | Replace boilerplate                            |
+| `docs/DEPLOY.md`                       | New deploy runbook                             |
 
 ## Out of scope
 
