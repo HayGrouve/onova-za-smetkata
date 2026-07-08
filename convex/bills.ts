@@ -176,12 +176,12 @@ export const getForGuest = query({
     const bill = await ctx.db.get(args.billId)
     if (!bill?.ownerId) return null
 
-    const { participants, items, assignments } = await loadBillRelations(
+    const { participants, items, assignments, payments } = await loadBillRelations(
       ctx,
       args.billId,
     )
 
-    return { bill, participants, items, assignments }
+    return { bill, participants, items, assignments, payments }
   },
 })
 
