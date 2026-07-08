@@ -421,14 +421,16 @@ function BillEditorContent({
         </Card>
       </div>
 
-      <StickyTotalsBar
-        billId={billId}
-        tipCents={parseEurInput(tip)}
-        participants={participants}
-        items={items}
-        assignments={assignments}
-        payments={payments}
-      />
+      {!reviewSheetOpen ? (
+        <StickyTotalsBar
+          billId={billId}
+          tipCents={parseEurInput(tip)}
+          participants={participants}
+          items={items}
+          assignments={assignments}
+          payments={payments}
+        />
+      ) : null}
 
       <Dialog open={preScanDialogOpen} onOpenChange={setPreScanDialogOpen}>
         <DialogContent>

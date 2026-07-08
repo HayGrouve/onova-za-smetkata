@@ -151,26 +151,26 @@ export function ReceiptScanReviewSheet({
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        className="gap-0 border-0 bg-transparent p-0 shadow-none mb-16"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+        className="mx-auto flex max-h-[85vh] w-full max-w-lg flex-col gap-0 overflow-hidden rounded-t-xl border-t bg-background p-0 pb-[env(safe-area-inset-bottom)] shadow-lg"
       >
-        <div className="relative mx-auto flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl border-t bg-background shadow-lg">
-          <SheetClose className="absolute top-4 right-4 z-10 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
-            <XIcon className="size-4" />
-            <span className="sr-only">Close</span>
-          </SheetClose>
+        <SheetClose className="absolute top-4 right-4 z-10 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
+          <XIcon className="size-4" />
+          <span className="sr-only">Close</span>
+        </SheetClose>
 
-          <SheetHeader className="text-center">
-            <SheetTitle className="px-8 text-center">
-              Преглед на разпознатите артикули
-            </SheetTitle>
-          </SheetHeader>
+        <SheetHeader className="text-center">
+          <SheetTitle className="px-8 text-center">
+            Преглед на разпознатите артикули
+          </SheetTitle>
+        </SheetHeader>
 
-          <div
-            className={cn(
-              'flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4',
-              scanReady === undefined && 'min-h-[40vh]',
-            )}
-          >
+        <div
+          className={cn(
+            'flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4',
+            scanReady === undefined && 'min-h-[40vh]',
+          )}
+        >
             {scanReady === undefined && (
               <div className="flex flex-1 items-center justify-center py-10">
                 <p className="text-sm text-muted-foreground">Зареждане...</p>
@@ -196,7 +196,9 @@ export function ReceiptScanReviewSheet({
             </div>
             )}
 
-            {scanReady && rows.length === 0 && (
+            {scanReady &&
+              rows.length === 0 &&
+              (scanReady.extractedItems?.length ?? 0) === 0 && (
               <p className="text-sm text-muted-foreground">
                 Няма разпознати артикули.
               </p>
@@ -266,10 +268,11 @@ export function ReceiptScanReviewSheet({
               </div>
             </div>
             ))}
-          </div>
 
-          {scanReady && (
-            <SheetFooter className="mt-0 gap-3 border-t">
+        </div>
+
+        {scanReady && (
+          <SheetFooter className="mt-0 gap-3 border-t">
               <div className="flex flex-col gap-1 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Сумата на артикулите</span>
@@ -311,8 +314,7 @@ export function ReceiptScanReviewSheet({
                 </Button>
               </div>
             </SheetFooter>
-          )}
-        </div>
+        )}
       </SheetContent>
     </Sheet>
   )
