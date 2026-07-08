@@ -25,10 +25,12 @@ import {
   filterGuestClaimItemsBySearch,
   filterUnclaimedGuestClaimItems,
 } from '#/lib/guest-claim-items.ts'
+import { buildNoIndexHead } from '#/lib/site-meta.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Doc, Id } from '../../../../convex/_generated/dataModel'
 
 export const Route = createFileRoute('/bills/$billId/claim')({
+  head: () => buildNoIndexHead('Моят дял'),
   component: BillClaimPage,
 })
 

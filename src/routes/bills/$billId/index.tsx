@@ -42,12 +42,14 @@ import { cn } from '#/lib/utils.ts'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
 import { BillHeaderTitleSync } from '#/components/layout/bill-header-title.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
+import { buildNoIndexHead } from '#/lib/site-meta.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
 
 type BillData = NonNullable<FunctionReturnType<typeof api.bills.get>>
 
 export const Route = createFileRoute('/bills/$billId/')({
+  head: () => buildNoIndexHead('Сметка'),
   component: BillEditor,
 })
 

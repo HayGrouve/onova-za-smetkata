@@ -19,7 +19,8 @@
     "lint": "eslint",
     "format": "prettier --write . && eslint --fix",
     "check": "prettier --check .",
-    "generate-icons": "node scripts/generate-pwa-icons.mjs"
+    "generate-icons": "node scripts/generate-pwa-icons.mjs",
+    "generate-og-image": "node scripts/generate-og-image.mjs"
   },
   "dependencies": {
     "@auth/core": "^0.41.1",

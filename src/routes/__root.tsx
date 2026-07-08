@@ -17,6 +17,7 @@ import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 
 import { SentryInit } from '../components/sentry-init.tsx'
+import { SITE_NAME } from '#/lib/site-meta.ts'
 import appCss from '../styles.css?url'
 
 function RootError({ error }: ErrorComponentProps) {
@@ -47,6 +48,7 @@ function RootError({ error }: ErrorComponentProps) {
 
 export const Route = createRootRoute({
   head: () => ({
+    title: SITE_NAME,
     meta: [
       {
         charSet: 'utf-8',
@@ -54,9 +56,6 @@ export const Route = createRootRoute({
       {
         name: 'viewport',
         content: 'width=device-width, initial-scale=1',
-      },
-      {
-        title: 'Онова за сметката',
       },
       {
         name: 'theme-color',

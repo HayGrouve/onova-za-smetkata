@@ -15,9 +15,13 @@ import { Label } from '#/components/ui/label.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
 import { PwaInstallBanner } from '#/components/pwa-install-banner.tsx'
+import { buildHomeHead } from '#/lib/site-meta.ts'
 import { api } from '../../convex/_generated/api'
 
-export const Route = createFileRoute('/')({ component: Home })
+export const Route = createFileRoute('/')({
+  head: () => buildHomeHead(),
+  component: Home,
+})
 
 function Home() {
   const navigate = useNavigate()

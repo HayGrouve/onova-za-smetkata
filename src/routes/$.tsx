@@ -1,7 +1,9 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { Button } from '#/components/ui/button.tsx'
+import { buildNoIndexHead } from '#/lib/site-meta.ts'
 
 export const Route = createFileRoute('/$')({
+  head: () => buildNoIndexHead('Страницата не е намерена'),
   component: NotFoundPage,
 })
 

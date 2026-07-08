@@ -21,3 +21,6 @@ todos.json
 # Playwright
 test-results/
 playwright-report/
+
+# Windows alternate data streams
+*:Zone.Identifier

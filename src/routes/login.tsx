@@ -6,8 +6,10 @@ import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { Separator } from '#/components/ui/separator.tsx'
 import { isClientDevMode } from '#/lib/dev-mode.ts'
+import { buildNoIndexHead } from '#/lib/site-meta.ts'
 
 export const Route = createFileRoute('/login')({
+  head: () => buildNoIndexHead('Вход'),
   validateSearch: (search: Record<string, unknown>) => ({
     redirect:
       typeof search.redirect === 'string' && search.redirect.startsWith('/')
