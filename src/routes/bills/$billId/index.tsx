@@ -3,6 +3,7 @@ import { useMutation, useQuery } from 'convex/react'
 import type { FunctionReturnType } from 'convex/server'
 import {
   CameraIcon,
+  ImageIcon,
   Loader2Icon,
   ReceiptIcon,
   ScanLineIcon,
@@ -115,7 +116,8 @@ function BillEditorContent({
   const updateBill = useMutation(api.bills.update)
   const generateUploadUrl = useMutation(api.files.generateUploadUrl)
   const startScan = useMutation(api.receiptScan.startScan)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
 
   const receiptUrl = useQuery(
@@ -353,25 +355,40 @@ function BillEditorContent({
                 />
               )}
               <input
-                ref={fileInputRef}
+                ref={galleryInputRef}
                 type="file"
                 accept="image/*,.heic,.heif"
                 className="hidden"
                 onChange={handleReceiptChange}
               />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="tap-feedback flex h-11 cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed text-sm text-muted-foreground disabled:opacity-50"
-              >
-                <CameraIcon className="size-4" />
-                {isUploading
-                  ? 'Качване...'
-                  : receiptUrl
-                    ? 'Смени снимката'
-                    : 'Добави снимка'}
-              </button>
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*,.heic,.heif"
+                capture="environment"
+                className="hidden"
+                onChange={handleReceiptChange}
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => galleryInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="tap-feedback flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed text-sm text-muted-foreground disabled:opacity-50"
+                >
+                  <ImageIcon className="size-4" aria-hidden />
+                  {isUploading ? 'Качване...' : 'От галерията'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="tap-feedback flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed text-sm text-muted-foreground disabled:opacity-50"
+                >
+                  <CameraIcon className="size-4" aria-hidden />
+                  {isUploading ? 'Качване...' : 'Снимай'}
+                </button>
+              </div>
               {bill.receiptStorageId && (
                 <div className="flex flex-col gap-1.5">
                   <Button

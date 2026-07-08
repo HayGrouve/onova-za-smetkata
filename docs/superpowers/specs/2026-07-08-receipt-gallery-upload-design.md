@@ -16,7 +16,7 @@ The original product design (`2026-07-07-personal-bill-splitter-design.md`) spec
 
 ## Goal
 
-One button → native OS picker offering camera **and** gallery/photos, with no new in-app menus.
+Two explicit actions: pick an existing image from the gallery, or take a new photo with the camera — no ambiguity on mobile.
 
 ## Non-goals
 
@@ -27,11 +27,14 @@ One button → native OS picker offering camera **and** gallery/photos, with no 
 
 ## Solution
 
-Remove `capture="environment"` from the receipt file input on the bill editor page. Keep:
+Two side-by-side buttons on the bill editor, each wired to its own hidden file input:
 
-- `type="file"`
-- `accept="image/*,.heic,.heif"`
-- Existing `handleReceiptChange` → `prepareReceiptImage` → Convex upload → `receiptStorageId`
+| Button | Input | Behavior |
+|--------|-------|----------|
+| **От галерията** | `accept="image/*,.heic,.heif"` (no `capture`) | Native gallery / file picker |
+| **Снимай** | same `accept` + `capture="environment"` | Opens rear camera immediately on mobile |
+
+Shared `handleReceiptChange` → `prepareReceiptImage` → Convex upload → `receiptStorageId`.
 
 ### Expected platform behavior
 
