@@ -34,6 +34,7 @@ import {
 import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
+import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { parseEurInput } from '#/lib/format-currency.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { prepareReceiptImage } from '#/lib/prepare-receipt-image.ts'
@@ -74,10 +75,7 @@ function BillEditor() {
   const { isAuthenticated, isLoading: authLoading } = useRequireHostAuth(
     `/bills/${billId}`,
   )
-  const data = useQuery(
-    api.bills.get,
-    isAuthenticated ? { billId } : 'skip',
-  )
+  const data = useQuery(api.bills.get, isAuthenticated ? { billId } : 'skip')
 
   if (authLoading || !isAuthenticated) {
     return (
@@ -89,14 +87,6 @@ function BillEditor() {
 
   if (data === undefined) {
     return <BillEditorSkeleton />
-  }
-
-  if (data === null) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-10 text-center text-muted-foreground">
-        Сметката не е намерена.
-      </div>
-    )
   }
 
   return <BillEditorContent billId={billId} data={data} />
@@ -228,7 +218,9 @@ function BillEditorContent({
   ) {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     saveTimeoutRef.current = setTimeout(() => {
-      void updateBill({ billId, ...patch })
+      void updateBill({ billId, ...patch }).catch((error) => {
+        toast.error(getConvexErrorMessage(error))
+      })
     }, 500)
   }
   useEffect(() => {
@@ -468,8 +460,8 @@ function BillEditorContent({
           <DialogHeader>
             <DialogTitle>Вече има артикули в сметката</DialogTitle>
             <DialogDescription>
-              Искате ли да добавите разпознатите артикули към
-              съществуващите, или да ги замените?
+              Искате ли да добавите разпознатите артикули към съществуващите,
+              или да ги замените?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -495,9 +487,8 @@ function BillEditorContent({
           <DialogHeader>
             <DialogTitle>Ще изтриете съществуващите артикули</DialogTitle>
             <DialogDescription>
-              Артикулите имат разпределения между участници. Замяната ще
-              изтрие съществуващите артикули и разпределенията им.
-              Продължавате ли?
+              Артикулите имат разпределения между участници. Замяната ще изтрие
+              съществуващите артикули и разпределенията им. Продължавате ли?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

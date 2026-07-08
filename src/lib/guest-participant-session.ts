@@ -30,13 +30,15 @@ function readSession(): StoredGuestSession | null {
 }
 
 export function createGuestSessionToken(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return crypto.randomUUID()
   }
   return `guest-${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
 
-export function getStoredGuestSession(billId: string): StoredGuestSession | null {
+export function getStoredGuestSession(
+  billId: string,
+): StoredGuestSession | null {
   const session = readSession()
   if (!session || session.billId !== billId) return null
   return session

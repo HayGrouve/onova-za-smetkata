@@ -14,7 +14,13 @@ describe('getGuestClaimItemState', () => {
   it('marks item unavailable when others claimed all units', () => {
     const state = getGuestClaimItemState(
       { _id: 'item-1' as Id<'items'>, quantity: 1 },
-      [{ itemId: 'item-1' as Id<'items'>, participantId: participantB, units: 1 }],
+      [
+        {
+          itemId: 'item-1' as Id<'items'>,
+          participantId: participantB,
+          units: 1,
+        },
+      ],
       participantA,
     )
 
@@ -26,7 +32,13 @@ describe('getGuestClaimItemState', () => {
   it('keeps partial multi-qty items available', () => {
     const state = getGuestClaimItemState(
       { _id: 'item-1' as Id<'items'>, quantity: 3 },
-      [{ itemId: 'item-1' as Id<'items'>, participantId: participantB, units: 2 }],
+      [
+        {
+          itemId: 'item-1' as Id<'items'>,
+          participantId: participantB,
+          units: 2,
+        },
+      ],
       participantA,
     )
 
@@ -38,9 +50,19 @@ describe('getGuestClaimItemState', () => {
 describe('sortGuestClaimItems', () => {
   it('orders items by sortOrder regardless of selection state', () => {
     const items = [
-      { _id: 'first' as Id<'items'>, name: 'Ябълка', sortOrder: 0, quantity: 1 },
+      {
+        _id: 'first' as Id<'items'>,
+        name: 'Ябълка',
+        sortOrder: 0,
+        quantity: 1,
+      },
       { _id: 'second' as Id<'items'>, name: 'Бира', sortOrder: 1, quantity: 1 },
-      { _id: 'third' as Id<'items'>, name: 'Салата', sortOrder: 2, quantity: 4 },
+      {
+        _id: 'third' as Id<'items'>,
+        name: 'Салата',
+        sortOrder: 2,
+        quantity: 4,
+      },
       { _id: 'fourth' as Id<'items'>, name: 'Мезе', sortOrder: 3, quantity: 1 },
     ]
 
@@ -75,9 +97,7 @@ describe('filterUnclaimedGuestClaimItems', () => {
   })
 
   it('keeps multi-qty items in the list when more units can be claimed', () => {
-    const items = [
-      { _id: 'multi' as Id<'items'>, name: 'Бира', quantity: 4 },
-    ]
+    const items = [{ _id: 'multi' as Id<'items'>, name: 'Бира', quantity: 4 }]
     const assignments = [
       {
         itemId: 'multi' as Id<'items'>,
@@ -116,12 +136,11 @@ describe('filterUnclaimedGuestClaimItems', () => {
 
 describe('filterGuestClaimItemsBySearch', () => {
   it('filters items by name', () => {
-    const items = [
-      { name: 'Салата' },
-      { name: 'Бира' },
-    ]
+    const items = [{ name: 'Салата' }, { name: 'Бира' }]
 
-    expect(filterGuestClaimItemsBySearch(items, 'би')).toEqual([{ name: 'Бира' }])
+    expect(filterGuestClaimItemsBySearch(items, 'би')).toEqual([
+      { name: 'Бира' },
+    ])
     expect(filterGuestClaimItemsBySearch(items, '')).toEqual(items)
   })
 })

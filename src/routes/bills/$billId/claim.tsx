@@ -8,19 +8,25 @@ import { GuestItemRow } from '#/components/bills/guest-item-row.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
+import { QueryErrorBoundary } from '#/components/ui/query-error-boundary.tsx'
 import { useGuestSessionHeartbeat } from '#/hooks/use-guest-session-heartbeat.ts'
 import {
-  calculateBillTotals,
-  type BillBreakdownInput,
+  calculateBillTotals
+  
 } from '#/lib/bill-calculations.ts'
+import type {BillBreakdownInput} from '#/lib/bill-calculations.ts';
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import {
   clearStoredGuestParticipant,
   getStoredGuestSession,
 } from '#/lib/guest-participant-session.ts'
-import { sortGuestClaimItems, filterGuestClaimItemsBySearch, filterUnclaimedGuestClaimItems } from '#/lib/guest-claim-items.ts'
+import {
+  sortGuestClaimItems,
+  filterGuestClaimItemsBySearch,
+  filterUnclaimedGuestClaimItems,
+} from '#/lib/guest-claim-items.ts'
 import { api } from '../../../../convex/_generated/api'
-import type { Id } from '../../../../convex/_generated/dataModel'
+import type { Doc, Id } from '../../../../convex/_generated/dataModel'
 
 export const Route = createFileRoute('/bills/$billId/claim')({
   component: BillClaimPage,
@@ -29,15 +35,25 @@ export const Route = createFileRoute('/bills/$billId/claim')({
 function BillClaimPage() {
   const { billId: billIdParam } = Route.useParams()
   const billId = billIdParam as Id<'bills'>
+
+  return (
+    <QueryErrorBoundary resetKey={billId}>
+      <BillClaimContent billId={billId} />
+    </QueryErrorBoundary>
+  )
+}
+
+function BillClaimContent({ billId }: { billId: Id<'bills'> }) {
   const navigate = useNavigate()
-  const data = useQuery(api.bills.getForGuest, { billId })
-  const releaseSession = useMutation(api.guestSessions.release)
   const [search, setSearch] = useState('')
 
-  const storedSession = useMemo(
-    () => getStoredGuestSession(billId),
-    [billId, data?.assignments, data?.participants],
-  )
+  const storedSession = useMemo(() => getStoredGuestSession(billId), [billId])
+
+  const data = useQuery(api.bills.getForGuest, {
+    billId,
+    sessionToken: storedSession?.sessionToken,
+  })
+  const releaseSession = useMutation(api.guestSessions.release)
 
   const handleSessionLost = useCallback(() => {
     if (storedSession) {
@@ -81,7 +97,7 @@ function BillClaimPage() {
         participantId: a.participantId,
         units: a.units,
       })),
-      payments: data.payments.map((p) => ({
+      payments: data.myPayments.map((p) => ({
         participantId: p.participantId,
         amountCents: p.amountCents,
       })),
@@ -122,13 +138,26 @@ function BillClaimPage() {
     return filterGuestClaimItemsBySearch(unclaimed, search)
   }, [data, search, storedParticipantId])
 
+  const assignmentsByItemId = useMemo(() => {
+    const map = new Map<Id<'items'>, Doc<'itemAssignments'>[]>()
+    if (!data) return map
+    for (const assignment of data.assignments) {
+      const list = map.get(assignment.itemId) ?? []
+      list.push(assignment)
+      map.set(assignment.itemId, list)
+    }
+    return map
+  }, [data?.assignments])
+
   const hasUnclaimedItems = useMemo(() => {
     if (!data || !storedParticipantId) return false
-    return filterUnclaimedGuestClaimItems(
-      data.items,
-      data.assignments,
-      storedParticipantId as Id<'participants'>,
-    ).length > 0
+    return (
+      filterUnclaimedGuestClaimItems(
+        data.items,
+        data.assignments,
+        storedParticipantId as Id<'participants'>,
+      ).length > 0
+    )
   }, [data, storedParticipantId])
 
   if (data === undefined || storedParticipantId === null || !storedSession) {
@@ -147,7 +176,9 @@ function BillClaimPage() {
     )
   }
 
-  const participant = data.participants.find((p) => p._id === storedParticipantId)
+  const participant = data.participants.find(
+    (p) => p._id === storedParticipantId,
+  )
   if (!participant) {
     clearStoredGuestParticipant(billId)
     void navigate({ to: '/bills/$billId/join', params: { billId } })
@@ -213,7 +244,9 @@ function BillClaimPage() {
 
         <div className="flex flex-col gap-3">
           {!hasItems ? (
-            <p className="text-sm text-muted-foreground">Все още няма артикули.</p>
+            <p className="text-sm text-muted-foreground">
+              Все още няма артикули.
+            </p>
           ) : visibleItems.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               {hasSearchQuery
@@ -228,9 +261,8 @@ function BillClaimPage() {
                 key={item._id}
                 item={item}
                 participantId={storedParticipantId as Id<'participants'>}
-                itemAssignments={data.assignments.filter(
-                  (assignment) => assignment.itemId === item._id,
-                )}
+                sessionToken={storedSession.sessionToken}
+                itemAssignments={assignmentsByItemId.get(item._id) ?? []}
                 participantLabels={labels}
                 readOnly={readOnly}
                 onItemSelected={() => setSearch('')}
@@ -244,6 +276,7 @@ function BillClaimPage() {
         <GuestClaimFooter
           billId={billId}
           participantId={storedParticipantId as Id<'participants'>}
+          sessionToken={storedSession.sessionToken}
           label={label}
           breakdownInput={breakdownInput}
           totals={participantTotals}

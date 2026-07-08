@@ -19,8 +19,7 @@ function useHeaderConfig() {
   const isSummary = pathname.endsWith('/summary')
   const isJoin = pathname.endsWith('/join')
   const isClaim = pathname.endsWith('/claim')
-  const isEditor =
-    billId !== undefined && !isSummary && !isJoin && !isClaim
+  const isEditor = billId !== undefined && !isSummary && !isJoin && !isClaim
 
   if (isHome) {
     return {
@@ -78,8 +77,7 @@ export function AppHeader() {
   const { title, backTo, backParams } = useHeaderConfig()
   const { isAuthenticated } = useConvexAuth()
 
-  const isGuestRoute =
-    pathname.endsWith('/join') || pathname.endsWith('/claim')
+  const isGuestRoute = pathname.endsWith('/join') || pathname.endsWith('/claim')
   const isLogin = pathname === '/login'
   const showHostActions = isAuthenticated && !isGuestRoute && !isLogin
   const viewer = useQuery(api.users.viewer, showHostActions ? {} : 'skip')

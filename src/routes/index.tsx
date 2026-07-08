@@ -14,6 +14,7 @@ import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
+import { PwaInstallBanner } from '#/components/pwa-install-banner.tsx'
 import { api } from '../../convex/_generated/api'
 
 export const Route = createFileRoute('/')({ component: Home })
@@ -65,6 +66,7 @@ function Home() {
 
   return (
     <div className="page-container">
+      <PwaInstallBanner />
       {paymentSettingsStatus === 'unconfigured' ? (
         <div className="mb-2">
           <PaymentSettingsOpenButton onClick={openPaymentSettings} />
@@ -98,13 +100,15 @@ function Home() {
           Array.from({ length: 3 }).map((_, index) => (
             <Skeleton key={index} className="h-20 w-full rounded-xl" />
           ))}
-        {!billsLoading && filteredBills !== null && filteredBills.length === 0 && (
-          <p className="py-8 text-center text-muted-foreground">
-            {search
-              ? 'Няма намерени сметки.'
-              : 'Все още нямате сметки. Създайте първата си сметка!'}
-          </p>
-        )}
+        {!billsLoading &&
+          filteredBills !== null &&
+          filteredBills.length === 0 && (
+            <p className="py-8 text-center text-muted-foreground">
+              {search
+                ? 'Няма намерени сметки.'
+                : 'Все още нямате сметки. Създайте първата си сметка!'}
+            </p>
+          )}
         {!billsLoading &&
           filteredBills?.map((summary) => (
             <BillCard key={summary.bill._id} {...summary} />

@@ -27,7 +27,10 @@ export function getGuestClaimItemState(
     (sum, assignment) => sum + (assignment.units ?? 0),
     0,
   )
-  const remainingUnits = Math.max(0, item.quantity - assignedUnitsTotal + myUnits)
+  const remainingUnits = Math.max(
+    0,
+    item.quantity - assignedUnitsTotal + myUnits,
+  )
 
   return {
     myUnits,
@@ -55,10 +58,9 @@ export function sortGuestClaimItems<T extends Pick<Doc<'items'>, 'sortOrder'>>(
   return [...items].sort((a, b) => a.sortOrder - b.sortOrder)
 }
 
-export function filterGuestClaimItemsBySearch<T extends Pick<Doc<'items'>, 'name'>>(
-  items: T[],
-  search: string,
-): T[] {
+export function filterGuestClaimItemsBySearch<
+  T extends Pick<Doc<'items'>, 'name'>,
+>(items: T[], search: string): T[] {
   const query = search.trim().toLowerCase()
   if (!query) return items
   return items.filter((item) => item.name.toLowerCase().includes(query))
@@ -102,7 +104,8 @@ export function getOtherClaimantLabels(
   return itemAssignments
     .filter(
       (assignment) =>
-        assignment.participantId !== participantId && (assignment.units ?? 0) > 0,
+        assignment.participantId !== participantId &&
+        (assignment.units ?? 0) > 0,
     )
     .map(
       (assignment) =>

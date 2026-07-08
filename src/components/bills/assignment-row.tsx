@@ -1,6 +1,8 @@
 import { useMutation } from 'convex/react'
 import { MinusIcon, PlusIcon } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from '#/lib/utils.ts'
+import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
 
@@ -21,6 +23,25 @@ export function AssignmentRow({
 }: AssignmentRowProps) {
   const toggleAssignment = useMutation(api.assignments.toggle)
   const setUnits = useMutation(api.assignments.setUnits)
+
+  async function handleToggle(participantId: Id<'participants'>) {
+    try {
+      await toggleAssignment({ itemId, participantId })
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
+    }
+  }
+
+  async function handleSetUnits(
+    participantId: Id<'participants'>,
+    units: number,
+  ) {
+    try {
+      await setUnits({ itemId, participantId, units })
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
+    }
+  }
 
   if (participants.length === 0) {
     return (
@@ -56,9 +77,7 @@ export function AssignmentRow({
             <button
               key={participant._id}
               type="button"
-              onClick={() =>
-                void toggleAssignment({ itemId, participantId: participant._id })
-              }
+              onClick={() => void handleToggle(participant._id)}
               className={chipClassName(isAssigned)}
             >
               {labels[participant._id] ?? participant.name}
@@ -82,9 +101,7 @@ export function AssignmentRow({
               <button
                 key={participant._id}
                 type="button"
-                onClick={() =>
-                  void toggleAssignment({ itemId, participantId: participant._id })
-                }
+                onClick={() => void handleToggle(participant._id)}
                 className={chipClassName(false)}
               >
                 {label}
@@ -102,13 +119,7 @@ export function AssignmentRow({
               <button
                 type="button"
                 aria-label={`Намали ${label}`}
-                onClick={() =>
-                  void setUnits({
-                    itemId,
-                    participantId: participant._id,
-                    units: units - 1,
-                  })
-                }
+                onClick={() => void handleSetUnits(participant._id, units - 1)}
                 className="flex size-6 items-center justify-center rounded-full hover:bg-foreground/10"
               >
                 <MinusIcon className="size-3.5" />
@@ -119,13 +130,7 @@ export function AssignmentRow({
               <button
                 type="button"
                 aria-label={`Увеличи ${label}`}
-                onClick={() =>
-                  void setUnits({
-                    itemId,
-                    participantId: participant._id,
-                    units: units + 1,
-                  })
-                }
+                onClick={() => void handleSetUnits(participant._id, units + 1)}
                 className="flex size-6 items-center justify-center rounded-full hover:bg-foreground/10"
               >
                 <PlusIcon className="size-3.5" />

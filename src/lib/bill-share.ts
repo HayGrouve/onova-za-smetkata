@@ -52,9 +52,7 @@ export function formatBreakdownLineLabel(
   participantCount: number,
 ): string {
   if (line.kind === 'tip') {
-    return participantCount > 1
-      ? `Бакшиш (1/${participantCount})`
-      : 'Бакшиш'
+    return participantCount > 1 ? `Бакшиш (1/${participantCount})` : 'Бакшиш'
   }
   return line.label
 }
@@ -96,7 +94,9 @@ function formatItemAssignees(
   breakdown: BillBreakdownInput,
   labels: Record<string, string>,
 ): string {
-  const itemAssignments = breakdown.assignments.filter((a) => a.itemId === item.id)
+  const itemAssignments = breakdown.assignments.filter(
+    (a) => a.itemId === item.id,
+  )
   if (itemAssignments.length === 0) return 'неразпределено'
 
   const usesUnits = itemAssignments.some((a) => a.units !== undefined)
@@ -157,12 +157,8 @@ function formatItemsSection(
   if (tipCents > 0) {
     const participantCount = breakdown.participants.length
     const shareLabel =
-      participantCount > 1
-        ? `поравно между ${participantCount}`
-        : 'цялата сума'
-    lines.push(
-      `• Бакшиш — ${formatCopyAmount(tipCents)} EUR (${shareLabel})`,
-    )
+      participantCount > 1 ? `поравно между ${participantCount}` : 'цялата сума'
+    lines.push(`• Бакшиш — ${formatCopyAmount(tipCents)} EUR (${shareLabel})`)
   }
 
   return lines
@@ -181,8 +177,7 @@ function formatParticipantSection(
   } else {
     for (const line of detail.lines) {
       const label = formatBreakdownLineLabel(line, participantCount)
-      const suffix =
-        line.kind === 'item' ? formatBreakdownLineSuffix(line) : ''
+      const suffix = line.kind === 'item' ? formatBreakdownLineSuffix(line) : ''
       lines.push(
         `  • ${label}${suffix} — ${formatCopyAmount(line.amountCents)} EUR`,
       )
@@ -227,7 +222,13 @@ export function formatBillShareText(input: BillShareInput): string {
 
   for (const participant of sortedParticipants) {
     sections.push('')
-    sections.push(...formatParticipantSection(participant, input.breakdown, participantCount))
+    sections.push(
+      ...formatParticipantSection(
+        participant,
+        input.breakdown,
+        participantCount,
+      ),
+    )
   }
 
   return sections.join('\n')
@@ -237,7 +238,7 @@ export async function shareOrCopyText(
   text: string,
   title: string,
 ): Promise<'shared' | 'copied'> {
-  if (typeof navigator !== 'undefined' && navigator.share) {
+  if (typeof navigator !== 'undefined' && 'share' in navigator) {
     try {
       await navigator.share({ title, text })
       return 'shared'

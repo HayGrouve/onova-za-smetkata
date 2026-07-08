@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useAuthActions } from '@convex-dev/auth/react'
-import { useConvexAuth } from '@convex-dev/auth/react'
+import { useAuthActions, useConvexAuth  } from '@convex-dev/auth/react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button.tsx'

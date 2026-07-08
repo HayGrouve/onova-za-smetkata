@@ -1,9 +1,11 @@
 import { useMutation, useQuery } from 'convex/react'
 import { UserPlusIcon, XIcon } from 'lucide-react'
-import { useRef, useState, type FormEvent } from 'react'
+import { useRef, useState  } from 'react'
+import type {FormEvent} from 'react';
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
+import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { Input } from '#/components/ui/input.tsx'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
@@ -37,8 +39,12 @@ export function ParticipantList({
     const trimmed = (participantName ?? name).trim()
     if (!trimmed) return
     setName('')
-    await addParticipant({ billId, name: trimmed })
-    nameInputRef.current?.focus()
+    try {
+      await addParticipant({ billId, name: trimmed })
+      nameInputRef.current?.focus()
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
+    }
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -47,16 +53,20 @@ export function ParticipantList({
   }
 
   async function handleRemove(participant: Doc<'participants'>) {
-    await removeParticipant({ participantId: participant._id })
-    toast('Участникът е премахнат', {
-      duration: 5000,
-      action: {
-        label: 'Отмени',
-        onClick: () => {
-          void addParticipant({ billId, name: participant.name })
+    try {
+      await removeParticipant({ participantId: participant._id })
+      toast('Участникът е премахнат', {
+        duration: 5000,
+        action: {
+          label: 'Отмени',
+          onClick: () => {
+            void handleAdd(participant.name)
+          },
         },
-      },
-    })
+      })
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
+    }
   }
 
   return (

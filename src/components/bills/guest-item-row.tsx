@@ -14,6 +14,7 @@ import type { Doc, Id } from '../../../convex/_generated/dataModel'
 export interface GuestItemRowProps {
   item: Doc<'items'>
   participantId: Id<'participants'>
+  sessionToken: string
   itemAssignments: Doc<'itemAssignments'>[]
   participantLabels: Record<string, string>
   readOnly: boolean
@@ -23,6 +24,7 @@ export interface GuestItemRowProps {
 export function GuestItemRow({
   item,
   participantId,
+  sessionToken,
   itemAssignments,
   participantLabels,
   readOnly,
@@ -31,8 +33,13 @@ export function GuestItemRow({
   const toggleAssignment = useMutation(api.assignments.toggle)
   const setUnits = useMutation(api.assignments.setUnits)
 
-  const { myUnits, assignedUnitsTotal, remainingUnits, isSelectedByMe, isUnavailableToMe } =
-    getGuestClaimItemState(item, itemAssignments, participantId)
+  const {
+    myUnits,
+    assignedUnitsTotal,
+    remainingUnits,
+    isSelectedByMe,
+    isUnavailableToMe,
+  } = getGuestClaimItemState(item, itemAssignments, participantId)
   const otherClaimants = getOtherClaimantLabels(
     itemAssignments,
     participantId,
@@ -44,7 +51,7 @@ export function GuestItemRow({
   async function handleToggle() {
     if (interactionDisabled) return
     try {
-      await toggleAssignment({ itemId: item._id, participantId })
+      await toggleAssignment({ itemId: item._id, participantId, sessionToken })
       onItemSelected?.()
     } catch (error) {
       toast.error(getConvexErrorMessage(error))
@@ -54,7 +61,7 @@ export function GuestItemRow({
   async function handleSetUnits(units: number) {
     if (readOnly) return
     try {
-      await setUnits({ itemId: item._id, participantId, units })
+      await setUnits({ itemId: item._id, participantId, units, sessionToken })
       if (units > myUnits) onItemSelected?.()
     } catch (error) {
       toast.error(getConvexErrorMessage(error))
@@ -83,7 +90,8 @@ export function GuestItemRow({
 
     return (
       <p className="text-xs text-muted-foreground">
-        {otherClaimants.join(', ')} · {assignedUnitsTotal}/{item.quantity} разпределени
+        {otherClaimants.join(', ')} · {assignedUnitsTotal}/{item.quantity}{' '}
+        разпределени
       </p>
     )
   }
@@ -104,7 +112,9 @@ export function GuestItemRow({
               {formatEur(item.unitPriceCents)} × {item.quantity}
             </p>
           </div>
-          <p className="font-medium tabular-nums">{formatEur(lineTotalCents)}</p>
+          <p className="font-medium tabular-nums">
+            {formatEur(lineTotalCents)}
+          </p>
         </div>
         {renderClaimantHint()}
         {!readOnly && !isUnavailableToMe && (
@@ -137,7 +147,9 @@ export function GuestItemRow({
       {renderClaimantHint()}
       {!readOnly && !isUnavailableToMe && (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-muted/40 px-3 py-2.5 dark:border-input dark:bg-input/40">
-          <span className="text-sm font-medium text-foreground">Ваши бройки</span>
+          <span className="text-sm font-medium text-foreground">
+            Ваши бройки
+          </span>
           <div className="flex items-center gap-1 rounded-full border border-primary/50 bg-background/80 pl-1 pr-1 dark:border-primary/40 dark:bg-background/60">
             <button
               type="button"

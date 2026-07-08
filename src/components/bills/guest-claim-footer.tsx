@@ -29,6 +29,7 @@ const statusLabels: Record<PaymentStatus, string> = {
 export interface GuestClaimFooterProps {
   billId: Id<'bills'>
   participantId: Id<'participants'>
+  sessionToken: string
   label: string
   breakdownInput: BillBreakdownInput
   totals: ParticipantTotals
@@ -38,6 +39,7 @@ export interface GuestClaimFooterProps {
 export function GuestClaimFooter({
   billId,
   participantId,
+  sessionToken,
   label,
   breakdownInput,
   totals,
@@ -51,10 +53,8 @@ export function GuestClaimFooter({
   const [spacerHeight, setSpacerHeight] = useState(0)
 
   const remainingCents = Math.max(0, totals.balanceCents)
-  const amountLabel =
-    totals.paidCents > 0 ? 'Остатък' : 'Вашият дял'
-  const amountCents =
-    totals.paidCents > 0 ? remainingCents : totals.owedCents
+  const amountLabel = totals.paidCents > 0 ? 'Остатък' : 'Вашият дял'
+  const amountCents = totals.paidCents > 0 ? remainingCents : totals.owedCents
 
   useEffect(() => {
     const footer = footerRef.current
@@ -87,29 +87,42 @@ export function GuestClaimFooter({
         const myUnits = assignment?.units ?? 0
 
         if (item && item.quantity > 1) {
-          await setUnits({ itemId, participantId, units: myUnits - 1 })
+          await setUnits({
+            itemId,
+            participantId,
+            units: myUnits - 1,
+            sessionToken,
+          })
           return
         }
 
         if (
           itemUsesUnitAssignments(
             itemId,
-            breakdownInput.assignments.map((assignment) => ({
-              itemId: assignment.itemId as Id<'items'>,
-              participantId: assignment.participantId as Id<'participants'>,
-              units: assignment.units,
+            breakdownInput.assignments.map((entry) => ({
+              itemId: entry.itemId as Id<'items'>,
+              participantId: entry.participantId as Id<'participants'>,
+              units: entry.units,
             })),
           )
         ) {
-          await setUnits({ itemId, participantId, units: 0 })
+          await setUnits({ itemId, participantId, units: 0, sessionToken })
         } else {
-          await toggleAssignment({ itemId, participantId })
+          await toggleAssignment({ itemId, participantId, sessionToken })
         }
       } catch (error) {
         toast.error(getConvexErrorMessage(error))
       }
     },
-    [breakdownInput.assignments, breakdownInput.items, participantId, readOnly, setUnits, toggleAssignment],
+    [
+      breakdownInput.assignments,
+      breakdownInput.items,
+      participantId,
+      readOnly,
+      sessionToken,
+      setUnits,
+      toggleAssignment,
+    ],
   )
 
   return (
@@ -145,7 +158,9 @@ export function GuestClaimFooter({
               <>
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs text-muted-foreground">{amountLabel}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {amountLabel}
+                    </p>
                     <p
                       key={amountCents}
                       className="guest-total-pulse text-lg font-semibold tabular-nums"

@@ -5,9 +5,7 @@ import { assertConvexUrlForBuild } from '#/lib/env.ts'
 
 const convexUrl = assertConvexUrlForBuild()
 
-const convexQueryClient = convexUrl
-  ? new ConvexQueryClient(convexUrl)
-  : null
+const convexQueryClient = convexUrl ? new ConvexQueryClient(convexUrl) : null
 
 function MissingConvexConfig() {
   return (

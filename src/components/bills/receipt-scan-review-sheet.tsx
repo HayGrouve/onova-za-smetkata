@@ -16,7 +16,10 @@ import {
   SheetTitle,
 } from '#/components/ui/sheet.tsx'
 import { formatEur, parseEurInput } from '#/lib/format-currency.ts'
-import { detectTotalsMismatch, sumItemsCents } from '#/lib/receipt-scan-utils.ts'
+import {
+  detectTotalsMismatch,
+  sumItemsCents,
+} from '#/lib/receipt-scan-utils.ts'
 import { cn } from '#/lib/utils.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -83,7 +86,9 @@ export function ReceiptScanReviewSheet({
   }, [open])
 
   function updateRow(index: number, patch: Partial<ReviewRow>) {
-    setRows((prev) => prev.map((r, i) => (i === index ? { ...r, ...patch } : r)))
+    setRows((prev) =>
+      prev.map((r, i) => (i === index ? { ...r, ...patch } : r)),
+    )
   }
 
   const allChecked = rows.length > 0 && rows.every((r) => r.checked)
@@ -125,7 +130,9 @@ export function ReceiptScanReviewSheet({
         mode: importMode,
         selectedIndexes: selectedRows.map(({ index }) => index),
         updateRestaurantName,
-        restaurantName: updateRestaurantName ? restaurantName.trim() : undefined,
+        restaurantName: updateRestaurantName
+          ? restaurantName.trim()
+          : undefined,
         items: selectedRows.map(({ row }) => ({
           name: row.name.trim(),
           unitPriceCents: parseEurInput(row.priceInput),
@@ -171,13 +178,13 @@ export function ReceiptScanReviewSheet({
             scanReady === undefined && 'min-h-[40vh]',
           )}
         >
-            {scanReady === undefined && (
-              <div className="flex flex-1 items-center justify-center py-10">
-                <p className="text-sm text-muted-foreground">Зареждане...</p>
-              </div>
-            )}
+          {scanReady === undefined && (
+            <div className="flex flex-1 items-center justify-center py-10">
+              <p className="text-sm text-muted-foreground">Зареждане...</p>
+            </div>
+          )}
 
-            {scanReady && (scanReady.extractedRestaurantName ?? '') !== '' && (
+          {scanReady && (scanReady.extractedRestaurantName ?? '') !== '' && (
             <div className="flex flex-col gap-2 rounded-lg border p-3">
               <Label htmlFor="scan-restaurant-name">Ресторант</Label>
               <Input
@@ -194,28 +201,33 @@ export function ReceiptScanReviewSheet({
                 Обнови името на ресторанта
               </label>
             </div>
-            )}
+          )}
 
-            {scanReady &&
-              rows.length === 0 &&
-              (scanReady.extractedItems?.length ?? 0) === 0 && (
+          {scanReady &&
+            rows.length === 0 &&
+            (scanReady.extractedItems?.length ?? 0) === 0 && (
               <p className="text-sm text-muted-foreground">
                 Няма разпознати артикули.
               </p>
             )}
 
-            {rows.length > 0 && (
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  {rows.length} разпознати артикула
-                </p>
-                <Button type="button" variant="ghost" size="sm" onClick={toggleSelectAll}>
-                  {allChecked ? 'Размаркирай всички' : 'Маркирай всички'}
-                </Button>
-              </div>
-            )}
+          {rows.length > 0 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                {rows.length} разпознати артикула
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={toggleSelectAll}
+              >
+                {allChecked ? 'Размаркирай всички' : 'Маркирай всички'}
+              </Button>
+            </div>
+          )}
 
-            {rows.map((row, index) => (
+          {rows.map((row, index) => (
             <div
               key={index}
               className={cn(
@@ -226,7 +238,9 @@ export function ReceiptScanReviewSheet({
             >
               <Checkbox
                 checked={row.checked}
-                onCheckedChange={(v) => updateRow(index, { checked: v === true })}
+                onCheckedChange={(v) =>
+                  updateRow(index, { checked: v === true })
+                }
                 className="mt-3"
               />
               <div className="flex flex-1 flex-col gap-2">
@@ -259,7 +273,9 @@ export function ReceiptScanReviewSheet({
                   <span className="text-muted-foreground">×</span>
                   <Input
                     value={row.quantity}
-                    onChange={(e) => updateRow(index, { quantity: e.target.value })}
+                    onChange={(e) =>
+                      updateRow(index, { quantity: e.target.value })
+                    }
                     inputMode="numeric"
                     placeholder="Бр."
                     className="h-10 w-16"
@@ -267,53 +283,54 @@ export function ReceiptScanReviewSheet({
                 </div>
               </div>
             </div>
-            ))}
-
+          ))}
         </div>
 
         {scanReady && (
           <SheetFooter className="mt-0 gap-3 border-t">
-              <div className="flex flex-col gap-1 text-sm">
+            <div className="flex flex-col gap-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  Сумата на артикулите
+                </span>
+                <span className="font-medium tabular-nums">
+                  {formatEur(itemsTotalCents)}
+                </span>
+              </div>
+              {receiptTotalCents !== undefined && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Сумата на артикулите</span>
+                  <span className="text-muted-foreground">Общо на бележка</span>
                   <span className="font-medium tabular-nums">
-                    {formatEur(itemsTotalCents)}
+                    {formatEur(receiptTotalCents)}
                   </span>
                 </div>
-                {receiptTotalCents !== undefined && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Общо на бележка</span>
-                    <span className="font-medium tabular-nums">
-                      {formatEur(receiptTotalCents)}
-                    </span>
-                  </div>
-                )}
-                {mismatch && (
-                  <p className="text-xs font-medium text-amber-600">
-                    Сумите не съвпадат — проверете артикулите
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 flex-1"
-                  onClick={() => void handleCancel()}
-                  disabled={isSubmitting}
-                >
-                  Отказ
-                </Button>
-                <Button
-                  type="button"
-                  className="h-11 flex-1"
-                  onClick={() => void handleImport()}
-                  disabled={isSubmitting || checkedCount === 0}
-                >
-                  Импортирай избраните ({checkedCount})
-                </Button>
-              </div>
-            </SheetFooter>
+              )}
+              {mismatch && (
+                <p className="text-xs font-medium text-amber-600">
+                  Сумите не съвпадат — проверете артикулите
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 flex-1"
+                onClick={() => void handleCancel()}
+                disabled={isSubmitting}
+              >
+                Отказ
+              </Button>
+              <Button
+                type="button"
+                className="h-11 flex-1"
+                onClick={() => void handleImport()}
+                disabled={isSubmitting || checkedCount === 0}
+              >
+                Импортирай избраните ({checkedCount})
+              </Button>
+            </div>
+          </SheetFooter>
         )}
       </SheetContent>
     </Sheet>

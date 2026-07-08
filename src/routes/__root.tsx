@@ -16,6 +16,7 @@ import { Toaster } from '../components/ui/sonner'
 import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 
+import { SentryInit } from '../components/sentry-init.tsx'
 import appCss from '../styles.css?url'
 
 function RootError({ error }: ErrorComponentProps) {
@@ -27,10 +28,16 @@ function RootError({ error }: ErrorComponentProps) {
           Опитайте да презаредите страницата.
         </p>
         {import.meta.env.DEV && error instanceof Error ? (
-          <p className="mt-3 text-left text-xs text-destructive">{error.message}</p>
+          <p className="mt-3 text-left text-xs text-destructive">
+            {error.message}
+          </p>
         ) : null}
       </div>
-      <Button type="button" className="h-11" onClick={() => window.location.reload()}>
+      <Button
+        type="button"
+        className="h-11"
+        onClick={() => window.location.reload()}
+      >
         <RefreshCwIcon className={ICON.button} aria-hidden />
         Опитай отново
       </Button>
@@ -99,6 +106,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           disableTransitionOnChange
         >
           <ConvexProvider>
+            <SentryInit />
             {children}
             <Toaster />
             {import.meta.env.DEV && (

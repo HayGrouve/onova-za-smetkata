@@ -9,6 +9,7 @@ import { Input } from '#/components/ui/input.tsx'
 import { useDebouncedCallback } from '#/hooks/use-debounced-callback.ts'
 import { parseEurInput } from '#/lib/format-currency.ts'
 import { ICON } from '#/lib/app-icons.ts'
+import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { cn } from '#/lib/utils.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
@@ -59,26 +60,34 @@ export function ItemList({
     setNewName('')
     setNewPrice('')
     setNewQuantity('1')
-    await addItem({ billId, name: trimmed, unitPriceCents, quantity })
+    try {
+      await addItem({ billId, name: trimmed, unitPriceCents, quantity })
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
+    }
   }
 
   async function handleDelete(item: Doc<'items'>) {
-    await removeItem({ itemId: item._id })
-    toast('Артикулът е изтрит', {
-      duration: 5000,
-      action: {
-        label: 'Отмени',
-        onClick: () => {
-          void addItem({
-            billId,
-            name: item.name,
-            unitPriceCents: item.unitPriceCents,
-            quantity: item.quantity,
-            note: item.note,
-          })
+    try {
+      await removeItem({ itemId: item._id })
+      toast('Артикулът е изтрит', {
+        duration: 5000,
+        action: {
+          label: 'Отмени',
+          onClick: () => {
+            void addItem({
+              billId,
+              name: item.name,
+              unitPriceCents: item.unitPriceCents,
+              quantity: item.quantity,
+              note: item.note,
+            })
+          },
         },
-      },
-    })
+      })
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
+    }
   }
 
   return (
@@ -102,7 +111,11 @@ export function ItemList({
         return (
           <div
             key={item._id}
-            id={item._id === firstUnassignedItemId ? 'first-unassigned-item' : undefined}
+            id={
+              item._id === firstUnassignedItemId
+                ? 'first-unassigned-item'
+                : undefined
+            }
             className={cn(
               'flex flex-col gap-3 rounded-lg border p-4',
               isUnassigned && 'border-l-4 border-amber-500',

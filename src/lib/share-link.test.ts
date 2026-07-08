@@ -26,7 +26,9 @@ describe('shareLink', () => {
   })
 
   it('returns cancelled when the user dismisses the share sheet', async () => {
-    const share = vi.fn().mockRejectedValue(new DOMException('Aborted', 'AbortError'))
+    const share = vi
+      .fn()
+      .mockRejectedValue(new DOMException('Aborted', 'AbortError'))
     vi.stubGlobal('navigator', { share })
 
     await expect(shareLink({ url: 'https://example.com/join' })).resolves.toBe(

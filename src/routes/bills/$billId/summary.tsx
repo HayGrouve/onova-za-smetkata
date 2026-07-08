@@ -13,7 +13,10 @@ import { toast } from 'sonner'
 import { ParticipantDetailSheet } from '#/components/bills/participant-detail-sheet.tsx'
 import { PaymentProgress } from '#/components/bills/payment-progress.tsx'
 import { PaymentRow } from '#/components/bills/payment-row.tsx'
-import { PaymentSettingsOpenButton, usePaymentSettingsStatus } from '#/components/bills/payment-settings-open-button.tsx'
+import {
+  PaymentSettingsOpenButton,
+  usePaymentSettingsStatus,
+} from '#/components/bills/payment-settings-open-button.tsx'
 import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
 import { ReceiptPreviewCard } from '#/components/bills/receipt-preview-card.tsx'
 import { ShareBillButton } from '#/components/bills/share-bill-button.tsx'
@@ -37,10 +40,11 @@ import {
 import { Separator } from '#/components/ui/separator.tsx'
 import {
   calculateBillTotals,
-  validateBillForFinalize,
-  type BillBreakdownInput,
-  type PaymentStatus,
+  validateBillForFinalize
+  
+  
 } from '#/lib/bill-calculations.ts'
+import type {BillBreakdownInput, PaymentStatus} from '#/lib/bill-calculations.ts';
 import { formatEur } from '#/lib/format-currency.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
@@ -67,10 +71,7 @@ function BillSummary() {
   const { isAuthenticated, isLoading: authLoading } = useRequireHostAuth(
     `/bills/${billId}/summary`,
   )
-  const data = useQuery(
-    api.bills.get,
-    isAuthenticated ? { billId } : 'skip',
-  )
+  const data = useQuery(api.bills.get, isAuthenticated ? { billId } : 'skip')
   const finalizeBill = useMutation(api.bills.finalize)
   const removeBill = useMutation(api.bills.remove)
   const [isFinalizing, setIsFinalizing] = useState(false)
@@ -165,7 +166,7 @@ function BillSummary() {
     )
   }
 
-  if (data === null || !totals) {
+  if (!totals) {
     return (
       <div className="mx-auto max-w-lg px-4 py-10 text-center text-muted-foreground">
         Сметката не е намерена.
@@ -182,8 +183,8 @@ function BillSummary() {
   }
 
   const sortedParticipants = [...participants].sort((a, b) => {
-    const statusA = totals.byParticipant[a._id]?.status ?? 'unpaid'
-    const statusB = totals.byParticipant[b._id]?.status ?? 'unpaid'
+    const statusA = totals.byParticipant[a._id].status
+    const statusB = totals.byParticipant[b._id].status
     const statusDiff = statusOrder[statusA] - statusOrder[statusB]
     if (statusDiff !== 0) return statusDiff
     return a.sortOrder - b.sortOrder
@@ -242,7 +243,9 @@ function BillSummary() {
                 {formatEur(totals.billTotalCents)}
               </p>
               {bill.note && (
-                <p className="mt-1 text-sm text-muted-foreground">{bill.note}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {bill.note}
+                </p>
               )}
             </div>
             {breakdownInput ? (
@@ -377,16 +380,16 @@ function BillSummary() {
           </Dialog>
         </div>
 
-        {detailParticipantId && breakdownInput && (
+        {detailParticipantId && (
           <ParticipantDetailSheet
-            open={detailParticipantId !== null}
+            open
             onOpenChange={(open) => {
               if (!open) setDetailParticipantId(null)
             }}
             billId={billId}
             participantId={detailParticipantId}
             label={labels[detailParticipantId] ?? 'Участник'}
-            breakdownInput={breakdownInput}
+            breakdownInput={breakdownInput!}
             totals={totals.byParticipant[detailParticipantId]}
             onOpenPaymentSettings={openPaymentSettings}
           />

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
+import { QueryErrorBoundary } from '#/components/ui/query-error-boundary.tsx'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import {
   clearStoredGuestParticipant,
@@ -22,9 +23,20 @@ export const Route = createFileRoute('/bills/$billId/join')({
 function BillJoinPage() {
   const { billId: billIdParam } = Route.useParams()
   const billId = billIdParam as Id<'bills'>
+
+  return (
+    <QueryErrorBoundary resetKey={billId}>
+      <BillJoinContent billId={billId} />
+    </QueryErrorBoundary>
+  )
+}
+
+function BillJoinContent({ billId }: { billId: Id<'bills'> }) {
   const navigate = useNavigate()
   const data = useQuery(api.bills.getForGuest, { billId })
-  const activeSessions = useQuery(api.guestSessions.listActiveForBill, { billId })
+  const activeSessions = useQuery(api.guestSessions.listActiveForBill, {
+    billId,
+  })
   const claimSession = useMutation(api.guestSessions.claim)
   const [claimingId, setClaimingId] = useState<Id<'participants'> | null>(null)
   const [resuming, setResuming] = useState(true)
@@ -52,7 +64,7 @@ function BillJoinPage() {
       return
     }
 
-    let cancelled = false
+    const cancelledRef = { current: false }
     void (async () => {
       try {
         await claimSession({
@@ -60,17 +72,16 @@ function BillJoinPage() {
           participantId: stored.participantId as Id<'participants'>,
           sessionToken: stored.sessionToken,
         })
-        if (!cancelled) {
-          void navigate({ to: '/bills/$billId/claim', params: { billId } })
-        }
+        if (cancelledRef.current) return
+        void navigate({ to: '/bills/$billId/claim', params: { billId } })
       } catch {
         clearStoredGuestParticipant(billId)
-        if (!cancelled) setResuming(false)
+        if (!cancelledRef.current) setResuming(false)
       }
     })()
 
     return () => {
-      cancelled = true
+      cancelledRef.current = true
     }
   }, [billId, claimSession, data, activeSessions, navigate])
 
@@ -125,7 +136,9 @@ function BillJoinPage() {
 
       {bill.status === 'final' ? (
         <div className="flex flex-col gap-3">
-          <p className="text-sm text-muted-foreground">Сметката е приключена.</p>
+          <p className="text-sm text-muted-foreground">
+            Сметката е приключена.
+          </p>
           <p className="text-xs text-muted-foreground">
             Изберете името си, за да видите разбивката.
           </p>

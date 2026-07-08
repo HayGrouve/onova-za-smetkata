@@ -13,7 +13,10 @@ export async function shareLink({
   title,
   text,
 }: ShareLinkOptions): Promise<ShareLinkResult> {
-  if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+  if (
+    typeof navigator !== 'undefined' &&
+    typeof navigator.share === 'function'
+  ) {
     try {
       const payload: ShareData = { url }
       if (title) payload.title = title
