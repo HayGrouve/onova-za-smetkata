@@ -17,6 +17,7 @@ import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 
 import { SentryInit } from '../components/sentry-init.tsx'
+import { ServiceWorkerRegister } from '../components/service-worker-register.tsx'
 import { SITE_NAME } from '#/lib/site-meta.ts'
 import appCss from '../styles.css?url'
 
@@ -72,6 +73,17 @@ export const Route = createRootRoute({
         href: '/manifest.json',
       },
       {
+        rel: 'icon',
+        href: '/favicon.ico',
+        sizes: 'any',
+      },
+      {
+        rel: 'icon',
+        href: '/icon-192.png',
+        sizes: '192x192',
+        type: 'image/png',
+      },
+      {
         rel: 'apple-touch-icon',
         href: '/apple-touch-icon.png',
       },
@@ -106,6 +118,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         >
           <ConvexProvider>
             <SentryInit />
+            <ServiceWorkerRegister />
             {children}
             <Toaster />
             {import.meta.env.DEV && (

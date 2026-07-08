@@ -11,6 +11,8 @@ export const JOIN_OG_DESCRIPTION =
 export const DEFAULT_SITE_ORIGIN = 'https://onova-za-smetkata.com'
 
 export const OG_IMAGE_PATH = '/og-image.png'
+export const OG_IMAGE_WIDTH = 1200
+export const OG_IMAGE_HEIGHT = 630
 
 export type SiteMetaTag = {
   charSet?: string
@@ -55,6 +57,8 @@ export function buildOpenGraphMeta(options: {
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: pageUrl },
     { property: 'og:image', content: imageUrl },
+    { property: 'og:image:width', content: String(OG_IMAGE_WIDTH) },
+    { property: 'og:image:height', content: String(OG_IMAGE_HEIGHT) },
     { property: 'og:locale', content: 'bg_BG' },
     { property: 'og:site_name', content: SITE_NAME },
     { name: 'twitter:card', content: 'summary_large_image' },

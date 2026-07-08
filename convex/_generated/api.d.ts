@@ -24,6 +24,7 @@ import type * as lib_clampParticipantUnits from "../lib/clampParticipantUnits.js
 import type * as lib_devMode from "../lib/devMode.js";
 import type * as lib_geminiReceipt from "../lib/geminiReceipt.js";
 import type * as lib_guestSession from "../lib/guestSession.js";
+import type * as lib_magicLinkEmail from "../lib/magicLinkEmail.js";
 import type * as lib_rateLimit from "../lib/rateLimit.js";
 import type * as lib_receiptStorage from "../lib/receiptStorage.js";
 import type * as lib_requireGuestSession from "../lib/requireGuestSession.js";
@@ -60,6 +61,7 @@ declare const fullApi: ApiFromModules<{
   "lib/devMode": typeof lib_devMode;
   "lib/geminiReceipt": typeof lib_geminiReceipt;
   "lib/guestSession": typeof lib_guestSession;
+  "lib/magicLinkEmail": typeof lib_magicLinkEmail;
   "lib/rateLimit": typeof lib_rateLimit;
   "lib/receiptStorage": typeof lib_receiptStorage;
   "lib/requireGuestSession": typeof lib_requireGuestSession;

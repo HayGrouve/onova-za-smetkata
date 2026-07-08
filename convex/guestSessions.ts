@@ -58,7 +58,13 @@ export const claim = mutation({
     sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
-    await assertRateLimit(ctx, `claim:${args.sessionToken}`, 20, 60_000)
+    await assertRateLimit(
+      ctx,
+      `claim:bill:${args.billId}`,
+      40,
+      60_000,
+      'Твърде много опити за присъединяване. Опитайте отново след малко.',
+    )
     const now = Date.now()
     const bill = await ctx.db.get(args.billId)
     if (!bill) throw new ConvexError('Сметката не е намерена.')

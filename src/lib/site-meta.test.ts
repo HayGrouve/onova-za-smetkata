@@ -6,7 +6,9 @@ import {
   DEFAULT_SITE_ORIGIN,
   JOIN_OG_DESCRIPTION,
   JOIN_OG_TITLE,
+  OG_IMAGE_HEIGHT,
   OG_IMAGE_PATH,
+  OG_IMAGE_WIDTH,
   resolveSiteOrigin,
   SITE_NAME,
 } from './site-meta'
@@ -39,6 +41,8 @@ describe('buildOpenGraphMeta', () => {
           property: 'og:image',
           content: `https://example.com${OG_IMAGE_PATH}`,
         },
+        { property: 'og:image:width', content: String(OG_IMAGE_WIDTH) },
+        { property: 'og:image:height', content: String(OG_IMAGE_HEIGHT) },
         { name: 'twitter:card', content: 'summary_large_image' },
       ]),
     )

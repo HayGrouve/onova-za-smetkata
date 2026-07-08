@@ -37,3 +37,30 @@ jobs:
 
       - name: Preflight
         run: pnpm run preflight
+
+  e2e:
+    runs-on: ubuntu-latest
+    if: ${{ secrets.E2E_VITE_CONVEX_URL != '' }}
+    env:
+      VITE_CONVEX_URL: ${{ secrets.E2E_VITE_CONVEX_URL }}
+      CI: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm run test:e2e:install
+
+      - name: E2E tests
+        run: pnpm run test:e2e

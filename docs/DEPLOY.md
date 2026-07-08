@@ -16,7 +16,7 @@
 | Variable             | Where                           | Required                                                        |
 | -------------------- | ------------------------------- | --------------------------------------------------------------- |
 | `VITE_CONVEX_URL`    | Vercel                          | Yes                                                             |
-| `VITE_APP_ORIGIN`    | Vercel                          | No (QR/share links; falls back to `window.location.origin`)     |
+| `VITE_APP_ORIGIN`    | Vercel                          | Yes for production OG/share URLs (`https://onova-za-smetkata.com`) |
 | `VITE_SENTRY_DSN`    | Vercel                          | No (Sentry client errors in production)                         |
 | `GEMINI_API_KEY`     | Convex Dashboard                | Yes (for OCR)                                                   |
 | `GEMINI_MODEL`       | Convex Dashboard                | No                                                              |
@@ -38,7 +38,7 @@ Never put `GEMINI_API_KEY`, JWT keys, OAuth secrets, or `DEV_MODE` in Vercel or 
 - **Guest sessions:** Assignment mutations require a valid guest session token or host auth. Expired sessions must re-claim a name on the join page.
 - **Guest payment privacy:** `getForGuest` returns `myPayments` only — never the full payments list.
 - **DEV_MODE:** Password provider is enabled only when `DEV_MODE=true` on a non-production Convex deployment. Never set `DEV_MODE=true` on production.
-- **Rate limits:** Guest name claims and OCR scans are rate-limited server-side.
+- **Rate limits:** Guest name claims are rate-limited per bill (`claim:bill:{billId}`); OCR scans are rate-limited server-side.
 
 ### Google OAuth redirect URI (production)
 
@@ -71,7 +71,8 @@ AUTH_RESEND_FROM=Онова за сметката <noreply@yourdomain.com>
 5. Build command: `pnpm run build` (default).
 6. Environment variables (Production):
    - `VITE_CONVEX_URL=https://coordinated-warbler-782.convex.cloud`
-   - Optional: `VITE_SENTRY_DSN`, `VITE_APP_ORIGIN` (after custom domain cutover)
+   - `VITE_APP_ORIGIN=https://onova-za-smetkata.com` (required for correct OG previews)
+   - Optional: `VITE_SENTRY_DSN`
 
 ## Release steps
 
@@ -119,6 +120,8 @@ AUTH_RESEND_FROM=Онова за сметката <noreply@yourdomain.com>
    - [ ] Payment settings (Revolut/IBAN) persist after reload
    - [ ] Receipt OCR scan (if Gemini key set)
    - [ ] Add to Home Screen shows branded icon
+   - [ ] Browser tab shows favicon
+   - [ ] Service worker registered (DevTools → Application → Service Workers)
    - [ ] No devtools panel visible
    - [ ] Summary bottom buttons not clipped on mobile
    - [ ] 404 page on unknown routes
@@ -167,3 +170,27 @@ Do this **after** smoke tests pass on `https://<project>.vercel.app`.
 | Data from wrong environment                          | Dev Convex URL in Vercel                | Point Vercel at prod URL                                |
 | Guest assignment fails                               | Missing/expired session                 | Re-join and pick name again                             |
 | Assignment queries fail after upgrade                | Missing `billId` backfill               | Run `npx convex run backfill:assignmentBillIds`         |
+
+## Production launch checklist
+
+Complete once before calling production “solid”:
+
+| Item | Where | Notes |
+|------|--------|-------|
+| `VITE_CONVEX_URL` | Vercel | Prod Convex cloud URL |
+| `VITE_APP_ORIGIN` | Vercel | `https://onova-za-smetkata.com` for OG/QR |
+| `SITE_URL` | Convex prod | Same custom domain for magic links |
+| `AUTH_RESEND_FROM` | Convex prod | Verified domain, e.g. `Онова за сметката <noreply@onova-za-smetkata.com>` |
+| `AUTH_RESEND_KEY`, JWT, Google OAuth | Convex prod | Dashboard → Settings → Environment |
+| `GEMINI_API_KEY` | Convex prod | Receipt OCR |
+| `DEV_MODE` | Convex prod | Must **not** be `true` |
+| Backfill | Convex prod | `npx convex run backfill:assignmentBillIds` (once) |
+| Domain + SSL | Vercel | Custom domain active |
+| Netlify decommissioned | Netlify | No stale DNS to old host |
+| Smoke test | Production URL | See release steps above |
+| Link preview | WhatsApp/Telegram | Join URL shows OG image |
+| Optional Sentry | Vercel | `VITE_SENTRY_DSN` |
+
+### E2E in CI (optional)
+
+To run Playwright on push/PR, add GitHub secret `E2E_VITE_CONVEX_URL` pointing at a **dev** Convex deployment with `DEV_MODE=true`. The CI job is skipped when the secret is unset.
