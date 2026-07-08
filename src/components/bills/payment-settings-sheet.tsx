@@ -79,7 +79,11 @@ export function PaymentSettingsSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="mx-auto max-w-lg rounded-t-xl">
+      <SheetContent
+        side="bottom"
+        className="mx-auto max-w-lg rounded-t-xl"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <WalletIcon className={ICON.section} aria-hidden />
