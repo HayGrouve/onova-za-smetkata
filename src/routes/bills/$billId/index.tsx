@@ -356,7 +356,6 @@ function BillEditorContent({
                 ref={fileInputRef}
                 type="file"
                 accept="image/*,.heic,.heif"
-                capture="environment"
                 className="hidden"
                 onChange={handleReceiptChange}
               />
