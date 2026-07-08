@@ -1,10 +1,5 @@
-import {
-  expect,
-  test as base,
-  type Browser,
-  type BrowserContext,
-  type Page,
-} from '@playwright/test'
+import { expect, test as base } from '@playwright/test'
+import type { Browser, BrowserContext, Page } from '@playwright/test'
 
 export const E2E_HOST_AUTH_MESSAGE = [
   'E2E host auth is not available.',
