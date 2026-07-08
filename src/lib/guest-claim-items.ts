@@ -38,45 +38,21 @@ export function getGuestClaimItemState(
   }
 }
 
-export function compareGuestClaimItemNames(
-  a: Pick<Doc<'items'>, 'name'>,
-  b: Pick<Doc<'items'>, 'name'>,
-): number {
-  return a.name.localeCompare(b.name, 'bg', { sensitivity: 'base' })
+export function isGuestClaimItemMaxedOutByMe(
+  item: Pick<Doc<'items'>, 'quantity'>,
+  state: GuestClaimItemState,
+): boolean {
+  return (
+    item.quantity > 1 &&
+    state.myUnits > 0 &&
+    state.myUnits >= state.remainingUnits
+  )
 }
 
-export function sortGuestClaimItems<T extends Pick<Doc<'items'>, '_id' | 'name' | 'quantity'>>(
+export function sortGuestClaimItems<T extends Pick<Doc<'items'>, 'sortOrder'>>(
   items: T[],
-  assignments: GuestItemAssignment[],
-  participantId: Id<'participants'>,
 ): T[] {
-  const available: T[] = []
-  const unavailable: T[] = []
-  const selected: T[] = []
-
-  for (const item of items) {
-    const itemAssignments = assignments.filter(
-      (assignment) => assignment.itemId === item._id,
-    )
-    const state = getGuestClaimItemState(item, itemAssignments, participantId)
-
-    if (state.isSelectedByMe) {
-      selected.push(item)
-    } else if (state.isUnavailableToMe) {
-      unavailable.push(item)
-    } else {
-      available.push(item)
-    }
-  }
-
-  const sortBucket = (bucket: T[]) =>
-    [...bucket].sort(compareGuestClaimItemNames)
-
-  return [
-    ...sortBucket(available),
-    ...sortBucket(unavailable),
-    ...sortBucket(selected),
-  ]
+  return [...items].sort((a, b) => a.sortOrder - b.sortOrder)
 }
 
 export function filterGuestClaimItemsBySearch<T extends Pick<Doc<'items'>, 'name'>>(
@@ -86,6 +62,36 @@ export function filterGuestClaimItemsBySearch<T extends Pick<Doc<'items'>, 'name
   const query = search.trim().toLowerCase()
   if (!query) return items
   return items.filter((item) => item.name.toLowerCase().includes(query))
+}
+
+export function filterUnclaimedGuestClaimItems<
+  T extends Pick<Doc<'items'>, '_id' | 'quantity'>,
+>(
+  items: T[],
+  assignments: GuestItemAssignment[],
+  participantId: Id<'participants'>,
+): T[] {
+  return items.filter((item) => {
+    const itemAssignments = assignments.filter(
+      (assignment) => assignment.itemId === item._id,
+    )
+    const state = getGuestClaimItemState(item, itemAssignments, participantId)
+
+    if (item.quantity === 1) {
+      return !state.isSelectedByMe
+    }
+
+    return !isGuestClaimItemMaxedOutByMe(item, state)
+  })
+}
+
+export function itemUsesUnitAssignments(
+  itemId: Id<'items'>,
+  assignments: GuestItemAssignment[],
+): boolean {
+  return assignments
+    .filter((assignment) => assignment.itemId === itemId)
+    .some((assignment) => assignment.units !== undefined)
 }
 
 export function getOtherClaimantLabels(

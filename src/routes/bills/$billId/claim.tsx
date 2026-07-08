@@ -18,7 +18,7 @@ import {
   clearStoredGuestParticipant,
   getStoredGuestSession,
 } from '#/lib/guest-participant-session.ts'
-import { sortGuestClaimItems, filterGuestClaimItemsBySearch } from '#/lib/guest-claim-items.ts'
+import { sortGuestClaimItems, filterGuestClaimItemsBySearch, filterUnclaimedGuestClaimItems } from '#/lib/guest-claim-items.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
 
@@ -113,13 +113,23 @@ function BillClaimPage() {
 
   const visibleItems = useMemo(() => {
     if (!data || !storedParticipantId) return []
-    const sorted = sortGuestClaimItems(
-      data.items,
+    const sorted = sortGuestClaimItems(data.items)
+    const unclaimed = filterUnclaimedGuestClaimItems(
+      sorted,
       data.assignments,
       storedParticipantId as Id<'participants'>,
     )
-    return filterGuestClaimItemsBySearch(sorted, search)
+    return filterGuestClaimItemsBySearch(unclaimed, search)
   }, [data, search, storedParticipantId])
+
+  const hasUnclaimedItems = useMemo(() => {
+    if (!data || !storedParticipantId) return false
+    return filterUnclaimedGuestClaimItems(
+      data.items,
+      data.assignments,
+      storedParticipantId as Id<'participants'>,
+    ).length > 0
+  }, [data, storedParticipantId])
 
   if (data === undefined || storedParticipantId === null || !storedSession) {
     return (
@@ -185,7 +195,7 @@ function BillClaimPage() {
           )}
         </div>
 
-        {hasItems && (
+        {hasUnclaimedItems && (
           <div className="relative">
             <Label htmlFor="claim-item-search" className="sr-only">
               Търсене по артикул
@@ -208,7 +218,9 @@ function BillClaimPage() {
             <p className="text-sm text-muted-foreground">
               {hasSearchQuery
                 ? 'Няма артикули, съответстващи на търсенето.'
-                : 'Все още няма артикули.'}
+                : hasUnclaimedItems
+                  ? 'Все още няма артикули.'
+                  : 'Всички артикули са отбелязани.'}
             </p>
           ) : (
             visibleItems.map((item) => (
@@ -235,6 +247,7 @@ function BillClaimPage() {
           label={label}
           breakdownInput={breakdownInput}
           totals={participantTotals}
+          readOnly={readOnly}
         />
       ) : null}
     </div>

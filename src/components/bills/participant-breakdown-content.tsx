@@ -12,6 +12,8 @@ import {
 import { formatEur } from '#/lib/format-currency.ts'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Separator } from '#/components/ui/separator.tsx'
+import { CircleXIcon } from 'lucide-react'
+import { cn } from '#/lib/utils.ts'
 import { ParticipantPayActions } from '#/components/bills/participant-pay-actions.tsx'
 import { PaymentActions } from '#/components/bills/payment-actions.tsx'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -38,6 +40,10 @@ export interface ParticipantBreakdownContentProps {
   /** Claim footer: skip duplicate totals grid; use `summaryFooter` instead. */
   summaryVariant?: 'default' | 'claim-footer'
   summaryFooter?: ReactNode
+  /** Claim footer: show remove control on assigned item lines. */
+  removableItemLines?: boolean
+  readOnly?: boolean
+  onRemoveItem?: (itemId: Id<'items'>) => void | Promise<void>
 }
 
 export function ParticipantBreakdownContent({
@@ -52,6 +58,9 @@ export function ParticipantBreakdownContent({
   showStatusBadge = true,
   summaryVariant = 'default',
   summaryFooter,
+  removableItemLines = false,
+  readOnly = false,
+  onRemoveItem,
 }: ParticipantBreakdownContentProps) {
   const breakdown = calculateParticipantBreakdown(
     breakdownInput,
@@ -75,13 +84,31 @@ export function ParticipantBreakdownContent({
       ) : (
         breakdown.lines.map((line, index) => (
           <div
-            key={`${line.kind}-${line.label}-${index}`}
+            key={`${line.kind}-${line.kind === 'item' ? line.itemId : line.label}-${index}`}
             className="flex items-start justify-between gap-3 text-sm"
           >
-            <p className="text-muted-foreground">
-              {formatBreakdownLineLabel(line, participantCount)}
-              {line.kind === 'item' ? formatBreakdownLineSuffix(line) : ''}
-            </p>
+            <div className="flex min-w-0 items-start gap-2">
+              {removableItemLines &&
+              line.kind === 'item' &&
+              !readOnly &&
+              onRemoveItem ? (
+                <button
+                  type="button"
+                  onClick={() => void onRemoveItem(line.itemId as Id<'items'>)}
+                  className={cn(
+                    'tap-feedback -ml-1 shrink-0 rounded-md p-1 text-primary/75',
+                    'hover:text-primary dark:text-primary/85',
+                  )}
+                  aria-label={`Премахни ${line.label}`}
+                >
+                  <CircleXIcon className="size-4" aria-hidden />
+                </button>
+              ) : null}
+              <p className="text-muted-foreground">
+                {formatBreakdownLineLabel(line, participantCount)}
+                {line.kind === 'item' ? formatBreakdownLineSuffix(line) : ''}
+              </p>
+            </div>
             <p className="shrink-0 tabular-nums">{formatEur(line.amountCents)}</p>
           </div>
         ))

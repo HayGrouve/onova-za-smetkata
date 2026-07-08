@@ -169,6 +169,7 @@ export interface BillBreakdownInput {
 export type ParticipantBreakdownLine =
   | {
       kind: 'item'
+      itemId: string
       label: string
       amountCents: number
       sharedWithCount?: number
@@ -208,6 +209,7 @@ export function calculateParticipantBreakdown(
       itemsSubtotalCents += amountCents
       lines.push({
         kind: 'item',
+        itemId: item.id,
         label: item.name,
         amountCents,
         units,
@@ -236,6 +238,7 @@ export function calculateParticipantBreakdown(
     itemsSubtotalCents += portion.cents
     lines.push({
       kind: 'item',
+      itemId: item.id,
       label: item.name,
       amountCents: portion.cents,
       sharedWithCount: sortedIds.length - 1,

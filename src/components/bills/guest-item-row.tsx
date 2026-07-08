@@ -1,5 +1,5 @@
 import { useMutation } from 'convex/react'
-import { CheckIcon, CircleXIcon, MinusIcon, PlusIcon } from 'lucide-react'
+import { MinusIcon, PlusIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '#/lib/utils.ts'
 import { formatEur } from '#/lib/format-currency.ts'
@@ -18,15 +18,6 @@ export interface GuestItemRowProps {
   participantLabels: Record<string, string>
   readOnly: boolean
   onItemSelected?: () => void
-}
-
-function SelectedUncheckHint() {
-  return (
-    <CircleXIcon
-      className="pointer-events-none absolute right-3 bottom-3 size-4 text-primary/75 dark:text-primary/85"
-      aria-hidden
-    />
-  )
 }
 
 export function GuestItemRow({
@@ -49,15 +40,12 @@ export function GuestItemRow({
   )
   const lineTotalCents = item.unitPriceCents * item.quantity
   const interactionDisabled = readOnly || isUnavailableToMe
-  const showUncheckHint =
-    isSelectedByMe && !readOnly && !isUnavailableToMe
 
   async function handleToggle() {
     if (interactionDisabled) return
-    const wasSelected = isSelectedByMe
     try {
       await toggleAssignment({ itemId: item._id, participantId })
-      if (!wasSelected) onItemSelected?.()
+      onItemSelected?.()
     } catch (error) {
       toast.error(getConvexErrorMessage(error))
     }
@@ -74,15 +62,12 @@ export function GuestItemRow({
   }
 
   const cardClassName = cn(
-    'guest-claim-card relative flex flex-col gap-1 rounded-lg border p-4 text-left',
-    isSelectedByMe
-      ? 'guest-claim-card--selected border-primary/50 bg-primary/10 dark:border-primary/40 dark:bg-primary/15'
-      : isUnavailableToMe
-        ? 'guest-claim-card--unavailable border-border/60 bg-muted/30'
-        : 'border-border bg-card',
+    'guest-claim-card flex flex-col gap-1 rounded-lg border p-4 text-left',
+    isUnavailableToMe
+      ? 'guest-claim-card--unavailable border-border/60 bg-muted/30'
+      : 'border-border bg-card',
     !interactionDisabled && 'tap-feedback',
     readOnly && !isUnavailableToMe && 'opacity-80',
-    showUncheckHint && 'pb-9',
   )
 
   function renderClaimantHint() {
@@ -110,11 +95,7 @@ export function GuestItemRow({
         disabled={interactionDisabled}
         onClick={() => void handleToggle()}
         className={cn(cardClassName, 'text-left')}
-        aria-label={
-          isSelectedByMe
-            ? `${item.name}, отбелязано — докоснете за премахване`
-            : `${item.name}, докоснете за отбелязване`
-        }
+        aria-label={`${item.name}, докоснете за отбелязване`}
       >
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -127,30 +108,23 @@ export function GuestItemRow({
         </div>
         {renderClaimantHint()}
         {!readOnly && !isUnavailableToMe && (
-          <p
-            key={isSelectedByMe ? 'claimed' : 'open'}
-            className={cn(
-              'guest-status-in flex items-center gap-1 text-xs font-medium',
-              isSelectedByMe ? 'text-primary' : 'text-muted-foreground',
-            )}
-          >
-            {isSelectedByMe ? (
-              <>
-                <CheckIcon className="size-3.5" aria-hidden />
-                Отбелязано
-              </>
-            ) : (
-              'Докоснете, за да отбележите'
-            )}
+          <p className="text-xs font-medium text-muted-foreground">
+            Докоснете, за да отбележите
           </p>
         )}
-        {showUncheckHint ? <SelectedUncheckHint /> : null}
       </button>
     )
   }
 
   return (
-    <div className={cn(cardClassName, 'gap-2')}>
+    <div
+      className={cn(
+        cardClassName,
+        'gap-2',
+        isSelectedByMe &&
+          'guest-claim-card--selected border-primary/50 bg-primary/10 dark:border-primary/40 dark:bg-primary/15',
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-medium">{item.name}</p>
@@ -176,9 +150,9 @@ export function GuestItemRow({
             </button>
             <span
               key={myUnits}
-              className="guest-count-pop min-w-8 text-center text-sm font-semibold tabular-nums text-foreground"
+              className="guest-count-pop min-w-10 text-center text-sm font-semibold tabular-nums text-foreground"
             >
-              {myUnits}
+              {myUnits}/{item.quantity}
             </span>
             <button
               type="button"
@@ -192,7 +166,6 @@ export function GuestItemRow({
           </div>
         </div>
       )}
-      {showUncheckHint ? <SelectedUncheckHint /> : null}
     </div>
   )
 }

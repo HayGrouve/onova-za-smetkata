@@ -32,6 +32,16 @@ describe('formatBreakdownLineSuffix', () => {
         totalUnits: 4,
       }),
     ).toBe(' · 2 от 4')
+
+    expect(
+      formatBreakdownLineSuffix({
+        kind: 'item',
+        label: 'Бира',
+        amountCents: 600,
+        units: 3,
+        totalUnits: 3,
+      }),
+    ).toBe(' · 3 от 3')
   })
 })
 

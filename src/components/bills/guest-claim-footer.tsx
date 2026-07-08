@@ -1,6 +1,6 @@
 import { SendIcon, PieChartIcon } from 'lucide-react'
-import { useQuery } from 'convex/react'
-import { useEffect, useRef, useState } from 'react'
+import { useMutation, useQuery } from 'convex/react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ParticipantBreakdownContent } from '#/components/bills/participant-breakdown-content.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
@@ -15,6 +15,8 @@ import { formatCopyAmount } from '#/lib/bill-share.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { buildRevolutUrl } from '#/lib/payment-settings.ts'
 import { copyToClipboard } from '#/lib/copy-to-clipboard.ts'
+import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { itemUsesUnitAssignments } from '#/lib/guest-claim-items.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -30,6 +32,7 @@ export interface GuestClaimFooterProps {
   label: string
   breakdownInput: BillBreakdownInput
   totals: ParticipantTotals
+  readOnly?: boolean
 }
 
 export function GuestClaimFooter({
@@ -38,8 +41,11 @@ export function GuestClaimFooter({
   label,
   breakdownInput,
   totals,
+  readOnly = false,
 }: GuestClaimFooterProps) {
   const settings = useQuery(api.paymentSettings.getForGuest, { billId })
+  const toggleAssignment = useMutation(api.assignments.toggle)
+  const setUnits = useMutation(api.assignments.setUnits)
   const revolutUsername = settings?.revolutUsername?.trim()
   const footerRef = useRef<HTMLDivElement>(null)
   const [spacerHeight, setSpacerHeight] = useState(0)
@@ -69,6 +75,43 @@ export function GuestClaimFooter({
     toast.success('Отворен Revolut')
   }
 
+  const handleRemoveItem = useCallback(
+    async (itemId: Id<'items'>) => {
+      if (readOnly) return
+      try {
+        const item = breakdownInput.items.find((entry) => entry.id === itemId)
+        const assignment = breakdownInput.assignments.find(
+          (entry) =>
+            entry.itemId === itemId && entry.participantId === participantId,
+        )
+        const myUnits = assignment?.units ?? 0
+
+        if (item && item.quantity > 1) {
+          await setUnits({ itemId, participantId, units: myUnits - 1 })
+          return
+        }
+
+        if (
+          itemUsesUnitAssignments(
+            itemId,
+            breakdownInput.assignments.map((assignment) => ({
+              itemId: assignment.itemId as Id<'items'>,
+              participantId: assignment.participantId as Id<'participants'>,
+              units: assignment.units,
+            })),
+          )
+        ) {
+          await setUnits({ itemId, participantId, units: 0 })
+        } else {
+          await toggleAssignment({ itemId, participantId })
+        }
+      } catch (error) {
+        toast.error(getConvexErrorMessage(error))
+      }
+    },
+    [breakdownInput.assignments, breakdownInput.items, participantId, readOnly, setUnits, toggleAssignment],
+  )
+
   return (
     <>
       <div aria-hidden style={{ height: spacerHeight }} />
@@ -95,6 +138,9 @@ export function GuestClaimFooter({
             showPayActions={false}
             showStatusBadge={false}
             summaryVariant="claim-footer"
+            removableItemLines
+            readOnly={readOnly}
+            onRemoveItem={handleRemoveItem}
             summaryFooter={
               <>
                 <div className="flex items-center justify-between gap-3">

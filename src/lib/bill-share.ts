@@ -64,7 +64,7 @@ export function formatBreakdownLineSuffix(
 ): string {
   if (line.kind !== 'item') return ''
   if (line.units !== undefined && line.totalUnits !== undefined) {
-    if (line.totalUnits <= 1 || line.units === line.totalUnits) return ''
+    if (line.totalUnits <= 1) return ''
     return ` · ${line.units} от ${line.totalUnits}`
   }
   if (line.sharedWithCount !== undefined && line.sharedWithCount > 0) {
