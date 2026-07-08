@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { Separator } from '#/components/ui/separator.tsx'
+import { isClientDevMode } from '#/lib/dev-mode.ts'
 
 export const Route = createFileRoute('/login')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -19,6 +20,7 @@ export const Route = createFileRoute('/login')({
 
 function LoginPage() {
   const { redirect } = Route.useSearch()
+  const devMode = isClientDevMode()
   const { isAuthenticated, isLoading } = useConvexAuth()
   const { signIn } = useAuthActions()
   const navigate = useNavigate()
@@ -62,6 +64,14 @@ function LoginPage() {
     return (
       <div className="page-container py-10 text-center text-muted-foreground">
         Зареждане...
+      </div>
+    )
+  }
+
+  if (devMode) {
+    return (
+      <div className="page-container py-10 text-center text-muted-foreground">
+        Влизане като dev потребител...
       </div>
     )
   }

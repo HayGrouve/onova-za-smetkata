@@ -3,6 +3,7 @@ import { useMutation, useQuery } from 'convex/react'
 import type { FunctionReturnType } from 'convex/server'
 import {
   CameraIcon,
+  Loader2Icon,
   ReceiptIcon,
   ScanLineIcon,
   ShoppingBagIcon,
@@ -36,7 +37,10 @@ import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import { parseEurInput } from '#/lib/format-currency.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { prepareReceiptImage } from '#/lib/prepare-receipt-image.ts'
+import { cn } from '#/lib/utils.ts'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
+import { BillHeaderTitleSync } from '#/components/layout/bill-header-title.tsx'
+import { Skeleton } from '#/components/ui/skeleton.tsx'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
 
@@ -84,11 +88,7 @@ function BillEditor() {
   }
 
   if (data === undefined) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-10 text-center text-muted-foreground">
-        Зареждане...
-      </div>
-    )
+    return <BillEditorSkeleton />
   }
 
   if (data === null) {
@@ -100,6 +100,16 @@ function BillEditor() {
   }
 
   return <BillEditorContent billId={billId} data={data} />
+}
+
+function BillEditorSkeleton() {
+  return (
+    <div className="page-container flex flex-col gap-4">
+      <Skeleton className="h-56 w-full rounded-xl" />
+      <Skeleton className="h-40 w-full rounded-xl" />
+      <Skeleton className="h-48 w-full rounded-xl" />
+    </div>
+  )
 }
 
 function BillEditorContent({
@@ -122,8 +132,11 @@ function BillEditorContent({
   )
 
   const latestScan = useQuery(api.receiptScan.getLatestScan, { billId })
+  const [scanRequested, setScanRequested] = useState(false)
   const isScanning =
-    latestScan?.status === 'pending' || latestScan?.status === 'processing'
+    scanRequested ||
+    latestScan?.status === 'pending' ||
+    latestScan?.status === 'processing'
   const [preScanDialogOpen, setPreScanDialogOpen] = useState(false)
   const [replaceConfirmOpen, setReplaceConfirmOpen] = useState(false)
   const [importMode, setImportMode] = useState<'add' | 'replace'>('add')
@@ -141,6 +154,7 @@ function BillEditorContent({
       handledScanIdRef.current !== latestScan._id
     ) {
       handledScanIdRef.current = latestScan._id
+      setScanRequested(false)
       setActiveScanId(latestScan._id)
       setReviewSheetOpen(true)
     }
@@ -149,6 +163,7 @@ function BillEditorContent({
       erroredScanIdRef.current !== latestScan._id
     ) {
       erroredScanIdRef.current = latestScan._id
+      setScanRequested(false)
       toast.error(
         latestScan.errorMessage ?? 'Неуспешно разпознаване на бележката',
       )
@@ -157,7 +172,11 @@ function BillEditorContent({
 
   function beginScan(mode: 'add' | 'replace') {
     setImportMode(mode)
-    void startScan({ billId })
+    setScanRequested(true)
+    void startScan({ billId }).catch(() => {
+      setScanRequested(false)
+      toast.error('Неуспешно стартиране на разпознаването')
+    })
   }
 
   function handleScanButtonClick() {
@@ -261,6 +280,7 @@ function BillEditorContent({
 
   return (
     <div className="page-container">
+      <BillHeaderTitleSync title={bill.restaurantName} />
       <div className="flex flex-col gap-4">
         <Card>
           <CardHeader>
@@ -332,7 +352,10 @@ function BillEditorContent({
                 <img
                   src={receiptUrl}
                   alt="Касова бележка"
-                  className="max-h-64 w-full rounded-md border object-contain"
+                  className={cn(
+                    'max-h-64 w-full rounded-md border object-contain',
+                    isScanning && 'receipt-scan-image-active',
+                  )}
                 />
               )}
               <input
@@ -363,14 +386,22 @@ function BillEditorContent({
                     variant="outline"
                     className="h-11"
                     disabled={isScanning}
+                    aria-busy={isScanning}
                     onClick={handleScanButtonClick}
                   >
-                    <ScanLineIcon className={ICON.button} aria-hidden />
+                    {isScanning ? (
+                      <Loader2Icon
+                        className={cn(
+                          ICON.button,
+                          'animate-spin motion-reduce:animate-none',
+                        )}
+                        aria-hidden
+                      />
+                    ) : (
+                      <ScanLineIcon className={ICON.button} aria-hidden />
+                    )}
                     {isScanning ? 'Разпознаване…' : 'Разпознай артикули'}
                   </Button>
-                  <p className="text-center text-xs text-muted-foreground">
-                    Използва AI (~€0.01 на scan)
-                  </p>
                 </div>
               )}
             </div>

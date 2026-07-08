@@ -1,8 +1,18 @@
+import { useConvexAuth } from '@convex-dev/auth/react'
+import { useQuery } from 'convex/react'
 import { createContext, useContext, useState } from 'react'
 import { PaymentSettingsSheet } from '#/components/bills/payment-settings-sheet.tsx'
+import {
+  getPaymentSettingsStatus,
+  type PaymentSettings,
+  type PaymentSettingsStatus,
+} from '#/lib/payment-settings.ts'
+import { api } from '../../../convex/_generated/api'
 
 interface PaymentSettingsContextValue {
   openPaymentSettings: () => void
+  settings: PaymentSettings | null | undefined
+  status: PaymentSettingsStatus
 }
 
 const PaymentSettingsContext =
@@ -14,10 +24,22 @@ export function PaymentSettingsProvider({
   children: React.ReactNode
 }) {
   const [open, setOpen] = useState(false)
+  const { isAuthenticated } = useConvexAuth()
+  const settings = useQuery(
+    api.paymentSettings.get,
+    isAuthenticated ? {} : 'skip',
+  )
+  const status: PaymentSettingsStatus = isAuthenticated
+    ? getPaymentSettingsStatus(settings)
+    : 'unconfigured'
 
   return (
     <PaymentSettingsContext.Provider
-      value={{ openPaymentSettings: () => setOpen(true) }}
+      value={{
+        openPaymentSettings: () => setOpen(true),
+        settings: isAuthenticated ? settings : null,
+        status,
+      }}
     >
       {children}
       <PaymentSettingsSheet open={open} onOpenChange={setOpen} />
@@ -25,12 +47,19 @@ export function PaymentSettingsProvider({
   )
 }
 
-export function usePaymentSettingsSheet(): PaymentSettingsContextValue {
+export function usePaymentSettings(): PaymentSettingsContextValue {
   const context = useContext(PaymentSettingsContext)
   if (!context) {
     throw new Error(
-      'usePaymentSettingsSheet must be used within PaymentSettingsProvider',
+      'usePaymentSettings must be used within PaymentSettingsProvider',
     )
   }
   return context
+}
+
+export function usePaymentSettingsSheet(): Pick<
+  PaymentSettingsContextValue,
+  'openPaymentSettings'
+> {
+  return usePaymentSettings()
 }

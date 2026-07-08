@@ -1,8 +1,8 @@
 import { CopyIcon, SaveIcon, WalletIcon } from 'lucide-react'
-import { useConvexAuth } from '@convex-dev/auth/react'
 import { useEffect, useState } from 'react'
-import { useMutation, useQuery } from 'convex/react'
+import { useMutation } from 'convex/react'
 import { toast } from 'sonner'
+import { usePaymentSettings } from '#/components/bills/payment-settings-provider.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
@@ -29,11 +29,7 @@ export function PaymentSettingsSheet({
   open,
   onOpenChange,
 }: PaymentSettingsSheetProps) {
-  const { isAuthenticated } = useConvexAuth()
-  const settings = useQuery(
-    api.paymentSettings.get,
-    isAuthenticated ? {} : 'skip',
-  )
+  const { settings } = usePaymentSettings()
   const saveSettings = useMutation(api.paymentSettings.save)
   const [revolutUsername, setRevolutUsername] = useState('')
   const [iban, setIban] = useState('')

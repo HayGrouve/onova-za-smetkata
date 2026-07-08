@@ -83,7 +83,7 @@ export function StickyTotalsBar({
         aria-hidden
         className="sticky-totals-bar-spacer"
       />
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t sticky-surface pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto max-w-lg">
           <Link
             to="/bills/$billId/summary"

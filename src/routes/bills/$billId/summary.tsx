@@ -45,6 +45,8 @@ import { formatEur } from '#/lib/format-currency.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
+import { BillHeaderTitleSync } from '#/components/layout/bill-header-title.tsx'
+import { Skeleton } from '#/components/ui/skeleton.tsx'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
 
@@ -155,8 +157,10 @@ function BillSummary() {
 
   if (data === undefined) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-10 text-center text-muted-foreground">
-        Зареждане...
+      <div className="page-container-summary flex flex-col gap-4">
+        <Skeleton className="h-8 w-2/3" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-48 w-full rounded-xl" />
       </div>
     )
   }
@@ -211,7 +215,8 @@ function BillSummary() {
   }
 
   return (
-    <div className="page-container">
+    <div className="page-container-summary">
+      <BillHeaderTitleSync title={bill.restaurantName} />
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           {dateFormatter.format(new Date(bill.date))}

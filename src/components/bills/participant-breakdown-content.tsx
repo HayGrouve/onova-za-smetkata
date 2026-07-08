@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type {
   BillBreakdownInput,
   ParticipantTotals,
@@ -32,6 +33,11 @@ export interface ParticipantBreakdownContentProps {
   showPaymentActions?: boolean
   /** Show Revolut button in breakdown block. Claim page uses sticky footer instead. */
   showPayActions?: boolean
+  /** Hide status badge (e.g. when shown in a parent header). */
+  showStatusBadge?: boolean
+  /** Claim footer: skip duplicate totals grid; use `summaryFooter` instead. */
+  summaryVariant?: 'default' | 'claim-footer'
+  summaryFooter?: ReactNode
 }
 
 export function ParticipantBreakdownContent({
@@ -43,6 +49,9 @@ export function ParticipantBreakdownContent({
   onOpenPaymentSettings,
   showPaymentActions = true,
   showPayActions = true,
+  showStatusBadge = true,
+  summaryVariant = 'default',
+  summaryFooter,
 }: ParticipantBreakdownContentProps) {
   const breakdown = calculateParticipantBreakdown(
     breakdownInput,
@@ -53,9 +62,11 @@ export function ParticipantBreakdownContent({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-end">
-        <Badge variant="outline">{statusLabels[totals.status]}</Badge>
-      </div>
+      {showStatusBadge ? (
+        <div className="flex items-center justify-end">
+          <Badge variant="outline">{statusLabels[totals.status]}</Badge>
+        </div>
+      ) : null}
 
       {breakdown.lines.length === 0 ? (
         <p className="text-sm text-muted-foreground">
@@ -78,20 +89,42 @@ export function ParticipantBreakdownContent({
 
       <Separator />
 
-      <div className="grid grid-cols-3 gap-2 text-sm">
-        <div>
-          <p className="text-xs text-muted-foreground">Дължи</p>
-          <p className="font-medium tabular-nums">{formatEur(totals.owedCents)}</p>
+      {summaryVariant === 'claim-footer' ? (
+        <>
+          {totals.paidCents > 0 ? (
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">Дължи</p>
+                <p className="font-medium tabular-nums">
+                  {formatEur(totals.owedCents)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Платено</p>
+                <p className="font-medium tabular-nums">
+                  {formatEur(totals.paidCents)}
+                </p>
+              </div>
+            </div>
+          ) : null}
+          {summaryFooter}
+        </>
+      ) : (
+        <div className="grid grid-cols-3 gap-2 text-sm">
+          <div>
+            <p className="text-xs text-muted-foreground">Дължи</p>
+            <p className="font-medium tabular-nums">{formatEur(totals.owedCents)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Платено</p>
+            <p className="font-medium tabular-nums">{formatEur(totals.paidCents)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Остатък</p>
+            <p className="font-medium tabular-nums">{formatEur(remainingCents)}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Платено</p>
-          <p className="font-medium tabular-nums">{formatEur(totals.paidCents)}</p>
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Остатък</p>
-          <p className="font-medium tabular-nums">{formatEur(remainingCents)}</p>
-        </div>
-      </div>
+      )}
 
       {showPayActions && remainingCents > 0 ? (
         <ParticipantPayActions

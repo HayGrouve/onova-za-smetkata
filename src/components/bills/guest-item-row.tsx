@@ -1,5 +1,5 @@
 import { useMutation } from 'convex/react'
-import { CheckIcon, MinusIcon, PlusIcon } from 'lucide-react'
+import { CheckIcon, CircleXIcon, MinusIcon, PlusIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '#/lib/utils.ts'
 import { formatEur } from '#/lib/format-currency.ts'
@@ -18,6 +18,15 @@ export interface GuestItemRowProps {
   participantLabels: Record<string, string>
   readOnly: boolean
   onItemSelected?: () => void
+}
+
+function SelectedUncheckHint() {
+  return (
+    <CircleXIcon
+      className="pointer-events-none absolute right-3 bottom-3 size-4 text-primary/75 dark:text-primary/85"
+      aria-hidden
+    />
+  )
 }
 
 export function GuestItemRow({
@@ -40,6 +49,8 @@ export function GuestItemRow({
   )
   const lineTotalCents = item.unitPriceCents * item.quantity
   const interactionDisabled = readOnly || isUnavailableToMe
+  const showUncheckHint =
+    isSelectedByMe && !readOnly && !isUnavailableToMe
 
   async function handleToggle() {
     if (interactionDisabled) return
@@ -63,7 +74,7 @@ export function GuestItemRow({
   }
 
   const cardClassName = cn(
-    'guest-claim-card flex flex-col gap-1 rounded-lg border p-4 text-left',
+    'guest-claim-card relative flex flex-col gap-1 rounded-lg border p-4 text-left',
     isSelectedByMe
       ? 'guest-claim-card--selected border-primary/50 bg-primary/10 dark:border-primary/40 dark:bg-primary/15'
       : isUnavailableToMe
@@ -71,6 +82,7 @@ export function GuestItemRow({
         : 'border-border bg-card',
     !interactionDisabled && 'tap-feedback',
     readOnly && !isUnavailableToMe && 'opacity-80',
+    showUncheckHint && 'pb-9',
   )
 
   function renderClaimantHint() {
@@ -98,6 +110,11 @@ export function GuestItemRow({
         disabled={interactionDisabled}
         onClick={() => void handleToggle()}
         className={cn(cardClassName, 'text-left')}
+        aria-label={
+          isSelectedByMe
+            ? `${item.name}, отбелязано — докоснете за премахване`
+            : `${item.name}, докоснете за отбелязване`
+        }
       >
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -127,6 +144,7 @@ export function GuestItemRow({
             )}
           </p>
         )}
+        {showUncheckHint ? <SelectedUncheckHint /> : null}
       </button>
     )
   }
@@ -174,6 +192,7 @@ export function GuestItemRow({
           </div>
         </div>
       )}
+      {showUncheckHint ? <SelectedUncheckHint /> : null}
     </div>
   )
 }

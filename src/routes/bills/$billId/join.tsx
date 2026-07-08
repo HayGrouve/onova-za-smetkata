@@ -170,6 +170,7 @@ function BillJoinPage() {
                   variant="outline"
                   disabled={isTaken || isClaiming || claimingId !== null}
                   className="h-12 justify-between text-base"
+                  aria-label={isTaken ? `${label} — заето` : label}
                   onClick={() => void handlePick(participant._id)}
                 >
                   <span>{label}</span>

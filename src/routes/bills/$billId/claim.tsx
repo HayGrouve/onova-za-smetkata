@@ -1,25 +1,18 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
-import { PieChartIcon, SearchIcon } from 'lucide-react'
+import { SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { GuestClaimFooter } from '#/components/bills/guest-claim-footer.tsx'
 import { GuestItemRow } from '#/components/bills/guest-item-row.tsx'
-import { ParticipantBreakdownContent } from '#/components/bills/participant-breakdown-content.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '#/components/ui/card.tsx'
+import { Label } from '#/components/ui/label.tsx'
 import { useGuestSessionHeartbeat } from '#/hooks/use-guest-session-heartbeat.ts'
 import {
   calculateBillTotals,
   type BillBreakdownInput,
 } from '#/lib/bill-calculations.ts'
-import { ICON } from '#/lib/app-icons.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import {
   clearStoredGuestParticipant,
@@ -169,7 +162,7 @@ function BillClaimPage() {
 
   return (
     <div className="page-container">
-      <div className="flex flex-col gap-4 py-4">
+      <div className="flex flex-col gap-4 py-4 pb-6">
         <div className="flex flex-col gap-2">
           <p className="text-sm text-muted-foreground">
             {data.bill.restaurantName.trim() || 'Сметка'}
@@ -194,8 +187,12 @@ function BillClaimPage() {
 
         {hasItems && (
           <div className="relative">
+            <Label htmlFor="claim-item-search" className="sr-only">
+              Търсене по артикул
+            </Label>
             <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              id="claim-item-search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Търсене по артикул"
@@ -229,37 +226,17 @@ function BillClaimPage() {
             ))
           )}
         </div>
-
-        {participantTotals && breakdownInput ? (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <PieChartIcon className={ICON.section} aria-hidden />
-                Разбивка на дяла
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ParticipantBreakdownContent
-                billId={billId}
-                participantId={storedParticipantId as Id<'participants'>}
-                label={label}
-                breakdownInput={breakdownInput}
-                totals={participantTotals}
-                showPaymentActions={false}
-                showPayActions={false}
-              />
-            </CardContent>
-          </Card>
-        ) : null}
       </div>
 
-      {participantTotals && (
+      {participantTotals && breakdownInput ? (
         <GuestClaimFooter
           billId={billId}
-          owedCents={participantTotals.owedCents}
-          remainingCents={Math.max(0, participantTotals.balanceCents)}
+          participantId={storedParticipantId as Id<'participants'>}
+          label={label}
+          breakdownInput={breakdownInput}
+          totals={participantTotals}
         />
-      )}
+      ) : null}
     </div>
   )
 }

@@ -1,12 +1,9 @@
-import { useAuthActions, useConvexAuth } from '@convex-dev/auth/react'
+import { useConvexAuth } from '@convex-dev/auth/react'
 import { Link, useParams, useRouterState } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
-import { ChevronLeftIcon, CogIcon, LogOutIcon } from 'lucide-react'
-import {
-  usePaymentSettingsConfigured,
-} from '#/components/bills/payment-settings-open-button.tsx'
-import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
-import { ThemeToggle } from '#/components/layout/theme-toggle.tsx'
+import { ChevronLeftIcon } from 'lucide-react'
+import { AppHeaderMenu } from '#/components/layout/app-header-menu.tsx'
+import { useBillHeaderTitleValue } from '#/components/layout/bill-header-title.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -15,27 +12,15 @@ function useHeaderConfig() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const params = useParams({ strict: false })
   const billId = params.billId as Id<'bills'> | undefined
-  const { isAuthenticated } = useConvexAuth()
+  const billHeaderTitle = useBillHeaderTitleValue()
 
   const isHome = pathname === '/'
   const isLogin = pathname === '/login'
   const isSummary = pathname.endsWith('/summary')
   const isJoin = pathname.endsWith('/join')
   const isClaim = pathname.endsWith('/claim')
-  const isGuestRoute = isJoin || isClaim
   const isEditor =
     billId !== undefined && !isSummary && !isJoin && !isClaim
-
-  const needsBillTitle =
-    isAuthenticated && !isLogin && !isGuestRoute && billId !== undefined
-
-  const billData = useQuery(
-    api.bills.get,
-    needsBillTitle && (isSummary || isEditor) ? { billId } : 'skip',
-  )
-
-  const restaurantName =
-    billData?.bill.restaurantName.trim() || 'Без име'
 
   if (isHome) {
     return {
@@ -55,7 +40,7 @@ function useHeaderConfig() {
 
   if (isSummary && billId) {
     return {
-      title: billData === undefined ? 'Зареждане…' : restaurantName,
+      title: billHeaderTitle ?? 'Сметка',
       backTo: '/bills/$billId' as const,
       backParams: { billId },
     }
@@ -79,7 +64,7 @@ function useHeaderConfig() {
 
   if (isEditor && billId) {
     return {
-      title: billData === undefined ? 'Зареждане…' : restaurantName,
+      title: billHeaderTitle ?? 'Сметка',
       backTo: '/' as const,
       backParams: undefined,
     }
@@ -92,9 +77,6 @@ export function AppHeader() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const { title, backTo, backParams } = useHeaderConfig()
   const { isAuthenticated } = useConvexAuth()
-  const { signOut } = useAuthActions()
-  const paymentSettingsConfigured = usePaymentSettingsConfigured()
-  const { openPaymentSettings } = usePaymentSettingsSheet()
 
   const isGuestRoute =
     pathname.endsWith('/join') || pathname.endsWith('/claim')
@@ -102,13 +84,9 @@ export function AppHeader() {
   const showHostActions = isAuthenticated && !isGuestRoute && !isLogin
   const viewer = useQuery(api.users.viewer, showHostActions ? {} : 'skip')
 
-  async function handleSignOut() {
-    await signOut()
-  }
-
   return (
-    <header className="sticky top-0 z-50 border-b bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="mx-auto flex h-14 max-w-lg items-center gap-2 px-2">
+    <header className="sticky-surface sticky top-0 z-50 border-b pt-[env(safe-area-inset-top)]">
+      <div className="page-shell flex h-14 items-center gap-2">
         {backTo ? (
           <Button
             variant="ghost"
@@ -121,47 +99,17 @@ export function AppHeader() {
               <ChevronLeftIcon className="size-5" />
             </Link>
           </Button>
-        ) : (
+        ) : pathname !== '/' ? (
           <div className="size-9 shrink-0" aria-hidden />
-        )}
+        ) : null}
         <h1 className="min-w-0 flex-1 truncate text-base font-semibold">
           {title}
         </h1>
-        <div className="flex shrink-0 items-center gap-1">
-          {showHostActions && viewer?.label ? (
-            <span
-              className="max-w-[5.5rem] truncate text-xs text-muted-foreground sm:max-w-[8rem]"
-              title={viewer.email ?? viewer.label}
-            >
-              {viewer.label}
-            </span>
-          ) : null}
-          <ThemeToggle />
-          {showHostActions && paymentSettingsConfigured ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="shrink-0 tap-feedback"
-              aria-label="Настройки за плащане"
-              onClick={openPaymentSettings}
-            >
-              <CogIcon className="size-5" />
-            </Button>
-          ) : null}
-          {showHostActions ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="shrink-0 tap-feedback"
-              aria-label="Изход"
-              onClick={() => void handleSignOut()}
-            >
-              <LogOutIcon className="size-5" />
-            </Button>
-          ) : null}
-        </div>
+        <AppHeaderMenu
+          showHostActions={showHostActions}
+          viewerLabel={viewer?.label}
+          viewerEmail={viewer?.email}
+        />
       </div>
     </header>
   )

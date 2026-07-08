@@ -140,7 +140,6 @@ Add button below photo upload:
 
 - **„Разпознай артикули“** — disabled if no receipt or scan in progress
 - Loading: **„Разпознаване…“** with spinner
-- Hint: **„Използва AI (~€0.01 на scan)“**
 
 **Pre-scan dialog** (when `items.length > 0`):
 

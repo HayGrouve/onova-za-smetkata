@@ -1,5 +1,6 @@
 import { ConvexAuthProvider } from '@convex-dev/auth/react'
 import { ConvexQueryClient } from '@convex-dev/react-query'
+import { DevAutoSignIn } from '#/components/auth/dev-auto-sign-in.tsx'
 import { assertConvexUrlForBuild } from '#/lib/env.ts'
 
 const convexUrl = assertConvexUrlForBuild()
@@ -30,6 +31,8 @@ export default function AppConvexProvider({
   const client = convexQueryClient.convexClient
 
   return (
-    <ConvexAuthProvider client={client}>{children}</ConvexAuthProvider>
+    <ConvexAuthProvider client={client}>
+      <DevAutoSignIn>{children}</DevAutoSignIn>
+    </ConvexAuthProvider>
   )
 }

@@ -11,6 +11,8 @@ import {
 import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
+import { Label } from '#/components/ui/label.tsx'
+import { Skeleton } from '#/components/ui/skeleton.tsx'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
 import { api } from '../../convex/_generated/api'
 
@@ -47,6 +49,8 @@ function Home() {
     )
   }
 
+  const billsLoading = bills === undefined
+
   async function handleCreateBill() {
     setIsCreating(true)
     try {
@@ -76,8 +80,12 @@ function Home() {
       </Button>
 
       <div className="relative mb-4">
+        <Label htmlFor="home-bill-search" className="sr-only">
+          Търсене по ресторант или участник
+        </Label>
         <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
+          id="home-bill-search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Търсене по ресторант или участник"
@@ -86,19 +94,21 @@ function Home() {
       </div>
 
       <div className="flex flex-col gap-3">
-        {filteredBills === null && (
-          <p className="py-8 text-center text-muted-foreground">Зареждане...</p>
-        )}
-        {filteredBills !== null && filteredBills.length === 0 && (
+        {billsLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+          ))}
+        {!billsLoading && filteredBills !== null && filteredBills.length === 0 && (
           <p className="py-8 text-center text-muted-foreground">
             {search
               ? 'Няма намерени сметки.'
               : 'Все още нямате сметки. Създайте първата си сметка!'}
           </p>
         )}
-        {filteredBills?.map((summary) => (
-          <BillCard key={summary.bill._id} {...summary} />
-        ))}
+        {!billsLoading &&
+          filteredBills?.map((summary) => (
+            <BillCard key={summary.bill._id} {...summary} />
+          ))}
       </div>
     </div>
   )

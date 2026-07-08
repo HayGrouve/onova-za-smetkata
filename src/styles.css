@@ -99,7 +99,7 @@
   --accent: oklch(0.274 0.006 286.033);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --destructive-foreground: oklch(0.704 0.191 22.216);
   --border: oklch(0.274 0.006 286.033);
   --input: oklch(0.274 0.006 286.033);
   --ring: oklch(0.442 0.017 285.786);
@@ -382,9 +382,28 @@ a {
 }
 
 @layer utilities {
+  .page-shell {
+    @apply mx-auto max-w-lg px-4;
+  }
+
   .page-container {
     @apply mx-auto max-w-lg px-4 pt-4;
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 3rem);
+  }
+
+  .sticky-surface {
+    @apply bg-background/95;
+  }
+
+  @media (min-width: 768px) {
+    .sticky-surface {
+      @apply bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80;
+    }
+  }
+
+  .page-container-summary {
+    @apply mx-auto max-w-lg px-4 pt-4;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem);
   }
 
   /* Matches StickyTotalsBar: preview link (h-11) + totals row + safe area + gap */
@@ -472,6 +491,22 @@ a {
 
     .guest-status-in {
       animation: guest-status-in 200ms ease-out;
+    }
+
+    @keyframes receipt-scan-border-pulse {
+      0%,
+      100% {
+        border-color: color-mix(in oklab, var(--primary) 12%, var(--border));
+        box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 0%, transparent);
+      }
+      50% {
+        border-color: color-mix(in oklab, var(--primary) 35%, var(--border));
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 10%, transparent);
+      }
+    }
+
+    .receipt-scan-image-active {
+      animation: receipt-scan-border-pulse 2s ease-in-out infinite;
     }
   }
 }

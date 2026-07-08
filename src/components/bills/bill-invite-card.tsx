@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Share2Icon, QrCodeIcon } from 'lucide-react'
-import QRCode from 'qrcode'
+import { QrCodeIcon, Share2Icon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
@@ -22,11 +21,14 @@ export function BillInviteCard({ billId, disabled }: BillInviteCardProps) {
     const url = buildBillJoinUrl(billId, origin)
     setJoinUrl(url)
     if (!canvasRef.current || disabled || !origin) return
-    void QRCode.toCanvas(canvasRef.current, url, {
-      width: 200,
-      margin: 1,
-      color: { dark: '#173a40', light: '#ffffff' },
-    })
+
+    void import('qrcode').then(({ default: QRCode }) =>
+      QRCode.toCanvas(canvasRef.current!, url, {
+        width: 200,
+        margin: 1,
+        color: { dark: '#173a40', light: '#ffffff' },
+      }),
+    )
   }, [billId, disabled])
 
   async function handleShareLink() {
@@ -39,14 +41,11 @@ export function BillInviteCard({ billId, disabled }: BillInviteCardProps) {
 
     if (result === 'shared') {
       toast.success('Линкът е споделен')
-      return
-    }
-    if (result === 'copied') {
+    } else if (result === 'copied') {
       toast.success('Линкът е копиран')
-      return
+    } else if (result === 'failed') {
+      toast.error('Неуспешно споделяне')
     }
-    if (result === 'cancelled') return
-    toast.error('Неуспешно споделяне на линка')
   }
 
   return (
@@ -74,6 +73,7 @@ export function BillInviteCard({ billId, disabled }: BillInviteCardProps) {
             type="button"
             variant="outline"
             className="h-11 w-full"
+            disabled={!joinUrl}
             onClick={() => void handleShareLink()}
           >
             <Share2Icon className={ICON.button} aria-hidden />

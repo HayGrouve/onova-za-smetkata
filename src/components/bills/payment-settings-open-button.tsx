@@ -1,31 +1,20 @@
-import { useConvexAuth } from '@convex-dev/auth/react'
-import { useQuery } from 'convex/react'
 import { CogIcon, WalletIcon } from 'lucide-react'
+import { usePaymentSettings } from '#/components/bills/payment-settings-provider.tsx'
 import { Button } from '#/components/ui/button.tsx'
-import {
-  getPaymentSettingsStatus,
-  type PaymentSettingsStatus,
-} from '#/lib/payment-settings.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { cn } from '#/lib/utils.ts'
-import { api } from '../../../convex/_generated/api'
 
 export interface PaymentSettingsOpenButtonProps {
   onClick: () => void
   className?: string
 }
 
-export function usePaymentSettingsStatus(): PaymentSettingsStatus {
-  const { isAuthenticated } = useConvexAuth()
-  const settings = useQuery(
-    api.paymentSettings.get,
-    isAuthenticated ? {} : 'skip',
-  )
-  return getPaymentSettingsStatus(settings)
+export function usePaymentSettingsStatus() {
+  return usePaymentSettings().status
 }
 
 export function usePaymentSettingsConfigured(): boolean {
-  return usePaymentSettingsStatus() === 'configured'
+  return usePaymentSettings().status === 'configured'
 }
 
 export function PaymentSettingsOpenButton({

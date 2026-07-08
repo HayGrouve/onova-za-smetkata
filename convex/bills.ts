@@ -66,6 +66,30 @@ export const listWithSummary = query({
 
     return await Promise.all(
       bills.map(async (bill) => {
+        if (bill.status === 'draft') {
+          const participants = await ctx.db
+            .query('participants')
+            .withIndex('by_billId', (q) => q.eq('billId', bill._id))
+            .collect()
+          const items = await ctx.db
+            .query('items')
+            .withIndex('by_billId', (q) => q.eq('billId', bill._id))
+            .collect()
+
+          const billTotalCents =
+            items.reduce(
+              (sum, item) => sum + item.unitPriceCents * item.quantity,
+              0,
+            ) + (bill.tipCents ?? 0)
+
+          return {
+            bill,
+            participantNames: participants.map((p) => p.name),
+            billTotalCents,
+            totalOutstandingCents: null,
+          }
+        }
+
         const { participants, items, assignments, payments } =
           await loadBillRelations(ctx, bill._id)
 

@@ -19,6 +19,7 @@ import type * as lib_assertAssignmentEditable from "../lib/assertAssignmentEdita
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_bill_ownership from "../lib/bill_ownership.js";
 import type * as lib_clampParticipantUnits from "../lib/clampParticipantUnits.js";
+import type * as lib_devMode from "../lib/devMode.js";
 import type * as lib_geminiReceipt from "../lib/geminiReceipt.js";
 import type * as lib_guestSession from "../lib/guestSession.js";
 import type * as lib_receiptStorage from "../lib/receiptStorage.js";
@@ -50,6 +51,7 @@ declare const fullApi: ApiFromModules<{
   "lib/auth": typeof lib_auth;
   "lib/bill_ownership": typeof lib_bill_ownership;
   "lib/clampParticipantUnits": typeof lib_clampParticipantUnits;
+  "lib/devMode": typeof lib_devMode;
   "lib/geminiReceipt": typeof lib_geminiReceipt;
   "lib/guestSession": typeof lib_guestSession;
   "lib/receiptStorage": typeof lib_receiptStorage;

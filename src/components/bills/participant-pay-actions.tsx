@@ -1,13 +1,11 @@
 import { SendIcon } from 'lucide-react'
-import { useConvexAuth } from '@convex-dev/auth/react'
-import { useQuery } from 'convex/react'
 import { toast } from 'sonner'
+import { usePaymentSettings } from '#/components/bills/payment-settings-provider.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 import { formatCopyAmount } from '#/lib/bill-share.ts'
 import { buildRevolutUrl } from '#/lib/payment-settings.ts'
 import { copyToClipboard } from '#/lib/copy-to-clipboard.ts'
-import { api } from '../../../convex/_generated/api'
 
 export interface ParticipantPayActionsProps {
   remainingCents: number
@@ -33,11 +31,7 @@ export function ParticipantPayActions({
   remainingCents,
   onOpenSettings,
 }: ParticipantPayActionsProps) {
-  const { isAuthenticated } = useConvexAuth()
-  const settings = useQuery(
-    api.paymentSettings.get,
-    isAuthenticated ? {} : 'skip',
-  )
+  const { settings } = usePaymentSettings()
 
   if (remainingCents <= 0) return null
 

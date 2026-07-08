@@ -218,7 +218,7 @@ function ItemRow({
         size="icon-lg"
         aria-label={`Изтрий ${item.name}`}
         onClick={onDelete}
-        className="text-muted-foreground hover:text-destructive"
+        className="text-muted-foreground hover:text-destructive dark:hover:text-destructive-foreground"
       >
         <Trash2Icon className="size-4" />
       </Button>
