@@ -8,6 +8,7 @@ import { clampParticipantUnits } from './lib/clampParticipantUnits'
 import { requireBillOwner } from './lib/auth'
 import { splitUnits } from './lib/splitUnits'
 import { touchBill } from './lib/touchBill'
+import { assertRateLimit } from './lib/rateLimit'
 
 async function getSortedParticipantIds(
   ctx: MutationCtx,
@@ -80,6 +81,10 @@ export const toggle = mutation({
       sessionToken: args.sessionToken,
     })
 
+    if (args.sessionToken) {
+      await assertRateLimit(ctx, `assign:toggle:${args.sessionToken}`, 60, 60_000)
+    }
+
     const participant = await ctx.db.get(args.participantId)
     assertAssignmentEditable({
       billStatus: bill.status,
@@ -130,6 +135,10 @@ export const setUnits = mutation({
       participantId: args.participantId,
       sessionToken: args.sessionToken,
     })
+
+    if (args.sessionToken) {
+      await assertRateLimit(ctx, `assign:setUnits:${args.sessionToken}`, 60, 60_000)
+    }
 
     const participant = await ctx.db.get(args.participantId)
     assertAssignmentEditable({

@@ -120,10 +120,7 @@ function BillEditorContent({
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
 
-  const receiptUrl = useQuery(
-    api.files.getUrl,
-    bill.receiptStorageId ? { storageId: bill.receiptStorageId } : 'skip',
-  )
+  const receiptUrl = useQuery(api.files.getReceiptUrl, { billId })
 
   const latestScan = useQuery(api.receiptScan.getLatestScan, { billId })
   const [scanRequested, setScanRequested] = useState(false)
@@ -244,7 +241,7 @@ function BillEditorContent({
     setIsUploading(true)
     try {
       const { blob, contentType } = await prepareReceiptImage(file)
-      const uploadUrl = await generateUploadUrl()
+      const uploadUrl = await generateUploadUrl({ billId })
       const result = await fetch(uploadUrl, {
         method: 'POST',
         headers: { 'Content-Type': contentType },
@@ -434,6 +431,7 @@ function BillEditorContent({
             <div className="mt-4">
               <BillInviteCard
                 billId={billId}
+                shareToken={bill.shareToken}
                 disabled={participants.length === 0}
               />
             </div>

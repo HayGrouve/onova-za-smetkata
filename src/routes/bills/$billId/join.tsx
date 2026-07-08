@@ -10,6 +10,7 @@ import {
   clearStoredGuestParticipant,
   createGuestSessionToken,
   getConvexErrorMessage,
+  getOrCreateGuestDeviceId,
   getStoredGuestSession,
   setStoredGuestSession,
 } from '#/lib/guest-participant-session.ts'
@@ -19,25 +20,44 @@ import type { Id } from '../../../../convex/_generated/dataModel'
 
 export const Route = createFileRoute('/bills/$billId/join')({
   head: ({ params }) => buildJoinShareHead(params.billId),
+  validateSearch: (search: Record<string, unknown>) => ({
+    t: typeof search.t === 'string' ? search.t : '',
+  }),
   component: BillJoinPage,
 })
 
 function BillJoinPage() {
   const { billId: billIdParam } = Route.useParams()
+  const { t: shareToken } = Route.useSearch()
   const billId = billIdParam as Id<'bills'>
 
+  if (!shareToken) {
+    return (
+      <div className="page-container py-10 text-center text-muted-foreground">
+        Невалиден линк за присъединяване. Попитайте домакина за нов линк.
+      </div>
+    )
+  }
+
   return (
-    <QueryErrorBoundary resetKey={billId}>
-      <BillJoinContent billId={billId} />
+    <QueryErrorBoundary resetKey={`${billId}:${shareToken}`}>
+      <BillJoinContent billId={billId} shareToken={shareToken} />
     </QueryErrorBoundary>
   )
 }
 
-function BillJoinContent({ billId }: { billId: Id<'bills'> }) {
+function BillJoinContent({
+  billId,
+  shareToken,
+}: {
+  billId: Id<'bills'>
+  shareToken: string
+}) {
   const navigate = useNavigate()
-  const data = useQuery(api.bills.getForGuest, { billId })
+  const data = useQuery(api.bills.getForGuest, { billId, shareToken })
   const activeSessions = useQuery(api.guestSessions.listActiveForBill, {
     billId,
+    shareToken,
   })
   const claimSession = useMutation(api.guestSessions.claim)
   const [claimingId, setClaimingId] = useState<Id<'participants'> | null>(null)
@@ -61,7 +81,7 @@ function BillJoinContent({ billId }: { billId: Id<'bills'> }) {
   useEffect(() => {
     if (data === undefined || activeSessions === undefined) return
     const stored = getStoredGuestSession(billId)
-    if (!stored) {
+    if (!stored || stored.shareToken !== shareToken) {
       setResuming(false)
       return
     }
@@ -71,11 +91,17 @@ function BillJoinContent({ billId }: { billId: Id<'bills'> }) {
       try {
         await claimSession({
           billId,
+          shareToken,
           participantId: stored.participantId as Id<'participants'>,
           sessionToken: stored.sessionToken,
+          deviceId: getOrCreateGuestDeviceId(),
         })
         if (cancelledRef.current) return
-        void navigate({ to: '/bills/$billId/claim', params: { billId } })
+        void navigate({
+          to: '/bills/$billId/claim',
+          params: { billId },
+          search: { t: shareToken },
+        })
       } catch {
         clearStoredGuestParticipant(billId)
         if (!cancelledRef.current) setResuming(false)
@@ -85,20 +111,12 @@ function BillJoinContent({ billId }: { billId: Id<'bills'> }) {
     return () => {
       cancelledRef.current = true
     }
-  }, [billId, claimSession, data, activeSessions, navigate])
+  }, [billId, claimSession, data, activeSessions, navigate, shareToken])
 
   if (data === undefined || activeSessions === undefined || resuming) {
     return (
       <div className="page-container py-10 text-center text-muted-foreground">
         Зареждане...
-      </div>
-    )
-  }
-
-  if (data === null) {
-    return (
-      <div className="page-container py-10 text-center text-muted-foreground">
-        Сметката не е намерена.
       </div>
     )
   }
@@ -112,6 +130,7 @@ function BillJoinContent({ billId }: { billId: Id<'bills'> }) {
     month: 'long',
     year: 'numeric',
   }).format(new Date(bill.date))
+  const isFinal = bill.status === 'final'
 
   async function handlePick(participantId: Id<'participants'>) {
     if (takenParticipantIds.has(participantId)) return
@@ -119,9 +138,24 @@ function BillJoinContent({ billId }: { billId: Id<'bills'> }) {
     const sessionToken = createGuestSessionToken()
     setClaimingId(participantId)
     try {
-      await claimSession({ billId, participantId, sessionToken })
-      setStoredGuestSession({ billId, participantId, sessionToken })
-      void navigate({ to: '/bills/$billId/claim', params: { billId } })
+      await claimSession({
+        billId,
+        shareToken,
+        participantId,
+        sessionToken,
+        deviceId: getOrCreateGuestDeviceId(),
+      })
+      setStoredGuestSession({
+        billId,
+        participantId,
+        sessionToken,
+        shareToken,
+      })
+      void navigate({
+        to: '/bills/$billId/claim',
+        params: { billId },
+        search: { t: shareToken },
+      })
     } catch (error) {
       toast.error(getConvexErrorMessage(error))
     } finally {
@@ -136,33 +170,7 @@ function BillJoinContent({ billId }: { billId: Id<'bills'> }) {
         <h2 className="text-xl font-semibold">{restaurantName}</h2>
       </div>
 
-      {bill.status === 'final' ? (
-        <div className="flex flex-col gap-3">
-          <p className="text-sm text-muted-foreground">
-            Сметката е приключена.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Изберете името си, за да видите разбивката.
-          </p>
-          <div className="flex flex-col gap-2">
-            {sorted.map((participant) => {
-              const label = labels[participant._id] ?? participant.name
-              return (
-                <Button
-                  key={participant._id}
-                  type="button"
-                  variant="outline"
-                  className="h-12 justify-start text-base"
-                  disabled={claimingId !== null}
-                  onClick={() => void handlePick(participant._id)}
-                >
-                  {label}
-                </Button>
-              )
-            })}
-          </div>
-        </div>
-      ) : sorted.length === 0 ? (
+      {sorted.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           Очаква се домакинът да добави участници.
         </p>
@@ -170,8 +178,9 @@ function BillJoinContent({ billId }: { billId: Id<'bills'> }) {
         <div className="flex flex-col gap-3">
           <h3 className="text-lg font-medium">Кой сте вие?</h3>
           <p className="text-xs text-muted-foreground">
-            Всяко име може да се използва от един телефон. Заетите имена са
-            маркирани по-долу.
+            {isFinal
+              ? 'Сметката е приключена — изберете името си, за да видите разбивката. Всяко име може да се използва от един телефон.'
+              : 'Всяко име може да се използва от един телефон. Заетите имена са маркирани по-долу.'}
           </p>
           <div className="flex flex-col gap-2">
             {sorted.map((participant) => {

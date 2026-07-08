@@ -13,12 +13,12 @@ import { ICON } from '#/lib/app-icons.ts'
 import type { Id } from '../../../convex/_generated/dataModel'
 
 export interface ReceiptPreviewCardProps {
-  storageId: Id<'_storage'>
+  billId: Id<'bills'>
 }
 
-export function ReceiptPreviewCard({ storageId }: ReceiptPreviewCardProps) {
+export function ReceiptPreviewCard({ billId }: ReceiptPreviewCardProps) {
   const [open, setOpen] = useState(false)
-  const receiptUrl = useQuery(api.files.getUrl, { storageId })
+  const receiptUrl = useQuery(api.files.getReceiptUrl, { billId })
 
   if (receiptUrl === undefined) {
     return (

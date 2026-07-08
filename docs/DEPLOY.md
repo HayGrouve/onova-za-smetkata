@@ -34,11 +34,13 @@ Never put `GEMINI_API_KEY`, JWT keys, OAuth secrets, or `DEV_MODE` in Vercel or 
 
 ### Security notes
 
-- **Capability URLs:** Bill join links (`/bills/{id}/join`) are unlisted but guessable if the bill ID leaks. Share only with people at the table.
+- **Share tokens:** Guest join links require `?t={shareToken}` (e.g. `/bills/{id}/join?t=...`). The token is rotatable from the host invite card (“Обнови линка”). After deploying the share-token schema, run `npx convex run backfill:shareTokens` on each environment once.
+- **Capability URLs:** Share join links only with people at the table. Rotating the token invalidates leaked links.
 - **Guest sessions:** Assignment mutations require a valid guest session token or host auth. Expired sessions must re-claim a name on the join page.
 - **Guest payment privacy:** `getForGuest` returns `myPayments` only — never the full payments list.
-- **DEV_MODE:** Password provider is enabled only when `DEV_MODE=true` on a non-production Convex deployment. Never set `DEV_MODE=true` on production.
-- **Rate limits:** Guest name claims are rate-limited per bill (`claim:bill:{billId}`); OCR scans are rate-limited server-side.
+- **DEV_MODE:** Password provider is enabled only when `DEV_MODE=true` on an **explicit dev deployment allowlist** (`striped-shepherd-984` plus optional `CONVEX_DEV_DEPLOYMENTS`). Never set `DEV_MODE=true` on production.
+- **Guest identity risk:** Guest names are claimable without accounts; if a session expires (~90s without heartbeat), another device can claim the same name. Document as accepted product risk for accountless guests.
+- **Rate limits:** Guest claims are limited per actor and per bill; assignment toggles, heartbeats, releases, and receipt uploads are rate-limited server-side.
 
 ### Google OAuth redirect URI (production)
 
@@ -91,6 +93,12 @@ AUTH_RESEND_FROM=Онова за сметката <noreply@yourdomain.com>
 
    ```bash
    npx convex run backfill:assignmentBillIds
+   ```
+
+   After deploying share-token schema, run once on each deployment:
+
+   ```bash
+   npx convex run backfill:shareTokens
    ```
 
 3. **Deploy Convex backend**

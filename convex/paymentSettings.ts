@@ -1,6 +1,7 @@
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 import { requireAuth } from './lib/auth'
+import { assertShareToken } from './lib/guestAccess'
 
 export const get = query({
   args: {},
@@ -18,10 +19,12 @@ export const get = query({
 })
 
 export const getForGuest = query({
-  args: { billId: v.id('bills') },
+  args: {
+    billId: v.id('bills'),
+    shareToken: v.string(),
+  },
   handler: async (ctx, args) => {
-    const bill = await ctx.db.get(args.billId)
-    if (!bill?.ownerId) return null
+    const bill = await assertShareToken(ctx, args.billId, args.shareToken)
 
     const row = await ctx.db
       .query('paymentSettings')

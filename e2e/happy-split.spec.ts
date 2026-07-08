@@ -1,5 +1,11 @@
 import { expect, openHostContext, test } from './helpers/host-auth'
 
+async function getJoinUrl(hostPage: import('@playwright/test').Page) {
+  const joinUrl = await hostPage.getByTestId('join-url').textContent()
+  expect(joinUrl).toBeTruthy()
+  return joinUrl!
+}
+
 test('guest can claim an item after host setup', async ({ browser }) => {
   const { context: hostContext, page: hostPage } = await openHostContext(browser)
 
@@ -21,9 +27,11 @@ test('guest can claim an item after host setup', async ({ browser }) => {
   const billId = billUrl.match(/\/bills\/([^/]+)/)?.[1]
   expect(billId).toBeTruthy()
 
+  const joinUrl = await getJoinUrl(hostPage)
+
   const guestContext = await browser.newContext()
   const guestPage = await guestContext.newPage()
-  await guestPage.goto(`/bills/${billId}/join`)
+  await guestPage.goto(joinUrl)
 
   await expect(
     guestPage.getByRole('heading', { name: 'Кой сте вие?' }),

@@ -12,6 +12,8 @@ import {
 } from './lib/receiptStorage'
 import { deleteGuestSessionsForBill } from './guestSessions'
 import { isGuestSessionActive } from './lib/guestSession'
+import { assertShareToken, toGuestVisibleBill } from './lib/guestAccess'
+import { createShareToken } from './lib/shareToken'
 
 async function loadBillRelations(ctx: QueryCtx, billId: Id<'bills'>) {
   const participants = await ctx.db
@@ -192,11 +194,11 @@ export const get = query({
 export const getForGuest = query({
   args: {
     billId: v.id('bills'),
+    shareToken: v.string(),
     sessionToken: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const bill = await ctx.db.get(args.billId)
-    if (!bill?.ownerId) return null
+    const bill = await assertShareToken(ctx, args.billId, args.shareToken)
 
     const { participants, items, assignments, payments } =
       await loadBillRelations(ctx, args.billId)
@@ -220,7 +222,13 @@ export const getForGuest = query({
       }
     }
 
-    return { bill, participants, items, assignments, myPayments }
+    return {
+      bill: toGuestVisibleBill(bill),
+      participants,
+      items,
+      assignments,
+      myPayments,
+    }
   },
 })
 
@@ -234,6 +242,7 @@ export const create = mutation({
       restaurantName: '',
       date: now,
       status: 'draft',
+      shareToken: createShareToken(),
       createdAt: now,
       updatedAt: now,
     })
@@ -309,6 +318,19 @@ export const finalize = mutation({
       status: 'final',
       updatedAt: Date.now(),
     })
+  },
+})
+
+export const rotateShareToken = mutation({
+  args: { billId: v.id('bills') },
+  handler: async (ctx, args) => {
+    await requireBillOwner(ctx, args.billId)
+    const shareToken = createShareToken()
+    await ctx.db.patch(args.billId, {
+      shareToken,
+      updatedAt: Date.now(),
+    })
+    return { shareToken }
   },
 })
 

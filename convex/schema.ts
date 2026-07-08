@@ -20,12 +20,14 @@ export default defineSchema({
     receiptStorageId: v.optional(v.id('_storage')),
     status: v.union(v.literal('draft'), v.literal('final')),
     tipCents: v.optional(v.number()),
+    shareToken: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index('by_status', ['status'])
     .index('by_updatedAt', ['updatedAt'])
-    .index('by_ownerId_updatedAt', ['ownerId', 'updatedAt']),
+    .index('by_ownerId_updatedAt', ['ownerId', 'updatedAt'])
+    .index('by_shareToken', ['shareToken']),
 
   participants: defineTable({
     billId: v.id('bills'),

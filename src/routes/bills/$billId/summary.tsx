@@ -273,7 +273,7 @@ function BillSummary() {
         ) : null}
 
         {bill.receiptStorageId && (
-          <ReceiptPreviewCard storageId={bill.receiptStorageId} />
+          <ReceiptPreviewCard billId={billId} />
         )}
 
         {isDraft && errors.length > 0 && (

@@ -1,9 +1,11 @@
 const STORAGE_KEY = 'onova-guest-participant'
+const DEVICE_KEY = 'onova-guest-device'
 
 export type StoredGuestSession = {
   billId: string
   participantId: string
   sessionToken: string
+  shareToken: string
 }
 
 function readSession(): StoredGuestSession | null {
@@ -15,12 +17,15 @@ function readSession(): StoredGuestSession | null {
     if (
       typeof parsed.billId === 'string' &&
       typeof parsed.participantId === 'string' &&
-      typeof parsed.sessionToken === 'string'
+      typeof parsed.sessionToken === 'string' &&
+      typeof parsed.shareToken === 'string' &&
+      parsed.shareToken.length > 0
     ) {
       return {
         billId: parsed.billId,
         participantId: parsed.participantId,
         sessionToken: parsed.sessionToken,
+        shareToken: parsed.shareToken,
       }
     }
     return null
@@ -34,6 +39,15 @@ export function createGuestSessionToken(): string {
     return crypto.randomUUID()
   }
   return `guest-${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
+export function getOrCreateGuestDeviceId(): string {
+  if (typeof sessionStorage === 'undefined') return ''
+  const existing = sessionStorage.getItem(DEVICE_KEY)
+  if (existing) return existing
+  const id = createGuestSessionToken()
+  sessionStorage.setItem(DEVICE_KEY, id)
+  return id
 }
 
 export function getStoredGuestSession(
@@ -57,11 +71,13 @@ export function setStoredGuestSession(session: StoredGuestSession): void {
 export function setStoredGuestParticipant(
   billId: string,
   participantId: string,
+  shareToken: string,
   sessionToken?: string,
 ): void {
   setStoredGuestSession({
     billId,
     participantId,
+    shareToken,
     sessionToken: sessionToken ?? createGuestSessionToken(),
   })
 }

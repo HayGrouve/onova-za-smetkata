@@ -1,5 +1,11 @@
 import { expect, openHostContext, test } from './helpers/host-auth'
 
+async function getJoinUrl(hostPage: import('@playwright/test').Page) {
+  const joinUrl = await hostPage.getByTestId('join-url').textContent()
+  expect(joinUrl).toBeTruthy()
+  return joinUrl!
+}
+
 test('finalized bill is read-only on guest claim page', async ({ browser }) => {
   const { context: hostContext, page: hostPage } = await openHostContext(browser)
 
@@ -19,6 +25,8 @@ test('finalized bill is read-only on guest claim page', async ({ browser }) => {
   const billId = hostPage.url().match(/\/bills\/([^/]+)/)?.[1]
   expect(billId).toBeTruthy()
 
+  const joinUrl = await getJoinUrl(hostPage)
+
   await hostPage.getByRole('link', { name: 'Преглед' }).click()
   await expect(hostPage).toHaveURL(new RegExp(`/bills/${billId}/summary`))
   await hostPage.getByRole('button', { name: 'Завърши сметка' }).click()
@@ -26,7 +34,7 @@ test('finalized bill is read-only on guest claim page', async ({ browser }) => {
 
   const guestContext = await browser.newContext()
   const guestPage = await guestContext.newPage()
-  await guestPage.goto(`/bills/${billId}/join`)
+  await guestPage.goto(joinUrl)
   await guestPage.getByRole('button', { name: participantName }).click()
 
   await expect(guestPage).toHaveURL(new RegExp(`/bills/${billId}/claim`))

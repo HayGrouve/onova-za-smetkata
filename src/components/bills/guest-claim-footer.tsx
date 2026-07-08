@@ -28,6 +28,7 @@ const statusLabels: Record<PaymentStatus, string> = {
 
 export interface GuestClaimFooterProps {
   billId: Id<'bills'>
+  shareToken: string
   participantId: Id<'participants'>
   sessionToken: string
   label: string
@@ -38,6 +39,7 @@ export interface GuestClaimFooterProps {
 
 export function GuestClaimFooter({
   billId,
+  shareToken,
   participantId,
   sessionToken,
   label,
@@ -45,7 +47,10 @@ export function GuestClaimFooter({
   totals,
   readOnly = false,
 }: GuestClaimFooterProps) {
-  const settings = useQuery(api.paymentSettings.getForGuest, { billId })
+  const settings = useQuery(api.paymentSettings.getForGuest, {
+    billId,
+    shareToken,
+  })
   const toggleAssignment = useMutation(api.assignments.toggle)
   const setUnits = useMutation(api.assignments.setUnits)
   const revolutUsername = settings?.revolutUsername?.trim()

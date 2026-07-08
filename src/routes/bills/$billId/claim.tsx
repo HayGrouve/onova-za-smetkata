@@ -10,11 +10,8 @@ import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { QueryErrorBoundary } from '#/components/ui/query-error-boundary.tsx'
 import { useGuestSessionHeartbeat } from '#/hooks/use-guest-session-heartbeat.ts'
-import {
-  calculateBillTotals
-  
-} from '#/lib/bill-calculations.ts'
-import type {BillBreakdownInput} from '#/lib/bill-calculations.ts';
+import { calculateBillTotals } from '#/lib/bill-calculations.ts'
+import type { BillBreakdownInput } from '#/lib/bill-calculations.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import {
   clearStoredGuestParticipant,
@@ -31,43 +28,69 @@ import type { Doc, Id } from '../../../../convex/_generated/dataModel'
 
 export const Route = createFileRoute('/bills/$billId/claim')({
   head: () => buildNoIndexHead('Моят дял'),
+  validateSearch: (search: Record<string, unknown>) => ({
+    t: typeof search.t === 'string' ? search.t : '',
+  }),
   component: BillClaimPage,
 })
 
 function BillClaimPage() {
   const { billId: billIdParam } = Route.useParams()
+  const { t: shareTokenFromUrl } = Route.useSearch()
   const billId = billIdParam as Id<'bills'>
 
   return (
-    <QueryErrorBoundary resetKey={billId}>
-      <BillClaimContent billId={billId} />
+    <QueryErrorBoundary resetKey={`${billId}:${shareTokenFromUrl}`}>
+      <BillClaimContent billId={billId} shareTokenFromUrl={shareTokenFromUrl} />
     </QueryErrorBoundary>
   )
 }
 
-function BillClaimContent({ billId }: { billId: Id<'bills'> }) {
+function BillClaimContent({
+  billId,
+  shareTokenFromUrl,
+}: {
+  billId: Id<'bills'>
+  shareTokenFromUrl: string
+}) {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
 
   const storedSession = useMemo(() => getStoredGuestSession(billId), [billId])
+  const shareToken = storedSession?.shareToken ?? shareTokenFromUrl
 
-  const data = useQuery(api.bills.getForGuest, {
-    billId,
-    sessionToken: storedSession?.sessionToken,
-  })
+  const data = useQuery(
+    api.bills.getForGuest,
+    shareToken
+      ? {
+          billId,
+          shareToken,
+          sessionToken: storedSession?.sessionToken,
+        }
+      : 'skip',
+  )
   const releaseSession = useMutation(api.guestSessions.release)
 
+  const redirectToJoin = useCallback(() => {
+    void navigate({
+      to: '/bills/$billId/join',
+      params: { billId },
+      search: shareToken ? { t: shareToken } : { t: '' },
+    })
+  }, [billId, navigate, shareToken])
+
   const handleSessionLost = useCallback(() => {
-    if (storedSession) {
+    if (storedSession && shareToken) {
       void releaseSession({
         billId,
+        shareToken,
         sessionToken: storedSession.sessionToken,
       })
     }
     clearStoredGuestParticipant(billId)
     toast.error('Сесията изтече или името е заето. Изберете отново.')
-    void navigate({ to: '/bills/$billId/join', params: { billId } })
-  }, [billId, navigate, releaseSession, storedSession])
+    redirectToJoin()
+  }, [billId, redirectToJoin, releaseSession, shareToken, storedSession])
 
   useGuestSessionHeartbeat(
     data?.bill.status === 'final' ? null : storedSession,
@@ -75,10 +98,14 @@ function BillClaimContent({ billId }: { billId: Id<'bills'> }) {
   )
 
   useEffect(() => {
-    if (storedSession === null && data !== undefined) {
-      void navigate({ to: '/bills/$billId/join', params: { billId } })
+    if (!shareToken) {
+      redirectToJoin()
+      return
     }
-  }, [billId, navigate, storedSession, data])
+    if (storedSession === null && data !== undefined) {
+      redirectToJoin()
+    }
+  }, [data, redirectToJoin, shareToken, storedSession])
 
   const storedParticipantId = storedSession?.participantId ?? null
 
@@ -162,18 +189,15 @@ function BillClaimContent({ billId }: { billId: Id<'bills'> }) {
     )
   }, [data, storedParticipantId])
 
-  if (data === undefined || storedParticipantId === null || !storedSession) {
+  if (
+    !shareToken ||
+    data === undefined ||
+    storedParticipantId === null ||
+    !storedSession
+  ) {
     return (
       <div className="page-container py-10 text-center text-muted-foreground">
         Зареждане...
-      </div>
-    )
-  }
-
-  if (data === null) {
-    return (
-      <div className="page-container py-10 text-center text-muted-foreground">
-        Сметката не е намерена.
       </div>
     )
   }
@@ -183,7 +207,7 @@ function BillClaimContent({ billId }: { billId: Id<'bills'> }) {
   )
   if (!participant) {
     clearStoredGuestParticipant(billId)
-    void navigate({ to: '/bills/$billId/join', params: { billId } })
+    redirectToJoin()
     return null
   }
 
@@ -197,10 +221,11 @@ function BillClaimContent({ billId }: { billId: Id<'bills'> }) {
   function handleSwitchIdentity() {
     void releaseSession({
       billId,
+      shareToken,
       sessionToken: storedSession.sessionToken,
     })
     clearStoredGuestParticipant(billId)
-    void navigate({ to: '/bills/$billId/join', params: { billId } })
+    redirectToJoin()
   }
 
   return (
@@ -277,6 +302,7 @@ function BillClaimContent({ billId }: { billId: Id<'bills'> }) {
       {participantTotals && breakdownInput ? (
         <GuestClaimFooter
           billId={billId}
+          shareToken={shareToken}
           participantId={storedParticipantId as Id<'participants'>}
           sessionToken={storedSession.sessionToken}
           label={label}

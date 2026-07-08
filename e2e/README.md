@@ -13,7 +13,7 @@ Playwright covers the host + guest split flow. Tests need a **working dev auth**
    ```bash
    npx convex dev
    ```
-   Use a dev Convex deployment with `DEV_MODE=true` in the Convex Dashboard (not production).
+   Use a dev Convex deployment with `DEV_MODE=true` in the Convex Dashboard (not production). Dev auth is allowed only on deployments in the dev allowlist (see `convex/lib/devMode.ts`).
 
 3. **Convex env** on that dev deployment (Dashboard → Settings → Environment):
    ```

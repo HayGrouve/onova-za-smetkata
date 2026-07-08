@@ -21,6 +21,7 @@ export function useGuestSessionHeartbeat(
       try {
         await heartbeat({
           billId: session.billId as Id<'bills'>,
+          shareToken: session.shareToken,
           participantId: session.participantId as Id<'participants'>,
           sessionToken: session.sessionToken,
         })

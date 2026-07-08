@@ -5,6 +5,7 @@ import type { MutationCtx } from './_generated/server'
 import { GUEST_SESSION_TTL_MS, isGuestSessionActive } from './lib/guestSession'
 import { requireGuestSession } from './lib/requireGuestSession'
 import { assertRateLimit } from './lib/rateLimit'
+import { assertShareToken } from './lib/guestAccess'
 
 async function purgeExpiredSessionsForBill(
   ctx: MutationCtx,
@@ -34,9 +35,42 @@ async function assertParticipantOnBill(
   return participant
 }
 
+function claimActorKey(sessionToken: string, deviceId?: string): string {
+  const device = deviceId?.trim().slice(0, 64)
+  if (device) return `device:${device}`
+  return `token:${sessionToken.slice(0, 36)}`
+}
+
+async function assertClaimRateLimits(
+  ctx: MutationCtx,
+  billId: Id<'bills'>,
+  sessionToken: string,
+  deviceId?: string,
+) {
+  const actor = claimActorKey(sessionToken, deviceId)
+  await assertRateLimit(
+    ctx,
+    `claim:actor:${actor}:bill:${billId}`,
+    10,
+    60_000,
+    'Твърде много опити за присъединяване. Опитайте отново след малко.',
+  )
+  await assertRateLimit(
+    ctx,
+    `claim:bill:${billId}`,
+    100,
+    60_000,
+    'Твърде много опити за присъединяване към тази сметка. Опитайте отново след малко.',
+  )
+}
+
 export const listActiveForBill = query({
-  args: { billId: v.id('bills') },
+  args: {
+    billId: v.id('bills'),
+    shareToken: v.string(),
+  },
   handler: async (ctx, args) => {
+    await assertShareToken(ctx, args.billId, args.shareToken)
     const now = Date.now()
     const sessions = await ctx.db
       .query('guestSessions')
@@ -54,41 +88,23 @@ export const listActiveForBill = query({
 export const claim = mutation({
   args: {
     billId: v.id('bills'),
+    shareToken: v.string(),
     participantId: v.id('participants'),
     sessionToken: v.string(),
+    deviceId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await assertRateLimit(
+    await assertShareToken(ctx, args.billId, args.shareToken)
+    await assertClaimRateLimits(
       ctx,
-      `claim:bill:${args.billId}`,
-      40,
-      60_000,
-      'Твърде много опити за присъединяване. Опитайте отново след малко.',
+      args.billId,
+      args.sessionToken,
+      args.deviceId,
     )
-    const now = Date.now()
-    const bill = await ctx.db.get(args.billId)
-    if (!bill) throw new ConvexError('Сметката не е намерена.')
 
+    const now = Date.now()
     await assertParticipantOnBill(ctx, args.billId, args.participantId)
     await purgeExpiredSessionsForBill(ctx, args.billId, now)
-
-    if (bill.status === 'final') {
-      const existingTokenSession = await ctx.db
-        .query('guestSessions')
-        .withIndex('by_sessionToken', (q) =>
-          q.eq('sessionToken', args.sessionToken),
-        )
-        .first()
-      if (existingTokenSession) await ctx.db.delete(existingTokenSession._id)
-      await ctx.db.insert('guestSessions', {
-        billId: args.billId,
-        participantId: args.participantId,
-        sessionToken: args.sessionToken,
-        lastSeenAt: now,
-        createdAt: now,
-      })
-      return { ok: true as const }
-    }
 
     const sessions = await ctx.db
       .query('guestSessions')
@@ -133,10 +149,13 @@ export const claim = mutation({
 export const heartbeat = mutation({
   args: {
     billId: v.id('bills'),
+    shareToken: v.string(),
     participantId: v.id('participants'),
     sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
+    await assertShareToken(ctx, args.billId, args.shareToken)
+    await assertRateLimit(ctx, `heartbeat:${args.sessionToken}`, 120, 60_000)
     const { sessionId } = await requireGuestSession(ctx, args)
     await ctx.db.patch(sessionId, { lastSeenAt: Date.now() })
     return { ok: true as const }
@@ -146,9 +165,12 @@ export const heartbeat = mutation({
 export const release = mutation({
   args: {
     billId: v.id('bills'),
+    shareToken: v.string(),
     sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
+    await assertShareToken(ctx, args.billId, args.shareToken)
+    await assertRateLimit(ctx, `release:${args.sessionToken}`, 20, 60_000)
     const session = await ctx.db
       .query('guestSessions')
       .withIndex('by_sessionToken', (q) =>
