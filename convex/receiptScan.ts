@@ -1,4 +1,4 @@
-import { v } from 'convex/values'
+import { ConvexError, v } from 'convex/values'
 import { internal } from './_generated/api'
 import {
   internalMutation,
@@ -8,6 +8,8 @@ import {
 } from './_generated/server'
 import { extractedItemValidator } from './schema'
 import { requireBillOwner } from './lib/auth'
+import { restaurantNameSchema } from './lib/billMetadataSchema'
+import { validateReceiptImportItems } from './lib/receiptImportSchema'
 import { assertRateLimit } from './lib/rateLimit'
 import { touchBill } from './lib/touchBill'
 
@@ -66,7 +68,10 @@ export const importScannedItems = mutation({
     const scan = await ctx.db.get(args.scanId)
     if (!scan) throw new Error('Сканирането не е намерено')
 
-    await requireBillOwner(ctx, scan.billId)
+    const bill = await requireBillOwner(ctx, scan.billId)
+    if (bill.status === 'final') {
+      throw new ConvexError('Сметката е завършена.')
+    }
 
     const selectedIndexSet = new Set(args.selectedIndexes)
     const itemsToImport =
@@ -74,6 +79,11 @@ export const importScannedItems = mutation({
       (scan.extractedItems ?? []).filter((_, index) =>
         selectedIndexSet.has(index),
       )
+
+    const validated = validateReceiptImportItems(itemsToImport)
+    if (!validated.ok) {
+      throw new ConvexError(validated.message)
+    }
 
     const existing = await ctx.db
       .query('items')
@@ -94,10 +104,10 @@ export const importScannedItems = mutation({
       sortOrderOffset = 0
     }
 
-    for (const [index, item] of itemsToImport.entries()) {
+    for (const [index, item] of validated.data.entries()) {
       await ctx.db.insert('items', {
         billId: scan.billId,
-        name: item.name.trim(),
+        name: item.name,
         unitPriceCents: item.unitPriceCents,
         quantity: item.quantity,
         sortOrder: sortOrderOffset + index,
@@ -107,7 +117,13 @@ export const importScannedItems = mutation({
     if (args.updateRestaurantName) {
       const restaurantName = args.restaurantName ?? scan.extractedRestaurantName
       if (restaurantName !== undefined) {
-        await ctx.db.patch(scan.billId, { restaurantName })
+        const parsed = restaurantNameSchema().safeParse(restaurantName)
+        if (!parsed.success) {
+          throw new ConvexError(
+            parsed.error.issues[0]?.message ?? 'Невалидно име на ресторант',
+          )
+        }
+        await ctx.db.patch(scan.billId, { restaurantName: parsed.data })
       }
     }
 

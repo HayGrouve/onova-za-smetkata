@@ -15,7 +15,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from '#/components/ui/sheet.tsx'
-import { formatEur, parseEurInput } from '#/lib/format-currency.ts'
+import { formatEur } from '#/lib/format-currency.ts'
+import { validateBillMetadataField } from '#/lib/bill-metadata-schema.ts'
+import {
+  validateReceiptImportRow,
+  validateReceiptImportSelection,
+} from '#/lib/receipt-import-schema.ts'
 import {
   detectTotalsMismatch,
   sumItemsCents,
@@ -94,15 +99,46 @@ export function ReceiptScanReviewSheet({
   const allChecked = rows.length > 0 && rows.every((r) => r.checked)
   const checkedCount = rows.filter((r) => r.checked).length
 
-  const parsedRows = rows.map((row) => ({
+  const selectionInput = rows.map((row) => ({
+    checked: row.checked,
     name: row.name,
-    unitPriceCents: parseEurInput(row.priceInput),
-    quantity: Math.max(1, Number.parseInt(row.quantity, 10) || 1),
-    confidence: row.confidence,
+    priceInput: row.priceInput,
+    quantityInput: row.quantity,
   }))
-  const itemsTotalCents = sumItemsCents(parsedRows)
+
+  const selection = validateReceiptImportSelection(selectionInput)
+  const rowErrors = selection.ok === false ? selection.rowErrors : {}
+  const hasInvalidCheckedRows = selection.ok === false
+
+  const footerRows = rows.flatMap((row, index) => {
+    if (!row.checked) return []
+    const validated = validateReceiptImportRow({
+      name: row.name,
+      priceInput: row.priceInput,
+      quantityInput: row.quantity,
+    })
+    if (!validated.ok) return []
+    return [
+      {
+        name: validated.data.name,
+        unitPriceCents: validated.data.unitPriceCents,
+        quantity: validated.data.quantity,
+        confidence: row.confidence,
+      },
+    ]
+  })
+
+  const itemsTotalCents = sumItemsCents(footerRows)
   const receiptTotalCents = scanReady?.receiptTotalCents
   const mismatch = detectTotalsMismatch(itemsTotalCents, receiptTotalCents)
+
+  const restaurantValidation =
+    updateRestaurantName
+      ? validateBillMetadataField('restaurantName', restaurantName)
+      : { ok: true as const }
+
+  const restaurantError =
+    restaurantValidation.ok === false ? restaurantValidation.message : undefined
 
   function toggleSelectAll() {
     setRows((prev) => prev.map((r) => ({ ...r, checked: !allChecked })))
@@ -114,13 +150,20 @@ export function ReceiptScanReviewSheet({
   }
 
   async function handleImport() {
-    const selectedRows = rows
-      .map((row, index) => ({ row, index }))
-      .filter(({ row }) => row.checked && row.name.trim().length > 0)
-
-    if (selectedRows.length === 0) {
+    if (checkedCount === 0) {
       toast.error('Изберете поне един артикул за импортиране')
       return
+    }
+
+    const importSelection = validateReceiptImportSelection(selectionInput)
+    if (!importSelection.ok) return
+
+    if (updateRestaurantName) {
+      const restaurant = validateBillMetadataField(
+        'restaurantName',
+        restaurantName,
+      )
+      if (!restaurant.ok) return
     }
 
     setIsSubmitting(true)
@@ -128,19 +171,17 @@ export function ReceiptScanReviewSheet({
       await importScannedItems({
         scanId,
         mode: importMode,
-        selectedIndexes: selectedRows.map(({ index }) => index),
+        selectedIndexes: importSelection.checkedIndexes,
         updateRestaurantName,
-        restaurantName: updateRestaurantName
-          ? restaurantName.trim()
-          : undefined,
-        items: selectedRows.map(({ row }) => ({
-          name: row.name.trim(),
-          unitPriceCents: parseEurInput(row.priceInput),
-          quantity: Math.max(1, Number.parseInt(row.quantity, 10) || 1),
+        restaurantName: updateRestaurantName ? restaurantName : undefined,
+        items: importSelection.data.map((item) => ({
+          name: item.name,
+          unitPriceCents: item.unitPriceCents,
+          quantity: item.quantity,
         })),
       })
       await dismissScan({ scanId })
-      toast.success(`${selectedRows.length} артикула добавени`)
+      toast.success(`${importSelection.data.length} артикула добавени`)
       onOpenChange(false)
     } catch (error) {
       toast.error(
@@ -192,7 +233,11 @@ export function ReceiptScanReviewSheet({
                 value={restaurantName}
                 onChange={(e) => setRestaurantName(e.target.value)}
                 className="h-11"
+                aria-invalid={Boolean(restaurantError)}
               />
+              {restaurantError ? (
+                <p className="text-xs text-destructive">{restaurantError}</p>
+              ) : null}
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox
                   checked={updateRestaurantName}
@@ -227,12 +272,16 @@ export function ReceiptScanReviewSheet({
             </div>
           )}
 
-          {rows.map((row, index) => (
+          {rows.map((row, index) => {
+            const errors = rowErrors[index]
+            return (
             <div
               key={index}
               className={cn(
                 'flex items-start gap-2 rounded-lg border p-3',
+                row.checked && errors && 'border-destructive',
                 row.confidence === 'low' &&
+                  !(row.checked && errors) &&
                   'border-amber-400 bg-amber-50 dark:border-amber-500 dark:bg-amber-950/40',
               )}
             >
@@ -250,6 +299,7 @@ export function ReceiptScanReviewSheet({
                     onChange={(e) => updateRow(index, { name: e.target.value })}
                     placeholder="Наименование"
                     className="h-10 flex-1"
+                    aria-invalid={Boolean(errors?.name)}
                   />
                   {row.confidence === 'low' && (
                     <Badge
@@ -260,6 +310,9 @@ export function ReceiptScanReviewSheet({
                     </Badge>
                   )}
                 </div>
+                {errors?.name ? (
+                  <p className="text-xs text-destructive">{errors.name}</p>
+                ) : null}
                 <div className="flex items-center gap-2">
                   <Input
                     value={row.priceInput}
@@ -269,6 +322,7 @@ export function ReceiptScanReviewSheet({
                     inputMode="decimal"
                     placeholder="Цена (€)"
                     className="h-10 flex-1"
+                    aria-invalid={Boolean(errors?.price)}
                   />
                   <span className="text-muted-foreground">×</span>
                   <Input
@@ -279,11 +333,19 @@ export function ReceiptScanReviewSheet({
                     inputMode="numeric"
                     placeholder="Бр."
                     className="h-10 w-16"
+                    aria-invalid={Boolean(errors?.quantity)}
                   />
                 </div>
+                {errors?.price ? (
+                  <p className="text-xs text-destructive">{errors.price}</p>
+                ) : null}
+                {errors?.quantity ? (
+                  <p className="text-xs text-destructive">{errors.quantity}</p>
+                ) : null}
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
 
         {scanReady && (
@@ -325,7 +387,12 @@ export function ReceiptScanReviewSheet({
                 type="button"
                 className="h-11 flex-1"
                 onClick={() => void handleImport()}
-                disabled={isSubmitting || checkedCount === 0}
+                disabled={
+                  isSubmitting ||
+                  checkedCount === 0 ||
+                  hasInvalidCheckedRows ||
+                  (updateRestaurantName && restaurantValidation.ok === false)
+                }
               >
                 Импортирай избраните ({checkedCount})
               </Button>
