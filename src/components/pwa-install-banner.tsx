@@ -2,15 +2,10 @@ import { DownloadIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
-import { isIosInstallBrowser, isStandalonePwa } from '#/lib/pwa-install.ts'
+import { usePwaInstall } from '#/components/pwa-install-provider.tsx'
 
-const DISMISS_KEY = 'pwa-install-dismissed'
-const VISIT_KEY = 'pwa-install-visits'
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
-}
+const BANNER_DISMISS_KEY = 'pwa-banner-dismissed'
+const LEGACY_DISMISS_KEY = 'pwa-install-dismissed'
 
 const IOS_INSTALL_STEPS = [
   'Плъзнете екрана надолу и изберете „Добавяне в началния екран“.',
@@ -38,59 +33,37 @@ function SafariShareIcon({ className }: { className?: string }) {
   )
 }
 
+function isBannerDismissed(): boolean {
+  if (localStorage.getItem(BANNER_DISMISS_KEY) === '1') return true
+  if (localStorage.getItem(LEGACY_DISMISS_KEY) === '1') {
+    localStorage.setItem(BANNER_DISMISS_KEY, '1')
+    return true
+  }
+  return false
+}
+
 export function PwaInstallBanner() {
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null)
+  const { canInstall, showIosSteps, deferredPrompt, install } = usePwaInstall()
   const [visible, setVisible] = useState(false)
-  const [showIosSteps, setShowIosSteps] = useState(false)
 
   useEffect(() => {
-    if (localStorage.getItem(DISMISS_KEY) === '1') return
-    if (isStandalonePwa()) return
-
-    const visits =
-      Number.parseInt(localStorage.getItem(VISIT_KEY) ?? '0', 10) + 1
-    localStorage.setItem(VISIT_KEY, String(visits))
-    if (visits < 2) return
-
-    if (isIosInstallBrowser()) {
-      setShowIosSteps(true)
-      setVisible(true)
-      return
-    }
-
-    function handleBeforeInstallPrompt(event: Event) {
-      event.preventDefault()
-      setDeferredPrompt(event as BeforeInstallPromptEvent)
-      setVisible(true)
-    }
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-    return () => {
-      window.removeEventListener(
-        'beforeinstallprompt',
-        handleBeforeInstallPrompt,
-      )
-    }
-  }, [])
+    if (isBannerDismissed() || !canInstall) return
+    setVisible(true)
+  }, [canInstall])
 
   if (!visible) return null
   if (!showIosSteps && !deferredPrompt) return null
 
   async function handleInstall() {
-    if (!deferredPrompt) return
-    await deferredPrompt.prompt()
-    const { outcome } = await deferredPrompt.userChoice
-    if (outcome === 'accepted') {
+    const result = await install()
+    if (result.outcome === 'accepted') {
       setVisible(false)
-      setDeferredPrompt(null)
     }
   }
 
   function handleDismiss() {
-    localStorage.setItem(DISMISS_KEY, '1')
+    localStorage.setItem(BANNER_DISMISS_KEY, '1')
     setVisible(false)
-    setDeferredPrompt(null)
   }
 
   return (

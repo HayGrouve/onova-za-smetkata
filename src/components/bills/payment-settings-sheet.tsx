@@ -18,6 +18,10 @@ import {
   clearLegacyPaymentSettings,
   loadLegacyPaymentSettings,
 } from '#/lib/payment-settings.ts'
+import {
+  formatPaymentSettingsErrors,
+  parsePaymentSettingsInput,
+} from '#/lib/payment-settings-schema.ts'
 import { api } from '../../../convex/_generated/api'
 
 export interface PaymentSettingsSheetProps {
@@ -33,10 +37,16 @@ export function PaymentSettingsSheet({
   const saveSettings = useMutation(api.paymentSettings.save)
   const [revolutUsername, setRevolutUsername] = useState('')
   const [iban, setIban] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<{
+    revolutUsername?: string
+    iban?: string
+  }>({})
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (!open || settings === undefined) return
+
+    setFieldErrors({})
 
     if (settings.revolutUsername || settings.iban) {
       setRevolutUsername(settings.revolutUsername ?? '')
@@ -48,7 +58,15 @@ export function PaymentSettingsSheet({
     if (legacy.revolutUsername || legacy.iban) {
       setRevolutUsername(legacy.revolutUsername ?? '')
       setIban(legacy.iban ?? '')
-      void saveSettings(legacy).then(() => clearLegacyPaymentSettings())
+      const parsedLegacy = parsePaymentSettingsInput({
+        revolutUsername: legacy.revolutUsername ?? '',
+        iban: legacy.iban ?? '',
+      })
+      if (parsedLegacy.success) {
+        void saveSettings(parsedLegacy.data).then(() =>
+          clearLegacyPaymentSettings(),
+        )
+      }
       return
     }
 
@@ -57,12 +75,16 @@ export function PaymentSettingsSheet({
   }, [open, settings, saveSettings])
 
   async function handleSave() {
+    const parsed = parsePaymentSettingsInput({ revolutUsername, iban })
+    if (!parsed.success) {
+      setFieldErrors(formatPaymentSettingsErrors(parsed.error))
+      return
+    }
+
+    setFieldErrors({})
     setSaving(true)
     try {
-      await saveSettings({
-        revolutUsername: revolutUsername.trim() || undefined,
-        iban: iban.trim() || undefined,
-      })
+      await saveSettings(parsed.data)
       clearLegacyPaymentSettings()
       toast.success('Настройките са запазени')
       onOpenChange(false)
@@ -93,11 +115,31 @@ export function PaymentSettingsSheet({
             <Input
               id="revolut-username"
               value={revolutUsername}
-              onChange={(e) => setRevolutUsername(e.target.value)}
+              onChange={(e) => {
+                setRevolutUsername(e.target.value)
+                if (fieldErrors.revolutUsername) {
+                  setFieldErrors((current) => ({
+                    ...current,
+                    revolutUsername: undefined,
+                  }))
+                }
+              }}
+              onBlur={() => {
+                const trimmed = revolutUsername.trim()
+                if (trimmed.startsWith('@')) {
+                  setRevolutUsername(trimmed.replace(/^@+/, ''))
+                }
+              }}
               placeholder="username"
               className="h-11"
               autoComplete="off"
+              aria-invalid={Boolean(fieldErrors.revolutUsername)}
             />
+            {fieldErrors.revolutUsername ? (
+              <p className="text-xs text-destructive">
+                {fieldErrors.revolutUsername}
+              </p>
+            ) : null}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -106,10 +148,19 @@ export function PaymentSettingsSheet({
               <Input
                 id="iban"
                 value={iban}
-                onChange={(e) => setIban(e.target.value)}
+                onChange={(e) => {
+                  setIban(e.target.value)
+                  if (fieldErrors.iban) {
+                    setFieldErrors((current) => ({
+                      ...current,
+                      iban: undefined,
+                    }))
+                  }
+                }}
                 placeholder="BG00XXXX00000000000000"
                 className="h-11 min-w-0 flex-1"
                 autoComplete="off"
+                aria-invalid={Boolean(fieldErrors.iban)}
               />
               <Button
                 type="button"
@@ -129,6 +180,9 @@ export function PaymentSettingsSheet({
                 Копирай
               </Button>
             </div>
+            {fieldErrors.iban ? (
+              <p className="text-xs text-destructive">{fieldErrors.iban}</p>
+            ) : null}
           </div>
         </div>
 

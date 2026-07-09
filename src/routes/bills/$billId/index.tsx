@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { BillAdvancedSettings } from '#/components/bills/bill-advanced-settings.tsx'
 import { ItemList } from '#/components/bills/item-list.tsx'
 import { BillInviteCard } from '#/components/bills/bill-invite-card.tsx'
 import { ParticipantList } from '#/components/bills/participant-list.tsx'
@@ -191,73 +192,43 @@ function BillEditorContent({
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="restaurantName">Ресторант</Label>
-              <Input
-                id="restaurantName"
-                value={restaurantName}
-                onChange={(e) => {
-                  setRestaurantName(e.target.value)
-                  scheduleSave({ restaurantName: e.target.value })
-                }}
-                placeholder="Напр. Механа Крайречна"
-                className="h-11"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="date">Дата</Label>
-              <Input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => {
-                  setDate(e.target.value)
-                  scheduleSave({ date: fromDateInputValue(e.target.value) })
-                }}
-                className="h-11"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="note">Бележка</Label>
-              <Input
-                id="note"
-                value={note}
-                onChange={(e) => {
-                  setNote(e.target.value)
-                  scheduleSave({ note: e.target.value })
-                }}
-                placeholder="Незадължителна бележка"
-                className="h-11"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="tip">Бакшиш</Label>
-              <Input
-                id="tip"
-                inputMode="decimal"
-                value={tip}
-                onChange={(e) => {
-                  setTip(e.target.value)
-                  scheduleSave({ tipCents: parseEurInput(e.target.value) })
-                }}
-                placeholder="0,00"
-                className="h-11"
-              />
-              <p className="text-xs text-muted-foreground">
-                Разделя се поравно между всички участници.
-              </p>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label>Снимка на касова бележка</Label>
-              {receiptUrl && (
-                <img
-                  src={receiptUrl}
-                  alt="Касова бележка"
+            <div className="flex flex-col gap-3">
+              {!bill.receiptStorageId ? (
+                <button
+                  type="button"
+                  onClick={() => galleryInputRef.current?.click()}
+                  disabled={isUploading}
                   className={cn(
-                    'max-h-64 w-full rounded-md border object-contain',
-                    isScanning && 'receipt-scan-image-active',
+                    'tap-feedback flex w-full flex-col items-center gap-3 rounded-lg border border-dashed p-4 text-left',
+                    'cursor-pointer transition-colors hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-50',
                   )}
-                />
+                >
+                  <div className="flex items-center gap-2 self-start text-sm font-medium">
+                    <ReceiptIcon className={ICON.section} aria-hidden />
+                    Снимка на касова бележка
+                  </div>
+                  <p className="self-start text-sm text-muted-foreground">
+                    Качете снимка на бележката, за да разпознаете артикулите
+                    автоматично.
+                  </p>
+                </button>
+              ) : (
+                <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-4">
+                  <div className="flex items-center gap-2 self-start text-sm font-medium">
+                    <ReceiptIcon className={ICON.section} aria-hidden />
+                    Снимка на касова бележка
+                  </div>
+                  {receiptUrl && (
+                    <img
+                      src={receiptUrl}
+                      alt="Касова бележка"
+                      className={cn(
+                        'max-h-64 w-full rounded-md border object-contain',
+                        isScanning && 'receipt-scan-image-active',
+                      )}
+                    />
+                  )}
+                </div>
               )}
               <input
                 ref={galleryInputRef}
@@ -295,31 +266,75 @@ function BillEditorContent({
                 </button>
               </div>
               {bill.receiptStorageId && (
-                <div className="flex flex-col gap-1.5">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-11"
-                    disabled={isScanning}
-                    aria-busy={isScanning}
-                    onClick={handleScanButtonClick}
-                  >
-                    {isScanning ? (
-                      <Loader2Icon
-                        className={cn(
-                          ICON.button,
-                          'animate-spin motion-reduce:animate-none',
-                        )}
-                        aria-hidden
-                      />
-                    ) : (
-                      <ScanLineIcon className={ICON.button} aria-hidden />
-                    )}
-                    {isScanning ? 'Разпознаване…' : 'Разпознай артикули'}
-                  </Button>
-                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11"
+                  disabled={isScanning}
+                  aria-busy={isScanning}
+                  onClick={handleScanButtonClick}
+                >
+                  {isScanning ? (
+                    <Loader2Icon
+                      className={cn(
+                        ICON.button,
+                        'animate-spin motion-reduce:animate-none',
+                      )}
+                      aria-hidden
+                    />
+                  ) : (
+                    <ScanLineIcon className={ICON.button} aria-hidden />
+                  )}
+                  {isScanning ? 'Разпознаване…' : 'Разпознай артикули'}
+                </Button>
               )}
             </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="tip">Бакшиш</Label>
+              <Input
+                id="tip"
+                inputMode="decimal"
+                value={tip}
+                onChange={(e) => {
+                  setTip(e.target.value)
+                  scheduleSave({ tipCents: parseEurInput(e.target.value) })
+                }}
+                placeholder="0,00"
+                className="h-11"
+              />
+              <p className="text-xs text-muted-foreground">
+                Разделя се поравно между всички участници.
+              </p>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="restaurantName">Ресторант</Label>
+              <Input
+                id="restaurantName"
+                value={restaurantName}
+                onChange={(e) => {
+                  setRestaurantName(e.target.value)
+                  scheduleSave({ restaurantName: e.target.value })
+                }}
+                placeholder="Напр. Механа Крайречна"
+                className="h-11"
+              />
+              <p className="text-xs text-muted-foreground">
+                Попълва се автоматично при разпознаване на бележката, ако името
+                е видимо на снимката.
+              </p>
+            </div>
+            <BillAdvancedSettings
+              note={note}
+              date={date}
+              onNoteChange={(value) => {
+                setNote(value)
+                scheduleSave({ note: value })
+              }}
+              onDateChange={(value) => {
+                setDate(value)
+                scheduleSave({ date: fromDateInputValue(value) })
+              }}
+            />
           </CardContent>
         </Card>
 

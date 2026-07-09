@@ -1,7 +1,8 @@
 import { mutation, query } from './_generated/server'
-import { v } from 'convex/values'
+import { ConvexError, v } from 'convex/values'
 import { requireAuth } from './lib/auth'
 import { assertShareToken } from './lib/guestAccess'
+import { parsePaymentSettingsInput } from './lib/paymentSettingsSchema'
 
 export const get = query({
   args: {},
@@ -45,11 +46,21 @@ export const save = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await requireAuth(ctx)
-    const revolutUsername = args.revolutUsername?.trim() || undefined
-    const iban = args.iban?.trim() || undefined
+
+    const parsed = parsePaymentSettingsInput({
+      revolutUsername: args.revolutUsername ?? '',
+      iban: args.iban ?? '',
+    })
+    if (!parsed.success) {
+      const firstIssue = parsed.error.issues[0]
+      throw new ConvexError(
+        firstIssue?.message ?? 'Невалидни настройки за плащане',
+      )
+    }
+
     const data = {
-      revolutUsername,
-      iban,
+      revolutUsername: parsed.data.revolutUsername,
+      iban: parsed.data.iban,
       updatedAt: Date.now(),
     }
 

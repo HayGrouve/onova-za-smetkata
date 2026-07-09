@@ -1,5 +1,21 @@
 import { describe, expect, it, vi } from 'vitest'
 import { isIosInstallBrowser, isStandalonePwa } from './pwa-install'
+import { isHostShellRoute } from './pwa-install-routes'
+
+describe('isHostShellRoute', () => {
+  it('allows home and bill host routes', () => {
+    expect(isHostShellRoute('/')).toBe(true)
+    expect(isHostShellRoute('/bills/abc123')).toBe(true)
+    expect(isHostShellRoute('/bills/abc123/')).toBe(true)
+    expect(isHostShellRoute('/bills/abc123/summary')).toBe(true)
+  })
+
+  it('blocks login and guest routes', () => {
+    expect(isHostShellRoute('/login')).toBe(false)
+    expect(isHostShellRoute('/bills/abc123/join')).toBe(false)
+    expect(isHostShellRoute('/bills/abc123/claim')).toBe(false)
+  })
+})
 
 describe('isStandalonePwa', () => {
   it('returns true when display-mode is standalone', () => {
