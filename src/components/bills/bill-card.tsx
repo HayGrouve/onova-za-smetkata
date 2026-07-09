@@ -82,11 +82,11 @@ export function BillCard({
             </p>
           </div>
           <div className="shrink-0 text-right">
-            <p className="font-semibold tabular-nums">
+            <p className="money font-semibold">
               {formatEur(billTotalCents)}
             </p>
             {!isDraft && (
-              <p className="text-sm text-muted-foreground tabular-nums">
+              <p className="money text-sm text-muted-foreground">
                 {totalOutstandingCents && totalOutstandingCents > 0
                   ? `Дължимо ${formatEur(totalOutstandingCents)}`
                   : 'Платено'}

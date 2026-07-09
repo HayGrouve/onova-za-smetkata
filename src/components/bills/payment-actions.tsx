@@ -113,7 +113,7 @@ export function PaymentActions({
             {participantPayments.map((payment) => (
               <li
                 key={payment._id}
-                className="flex items-center justify-between gap-2 tabular-nums"
+                className="money flex items-center justify-between gap-2"
               >
                 <span>{formatEur(payment.amountCents)}</span>
                 <span className="text-xs text-muted-foreground">

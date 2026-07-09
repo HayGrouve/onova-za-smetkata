@@ -24,3 +24,4 @@ playwright-report/
 
 # Windows alternate data streams
 *:Zone.Identifier
+.superpowers/

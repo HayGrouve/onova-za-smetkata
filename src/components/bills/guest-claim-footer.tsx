@@ -182,7 +182,7 @@ export function GuestClaimFooter({
                     </p>
                     <p
                       key={amountCents}
-                      className="guest-total-pulse text-lg font-semibold tabular-nums"
+                      className="guest-total-pulse money text-lg font-semibold"
                     >
                       {formatEur(amountCents)}
                     </p>

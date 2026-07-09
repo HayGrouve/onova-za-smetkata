@@ -60,7 +60,11 @@ function Home() {
     setIsCreating(true)
     try {
       const billId = await createBill()
-      await navigate({ to: '/bills/$billId', params: { billId } })
+      await navigate({
+        to: '/bills/$billId',
+        params: { billId },
+        search: { step: 1 },
+      })
     } catch {
       toast.error('Неуспешно създаване на сметка')
     } finally {

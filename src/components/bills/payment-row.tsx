@@ -79,13 +79,13 @@ export function PaymentRow({
       <div className="grid grid-cols-3 gap-2 text-sm text-muted-foreground">
         <div>
           <p className="text-xs">Дължи</p>
-          <p className="tabular-nums text-foreground">
+          <p className="money text-foreground">
             {formatEur(totals.owedCents)}
           </p>
         </div>
         <div>
           <p className="text-xs">Платено</p>
-          <p className="tabular-nums text-foreground">
+          <p className="money text-foreground">
             {formatEur(totals.paidCents)}
           </p>
         </div>
@@ -100,13 +100,13 @@ export function PaymentRow({
             <button
               type="button"
               onClick={() => copyRemainingAmount(remainingCents)}
-              className="tap-feedback cursor-pointer tabular-nums text-foreground"
+              className="tap-feedback money cursor-pointer text-foreground"
               aria-label="Копирай сумата"
             >
               {formatEur(remainingCents)}
             </button>
           ) : (
-            <p className="tabular-nums text-foreground">
+            <p className="money text-foreground">
               {formatEur(remainingCents)}
             </p>
           )}

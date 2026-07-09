@@ -12,7 +12,7 @@ export function OfflineBanner() {
   return (
     <div
       role="status"
-      className="sticky top-14 z-40 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-950 dark:text-amber-100"
+      className="sticky top-14 z-40 border-b border-accent-foreground/30 bg-accent px-4 py-2 text-sm text-accent-foreground"
     >
       <div className="page-shell flex items-center justify-between gap-3">
         <p className="flex items-center gap-2">

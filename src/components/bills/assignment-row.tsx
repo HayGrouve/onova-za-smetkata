@@ -157,7 +157,7 @@ export function AssignmentRow({
         })}
       </div>
       {unitsMismatch && (
-        <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+        <p className="text-xs font-medium text-accent-foreground">
           Разпределени {assignedUnitsTotal} от {itemQuantity} броя
         </p>
       )}

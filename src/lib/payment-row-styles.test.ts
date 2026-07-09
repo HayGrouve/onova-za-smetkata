@@ -8,7 +8,7 @@ describe('getPaymentRowBorderClass', () => {
 
   it('returns amber left border for partial', () => {
     expect(getPaymentRowBorderClass('partial')).toBe(
-      'border-l-4 border-amber-500',
+      'border-l-4 border-accent-foreground',
     )
   })
 

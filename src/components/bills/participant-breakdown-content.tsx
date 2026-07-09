@@ -109,7 +109,7 @@ export function ParticipantBreakdownContent({
                 {line.kind === 'item' ? formatBreakdownLineSuffix(line) : ''}
               </p>
             </div>
-            <p className="shrink-0 tabular-nums">
+            <p className="money shrink-0">
               {formatEur(line.amountCents)}
             </p>
           </div>
@@ -124,13 +124,13 @@ export function ParticipantBreakdownContent({
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
                 <p className="text-xs text-muted-foreground">Дължи</p>
-                <p className="font-medium tabular-nums">
+                <p className="money font-medium">
                   {formatEur(totals.owedCents)}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Платено</p>
-                <p className="font-medium tabular-nums">
+                <p className="money font-medium">
                   {formatEur(totals.paidCents)}
                 </p>
               </div>
@@ -142,19 +142,19 @@ export function ParticipantBreakdownContent({
         <div className="grid grid-cols-3 gap-2 text-sm">
           <div>
             <p className="text-xs text-muted-foreground">Дължи</p>
-            <p className="font-medium tabular-nums">
+            <p className="money font-medium">
               {formatEur(totals.owedCents)}
             </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Платено</p>
-            <p className="font-medium tabular-nums">
+            <p className="money font-medium">
               {formatEur(totals.paidCents)}
             </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Остатък</p>
-            <p className="font-medium tabular-nums">
+            <p className="money font-medium">
               {formatEur(remainingCents)}
             </p>
           </div>

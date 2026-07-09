@@ -1,10 +1,21 @@
 import { useMutation } from 'convex/react'
-import { AlertTriangleIcon, PlusIcon, Trash2Icon, UsersIcon } from 'lucide-react'
+import {
+  AlertTriangleIcon,
+  ChevronDownIcon,
+  PlusIcon,
+  Trash2Icon,
+  UsersIcon,
+} from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AssignmentRow } from '#/components/bills/assignment-row.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '#/components/ui/collapsible.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { useDebouncedCallback } from '#/hooks/use-debounced-callback.ts'
@@ -47,6 +58,7 @@ export function ItemList({
   const [newName, setNewName] = useState('')
   const [newPrice, setNewPrice] = useState('')
   const [newQuantity, setNewQuantity] = useState('1')
+  const [addOpen, setAddOpen] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<{
     name?: string
     price?: string
@@ -76,6 +88,7 @@ export function ItemList({
       quantityInput: newQuantity,
     })
     if (!validated.ok) {
+      setAddOpen(true)
       setFieldErrors({
         name: validated.fieldErrors.name,
         price: validated.fieldErrors.price,
@@ -174,7 +187,7 @@ export function ItemList({
             }
             className={cn(
               'flex flex-col gap-3 rounded-lg border p-4',
-              isUnassigned && 'border-l-4 border-amber-500',
+              isUnassigned && 'border-l-4 border-accent-foreground',
             )}
           >
             <ItemRow
@@ -194,73 +207,107 @@ export function ItemList({
       })}
 
       {!readOnly ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-dashed p-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="new-item-name">Наименование на артикул</Label>
-            <Input
-              id="new-item-name"
-              value={newName}
-              onChange={(e) => {
-                setNewName(e.target.value)
-                if (fieldErrors.name) {
-                  setFieldErrors((prev) => ({ ...prev, name: undefined }))
-                }
-              }}
-              placeholder="Наименование на артикул"
-              className="h-11"
-              aria-invalid={Boolean(fieldErrors.name)}
+        <Collapsible open={addOpen} onOpenChange={setAddOpen}>
+          <CollapsibleTrigger
+            className={cn(
+              'tap-feedback flex h-11 w-full items-center justify-between gap-2 rounded-md border px-3 text-sm font-medium',
+              'text-muted-foreground hover:bg-muted/50',
+            )}
+            aria-expanded={addOpen}
+          >
+            <span className="flex items-center gap-2">
+              <PlusIcon className={ICON.button} aria-hidden />
+              Добави артикул
+            </span>
+            <ChevronDownIcon
+              className={cn(
+                ICON.button,
+                'shrink-0 transition-transform duration-200',
+                addOpen && 'rotate-180',
+              )}
+              aria-hidden
             />
-            {fieldErrors.name ? (
-              <p className="text-xs text-destructive">{fieldErrors.name}</p>
-            ) : null}
-          </div>
-          <div className="flex gap-2">
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-              <Label htmlFor="new-item-price">Цена (€)</Label>
-              <Input
-                id="new-item-price"
-                value={newPrice}
-                onChange={(e) => {
-                  setNewPrice(e.target.value)
-                  if (fieldErrors.price) {
-                    setFieldErrors((prev) => ({ ...prev, price: undefined }))
-                  }
-                }}
-                inputMode="decimal"
-                placeholder="Цена (€)"
-                className="h-11 flex-1"
-                aria-invalid={Boolean(fieldErrors.price)}
-              />
-              {fieldErrors.price ? (
-                <p className="text-xs text-destructive">{fieldErrors.price}</p>
-              ) : null}
-            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent
+            id="add-item-form"
+            className="flex flex-col gap-3 pt-3 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
+          >
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="new-item-quantity">Бр.</Label>
+              <Label htmlFor="new-item-name">Наименование на артикул</Label>
               <Input
-                id="new-item-quantity"
-                value={newQuantity}
+                id="new-item-name"
+                value={newName}
                 onChange={(e) => {
-                  setNewQuantity(e.target.value)
-                  if (fieldErrors.quantity) {
-                    setFieldErrors((prev) => ({ ...prev, quantity: undefined }))
+                  setNewName(e.target.value)
+                  if (fieldErrors.name) {
+                    setFieldErrors((prev) => ({ ...prev, name: undefined }))
                   }
                 }}
-                inputMode="numeric"
-                placeholder="Бр."
-                className="h-11 w-16"
-                aria-invalid={Boolean(fieldErrors.quantity)}
+                placeholder="Наименование на артикул"
+                className="h-11"
+                aria-invalid={Boolean(fieldErrors.name)}
               />
-              {fieldErrors.quantity ? (
-                <p className="text-xs text-destructive">{fieldErrors.quantity}</p>
+              {fieldErrors.name ? (
+                <p className="text-xs text-destructive">{fieldErrors.name}</p>
               ) : null}
             </div>
-          </div>
-          <Button className="h-11" onClick={handleAdd} disabled={!newName.trim()}>
-            <PlusIcon className={ICON.button} aria-hidden />
-            Добави артикул
-          </Button>
-        </div>
+            <div className="flex gap-2">
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <Label htmlFor="new-item-price">Цена (€)</Label>
+                <Input
+                  id="new-item-price"
+                  value={newPrice}
+                  onChange={(e) => {
+                    setNewPrice(e.target.value)
+                    if (fieldErrors.price) {
+                      setFieldErrors((prev) => ({ ...prev, price: undefined }))
+                    }
+                  }}
+                  inputMode="decimal"
+                  placeholder="Цена (€)"
+                  className="h-11 flex-1"
+                  aria-invalid={Boolean(fieldErrors.price)}
+                />
+                {fieldErrors.price ? (
+                  <p className="text-xs text-destructive">{fieldErrors.price}</p>
+                ) : null}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="new-item-quantity">Бр.</Label>
+                <Input
+                  id="new-item-quantity"
+                  value={newQuantity}
+                  onChange={(e) => {
+                    setNewQuantity(e.target.value)
+                    if (fieldErrors.quantity) {
+                      setFieldErrors((prev) => ({
+                        ...prev,
+                        quantity: undefined,
+                      }))
+                    }
+                  }}
+                  inputMode="numeric"
+                  placeholder="Бр."
+                  className="h-11 w-16"
+                  aria-invalid={Boolean(fieldErrors.quantity)}
+                />
+                {fieldErrors.quantity ? (
+                  <p className="text-xs text-destructive">
+                    {fieldErrors.quantity}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+            <Button
+              className="h-11"
+              onClick={() => void handleAdd()}
+              disabled={!newName.trim()}
+            >
+              <PlusIcon className={ICON.button} aria-hidden />
+              Добави
+            </Button>
+          </CollapsibleContent>
+        </Collapsible>
       ) : null}
     </div>
   )

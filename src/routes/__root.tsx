@@ -60,12 +60,12 @@ export const Route = createRootRoute({
       },
       {
         name: 'theme-color',
-        content: '#ffffff',
+        content: '#faf9f7',
         media: '(prefers-color-scheme: light)',
       },
       {
         name: 'theme-color',
-        content: '#0f172a',
+        content: '#121214',
         media: '(prefers-color-scheme: dark)',
       },
     ],

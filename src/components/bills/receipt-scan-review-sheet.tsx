@@ -282,7 +282,7 @@ export function ReceiptScanReviewSheet({
                 row.checked && errors && 'border-destructive',
                 row.confidence === 'low' &&
                   !(row.checked && errors) &&
-                  'border-amber-400 bg-amber-50 dark:border-amber-500 dark:bg-amber-950/40',
+                  'border-accent-foreground/50 bg-accent/50',
               )}
             >
               <Checkbox
@@ -304,7 +304,7 @@ export function ReceiptScanReviewSheet({
                   {row.confidence === 'low' && (
                     <Badge
                       variant="outline"
-                      className="border-amber-500 text-amber-700 dark:text-amber-300"
+                      className="border-accent-foreground/50 text-accent-foreground"
                     >
                       ?
                     </Badge>
@@ -355,20 +355,20 @@ export function ReceiptScanReviewSheet({
                 <span className="text-muted-foreground">
                   Сумата на артикулите
                 </span>
-                <span className="font-medium tabular-nums">
+                <span className="money font-medium">
                   {formatEur(itemsTotalCents)}
                 </span>
               </div>
               {receiptTotalCents !== undefined && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Общо на бележка</span>
-                  <span className="font-medium tabular-nums">
+                  <span className="money font-medium">
                     {formatEur(receiptTotalCents)}
                   </span>
                 </div>
               )}
               {mismatch && (
-                <p className="text-xs font-medium text-amber-600">
+                <p className="text-xs font-medium text-accent-foreground">
                   Сумите не съвпадат — проверете артикулите
                 </p>
               )}

@@ -112,7 +112,7 @@ export function GuestItemRow({
               {formatEur(item.unitPriceCents)} × {item.quantity}
             </p>
           </div>
-          <p className="font-medium tabular-nums">
+          <p className="money font-medium">
             {formatEur(lineTotalCents)}
           </p>
         </div>
@@ -142,7 +142,7 @@ export function GuestItemRow({
             {formatEur(item.unitPriceCents)} × {item.quantity}
           </p>
         </div>
-        <p className="font-medium tabular-nums">{formatEur(lineTotalCents)}</p>
+        <p className="money font-medium">{formatEur(lineTotalCents)}</p>
       </div>
       {renderClaimantHint()}
       {!readOnly && !isUnavailableToMe && (
