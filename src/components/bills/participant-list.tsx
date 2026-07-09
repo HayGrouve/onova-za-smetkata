@@ -1,12 +1,30 @@
 import { useMutation, useQuery } from 'convex/react'
-import { UserPlusIcon, XIcon } from 'lucide-react'
-import { useRef, useState  } from 'react'
-import type {FormEvent} from 'react';
+import {
+  MoreHorizontalIcon,
+  UserPlusIcon,
+  XIcon,
+} from 'lucide-react'
+import { useRef, useState } from 'react'
+import type { FormEvent } from 'react'
 import { toast } from 'sonner'
+import {
+  FriendGroupAddPreviewSheet,
+  type FriendGroupPreview,
+} from '#/components/bills/friend-group-add-preview-sheet.tsx'
+import { useFriendGroups } from '#/components/bills/friend-groups-provider.tsx'
 import { Button } from '#/components/ui/button.tsx'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '#/components/ui/dropdown-menu.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { summarizeAddMembersToBill } from '#/lib/friend-group-schema.ts'
+import { validateParticipantAdd } from '#/lib/participant-schema.ts'
 import { Input } from '#/components/ui/input.tsx'
+import { Separator } from '#/components/ui/separator.tsx'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
 
@@ -14,18 +32,30 @@ export interface ParticipantListProps {
   billId: Id<'bills'>
   participants: Doc<'participants'>[]
   labels: Record<string, string>
+  readOnly?: boolean
+  suggestedGroupName?: string
 }
 
 export function ParticipantList({
   billId,
   participants,
   labels,
+  readOnly = false,
+  suggestedGroupName = '',
 }: ParticipantListProps) {
   const [name, setName] = useState('')
+  const [nameError, setNameError] = useState<string | undefined>()
+  const [previewGroup, setPreviewGroup] = useState<FriendGroupPreview | null>(
+    null,
+  )
+  const [previewOpen, setPreviewOpen] = useState(false)
   const nameInputRef = useRef<HTMLInputElement>(null)
   const addParticipant = useMutation(api.participants.add)
+  const addGroupToBill = useMutation(api.friendGroups.addToBill)
   const removeParticipant = useMutation(api.participants.remove)
   const recentNames = useQuery(api.participants.listRecentNames, { limit: 12 })
+  const friendGroups = useQuery(api.friendGroups.list, {})
+  const { openNewFriendGroup } = useFriendGroups()
 
   const currentNames = new Set(
     participants.map((p) => p.name.trim().toLowerCase()),
@@ -36,11 +66,29 @@ export function ParticipantList({
     ) ?? []
 
   async function handleAdd(participantName?: string) {
-    const trimmed = (participantName ?? name).trim()
-    if (!trimmed) return
-    setName('')
+    const raw = participantName ?? name
+    const validated = validateParticipantAdd(
+      { name: raw },
+      {
+        existingNames: participants.map((participant) => participant.name),
+        participantCount: participants.length,
+      },
+    )
+    if (!validated.ok) {
+      if (participantName === undefined) {
+        setNameError(validated.message)
+      } else {
+        toast.error(validated.message)
+      }
+      return
+    }
+
+    setNameError(undefined)
+    if (participantName === undefined) {
+      setName('')
+    }
     try {
-      await addParticipant({ billId, name: trimmed })
+      await addParticipant({ billId, name: validated.name })
       nameInputRef.current?.focus()
     } catch (error) {
       toast.error(getConvexErrorMessage(error))
@@ -69,61 +117,194 @@ export function ParticipantList({
     }
   }
 
+  async function handleAddGroupAll(group: FriendGroupPreview) {
+    try {
+      const result = await addGroupToBill({ billId, groupId: group._id })
+      toast.success(summarizeAddMembersToBill(result))
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
+    }
+  }
+
+  function openPreview(group: FriendGroupPreview) {
+    setPreviewGroup(group)
+    setPreviewOpen(true)
+  }
+
+  function openSaveParticipantsAsGroup() {
+    const memberNames = participants.map((participant) => participant.name)
+    const suggestedName =
+      suggestedGroupName.trim() ||
+      `Група от ${new Date().toLocaleDateString('bg-BG')}`
+    openNewFriendGroup({ memberNames, suggestedName })
+  }
+
+  const showAddControls = !readOnly
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-2">
-        {participants.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            Все още няма участници.
-          </p>
-        )}
-        {participants.map((participant) => (
-          <span
-            key={participant._id}
-            className="flex h-9 items-center gap-1.5 rounded-full border bg-secondary/60 pr-1 pl-3 text-sm"
-          >
-            {labels[participant._id] ?? participant.name}
-            <button
-              type="button"
-              aria-label={`Премахни ${participant.name}`}
-              className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
-              onClick={() => handleRemove(participant)}
-            >
-              <XIcon className="size-4" />
-            </button>
-          </span>
-        ))}
-      </div>
-      {quickAddNames.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {quickAddNames.map((recentName) => (
-            <Button
-              key={recentName}
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 rounded-full"
-              onClick={() => void handleAdd(recentName)}
-            >
-              {recentName}
-            </Button>
-          ))}
+    <div className="flex flex-col gap-4">
+      <section aria-label="Участници на сметката" className="flex flex-col gap-2">
+        <p className="text-xs font-medium text-muted-foreground">
+          На сметката
+        </p>
+        <div className="min-h-9 rounded-lg border border-border/60 bg-background/60 px-3 py-2.5">
+          {participants.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Все още няма участници.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {participants.map((participant) => (
+                <span
+                  key={participant._id}
+                  className="flex h-9 items-center gap-1.5 rounded-full border bg-secondary/60 pr-1 pl-3 text-sm"
+                >
+                  {labels[participant._id] ?? participant.name}
+                  {!readOnly ? (
+                    <button
+                      type="button"
+                      aria-label={`Премахни ${participant.name}`}
+                      className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+                      onClick={() => handleRemove(participant)}
+                    >
+                      <XIcon className="size-4" />
+                    </button>
+                  ) : null}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-      )}
-      <form className="flex gap-2" onSubmit={handleSubmit}>
-        <Input
-          ref={nameInputRef}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Име на участник"
-          className="h-11 flex-1"
-          autoComplete="off"
-        />
-        <Button type="submit" className="h-11" disabled={!name.trim()}>
-          <UserPlusIcon className={ICON.button} aria-hidden />
-          Добави
-        </Button>
-      </form>
+      </section>
+
+      {showAddControls ? (
+        <>
+          <Separator />
+          <section
+            aria-label="Добавяне на участници"
+            className="flex flex-col gap-4 rounded-lg border border-dashed border-border/80 bg-muted/25 p-3"
+          >
+            <p className="text-sm font-medium">Добави участници</p>
+
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-muted-foreground">От група</p>
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                {friendGroups?.map((group) => (
+                  <div
+                    key={group._id}
+                    className="flex shrink-0 items-stretch overflow-hidden rounded-full border border-dashed"
+                  >
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 max-w-40 truncate rounded-r-none border-0 px-3"
+                      onClick={() => void handleAddGroupAll(group)}
+                    >
+                      {group.name}
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon-sm"
+                          className="h-8 w-8 shrink-0 rounded-l-none border-0 border-l border-dashed"
+                          aria-label={`Опции за група ${group.name}`}
+                        >
+                          <MoreHorizontalIcon className="size-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={() => openPreview(group)}>
+                          Избери участници
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                ))}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 shrink-0 rounded-full border-dashed"
+                    >
+                      + Група
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem onSelect={() => openNewFriendGroup()}>
+                      Нова група
+                    </DropdownMenuItem>
+                    {participants.length >= 2 ? (
+                      <DropdownMenuItem onSelect={openSaveParticipantsAsGroup}>
+                        Запази участниците като група
+                      </DropdownMenuItem>
+                    ) : null}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+
+            {quickAddNames.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                <p className="text-xs text-muted-foreground">Скорошни</p>
+                <div className="flex flex-wrap gap-2">
+                  {quickAddNames.map((recentName) => (
+                    <Button
+                      key={recentName}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-full border-dashed"
+                      onClick={() => void handleAdd(recentName)}
+                    >
+                      + {recentName}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-muted-foreground">Ръчно</p>
+              <form className="flex flex-col gap-1.5" onSubmit={handleSubmit}>
+                <div className="flex gap-2">
+                  <Input
+                    ref={nameInputRef}
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value)
+                      if (nameError) setNameError(undefined)
+                    }}
+                    placeholder="Име на участник"
+                    className="h-11 flex-1"
+                    autoComplete="off"
+                    aria-invalid={Boolean(nameError)}
+                  />
+                  <Button type="submit" className="h-11" disabled={!name.trim()}>
+                    <UserPlusIcon className={ICON.button} aria-hidden />
+                    Добави
+                  </Button>
+                </div>
+                {nameError ? (
+                  <p className="text-xs text-destructive">{nameError}</p>
+                ) : null}
+              </form>
+            </div>
+          </section>
+        </>
+      ) : null}
+
+      <FriendGroupAddPreviewSheet
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        group={previewGroup}
+        billId={billId}
+        participants={participants}
+      />
     </div>
   )
 }

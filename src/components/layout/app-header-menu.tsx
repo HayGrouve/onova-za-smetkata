@@ -6,10 +6,12 @@ import {
   MoonIcon,
   MoreVerticalIcon,
   SunIcon,
+  UsersIcon,
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
+import { useFriendGroupsSheet } from '#/components/bills/friend-groups-provider.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import {
   DropdownMenu,
@@ -37,6 +39,7 @@ export function AppHeaderMenu({
   const { theme, setTheme } = useTheme()
   const { signOut } = useAuthActions()
   const { openPaymentSettings } = usePaymentSettingsSheet()
+  const { openFriendGroups } = useFriendGroupsSheet()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -97,6 +100,10 @@ export function AppHeaderMenu({
             <DropdownMenuItem onSelect={() => openPaymentSettings()}>
               <CogIcon className={ICON.button} aria-hidden />
               Настройки за плащане
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => openFriendGroups()}>
+              <UsersIcon className={ICON.button} aria-hidden />
+              Моите групи
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"

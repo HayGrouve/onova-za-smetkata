@@ -91,6 +91,14 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index('by_userId', ['userId']),
 
+  friendGroups: defineTable({
+    userId: v.id('users'),
+    name: v.string(),
+    memberNames: v.array(v.string()),
+    sortOrder: v.number(),
+    updatedAt: v.number(),
+  }).index('by_userId', ['userId']),
+
   receiptScans: defineTable({
     billId: v.id('bills'),
     storageId: v.id('_storage'),
