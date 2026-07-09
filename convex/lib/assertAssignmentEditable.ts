@@ -1,5 +1,6 @@
 import { ConvexError } from 'convex/values'
 import type { Id } from '../_generated/dataModel'
+import { GUEST_FLOW_MESSAGES } from './guestFlowMessages'
 
 export type AssignmentEditableError = 'bill_final' | 'participant_not_on_bill'
 
@@ -19,8 +20,8 @@ export function getAssignmentEditableError(input: {
 }
 
 const errorMessages: Record<AssignmentEditableError, string> = {
-  bill_final: 'Сметката е приключена и не може да се редактира.',
-  participant_not_on_bill: 'Участникът не принадлежи на тази сметка.',
+  bill_final: GUEST_FLOW_MESSAGES.billFinalNoEdit,
+  participant_not_on_bill: GUEST_FLOW_MESSAGES.participantNotOnBill,
 }
 
 export function assertAssignmentEditable(input: {

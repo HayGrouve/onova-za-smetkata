@@ -23,6 +23,7 @@ import {
   filterUnclaimedGuestClaimItems,
   filterClaimedGuestClaimItems,
 } from '#/lib/guest-claim-items.ts'
+import { GUEST_FLOW_MESSAGES } from '#/lib/guest-flow-messages.ts'
 import { cn } from '#/lib/utils.ts'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
 import { api } from '../../../../convex/_generated/api'
@@ -91,7 +92,7 @@ function BillClaimContent({
       })
     }
     clearStoredGuestParticipant(billId)
-    toast.error('Сесията изтече или името е заето. Изберете отново.')
+    toast.error(GUEST_FLOW_MESSAGES.sessionLostRedirect)
     redirectToJoin()
   }, [billId, redirectToJoin, releaseSession, shareToken, storedSession])
 

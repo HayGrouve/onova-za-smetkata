@@ -2,6 +2,11 @@ import { ConvexError, v } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import type { Id } from './_generated/dataModel'
 import type { MutationCtx } from './_generated/server'
+import {
+  buildClaimActorKey,
+  parseGuestClaimInput,
+} from './lib/guestClaimSchema'
+import { GUEST_FLOW_MESSAGES } from './lib/guestFlowMessages'
 import { GUEST_SESSION_TTL_MS, isGuestSessionActive } from './lib/guestSession'
 import { requireGuestSession } from './lib/requireGuestSession'
 import { assertRateLimit } from './lib/rateLimit'
@@ -30,15 +35,9 @@ async function assertParticipantOnBill(
 ) {
   const participant = await ctx.db.get(participantId)
   if (!participant || participant.billId !== billId) {
-    throw new ConvexError('Участникът не принадлежи на тази сметка.')
+    throw new ConvexError(GUEST_FLOW_MESSAGES.participantNotOnBill)
   }
   return participant
-}
-
-function claimActorKey(sessionToken: string, deviceId?: string): string {
-  const device = deviceId?.trim().slice(0, 64)
-  if (device) return `device:${device}`
-  return `token:${sessionToken.slice(0, 36)}`
 }
 
 async function assertClaimRateLimits(
@@ -47,20 +46,20 @@ async function assertClaimRateLimits(
   sessionToken: string,
   deviceId?: string,
 ) {
-  const actor = claimActorKey(sessionToken, deviceId)
+  const actor = buildClaimActorKey(sessionToken, deviceId)
   await assertRateLimit(
     ctx,
     `claim:actor:${actor}:bill:${billId}`,
     10,
     60_000,
-    'Твърде много опити за присъединяване. Опитайте отново след малко.',
+    GUEST_FLOW_MESSAGES.claimRateLimitActor,
   )
   await assertRateLimit(
     ctx,
     `claim:bill:${billId}`,
     100,
     60_000,
-    'Твърде много опити за присъединяване към тази сметка. Опитайте отново след малко.',
+    GUEST_FLOW_MESSAGES.claimRateLimitBill,
   )
 }
 
@@ -95,11 +94,17 @@ export const claim = mutation({
   },
   handler: async (ctx, args) => {
     await assertShareToken(ctx, args.billId, args.shareToken)
+
+    const parsedDevice = parseGuestClaimInput({ deviceId: args.deviceId })
+    if (!parsedDevice.ok) {
+      throw new ConvexError(parsedDevice.message)
+    }
+
     await assertClaimRateLimits(
       ctx,
       args.billId,
       args.sessionToken,
-      args.deviceId,
+      parsedDevice.deviceId,
     )
 
     const now = Date.now()
@@ -122,7 +127,7 @@ export const claim = mutation({
         await ctx.db.patch(activeForParticipant._id, { lastSeenAt: now })
         return { ok: true as const }
       }
-      throw new ConvexError('Това име вече е заето от друг телефон.')
+      throw new ConvexError(GUEST_FLOW_MESSAGES.nameTaken)
     }
 
     const existingTokenSession = await ctx.db

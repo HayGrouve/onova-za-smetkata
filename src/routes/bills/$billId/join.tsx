@@ -6,6 +6,7 @@ import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { QueryErrorBoundary } from '#/components/ui/query-error-boundary.tsx'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
+import { GUEST_FLOW_MESSAGES } from '#/lib/guest-flow-messages.ts'
 import {
   clearStoredGuestParticipant,
   createGuestSessionToken,
@@ -34,7 +35,7 @@ function BillJoinPage() {
   if (!shareToken) {
     return (
       <div className="page-container py-10 text-center text-muted-foreground">
-        Невалиден линк за присъединяване. Попитайте домакина за нов линк.
+        {GUEST_FLOW_MESSAGES.invalidJoinLink}
       </div>
     )
   }

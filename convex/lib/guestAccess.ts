@@ -1,6 +1,7 @@
 import { ConvexError } from 'convex/values'
 import type { Doc, Id } from '../_generated/dataModel'
 import type { MutationCtx, QueryCtx } from '../_generated/server'
+import { GUEST_FLOW_MESSAGES } from './guestFlowMessages'
 
 type GuestAccessCtx = QueryCtx | MutationCtx
 
@@ -11,10 +12,10 @@ export async function assertShareToken(
 ): Promise<Doc<'bills'>> {
   const bill = await ctx.db.get(billId)
   if (!bill?.ownerId) {
-    throw new ConvexError('Сметката не е намерена.')
+    throw new ConvexError(GUEST_FLOW_MESSAGES.billNotFound)
   }
   if (!shareToken || !bill.shareToken || bill.shareToken !== shareToken) {
-    throw new ConvexError('Невалиден или изтекъл линк за споделяне.')
+    throw new ConvexError(GUEST_FLOW_MESSAGES.invalidShareLink)
   }
   return bill
 }

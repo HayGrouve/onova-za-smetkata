@@ -3,6 +3,7 @@ import { getAuthUserId } from '@convex-dev/auth/server'
 import type { Id } from '../_generated/dataModel'
 import type { MutationCtx } from '../_generated/server'
 import { assertBillOwnedBy } from './bill_ownership'
+import { GUEST_FLOW_MESSAGES } from './guestFlowMessages'
 import { requireGuestSession } from './requireGuestSession'
 
 export async function assertCanMutateAssignment(
@@ -23,7 +24,7 @@ export async function assertCanMutateAssignment(
   }
 
   if (!args.sessionToken) {
-    throw new ConvexError('Изисква се валидна гост-сесия.')
+    throw new ConvexError(GUEST_FLOW_MESSAGES.sessionRequired)
   }
 
   await requireGuestSession(ctx, {

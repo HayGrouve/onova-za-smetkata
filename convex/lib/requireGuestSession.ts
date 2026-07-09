@@ -2,6 +2,7 @@ import { ConvexError } from 'convex/values'
 import type { Id } from '../_generated/dataModel'
 import type { MutationCtx } from '../_generated/server'
 import { isGuestSessionActive } from './guestSession'
+import { GUEST_FLOW_MESSAGES } from './guestFlowMessages'
 
 export async function requireGuestSession(
   ctx: MutationCtx,
@@ -13,7 +14,7 @@ export async function requireGuestSession(
 ): Promise<{ sessionId: Id<'guestSessions'> }> {
   const participant = await ctx.db.get(args.participantId)
   if (!participant || participant.billId !== args.billId) {
-    throw new ConvexError('Участникът не принадлежи на тази сметка.')
+    throw new ConvexError(GUEST_FLOW_MESSAGES.participantNotOnBill)
   }
 
   const session = await ctx.db
@@ -28,12 +29,12 @@ export async function requireGuestSession(
     session.billId !== args.billId ||
     session.participantId !== args.participantId
   ) {
-    throw new ConvexError('Сесията изтече. Изберете името си отново.')
+    throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
   }
 
   if (!isGuestSessionActive(session.lastSeenAt)) {
     await ctx.db.delete(session._id)
-    throw new ConvexError('Сесията изтече. Изберете името си отново.')
+    throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
   }
 
   return { sessionId: session._id }
