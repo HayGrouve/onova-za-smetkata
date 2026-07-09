@@ -23,6 +23,73 @@
 
 **Design & plan:** `docs/superpowers/specs/2026-07-08-area-a-security-privacy-design.md`, `docs/superpowers/plans/2026-07-08-area-a-security-privacy.md`
 
+**Next wave (Area B):** `docs/superpowers/specs/2026-07-09-area-b-money-correctness-design.md` — money math consolidation (MON-1–MON-6). **Status:** ✅ Implemented (2026-07-09). Plan: `docs/superpowers/plans/2026-07-09-area-b-money-correctness.md`
+
+**Next wave (Area C):** `docs/superpowers/specs/2026-07-09-area-c-guest-payment-ux-design.md` — Guest & payment UX (UX-1–UX-7). **Status:** ✅ Implemented (2026-07-09). Plan: `docs/superpowers/plans/2026-07-09-area-c-guest-payment-ux.md`
+
+**Next wave:** Area D — ✅ `docs/superpowers/plans/2026-07-09-area-d-lifecycle-correctness.md`
+
+---
+
+## Area C remediation status (2026-07-09)
+
+| ID | Severity | Status | Notes |
+|----|----------|--------|-------|
+| UX-1 | 🔴 | ✅ Done | `getForGuest` returns `iban`; guest footer copy button |
+| UX-2 | 🔴 | ✅ Done | Edit hidden on final; badge `Завършена — само преглед` |
+| UX-3 | 🔴 | ✅ Done | 44px targets on assignment/payment controls; `aria-pressed` on chips |
+| UX-4 | 🟡 | ✅ Done | `assignEven` + per-item / unassigned batch equal-split UI |
+| UX-5 | 🟡 | ✅ Done | Finalize confirm; delete „Отказ“ on summary + bill card |
+| UX-6 | 🟡 | ✅ Done | Payment log + `payments.undoLast` |
+| UX-7 | 🟡 | ✅ Done | Claim tabs „Остават“ / „Мои“; qty=1 cent-split fix |
+| UX-8 | 🟡 | ✅ Done | Honest offline banner; SW static-only (no navigate shell cache) |
+| UX-9 | 🟢 | ✅ Done | Labels, Затвори SR, viewport-fit, theme-color, share € format |
+
+---
+
+## Area D remediation status (2026-07-09)
+
+| ID | Severity | Status | Notes |
+|----|----------|--------|-------|
+| LIF-1 | 🟡 | ✅ Done | `cleanup.run` cron (6h); finalize purges guest sessions |
+| LIF-2 | 🟡 | ✅ Done | `payments.undoLast` (Area C UX-6) |
+| LIF-3 | 🟡 | ✅ Done | Throw `ConvexError` on missing entities; payments participant check |
+| LIF-4 | 🟢 | ✅ Done | `convex/lib/money.ts`; `by_participantId`; removed `by_status` |
+
+**Next wave:** All audit areas complete (ARC-6 deferred by design).
+
+---
+
+## Area E remediation status (2026-07-09)
+
+| ID | Severity | Status | Notes |
+|----|----------|--------|-------|
+| ARC-1 | 🟡 | ✅ Done | Denormalized list summary on `bills`; `touchBill` refresh; `listWithSummary` O(1) |
+| ARC-2 | 🟢 | ✅ Done | `listRecentNames` capped at 24 recent bills |
+| ARC-3 | 🟢 | ✅ Done | `convex/lib/billListSummary.ts`; thin `bills.ts` |
+| ARC-4 | 🟢 | ✅ Done | `useReceiptScan` hook extracted from bill editor |
+| ARC-5 | 🟢 | ✅ Done | `by_itemId_participantId` index; upsert in `setUnits`; dedupe backfill |
+| ARC-6 | 🟢 | ⏸ Deferred | Audit log / soft deletes / multi-currency — product decision |
+
+**Deploy follow-up:** `npx convex run backfill:refreshBillListSummaries` once after schema deploy (optional: `backfill:dedupeAssignments`).
+
+**Design & plan:** `docs/superpowers/specs/2026-07-09-area-e-architecture-scalability-design.md`, `docs/superpowers/plans/2026-07-09-area-e-architecture-scalability.md`
+
+---
+
+## Area B remediation status (2026-07-09)
+
+| ID | Severity | Status | Notes |
+|----|----------|--------|-------|
+| MON-1 | 🔴 | ✅ Done | `shared/bill-calculations.ts`; `listWithSummary` uses `calculateBillTotals` |
+| MON-2 | 🔴 | ✅ Done | Single `validateBillForFinalize`; `assertBillCanFinalize` throws `ConvexError` |
+| MON-3 | 🟡 | ✅ Done | `normalizeItemAssignmentModes` on write; optional backfill |
+| MON-4 | 🟡 | ✅ Done | `syncEvenAssignments` cent-split for qty=1 (backend only) |
+| MON-5 | 🟡 | ✅ Done | Block quantity decrease when units exceed new qty |
+| MON-6 | 🟢 | ✅ Done | Reconciliation tests; `payments.add` validation |
+
+**Deploy follow-up:** `npx convex run backfill:normalizeAssignmentModes` once after deploy (optional, idempotent).
+
 ---
 
 ## How to use this document
@@ -447,9 +514,10 @@ Before implementing Area A, decide the **guest access model**:
 
 # Suggested build order
 
-1. **Anchor decision** (capability links vs access control).
-2. **Area A** — SEC-1, SEC-3 (unconditional), then SEC-4 → SEC-2, SEC-5, SEC-6.
-3. **Area B** — MON-1/MON-2 consolidation + MON-6 reconciliation test, then MON-3/4/5.
-4. **Area C** — UX-1, UX-2, UX-3 first; then UX-4/5/6/7; UX-9 polish pass last.
-5. **Area D** — LIF-1..4 alongside related work (LIF-2 with UX-6, LIF-3 with Area B).
-6. **Area E** — opportunistically as you touch those files.
+1. ~~**Anchor decision** (capability links vs access control).~~ ✅ Done (Area A)
+2. ~~**Area A** — SEC-1, SEC-3 (unconditional), then SEC-4 → SEC-2, SEC-5, SEC-6.~~ ✅ Done
+3. ~~**Area B** — MON-1/MON-2 consolidation + MON-6 reconciliation test, then MON-3/4/5.~~ ✅ Done → `docs/superpowers/plans/2026-07-09-area-b-money-correctness.md`
+4. ~~**Area C** — UX-1 through UX-7.~~ ✅ Done → `docs/superpowers/plans/2026-07-09-area-c-guest-payment-ux.md`
+4b. ~~**Area C polish** — UX-8, UX-9.~~ ✅ Done
+5. ~~**Area D** — LIF-1..4.~~ ✅ Done → `docs/superpowers/plans/2026-07-09-area-d-lifecycle-correctness.md`
+6. ~~**Area E** — ARC-1..5.~~ ✅ Done → `docs/superpowers/plans/2026-07-09-area-e-architecture-scalability.md` (ARC-6 deferred)

@@ -41,6 +41,7 @@ Never put `GEMINI_API_KEY`, JWT keys, OAuth secrets, or `DEV_MODE` in Vercel or 
 - **DEV_MODE:** Password provider is enabled only when `DEV_MODE=true` on an **explicit dev deployment allowlist** (`striped-shepherd-984` plus optional `CONVEX_DEV_DEPLOYMENTS`). Never set `DEV_MODE=true` on production.
 - **Guest identity risk:** Guest names are claimable without accounts; if a session expires (~90s without heartbeat), another device can claim the same name. Document as accepted product risk for accountless guests.
 - **Rate limits:** Guest claims are limited per actor and per bill; assignment toggles, heartbeats, releases, and receipt uploads are rate-limited server-side.
+- **Cleanup cron:** `cleanup.run` purges expired guest sessions, stale rate-limit buckets, and old terminal receipt scans every 6 hours (registered in `convex/crons.ts`).
 
 ### Google OAuth redirect URI (production)
 
@@ -99,6 +100,24 @@ AUTH_RESEND_FROM=Онова за сметката <noreply@yourdomain.com>
 
    ```bash
    npx convex run backfill:shareTokens
+   ```
+
+   After deploying Area B money-correctness changes (optional, idempotent):
+
+   ```bash
+   npx convex run backfill:normalizeAssignmentModes
+   ```
+
+   After deploying Area E list-summary fields (required once per environment):
+
+   ```bash
+   npx convex run backfill:refreshBillListSummaries
+   ```
+
+   After deploying Area E assignment compound index (optional, idempotent):
+
+   ```bash
+   npx convex run backfill:dedupeAssignments
    ```
 
 3. **Deploy Convex backend**
