@@ -6,8 +6,9 @@ import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import type { ParticipantTotals } from '#/lib/bill-calculations.ts'
 import { ICON } from '#/lib/app-icons.ts'
-import { formatEur, parseEurInput } from '#/lib/format-currency.ts'
+import { formatEur } from '#/lib/format-currency.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { validatePaymentAddForm } from '#/lib/payment-amount-schema.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
 
@@ -36,8 +37,15 @@ export function PaymentActions({
   const addPayment = useMutation(api.payments.add)
   const undoLastPayment = useMutation(api.payments.undoLast)
   const [partialAmount, setPartialAmount] = useState('')
+  const [amountError, setAmountError] = useState<string | undefined>()
   const [isUndoing, setIsUndoing] = useState(false)
   const remainingCents = Math.max(0, totals.balanceCents)
+
+  const partialValidation = validatePaymentAddForm(
+    { amountInput: partialAmount },
+    { remainingCents },
+  )
+  const canSubmitPartial = partialValidation.ok
 
   const participantPayments = useMemo(
     () =>
@@ -58,12 +66,25 @@ export function PaymentActions({
   }
 
   async function handlePartialPayment() {
-    const amountCents = parseEurInput(partialAmount)
-    if (amountCents <= 0) return
+    const validated = validatePaymentAddForm(
+      { amountInput: partialAmount },
+      { remainingCents },
+    )
+    if (!validated.ok) {
+      setAmountError(validated.message)
+      return
+    }
+
+    setAmountError(undefined)
     setPartialAmount('')
     try {
-      await addPayment({ billId, participantId, amountCents })
-      toast.success(`${label} плати ${formatEur(amountCents)}`)
+      await addPayment({
+        billId,
+        participantId,
+        amountCents: validated.data.amountCents,
+        note: validated.data.note,
+      })
+      toast.success(`${label} плати ${formatEur(validated.data.amountCents)}`)
     } catch (error) {
       toast.error(getConvexErrorMessage(error))
     }
@@ -121,18 +142,27 @@ export function PaymentActions({
             Платено
           </Button>
           <div className="flex gap-2">
-            <Input
-              value={partialAmount}
-              onChange={(e) => setPartialAmount(e.target.value)}
-              inputMode="decimal"
-              placeholder="Частична сума"
-              className="h-11 min-w-0 flex-1"
-            />
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <Input
+                value={partialAmount}
+                onChange={(e) => {
+                  setPartialAmount(e.target.value)
+                  if (amountError) setAmountError(undefined)
+                }}
+                inputMode="decimal"
+                placeholder="Частична сума"
+                className="h-11 min-w-0 flex-1"
+                aria-invalid={Boolean(amountError)}
+              />
+              {amountError ? (
+                <p className="text-xs text-destructive">{amountError}</p>
+              ) : null}
+            </div>
             <Button
               variant="outline"
               className="h-11 shrink-0"
-              onClick={handlePartialPayment}
-              disabled={!partialAmount.trim()}
+              onClick={() => void handlePartialPayment()}
+              disabled={!canSubmitPartial}
             >
               <CoinsIcon className={ICON.button} aria-hidden />
               Плати

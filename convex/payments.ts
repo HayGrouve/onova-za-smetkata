@@ -2,7 +2,7 @@ import { mutation } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
 import { requireBillOwner } from './lib/auth'
 import { calculateBillTotals } from './lib/billCalculations'
-import { assertPositiveIntCents } from './lib/money'
+import { validatePaymentAdd } from './lib/paymentAmountSchema'
 import { touchBill } from './lib/touchBill'
 
 export const add = mutation({
@@ -19,11 +19,6 @@ export const add = mutation({
     if (!participant || participant.billId !== args.billId) {
       throw new ConvexError('Участникът не принадлежи на тази сметка.')
     }
-
-    if (args.amountCents <= 0) {
-      throw new ConvexError('Сумата трябва да е положителна.')
-    }
-    assertPositiveIntCents(args.amountCents)
 
     const items = await ctx.db
       .query('items')
@@ -73,15 +68,19 @@ export const add = mutation({
       .filter((payment) => payment.participantId === args.participantId)
       .reduce((sum, payment) => sum + payment.amountCents, 0)
 
-    if (paidCents + args.amountCents > owedCents) {
-      throw new ConvexError('Сумата надвишава дължимото.')
+    const validated = validatePaymentAdd(
+      { amountCents: args.amountCents, note: args.note },
+      { owedCents, paidCents },
+    )
+    if (!validated.ok) {
+      throw new ConvexError(validated.message)
     }
 
     const id = await ctx.db.insert('payments', {
       billId: args.billId,
       participantId: args.participantId,
-      amountCents: args.amountCents,
-      note: args.note,
+      amountCents: validated.data.amountCents,
+      note: validated.data.note,
       paidAt: Date.now(),
     })
     await touchBill(ctx, args.billId)
