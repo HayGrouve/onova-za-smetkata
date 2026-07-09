@@ -12,6 +12,7 @@ import {
   type FriendGroupPreview,
 } from '#/components/bills/friend-group-add-preview-sheet.tsx'
 import { useFriendGroups } from '#/components/bills/friend-groups-provider.tsx'
+import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import {
   DropdownMenu,
@@ -21,6 +22,7 @@ import {
 } from '#/components/ui/dropdown-menu.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { getParticipantRemoveCopy } from '#/lib/destructive-action-copy.ts'
 import { summarizeAddMembersToBill } from '#/lib/friend-group-schema.ts'
 import { validateParticipantAdd } from '#/lib/participant-schema.ts'
 import { Input } from '#/components/ui/input.tsx'
@@ -56,6 +58,7 @@ export function ParticipantList({
   const recentNames = useQuery(api.participants.listRecentNames, { limit: 12 })
   const friendGroups = useQuery(api.friendGroups.list, {})
   const { openNewFriendGroup } = useFriendGroups()
+  const { confirm } = useConfirmAction()
 
   const currentNames = new Set(
     participants.map((p) => p.name.trim().toLowerCase()),
@@ -98,6 +101,13 @@ export function ParticipantList({
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     void handleAdd()
+  }
+
+  async function handleRemoveWithConfirm(participant: Doc<'participants'>) {
+    const label = labels[participant._id] ?? participant.name
+    const confirmed = await confirm(getParticipantRemoveCopy(label))
+    if (!confirmed) return
+    await handleRemove(participant)
   }
 
   async function handleRemove(participant: Doc<'participants'>) {
@@ -165,7 +175,7 @@ export function ParticipantList({
                       type="button"
                       aria-label={`Премахни ${participant.name}`}
                       className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
-                      onClick={() => handleRemove(participant)}
+                      onClick={() => void handleRemoveWithConfirm(participant)}
                     >
                       <XIcon className="size-4" />
                     </button>

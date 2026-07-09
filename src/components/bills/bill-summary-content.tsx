@@ -10,6 +10,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { ParticipantDetailSheet } from '#/components/bills/participant-detail-sheet.tsx'
 import { PaymentProgress } from '#/components/bills/payment-progress.tsx'
 import { PaymentRow } from '#/components/bills/payment-row.tsx'
@@ -35,7 +36,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '#/components/ui/dialog.tsx'
 import { Separator } from '#/components/ui/separator.tsx'
 import {
@@ -46,6 +46,7 @@ import type {
   BillBreakdownInput,
   PaymentStatus,
 } from '#/lib/bill-calculations.ts'
+import { getBillDeleteCopy } from '#/lib/destructive-action-copy.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
@@ -75,10 +76,10 @@ export function BillSummaryContent({
   const data = useQuery(api.bills.get, { billId })
   const finalizeBill = useMutation(api.bills.finalize)
   const removeBill = useMutation(api.bills.remove)
+  const { confirm } = useConfirmAction()
   const [isFinalizing, setIsFinalizing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [finalizeOpen, setFinalizeOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
   const [detailParticipantId, setDetailParticipantId] =
     useState<Id<'participants'> | null>(null)
   const paymentSettingsStatus = usePaymentSettingsStatus()
@@ -202,11 +203,12 @@ export function BillSummaryContent({
     }
   }
 
-  async function handleDelete() {
+  async function handleDeleteWithConfirm() {
+    const confirmed = await confirm(getBillDeleteCopy())
+    if (!confirmed) return
     setIsDeleting(true)
     try {
       await removeBill({ billId })
-      setDeleteOpen(false)
       await navigate({ to: '/' })
     } catch {
       toast.error('Неуспешно изтриване на сметката')
@@ -410,44 +412,15 @@ export function BillSummaryContent({
             Редактирай
           </Button>
         ) : null}
-        <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-          <DialogTrigger asChild>
-            <Button
-              variant="destructive"
-              className={cn('h-11', isDraft && !embedded ? 'flex-1' : 'w-full')}
-            >
-              <Trash2Icon className={ICON.button} aria-hidden />
-              Изтрий
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Изтриване на сметка</DialogTitle>
-              <DialogDescription>
-                Това действие е необратимо. Всички участници, артикули и
-                плащания ще бъдат изтрити заедно със сметката.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isDeleting}
-                onClick={() => setDeleteOpen(false)}
-              >
-                Отказ
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => void handleDelete()}
-                disabled={isDeleting}
-              >
-                <Trash2Icon className={ICON.button} aria-hidden />
-                Изтрий сметката
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button
+          variant="destructive"
+          className={cn('h-11', isDraft && !embedded ? 'flex-1' : 'w-full')}
+          disabled={isDeleting}
+          onClick={() => void handleDeleteWithConfirm()}
+        >
+          <Trash2Icon className={ICON.button} aria-hidden />
+          Изтрий
+        </Button>
       </div>
 
       {detailParticipantId && (

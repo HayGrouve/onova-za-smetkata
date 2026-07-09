@@ -2,11 +2,13 @@ import { CheckIcon, CoinsIcon, Undo2Icon } from 'lucide-react'
 import { useMutation } from 'convex/react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import type { ParticipantTotals } from '#/lib/bill-calculations.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { formatEur } from '#/lib/format-currency.ts'
+import { getPaymentUndoCopy } from '#/lib/destructive-action-copy.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { validatePaymentAddForm } from '#/lib/payment-amount-schema.ts'
 import { api } from '../../../convex/_generated/api'
@@ -36,6 +38,7 @@ export function PaymentActions({
 }: PaymentActionsProps) {
   const addPayment = useMutation(api.payments.add)
   const undoLastPayment = useMutation(api.payments.undoLast)
+  const { confirm } = useConfirmAction()
   const [partialAmount, setPartialAmount] = useState('')
   const [amountError, setAmountError] = useState<string | undefined>()
   const [isUndoing, setIsUndoing] = useState(false)
@@ -90,6 +93,12 @@ export function PaymentActions({
     }
   }
 
+  async function handleUndoLastWithConfirm() {
+    const confirmed = await confirm(getPaymentUndoCopy())
+    if (!confirmed) return
+    await handleUndoLast()
+  }
+
   async function handleUndoLast() {
     setIsUndoing(true)
     try {
@@ -126,7 +135,7 @@ export function PaymentActions({
             type="button"
             variant="ghost"
             className="h-11 w-full justify-start px-0"
-            onClick={() => void handleUndoLast()}
+            onClick={() => void handleUndoLastWithConfirm()}
             disabled={isUndoing}
           >
             <Undo2Icon className={ICON.button} aria-hidden />

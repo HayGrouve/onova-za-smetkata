@@ -21,6 +21,11 @@ function useHeaderConfig() {
   const isClaim = pathname.endsWith('/claim')
   const isEditor = billId !== undefined && !isSummary && !isJoin && !isClaim
 
+  const bill = useQuery(
+    api.bills.get,
+    isSummary && billId ? { billId } : 'skip',
+  )
+
   if (isHome) {
     return {
       title: 'Онова за сметката',
@@ -38,10 +43,11 @@ function useHeaderConfig() {
   }
 
   if (isSummary && billId) {
+    const isDraft = bill?.bill.status === 'draft'
     return {
       title: billHeaderTitle ?? 'Сметка',
-      backTo: '/bills/$billId' as const,
-      backParams: { billId },
+      backTo: isDraft ? ('/bills/$billId' as const) : ('/' as const),
+      backParams: isDraft ? { billId } : undefined,
     }
   }
 

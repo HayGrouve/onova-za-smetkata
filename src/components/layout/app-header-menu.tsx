@@ -11,6 +11,7 @@ import {
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
+import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { useFriendGroupsSheet } from '#/components/bills/friend-groups-provider.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import {
@@ -24,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu.tsx'
 import { ICON } from '#/lib/app-icons.ts'
+import { getSignOutCopy } from '#/lib/destructive-action-copy.ts'
 
 export interface AppHeaderMenuProps {
   showHostActions: boolean
@@ -40,11 +42,18 @@ export function AppHeaderMenu({
   const { signOut } = useAuthActions()
   const { openPaymentSettings } = usePaymentSettingsSheet()
   const { openFriendGroups } = useFriendGroupsSheet()
+  const { confirm } = useConfirmAction()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  async function handleSignOutWithConfirm() {
+    const confirmed = await confirm(getSignOutCopy())
+    if (!confirmed) return
+    await handleSignOut()
+  }
 
   async function handleSignOut() {
     await signOut()
@@ -107,7 +116,10 @@ export function AppHeaderMenu({
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
-              onSelect={() => void handleSignOut()}
+              onSelect={(e) => {
+                e.preventDefault()
+                void handleSignOutWithConfirm()
+              }}
             >
               <LogOutIcon className={ICON.button} aria-hidden />
               Изход

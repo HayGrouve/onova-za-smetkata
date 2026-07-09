@@ -3,17 +3,10 @@ import { useMutation } from 'convex/react'
 import { MoreVerticalIcon, Trash2Icon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { Card, CardContent } from '#/components/ui/card.tsx'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '#/components/ui/dialog.tsx'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu.tsx'
 import { formatEur } from '#/lib/format-currency.ts'
+import { getBillDeleteCopy } from '#/lib/destructive-action-copy.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc } from '../../../convex/_generated/dataModel'
@@ -44,16 +38,17 @@ export function BillCard({
   totalOutstandingCents,
 }: BillSummary) {
   const removeBill = useMutation(api.bills.remove)
-  const [deleteOpen, setDeleteOpen] = useState(false)
+  const { confirm } = useConfirmAction()
   const [isDeleting, setIsDeleting] = useState(false)
   const isDraft = bill.status === 'draft'
   const to = isDraft ? '/bills/$billId' : '/bills/$billId/summary'
 
-  async function handleDelete() {
+  async function handleDeleteWithConfirm() {
+    const confirmed = await confirm(getBillDeleteCopy())
+    if (!confirmed) return
     setIsDeleting(true)
     try {
       await removeBill({ billId: bill._id })
-      setDeleteOpen(false)
     } catch {
       toast.error('Неуспешно изтриване на сметката')
     } finally {
@@ -113,9 +108,10 @@ export function BillCard({
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               variant="destructive"
+              disabled={isDeleting}
               onSelect={(e) => {
                 e.preventDefault()
-                setDeleteOpen(true)
+                void handleDeleteWithConfirm()
               }}
             >
               <Trash2Icon className={ICON.button} aria-hidden />
@@ -124,36 +120,6 @@ export function BillCard({
           </DropdownMenuContent>
         </DropdownMenu>
       </CardContent>
-
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Изтриване на сметка</DialogTitle>
-            <DialogDescription>
-              Това действие е необратимо. Всички участници, артикули и плащания
-              ще бъдат изтрити заедно със сметката.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isDeleting}
-              onClick={() => setDeleteOpen(false)}
-            >
-              Отказ
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => void handleDelete()}
-              disabled={isDeleting}
-            >
-              <Trash2Icon className={ICON.button} aria-hidden />
-              Изтрий сметката
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Card>
   )
 }

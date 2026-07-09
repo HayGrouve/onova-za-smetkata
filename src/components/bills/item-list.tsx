@@ -9,6 +9,7 @@ import {
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AssignmentRow } from '#/components/bills/assignment-row.tsx'
+import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import {
@@ -20,6 +21,7 @@ import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { useDebouncedCallback } from '#/hooks/use-debounced-callback.ts'
 import { ICON } from '#/lib/app-icons.ts'
+import { getItemDeleteCopy } from '#/lib/destructive-action-copy.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import {
   itemNameSchema,
@@ -54,6 +56,7 @@ export function ItemList({
   const addItem = useMutation(api.items.add)
   const removeItem = useMutation(api.items.remove)
   const assignAll = useMutation(api.assignments.assignAll)
+  const { confirm } = useConfirmAction()
 
   const [newName, setNewName] = useState('')
   const [newPrice, setNewPrice] = useState('')
@@ -112,6 +115,12 @@ export function ItemList({
     } catch (error) {
       toast.error(getConvexErrorMessage(error))
     }
+  }
+
+  async function handleDeleteWithConfirm(item: Doc<'items'>) {
+    const confirmed = await confirm(getItemDeleteCopy(item.name))
+    if (!confirmed) return
+    await handleDelete(item)
   }
 
   async function handleDelete(item: Doc<'items'>) {
@@ -193,7 +202,7 @@ export function ItemList({
             <ItemRow
               item={item}
               readOnly={readOnly}
-              onDelete={() => void handleDelete(item)}
+              onDelete={() => void handleDeleteWithConfirm(item)}
             />
             <AssignmentRow
               itemId={item._id}

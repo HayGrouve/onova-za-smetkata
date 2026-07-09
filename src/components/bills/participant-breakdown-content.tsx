@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import type {
   BillBreakdownInput,
   ParticipantTotals,
@@ -10,6 +11,7 @@ import {
   formatBreakdownLineSuffix,
 } from '#/lib/bill-share.ts'
 import { formatEur } from '#/lib/format-currency.ts'
+import { getClaimUnassignCopy } from '#/lib/destructive-action-copy.ts'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Separator } from '#/components/ui/separator.tsx'
 import { CircleXIcon } from 'lucide-react'
@@ -65,9 +67,19 @@ export function ParticipantBreakdownContent({
   readOnly = false,
   onRemoveItem,
 }: ParticipantBreakdownContentProps) {
+  const { confirm } = useConfirmAction()
   const breakdown = calculateParticipantBreakdown(breakdownInput, participantId)
   const remainingCents = Math.max(0, totals.balanceCents)
   const participantCount = breakdownInput.participants.length
+
+  async function handleRemoveItemWithConfirm(
+    itemId: Id<'items'>,
+    label: string,
+  ) {
+    const confirmed = await confirm(getClaimUnassignCopy(label))
+    if (!confirmed) return
+    await onRemoveItem?.(itemId)
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -94,7 +106,12 @@ export function ParticipantBreakdownContent({
               onRemoveItem ? (
                 <button
                   type="button"
-                  onClick={() => void onRemoveItem(line.itemId as Id<'items'>)}
+                  onClick={() =>
+                    void handleRemoveItemWithConfirm(
+                      line.itemId as Id<'items'>,
+                      line.label,
+                    )
+                  }
                   className={cn(
                     'tap-feedback -ml-1 shrink-0 rounded-md p-1 text-primary/75',
                     'hover:text-primary dark:text-primary/85',

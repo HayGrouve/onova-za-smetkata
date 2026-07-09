@@ -3,6 +3,7 @@ import { PlusIcon, Trash2Icon, UsersIcon, XIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { toast } from 'sonner'
+import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
@@ -14,6 +15,10 @@ import {
   SheetTitle,
 } from '#/components/ui/sheet.tsx'
 import { ICON } from '#/lib/app-icons.ts'
+import {
+  getFriendGroupDeleteCopy,
+  getFriendGroupMemberRemoveCopy,
+} from '#/lib/destructive-action-copy.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import {
   formatFriendGroupErrors,
@@ -48,6 +53,7 @@ export function FriendGroupEditorSheet({
   const createGroup = useMutation(api.friendGroups.create)
   const updateGroup = useMutation(api.friendGroups.update)
   const removeGroup = useMutation(api.friendGroups.remove)
+  const { confirm } = useConfirmAction()
 
   const [name, setName] = useState('')
   const [memberNames, setMemberNames] = useState<string[]>([])
@@ -110,6 +116,14 @@ export function FriendGroupEditorSheet({
     setMemberInput('')
   }
 
+  async function removeMemberWithConfirm(index: number) {
+    const name = memberNames[index]
+    if (!name) return
+    const confirmed = await confirm(getFriendGroupMemberRemoveCopy(name))
+    if (!confirmed) return
+    removeMember(index)
+  }
+
   function removeMember(index: number) {
     setMemberNames((prev) => prev.filter((_, i) => i !== index))
   }
@@ -150,6 +164,13 @@ export function FriendGroupEditorSheet({
     } finally {
       setSaving(false)
     }
+  }
+
+  async function handleDeleteWithConfirm() {
+    const name = existing?.name ?? 'групата'
+    const confirmed = await confirm(getFriendGroupDeleteCopy(name))
+    if (!confirmed) return
+    await handleDelete()
   }
 
   async function handleDelete() {
@@ -221,7 +242,7 @@ export function FriendGroupEditorSheet({
                     type="button"
                     aria-label={`Премахни ${member}`}
                     className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
-                    onClick={() => removeMember(index)}
+                    onClick={() => void removeMemberWithConfirm(index)}
                   >
                     <XIcon className="size-4" />
                   </button>
@@ -266,7 +287,7 @@ export function FriendGroupEditorSheet({
               type="button"
               variant="destructive"
               className="w-full"
-              onClick={() => void handleDelete()}
+              onClick={() => void handleDeleteWithConfirm()}
               disabled={deleting}
             >
               <Trash2Icon className={ICON.button} aria-hidden />
