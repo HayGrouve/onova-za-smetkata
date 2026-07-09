@@ -31,6 +31,7 @@ import type * as lib_guestAccess from "../lib/guestAccess.js";
 import type * as lib_guestSession from "../lib/guestSession.js";
 import type * as lib_magicLinkEmail from "../lib/magicLinkEmail.js";
 import type * as lib_money from "../lib/money.js";
+import type * as lib_paymentSettingsSchema from "../lib/paymentSettingsSchema.js";
 import type * as lib_rateLimit from "../lib/rateLimit.js";
 import type * as lib_receiptStorage from "../lib/receiptStorage.js";
 import type * as lib_requireGuestSession from "../lib/requireGuestSession.js";
@@ -74,6 +75,7 @@ declare const fullApi: ApiFromModules<{
   "lib/guestSession": typeof lib_guestSession;
   "lib/magicLinkEmail": typeof lib_magicLinkEmail;
   "lib/money": typeof lib_money;
+  "lib/paymentSettingsSchema": typeof lib_paymentSettingsSchema;
   "lib/rateLimit": typeof lib_rateLimit;
   "lib/receiptStorage": typeof lib_receiptStorage;
   "lib/requireGuestSession": typeof lib_requireGuestSession;
