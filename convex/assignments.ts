@@ -1,12 +1,12 @@
 import type { Id } from './_generated/dataModel'
 import type { MutationCtx } from './_generated/server'
 import { mutation } from './_generated/server'
-import { v } from 'convex/values'
+import { ConvexError, v } from 'convex/values'
 import { assertAssignmentEditable } from './lib/assertAssignmentEditable'
 import { assertCanMutateAssignment } from './lib/assertCanMutateAssignment'
 import { clampParticipantUnits } from './lib/clampParticipantUnits'
 import { requireBillOwner } from './lib/auth'
-import { splitUnits } from './lib/splitUnits'
+import { splitUnits } from './lib/billCalculations'
 import { touchBill } from './lib/touchBill'
 import { assertRateLimit } from './lib/rateLimit'
 
@@ -25,6 +25,40 @@ async function getSortedParticipantIds(
   return [...participantIds].sort(
     (a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0),
   )
+}
+
+async function normalizeItemAssignmentModes(
+  ctx: MutationCtx,
+  item: { _id: Id<'items'>; billId: Id<'bills'>; quantity: number },
+) {
+  const existing = await ctx.db
+    .query('itemAssignments')
+    .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
+    .collect()
+  if (existing.length === 0) return
+
+  if (item.quantity === 1) {
+    for (const assignment of existing) {
+      if (assignment.units !== undefined) {
+        await ctx.db.replace(assignment._id, {
+          billId: assignment.billId,
+          itemId: assignment.itemId,
+          participantId: assignment.participantId,
+        })
+      }
+    }
+    return
+  }
+
+  const hasUnits = existing.some((assignment) => assignment.units !== undefined)
+  const hasCentOnly = existing.some((assignment) => assignment.units === undefined)
+  if (!hasUnits || !hasCentOnly) return
+
+  for (const assignment of existing) {
+    if (assignment.units === undefined) {
+      await ctx.db.patch(assignment._id, { units: 0 })
+    }
+  }
 }
 
 async function syncEvenAssignments(
@@ -47,6 +81,18 @@ async function syncEvenAssignments(
     item.billId,
     participantIds,
   )
+
+  if (item.quantity === 1) {
+    for (const participantId of sortedIds) {
+      await ctx.db.insert('itemAssignments', {
+        billId: item.billId,
+        itemId: item._id,
+        participantId,
+      })
+    }
+    return
+  }
+
   const units = splitUnits(item.quantity, sortedIds.length)
 
   for (let index = 0; index < sortedIds.length; index++) {
@@ -70,10 +116,14 @@ export const toggle = mutation({
   },
   handler: async (ctx, args) => {
     const item = await ctx.db.get(args.itemId)
-    if (!item) return
+    if (!item) {
+      throw new ConvexError('Артикулът не е намерен.')
+    }
 
     const bill = await ctx.db.get(item.billId)
-    if (!bill) return
+    if (!bill) {
+      throw new ConvexError('Сметката не е намерена.')
+    }
 
     await assertCanMutateAssignment(ctx, {
       billId: item.billId,
@@ -125,10 +175,20 @@ export const setUnits = mutation({
   },
   handler: async (ctx, args) => {
     const item = await ctx.db.get(args.itemId)
-    if (!item) return
+    if (!item) {
+      throw new ConvexError('Артикулът не е намерен.')
+    }
 
     const bill = await ctx.db.get(item.billId)
-    if (!bill) return
+    if (!bill) {
+      throw new ConvexError('Сметката не е намерена.')
+    }
+
+    if (item.quantity === 1) {
+      throw new ConvexError(
+        'Единичните артикули се разпределят чрез избор на участници.',
+      )
+    }
 
     await assertCanMutateAssignment(ctx, {
       billId: item.billId,
@@ -147,6 +207,13 @@ export const setUnits = mutation({
       participantBillId: participant?.billId,
     })
 
+    const existingAssignment = await ctx.db
+      .query('itemAssignments')
+      .withIndex('by_itemId_participantId', (q) =>
+        q.eq('itemId', args.itemId).eq('participantId', args.participantId),
+      )
+      .unique()
+
     const existing = await ctx.db
       .query('itemAssignments')
       .withIndex('by_itemId', (q) => q.eq('itemId', args.itemId))
@@ -161,18 +228,16 @@ export const setUnits = mutation({
       })),
       participantId: args.participantId,
     })
-    const match = existing.find(
-      (assignment) => assignment.participantId === args.participantId,
-    )
 
     if (clampedUnits === 0) {
-      if (match) await ctx.db.delete(match._id)
+      if (existingAssignment) await ctx.db.delete(existingAssignment._id)
+      await normalizeItemAssignmentModes(ctx, item)
       await touchBill(ctx, item.billId)
       return
     }
 
-    if (match) {
-      await ctx.db.patch(match._id, { units: clampedUnits })
+    if (existingAssignment) {
+      await ctx.db.patch(existingAssignment._id, { units: clampedUnits })
     } else {
       await ctx.db.insert('itemAssignments', {
         billId: item.billId,
@@ -182,6 +247,38 @@ export const setUnits = mutation({
       })
     }
 
+    await normalizeItemAssignmentModes(ctx, item)
+    await touchBill(ctx, item.billId)
+  },
+})
+
+export const assignEven = mutation({
+  args: { itemId: v.id('items') },
+  handler: async (ctx, args) => {
+    const item = await ctx.db.get(args.itemId)
+    if (!item) {
+      throw new ConvexError('Артикулът не е намерен.')
+    }
+
+    const bill = await ctx.db.get(item.billId)
+    if (!bill) {
+      throw new ConvexError('Сметката не е намерена.')
+    }
+    if (bill.status === 'final') {
+      throw new ConvexError('Сметката е приключена и не може да се редактира.')
+    }
+
+    await requireBillOwner(ctx, item.billId)
+
+    const participants = await ctx.db
+      .query('participants')
+      .withIndex('by_billId', (q) => q.eq('billId', item.billId))
+      .collect()
+    const participantIds = participants
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((participant) => participant._id)
+
+    await syncEvenAssignments(ctx, item, participantIds)
     await touchBill(ctx, item.billId)
   },
 })
@@ -192,7 +289,10 @@ export const assignAll = mutation({
     mode: v.union(v.literal('all_items'), v.literal('unassigned_only')),
   },
   handler: async (ctx, args) => {
-    await requireBillOwner(ctx, args.billId)
+    const bill = await requireBillOwner(ctx, args.billId)
+    if (bill.status === 'final') {
+      throw new ConvexError('Сметката е приключена и не може да се редактира.')
+    }
     const participants = await ctx.db
       .query('participants')
       .withIndex('by_billId', (q) => q.eq('billId', args.billId))

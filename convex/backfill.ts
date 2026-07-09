@@ -1,5 +1,50 @@
 import { internalMutation } from './_generated/server'
+import type { Id } from './_generated/dataModel'
+import { computeBillListSummary } from './lib/billListSummary'
 import { createShareToken } from './lib/shareToken'
+
+/** Run once after Area E: npx convex run backfill:refreshBillListSummaries */
+export const refreshBillListSummaries = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const bills = await ctx.db.query('bills').collect()
+    let patched = 0
+    for (const bill of bills) {
+      const summary = await computeBillListSummary(ctx, bill._id)
+      if (!summary) continue
+      await ctx.db.patch(bill._id, {
+        listBillTotalCents: summary.listBillTotalCents,
+        listOutstandingCents: summary.listOutstandingCents,
+        listParticipantNames: summary.listParticipantNames,
+      })
+      patched++
+    }
+    return { patched }
+  },
+})
+
+/** Run once after Area E assignment index: npx convex run backfill:dedupeAssignments */
+export const dedupeAssignments = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const assignments = await ctx.db.query('itemAssignments').collect()
+    const seen = new Map<string, Id<'itemAssignments'>>()
+    let removed = 0
+
+    for (const assignment of assignments) {
+      const key = `${assignment.itemId}:${assignment.participantId}`
+      const existingId = seen.get(key)
+      if (existingId) {
+        await ctx.db.delete(assignment._id)
+        removed++
+        continue
+      }
+      seen.set(key, assignment._id)
+    }
+
+    return { removed }
+  },
+})
 
 /** Run once after adding billId to itemAssignments: npx convex run backfill:assignmentBillIds */
 export const assignmentBillIds = internalMutation({
@@ -30,6 +75,54 @@ export const shareTokens = internalMutation({
       await ctx.db.patch(bill._id, { shareToken: createShareToken() })
       patched++
     }
+    return { patched }
+  },
+})
+
+/** Run once after Area B: npx convex run backfill:normalizeAssignmentModes */
+export const normalizeAssignmentModes = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const items = await ctx.db.query('items').collect()
+    let patched = 0
+
+    for (const item of items) {
+      const assignments = await ctx.db
+        .query('itemAssignments')
+        .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
+        .collect()
+      if (assignments.length === 0) continue
+
+      if (item.quantity === 1) {
+        for (const assignment of assignments) {
+          if (assignment.units !== undefined) {
+            await ctx.db.replace(assignment._id, {
+              billId: assignment.billId,
+              itemId: assignment.itemId,
+              participantId: assignment.participantId,
+            })
+            patched++
+          }
+        }
+        continue
+      }
+
+      const hasUnits = assignments.some(
+        (assignment) => assignment.units !== undefined,
+      )
+      const hasCentOnly = assignments.some(
+        (assignment) => assignment.units === undefined,
+      )
+      if (!hasUnits || !hasCentOnly) continue
+
+      for (const assignment of assignments) {
+        if (assignment.units === undefined) {
+          await ctx.db.patch(assignment._id, { units: 0 })
+          patched++
+        }
+      }
+    }
+
     return { patched }
   },
 })

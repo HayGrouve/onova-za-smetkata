@@ -1,8 +1,10 @@
 import { mutation, query } from './_generated/server'
-import { v } from 'convex/values'
+import { ConvexError, v } from 'convex/values'
 import { requireAuth, requireBillOwner } from './lib/auth'
 import { touchBill } from './lib/touchBill'
 import { deleteGuestSessionsForParticipant } from './guestSessions'
+
+const RECENT_NAMES_BILL_SCAN_LIMIT = 24
 
 export const listRecentNames = query({
   args: { limit: v.optional(v.number()) },
@@ -13,7 +15,7 @@ export const listRecentNames = query({
       .query('bills')
       .withIndex('by_ownerId_updatedAt', (q) => q.eq('ownerId', userId))
       .order('desc')
-      .collect()
+      .take(RECENT_NAMES_BILL_SCAN_LIMIT)
     const seen = new Set<string>()
     const names: string[] = []
     for (const bill of bills) {
@@ -55,7 +57,9 @@ export const remove = mutation({
   args: { participantId: v.id('participants') },
   handler: async (ctx, args) => {
     const participant = await ctx.db.get(args.participantId)
-    if (!participant) return
+    if (!participant) {
+      throw new ConvexError('Участникът не е намерен.')
+    }
 
     await requireBillOwner(ctx, participant.billId)
 
@@ -69,11 +73,11 @@ export const remove = mutation({
 
     const payments = await ctx.db
       .query('payments')
-      .withIndex('by_billId', (q) => q.eq('billId', participant.billId))
+      .withIndex('by_participantId', (q) =>
+        q.eq('participantId', args.participantId),
+      )
       .collect()
-    for (const p of payments.filter(
-      (pay) => pay.participantId === args.participantId,
-    )) {
+    for (const p of payments) {
       await ctx.db.delete(p._id)
     }
 

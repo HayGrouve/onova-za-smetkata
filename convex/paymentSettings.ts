@@ -33,6 +33,7 @@ export const getForGuest = query({
 
     return {
       revolutUsername: row?.revolutUsername,
+      iban: row?.iban,
     }
   },
 })

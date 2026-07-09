@@ -21,10 +21,12 @@ export default defineSchema({
     status: v.union(v.literal('draft'), v.literal('final')),
     tipCents: v.optional(v.number()),
     shareToken: v.optional(v.string()),
+    listBillTotalCents: v.optional(v.number()),
+    listOutstandingCents: v.optional(v.number()),
+    listParticipantNames: v.optional(v.array(v.string())),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index('by_status', ['status'])
     .index('by_updatedAt', ['updatedAt'])
     .index('by_ownerId_updatedAt', ['ownerId', 'updatedAt'])
     .index('by_shareToken', ['shareToken']),
@@ -52,7 +54,8 @@ export default defineSchema({
   })
     .index('by_itemId', ['itemId'])
     .index('by_participantId', ['participantId'])
-    .index('by_billId', ['billId']),
+    .index('by_billId', ['billId'])
+    .index('by_itemId_participantId', ['itemId', 'participantId']),
 
   rateLimitBuckets: defineTable({
     key: v.string(),
@@ -77,7 +80,9 @@ export default defineSchema({
     amountCents: v.number(),
     note: v.optional(v.string()),
     paidAt: v.number(),
-  }).index('by_billId', ['billId']),
+  })
+    .index('by_billId', ['billId'])
+    .index('by_participantId', ['participantId']),
 
   paymentSettings: defineTable({
     userId: v.id('users'),
