@@ -1,6 +1,7 @@
 import { mutation, query } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
 import { requireAuth, requireBillOwner } from './lib/auth'
+import { validateParticipantAdd } from './lib/participantSchema'
 import { touchBill } from './lib/touchBill'
 import { deleteGuestSessionsForParticipant } from './guestSessions'
 
@@ -38,14 +39,30 @@ export const listRecentNames = query({
 export const add = mutation({
   args: { billId: v.id('bills'), name: v.string() },
   handler: async (ctx, args) => {
-    await requireBillOwner(ctx, args.billId)
+    const bill = await requireBillOwner(ctx, args.billId)
+    if (bill.status === 'final') {
+      throw new ConvexError('Сметката е завършена.')
+    }
+
     const existing = await ctx.db
       .query('participants')
       .withIndex('by_billId', (q) => q.eq('billId', args.billId))
       .collect()
+
+    const validated = validateParticipantAdd(
+      { name: args.name },
+      {
+        existingNames: existing.map((participant) => participant.name),
+        participantCount: existing.length,
+      },
+    )
+    if (!validated.ok) {
+      throw new ConvexError(validated.message)
+    }
+
     const id = await ctx.db.insert('participants', {
       billId: args.billId,
-      name: args.name.trim(),
+      name: validated.name,
       sortOrder: existing.length,
     })
     await touchBill(ctx, args.billId)
