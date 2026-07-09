@@ -8,9 +8,17 @@ import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { useDebouncedCallback } from '#/hooks/use-debounced-callback.ts'
-import { parseEurInput } from '#/lib/format-currency.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import {
+  itemNameSchema,
+  parseItemPriceInput,
+  quantityInputSchema,
+  validateItemAddForm,
+  validateItemNameInput,
+  validateItemPriceInput,
+  validateItemQuantityInput,
+} from '#/lib/item-schema.ts'
 import { cn } from '#/lib/utils.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
@@ -21,6 +29,7 @@ export interface ItemListProps {
   participants: Doc<'participants'>[]
   assignments: Doc<'itemAssignments'>[]
   labels: Record<string, string>
+  readOnly?: boolean
 }
 
 export function ItemList({
@@ -29,6 +38,7 @@ export function ItemList({
   participants,
   assignments,
   labels,
+  readOnly = false,
 }: ItemListProps) {
   const addItem = useMutation(api.items.add)
   const removeItem = useMutation(api.items.remove)
@@ -37,6 +47,11 @@ export function ItemList({
   const [newName, setNewName] = useState('')
   const [newPrice, setNewPrice] = useState('')
   const [newQuantity, setNewQuantity] = useState('1')
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: string
+    price?: string
+    quantity?: string
+  }>({})
 
   const assignedItemIds = useMemo(
     () => new Set(assignments.map((a) => a.itemId)),
@@ -55,15 +70,32 @@ export function ItemList({
   }
 
   async function handleAdd() {
-    const trimmed = newName.trim()
-    if (!trimmed) return
-    const unitPriceCents = parseEurInput(newPrice)
-    const quantity = Math.max(1, Number.parseInt(newQuantity, 10) || 1)
+    const validated = validateItemAddForm({
+      name: newName,
+      priceInput: newPrice,
+      quantityInput: newQuantity,
+    })
+    if (!validated.ok) {
+      setFieldErrors({
+        name: validated.fieldErrors.name,
+        price: validated.fieldErrors.price,
+        quantity: validated.fieldErrors.quantity,
+      })
+      return
+    }
+
+    setFieldErrors({})
     setNewName('')
     setNewPrice('')
     setNewQuantity('1')
     try {
-      await addItem({ billId, name: trimmed, unitPriceCents, quantity })
+      await addItem({
+        billId,
+        name: validated.data.name,
+        unitPriceCents: validated.data.unitPriceCents,
+        quantity: validated.data.quantity,
+        note: validated.data.note,
+      })
     } catch (error) {
       toast.error(getConvexErrorMessage(error))
     }
@@ -145,7 +177,11 @@ export function ItemList({
               isUnassigned && 'border-l-4 border-amber-500',
             )}
           >
-            <ItemRow item={item} onDelete={() => void handleDelete(item)} />
+            <ItemRow
+              item={item}
+              readOnly={readOnly}
+              onDelete={() => void handleDelete(item)}
+            />
             <AssignmentRow
               itemId={item._id}
               itemQuantity={item.quantity}
@@ -157,55 +193,86 @@ export function ItemList({
         )
       })}
 
-      <div className="flex flex-col gap-3 rounded-lg border border-dashed p-4">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="new-item-name">Наименование на артикул</Label>
-          <Input
-            id="new-item-name"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="Наименование на артикул"
-            className="h-11"
-          />
-        </div>
-        <div className="flex gap-2">
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <Label htmlFor="new-item-price">Цена (€)</Label>
-            <Input
-              id="new-item-price"
-              value={newPrice}
-              onChange={(e) => setNewPrice(e.target.value)}
-              inputMode="decimal"
-              placeholder="Цена (€)"
-              className="h-11 flex-1"
-            />
-          </div>
+      {!readOnly ? (
+        <div className="flex flex-col gap-3 rounded-lg border border-dashed p-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="new-item-quantity">Бр.</Label>
+            <Label htmlFor="new-item-name">Наименование на артикул</Label>
             <Input
-              id="new-item-quantity"
-              value={newQuantity}
-              onChange={(e) => setNewQuantity(e.target.value)}
-              inputMode="numeric"
-              placeholder="Бр."
-              className="h-11 w-16"
+              id="new-item-name"
+              value={newName}
+              onChange={(e) => {
+                setNewName(e.target.value)
+                if (fieldErrors.name) {
+                  setFieldErrors((prev) => ({ ...prev, name: undefined }))
+                }
+              }}
+              placeholder="Наименование на артикул"
+              className="h-11"
+              aria-invalid={Boolean(fieldErrors.name)}
             />
+            {fieldErrors.name ? (
+              <p className="text-xs text-destructive">{fieldErrors.name}</p>
+            ) : null}
           </div>
+          <div className="flex gap-2">
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <Label htmlFor="new-item-price">Цена (€)</Label>
+              <Input
+                id="new-item-price"
+                value={newPrice}
+                onChange={(e) => {
+                  setNewPrice(e.target.value)
+                  if (fieldErrors.price) {
+                    setFieldErrors((prev) => ({ ...prev, price: undefined }))
+                  }
+                }}
+                inputMode="decimal"
+                placeholder="Цена (€)"
+                className="h-11 flex-1"
+                aria-invalid={Boolean(fieldErrors.price)}
+              />
+              {fieldErrors.price ? (
+                <p className="text-xs text-destructive">{fieldErrors.price}</p>
+              ) : null}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="new-item-quantity">Бр.</Label>
+              <Input
+                id="new-item-quantity"
+                value={newQuantity}
+                onChange={(e) => {
+                  setNewQuantity(e.target.value)
+                  if (fieldErrors.quantity) {
+                    setFieldErrors((prev) => ({ ...prev, quantity: undefined }))
+                  }
+                }}
+                inputMode="numeric"
+                placeholder="Бр."
+                className="h-11 w-16"
+                aria-invalid={Boolean(fieldErrors.quantity)}
+              />
+              {fieldErrors.quantity ? (
+                <p className="text-xs text-destructive">{fieldErrors.quantity}</p>
+              ) : null}
+            </div>
+          </div>
+          <Button className="h-11" onClick={handleAdd} disabled={!newName.trim()}>
+            <PlusIcon className={ICON.button} aria-hidden />
+            Добави артикул
+          </Button>
         </div>
-        <Button className="h-11" onClick={handleAdd} disabled={!newName.trim()}>
-          <PlusIcon className={ICON.button} aria-hidden />
-          Добави артикул
-        </Button>
-      </div>
+      ) : null}
     </div>
   )
 }
 
 function ItemRow({
   item,
+  readOnly = false,
   onDelete,
 }: {
   item: Doc<'items'>
+  readOnly?: boolean
   onDelete: () => void
 }) {
   const updateItem = useMutation(api.items.update)
@@ -214,58 +281,120 @@ function ItemRow({
     formatEurInputValue(item.unitPriceCents),
   )
   const [quantity, setQuantity] = useState(String(item.quantity))
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: string
+    price?: string
+    quantity?: string
+  }>({})
 
   const debouncedSave = useDebouncedCallback(
-    (patch: { name?: string; unitPriceCents?: number; quantity?: number }) => {
-      void updateItem({ itemId: item._id, ...patch })
+    async (patch: {
+      name?: string
+      unitPriceCents?: number
+      quantity?: number
+    }) => {
+      try {
+        await updateItem({ itemId: item._id, ...patch })
+      } catch (error) {
+        toast.error(getConvexErrorMessage(error))
+      }
     },
     500,
   )
 
+  function scheduleItemFieldSave(
+    field: 'name' | 'price' | 'quantity',
+    raw: string,
+  ) {
+    const error =
+      field === 'name'
+        ? validateItemNameInput(raw)
+        : field === 'price'
+          ? validateItemPriceInput(raw)
+          : validateItemQuantityInput(raw)
+
+    if (error) {
+      setFieldErrors((prev) => ({ ...prev, [field]: error }))
+      return
+    }
+
+    setFieldErrors((prev) => ({ ...prev, [field]: undefined }))
+
+    if (field === 'name') {
+      debouncedSave({ name: itemNameSchema.parse(raw) })
+      return
+    }
+    if (field === 'price') {
+      const parsed = parseItemPriceInput(raw)
+      if (parsed.ok) debouncedSave({ unitPriceCents: parsed.cents })
+      return
+    }
+    const qtyParsed = quantityInputSchema.safeParse(raw)
+    if (qtyParsed.success) debouncedSave({ quantity: qtyParsed.data })
+  }
+
   return (
     <div className="flex items-start gap-2">
       <div className="flex flex-1 flex-col gap-2">
-        <Input
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value)
-            debouncedSave({ name: e.target.value })
-          }}
-          placeholder="Наименование"
-          className="h-11"
-        />
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-1">
           <Input
-            value={price}
+            value={name}
+            disabled={readOnly}
             onChange={(e) => {
-              setPrice(e.target.value)
-              debouncedSave({ unitPriceCents: parseEurInput(e.target.value) })
+              setName(e.target.value)
+              scheduleItemFieldSave('name', e.target.value)
             }}
-            inputMode="decimal"
-            placeholder="Цена (€)"
-            className="h-11 flex-1"
+            placeholder="Наименование"
+            className="h-11"
+            aria-invalid={Boolean(fieldErrors.name)}
           />
-          <span className="text-muted-foreground">×</span>
-          <Input
-            value={quantity}
-            onChange={(e) => {
-              setQuantity(e.target.value)
-              const parsed = Math.max(
-                1,
-                Number.parseInt(e.target.value, 10) || 1,
-              )
-              debouncedSave({ quantity: parsed })
-            }}
-            inputMode="numeric"
-            placeholder="Бр."
-            className="h-11 w-16"
-          />
+          {fieldErrors.name ? (
+            <p className="text-xs text-destructive">{fieldErrors.name}</p>
+          ) : null}
+        </div>
+        <div className="flex items-start gap-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <Input
+              value={price}
+              disabled={readOnly}
+              onChange={(e) => {
+                setPrice(e.target.value)
+                scheduleItemFieldSave('price', e.target.value)
+              }}
+              inputMode="decimal"
+              placeholder="Цена (€)"
+              className="h-11 flex-1"
+              aria-invalid={Boolean(fieldErrors.price)}
+            />
+            {fieldErrors.price ? (
+              <p className="text-xs text-destructive">{fieldErrors.price}</p>
+            ) : null}
+          </div>
+          <span className="mt-3 text-muted-foreground">×</span>
+          <div className="flex flex-col gap-1">
+            <Input
+              value={quantity}
+              disabled={readOnly}
+              onChange={(e) => {
+                setQuantity(e.target.value)
+                scheduleItemFieldSave('quantity', e.target.value)
+              }}
+              inputMode="numeric"
+              placeholder="Бр."
+              className="h-11 w-16"
+              aria-invalid={Boolean(fieldErrors.quantity)}
+            />
+            {fieldErrors.quantity ? (
+              <p className="text-xs text-destructive">{fieldErrors.quantity}</p>
+            ) : null}
+          </div>
         </div>
       </div>
       <Button
         variant="ghost"
         size="icon-lg"
         aria-label={`Изтрий ${item.name}`}
+        disabled={readOnly}
         onClick={onDelete}
         className="text-muted-foreground hover:text-destructive dark:hover:text-destructive-foreground"
       >

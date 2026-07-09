@@ -1,8 +1,11 @@
 import { mutation } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
 import { requireBillOwner } from './lib/auth'
-import { assertNonNegativeIntCents, assertPositiveQuantity } from './lib/money'
 import { sumAssignedUnits } from './lib/clampParticipantUnits'
+import {
+  validateItemAddArgs,
+  validateItemUpdatePatch,
+} from './lib/itemSchema'
 import { touchBill } from './lib/touchBill'
 
 export const add = mutation({
@@ -14,22 +17,31 @@ export const add = mutation({
     note: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await requireBillOwner(ctx, args.billId)
-    const unitPriceCents = assertNonNegativeIntCents(
-      args.unitPriceCents,
-      'Цената',
-    )
-    const quantity = assertPositiveQuantity(args.quantity ?? 1)
+    const bill = await requireBillOwner(ctx, args.billId)
+    if (bill.status === 'final') {
+      throw new ConvexError('Сметката е завършена.')
+    }
+
+    const validated = validateItemAddArgs({
+      name: args.name,
+      unitPriceCents: args.unitPriceCents,
+      quantity: args.quantity,
+      note: args.note,
+    })
+    if (!validated.ok) {
+      throw new ConvexError(validated.message)
+    }
+
     const existing = await ctx.db
       .query('items')
       .withIndex('by_billId', (q) => q.eq('billId', args.billId))
       .collect()
     const id = await ctx.db.insert('items', {
       billId: args.billId,
-      name: args.name.trim(),
-      unitPriceCents,
-      quantity,
-      note: args.note,
+      name: validated.data.name,
+      unitPriceCents: validated.data.unitPriceCents,
+      quantity: validated.data.quantity,
+      note: validated.data.note,
       sortOrder: existing.length,
     })
     await touchBill(ctx, args.billId)
@@ -51,16 +63,25 @@ export const update = mutation({
       throw new ConvexError('Артикулът не е намерен.')
     }
 
-    await requireBillOwner(ctx, item.billId)
-
-    if (args.unitPriceCents !== undefined) {
-      assertNonNegativeIntCents(args.unitPriceCents, 'Цената')
-    }
-    if (args.quantity !== undefined) {
-      assertPositiveQuantity(args.quantity)
+    const bill = await requireBillOwner(ctx, item.billId)
+    if (bill.status === 'final') {
+      throw new ConvexError('Сметката е завършена.')
     }
 
-    if (args.quantity !== undefined && args.quantity < item.quantity) {
+    const validated = validateItemUpdatePatch({
+      name: args.name,
+      unitPriceCents: args.unitPriceCents,
+      quantity: args.quantity,
+      note: args.note,
+    })
+    if (!validated.ok) {
+      throw new ConvexError(validated.message)
+    }
+
+    if (
+      validated.data.quantity !== undefined &&
+      validated.data.quantity < item.quantity
+    ) {
       const assignments = await ctx.db
         .query('itemAssignments')
         .withIndex('by_itemId', (q) => q.eq('itemId', args.itemId))
@@ -70,7 +91,7 @@ export const update = mutation({
       )
       if (usesUnits) {
         const assignedUnits = sumAssignedUnits(assignments)
-        if (assignedUnits > args.quantity) {
+        if (assignedUnits > validated.data.quantity) {
           throw new ConvexError(
             'Намалете разпределенията преди да намалите количеството.',
           )
@@ -78,15 +99,9 @@ export const update = mutation({
       }
     }
 
-    const { itemId, name, unitPriceCents, quantity, note } = args
-    const patch = {
-      ...(name !== undefined ? { name: name.trim() } : {}),
-      ...(unitPriceCents !== undefined ? { unitPriceCents } : {}),
-      ...(quantity !== undefined ? { quantity } : {}),
-      ...(note !== undefined ? { note } : {}),
-    }
+    const patch = validated.data
     if (Object.keys(patch).length > 0) {
-      await ctx.db.patch(itemId, patch)
+      await ctx.db.patch(args.itemId, patch)
     }
     await touchBill(ctx, item.billId)
   },
