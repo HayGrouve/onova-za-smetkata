@@ -1,5 +1,5 @@
 import { mutation, query } from './_generated/server'
-import { v } from 'convex/values'
+import { ConvexError, v } from 'convex/values'
 import type { Id } from './_generated/dataModel'
 import { requireAuth, requireBillOwner } from './lib/auth'
 import { assertBillCanFinalize } from './lib/validateBillForFinalize'
@@ -13,7 +13,10 @@ import {
 import { deleteGuestSessionsForBill } from './guestSessions'
 import { isGuestSessionActive } from './lib/guestSession'
 import { assertShareToken, toGuestVisibleBill } from './lib/guestAccess'
-import { assertNonNegativeIntCents } from './lib/money'
+import {
+  firstZodIssueMessage,
+  parseBillMetadataPatch,
+} from './lib/billMetadataSchema'
 import { createShareToken } from './lib/shareToken'
 
 export const list = query({
@@ -133,10 +136,21 @@ export const update = mutation({
 
     const bill = await requireBillOwner(ctx, billId)
 
-    const validatedTipCents =
-      tipCents !== undefined
-        ? assertNonNegativeIntCents(tipCents, 'Бакшишът')
-        : undefined
+    const rawPatch = {
+      ...(restaurantName !== undefined ? { restaurantName } : {}),
+      ...(date !== undefined ? { date } : {}),
+      ...(note !== undefined ? { note } : {}),
+      ...(tipCents !== undefined ? { tipCents } : {}),
+    }
+
+    const parsed = parseBillMetadataPatch(rawPatch)
+    if (!parsed.success) {
+      throw new ConvexError(
+        firstZodIssueMessage(parsed.error, 'Невалидни данни за сметката'),
+      )
+    }
+
+    const normalized = parsed.data
 
     const oldReceiptStorageId = shouldDeleteReplacedReceiptStorage(
       bill.receiptStorageId,
@@ -147,11 +161,15 @@ export const update = mutation({
 
     await ctx.db.patch(billId, {
       updatedAt: Date.now(),
-      ...(restaurantName !== undefined ? { restaurantName } : {}),
-      ...(date !== undefined ? { date } : {}),
-      ...(note !== undefined ? { note } : {}),
+      ...(normalized.restaurantName !== undefined
+        ? { restaurantName: normalized.restaurantName }
+        : {}),
+      ...(normalized.date !== undefined ? { date: normalized.date } : {}),
+      ...(note !== undefined ? { note: normalized.note } : {}),
       ...(receiptStorageId !== undefined ? { receiptStorageId } : {}),
-      ...(validatedTipCents !== undefined ? { tipCents: validatedTipCents } : {}),
+      ...(normalized.tipCents !== undefined
+        ? { tipCents: normalized.tipCents }
+        : {}),
     })
 
     if (oldReceiptStorageId) {
