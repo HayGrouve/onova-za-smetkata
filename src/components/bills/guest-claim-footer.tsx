@@ -1,4 +1,4 @@
-import { SendIcon, PieChartIcon } from 'lucide-react'
+import { SendIcon, PieChartIcon, CopyIcon } from 'lucide-react'
 import { useMutation, useQuery } from 'convex/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -54,6 +54,10 @@ export function GuestClaimFooter({
   const toggleAssignment = useMutation(api.assignments.toggle)
   const setUnits = useMutation(api.assignments.setUnits)
   const revolutUsername = settings?.revolutUsername?.trim()
+  const iban = settings?.iban?.trim()
+  const hasRevolut = Boolean(revolutUsername)
+  const hasIban = Boolean(iban)
+  const hasPaymentMethod = hasRevolut || hasIban
   const footerRef = useRef<HTMLDivElement>(null)
   const [spacerHeight, setSpacerHeight] = useState(0)
 
@@ -78,6 +82,16 @@ export function GuestClaimFooter({
     void copyToClipboard(formatCopyAmount(remainingCents))
     window.open(buildRevolutUrl(revolutUsername, remainingCents))
     toast.success('Отворен Revolut')
+  }
+
+  async function handleCopyIban() {
+    if (!iban) return
+    const copied = await copyToClipboard(iban)
+    if (copied) {
+      toast.success('IBAN копиран')
+    } else {
+      toast.error('Неуспешно копиране')
+    }
   }
 
   const handleRemoveItem = useCallback(
@@ -173,23 +187,42 @@ export function GuestClaimFooter({
                       {formatEur(amountCents)}
                     </p>
                   </div>
-                  <Button
-                    type="button"
-                    className="h-11"
-                    disabled={!revolutUsername || remainingCents <= 0}
-                    onClick={handleRevolut}
-                  >
-                    <SendIcon className={ICON.button} aria-hidden />
-                    Revolut
-                  </Button>
+                  <div className="flex shrink-0 gap-2">
+                    {hasRevolut ? (
+                      <Button
+                        type="button"
+                        className="h-11"
+                        disabled={remainingCents <= 0}
+                        onClick={handleRevolut}
+                      >
+                        <SendIcon className={ICON.button} aria-hidden />
+                        Revolut
+                      </Button>
+                    ) : null}
+                    {hasIban ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-11"
+                        onClick={() => void handleCopyIban()}
+                      >
+                        <CopyIcon className={ICON.button} aria-hidden />
+                        IBAN
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
-                {!revolutUsername ? (
+                {!hasPaymentMethod ? (
                   <p className="text-xs text-muted-foreground">
-                    Попитайте домакина за Revolut.
+                    Попитайте домакина за Revolut или банков превод.
                   </p>
                 ) : remainingCents <= 0 ? (
                   <p className="text-xs text-muted-foreground">
                     Няма оставащо за плащане.
+                  </p>
+                ) : hasIban && !hasRevolut ? (
+                  <p className="text-xs text-muted-foreground">
+                    Копирайте IBAN за банков превод.
                   </p>
                 ) : null}
               </>

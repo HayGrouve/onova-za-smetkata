@@ -21,7 +21,9 @@ import {
   sortGuestClaimItems,
   filterGuestClaimItemsBySearch,
   filterUnclaimedGuestClaimItems,
+  filterClaimedGuestClaimItems,
 } from '#/lib/guest-claim-items.ts'
+import { cn } from '#/lib/utils.ts'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Doc, Id } from '../../../../convex/_generated/dataModel'
@@ -55,6 +57,7 @@ function BillClaimContent({
 }) {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
+  const [itemTab, setItemTab] = useState<'remaining' | 'mine'>('remaining')
 
   const storedSession = useMemo(() => getStoredGuestSession(billId), [billId])
   const shareToken = storedSession?.shareToken ?? shareTokenFromUrl
@@ -159,13 +162,31 @@ function BillClaimContent({
   const visibleItems = useMemo(() => {
     if (!data || !storedParticipantId) return []
     const sorted = sortGuestClaimItems(data.items)
-    const unclaimed = filterUnclaimedGuestClaimItems(
-      sorted,
+    const participantId = storedParticipantId as Id<'participants'>
+    const filtered =
+      itemTab === 'mine'
+        ? filterClaimedGuestClaimItems(sorted, data.assignments, participantId)
+        : filterUnclaimedGuestClaimItems(sorted, data.assignments, participantId)
+    return filterGuestClaimItemsBySearch(filtered, search)
+  }, [data, itemTab, search, storedParticipantId])
+
+  const remainingCount = useMemo(() => {
+    if (!data || !storedParticipantId) return 0
+    return filterUnclaimedGuestClaimItems(
+      data.items,
       data.assignments,
       storedParticipantId as Id<'participants'>,
-    )
-    return filterGuestClaimItemsBySearch(unclaimed, search)
-  }, [data, search, storedParticipantId])
+    ).length
+  }, [data, storedParticipantId])
+
+  const claimedCount = useMemo(() => {
+    if (!data || !storedParticipantId) return 0
+    return filterClaimedGuestClaimItems(
+      data.items,
+      data.assignments,
+      storedParticipantId as Id<'participants'>,
+    ).length
+  }, [data, storedParticipantId])
 
   const assignmentsByItemId = useMemo(() => {
     const map = new Map<Id<'items'>, Doc<'itemAssignments'>[]>()
@@ -178,16 +199,7 @@ function BillClaimContent({
     return map
   }, [data?.assignments])
 
-  const hasUnclaimedItems = useMemo(() => {
-    if (!data || !storedParticipantId) return false
-    return (
-      filterUnclaimedGuestClaimItems(
-        data.items,
-        data.assignments,
-        storedParticipantId as Id<'participants'>,
-      ).length > 0
-    )
-  }, [data, storedParticipantId])
+  const hasUnclaimedItems = remainingCount > 0
 
   if (
     !shareToken ||
@@ -253,7 +265,44 @@ function BillClaimContent({
           )}
         </div>
 
-        {hasUnclaimedItems && (
+        {hasItems ? (
+          <div
+            className="grid grid-cols-2 gap-2 rounded-lg border bg-muted/40 p-1"
+            role="tablist"
+            aria-label="Филтър на артикули"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={itemTab === 'remaining'}
+              className={cn(
+                'h-11 rounded-md text-sm font-medium transition-colors',
+                itemTab === 'remaining'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground',
+              )}
+              onClick={() => setItemTab('remaining')}
+            >
+              Остават ({remainingCount})
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={itemTab === 'mine'}
+              className={cn(
+                'h-11 rounded-md text-sm font-medium transition-colors',
+                itemTab === 'mine'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground',
+              )}
+              onClick={() => setItemTab('mine')}
+            >
+              Мои ({claimedCount})
+            </button>
+          </div>
+        ) : null}
+
+        {(hasUnclaimedItems || itemTab === 'mine') && (
           <div className="relative">
             <Label htmlFor="claim-item-search" className="sr-only">
               Търсене по артикул
@@ -278,8 +327,8 @@ function BillClaimContent({
             <p className="text-sm text-muted-foreground">
               {hasSearchQuery
                 ? 'Няма артикули, съответстващи на търсенето.'
-                : hasUnclaimedItems
-                  ? 'Все още няма артикули.'
+                : itemTab === 'mine'
+                  ? 'Все още няма отбелязани артикули.'
                   : 'Всички артикули са отбелязани.'}
             </p>
           ) : (

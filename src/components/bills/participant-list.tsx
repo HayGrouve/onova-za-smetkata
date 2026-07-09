@@ -86,7 +86,7 @@ export function ParticipantList({
             <button
               type="button"
               aria-label={`Премахни ${participant.name}`}
-              className="flex size-7 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+              className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
               onClick={() => handleRemove(participant)}
             >
               <XIcon className="size-4" />

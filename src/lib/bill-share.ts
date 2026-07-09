@@ -10,6 +10,7 @@ import {
   lineTotalCents,
   splitLineTotal,
 } from './bill-calculations.ts'
+import { formatEur } from './format-currency.ts'
 
 const statusLabels: Record<PaymentStatus, string> = {
   unpaid: 'неплатено',
@@ -25,6 +26,10 @@ const dateFormatter = new Intl.DateTimeFormat('bg-BG', {
 
 export function formatCopyAmount(cents: number): string {
   return (cents / 100).toFixed(2).replace('.', ',')
+}
+
+function formatShareAmount(cents: number): string {
+  return formatEur(cents)
 }
 
 export function formatRevolutAmount(cents: number): string {
@@ -117,9 +122,9 @@ function formatItemAssignees(
         const amountCents = units * item.unitPriceCents
         const name = labelForParticipant(assignment.participantId, labels)
         if (item.quantity > 1) {
-          return `${name} ${units} бр. (${formatCopyAmount(amountCents)} EUR)`
+          return `${name} ${units} бр. (${formatShareAmount(amountCents)})`
         }
-        return `${name} (${formatCopyAmount(amountCents)} EUR)`
+        return `${name} (${formatShareAmount(amountCents)})`
       })
       .join(' · ')
   }
@@ -131,7 +136,7 @@ function formatItemAssignees(
   return portions
     .map(
       (portion) =>
-        `${labelForParticipant(portion.id, labels)} (${formatCopyAmount(portion.cents)} EUR)`,
+        `${labelForParticipant(portion.id, labels)} (${formatShareAmount(portion.cents)})`,
     )
     .join(' · ')
 }
@@ -148,7 +153,7 @@ function formatItemsSection(
 
     const quantitySuffix = item.quantity > 1 ? ` ×${item.quantity}` : ''
     lines.push(
-      `• ${item.name}${quantitySuffix} — ${formatCopyAmount(totalCents)} EUR`,
+      `• ${item.name}${quantitySuffix} — ${formatShareAmount(totalCents)}`,
     )
     lines.push(`  ${formatItemAssignees(item, breakdown, labels)}`)
   }
@@ -158,7 +163,7 @@ function formatItemsSection(
     const participantCount = breakdown.participants.length
     const shareLabel =
       participantCount > 1 ? `поравно между ${participantCount}` : 'цялата сума'
-    lines.push(`• Бакшиш — ${formatCopyAmount(tipCents)} EUR (${shareLabel})`)
+    lines.push(`• Бакшиш — ${formatShareAmount(tipCents)} (${shareLabel})`)
   }
 
   return lines
@@ -179,7 +184,7 @@ function formatParticipantSection(
       const label = formatBreakdownLineLabel(line, participantCount)
       const suffix = line.kind === 'item' ? formatBreakdownLineSuffix(line) : ''
       lines.push(
-        `  • ${label}${suffix} — ${formatCopyAmount(line.amountCents)} EUR`,
+        `  • ${label}${suffix} — ${formatShareAmount(line.amountCents)}`,
       )
     }
   }
@@ -187,7 +192,7 @@ function formatParticipantSection(
   const { owedCents, paidCents, balanceCents, status } = participant.totals
   const remainingCents = Math.max(0, balanceCents)
   lines.push(
-    `  Дължи ${formatCopyAmount(owedCents)} EUR · Платено ${formatCopyAmount(paidCents)} EUR · Остатък ${formatCopyAmount(remainingCents)} EUR — ${statusLabels[status]}`,
+    `  Дължи ${formatShareAmount(owedCents)} · Платено ${formatShareAmount(paidCents)} · Остатък ${formatShareAmount(remainingCents)} — ${statusLabels[status]}`,
   )
 
   return lines
@@ -216,7 +221,7 @@ export function formatBillShareText(input: BillShareInput): string {
   sections.push('')
   sections.push(...formatItemsSection(input.breakdown, labels))
   sections.push('')
-  sections.push(`Общо: ${formatCopyAmount(input.billTotalCents)} EUR`)
+  sections.push(`Общо: ${formatShareAmount(input.billTotalCents)}`)
   sections.push('')
   sections.push('Участници')
 

@@ -17,7 +17,8 @@ export function OfflineBanner() {
       <div className="page-shell flex items-center justify-between gap-3">
         <p className="flex items-center gap-2">
           <WifiOffIcon className={ICON.button} aria-hidden />
-          Няма интернет връзка. Приложението изисква мрежа.
+          Няма интернет връзка. Данните за сметката изискват мрежа — опитайте
+          отново, когато сте онлайн.
         </p>
         <button
           type="button"

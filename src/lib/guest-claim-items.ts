@@ -22,6 +22,18 @@ export function getGuestClaimItemState(
   const myAssignment = itemAssignments.find(
     (assignment) => assignment.participantId === participantId,
   )
+
+  if (item.quantity === 1) {
+    const isSelectedByMe = myAssignment !== undefined
+    return {
+      myUnits: isSelectedByMe ? 1 : 0,
+      assignedUnitsTotal: itemAssignments.length,
+      remainingUnits: isSelectedByMe ? 0 : 1,
+      isSelectedByMe,
+      isUnavailableToMe: false,
+    }
+  }
+
   const myUnits = myAssignment?.units ?? 0
   const assignedUnitsTotal = itemAssignments.reduce(
     (sum, assignment) => sum + (assignment.units ?? 0),
@@ -84,6 +96,22 @@ export function filterUnclaimedGuestClaimItems<
     }
 
     return !isGuestClaimItemMaxedOutByMe(item, state)
+  })
+}
+
+export function filterClaimedGuestClaimItems<
+  T extends Pick<Doc<'items'>, '_id' | 'quantity'>,
+>(
+  items: T[],
+  assignments: GuestItemAssignment[],
+  participantId: Id<'participants'>,
+): T[] {
+  return items.filter((item) => {
+    const itemAssignments = assignments.filter(
+      (assignment) => assignment.itemId === item._id,
+    )
+    const state = getGuestClaimItemState(item, itemAssignments, participantId)
+    return state.isSelectedByMe
   })
 }
 

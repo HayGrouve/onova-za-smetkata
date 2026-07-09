@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   filterGuestClaimItemsBySearch,
   filterUnclaimedGuestClaimItems,
+  filterClaimedGuestClaimItems,
   getGuestClaimItemState,
   sortGuestClaimItems,
 } from './guest-claim-items'
@@ -11,7 +12,23 @@ const participantA = 'p-a' as Id<'participants'>
 const participantB = 'p-b' as Id<'participants'>
 
 describe('getGuestClaimItemState', () => {
-  it('marks item unavailable when others claimed all units', () => {
+  it('marks cent-split single-qty item as selected when participant is assigned', () => {
+    const state = getGuestClaimItemState(
+      { _id: 'item-1' as Id<'items'>, quantity: 1 },
+      [
+        {
+          itemId: 'item-1' as Id<'items'>,
+          participantId: participantA,
+        },
+      ],
+      participantA,
+    )
+
+    expect(state.isSelectedByMe).toBe(true)
+    expect(state.isUnavailableToMe).toBe(false)
+  })
+
+  it('keeps single-qty items available when assigned to others (cent-split)', () => {
     const state = getGuestClaimItemState(
       { _id: 'item-1' as Id<'items'>, quantity: 1 },
       [
@@ -24,9 +41,8 @@ describe('getGuestClaimItemState', () => {
       participantA,
     )
 
-    expect(state.isUnavailableToMe).toBe(true)
+    expect(state.isUnavailableToMe).toBe(false)
     expect(state.isSelectedByMe).toBe(false)
-    expect(state.remainingUnits).toBe(0)
   })
 
   it('keeps partial multi-qty items available', () => {
@@ -85,7 +101,6 @@ describe('filterUnclaimedGuestClaimItems', () => {
       {
         itemId: 'claimed' as Id<'items'>,
         participantId: participantA,
-        units: 1,
       },
     ]
 
@@ -131,6 +146,27 @@ describe('filterUnclaimedGuestClaimItems', () => {
         (item) => item._id,
       ),
     ).toEqual(['open'])
+  })
+})
+
+describe('filterClaimedGuestClaimItems', () => {
+  it('returns items claimed by the participant', () => {
+    const items = [
+      { _id: 'open' as Id<'items'>, name: 'Бира', quantity: 1 },
+      { _id: 'claimed' as Id<'items'>, name: 'Салата', quantity: 1 },
+    ]
+    const assignments = [
+      {
+        itemId: 'claimed' as Id<'items'>,
+        participantId: participantA,
+      },
+    ]
+
+    expect(
+      filterClaimedGuestClaimItems(items, assignments, participantA).map(
+        (item) => item._id,
+      ),
+    ).toEqual(['claimed'])
   })
 })
 

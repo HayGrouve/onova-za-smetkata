@@ -93,6 +93,8 @@ export function StickyTotalsBar({
           <button
             type="button"
             onClick={() => setOpen(true)}
+            aria-label="Разбивка на сметката"
+            aria-expanded={open}
             className="tap-feedback flex w-full cursor-pointer items-center gap-3 px-4 py-3.5 text-left"
           >
             <div className="shrink-0">

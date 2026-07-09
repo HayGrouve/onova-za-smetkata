@@ -136,8 +136,16 @@ export function BillCard({
           </DialogHeader>
           <DialogFooter>
             <Button
+              type="button"
+              variant="outline"
+              disabled={isDeleting}
+              onClick={() => setDeleteOpen(false)}
+            >
+              Отказ
+            </Button>
+            <Button
               variant="destructive"
-              onClick={handleDelete}
+              onClick={() => void handleDelete()}
               disabled={isDeleting}
             >
               <Trash2Icon className={ICON.button} aria-hidden />

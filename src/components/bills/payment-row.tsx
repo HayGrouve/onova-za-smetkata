@@ -12,7 +12,7 @@ import type {
 import { formatEur } from '#/lib/format-currency.ts'
 import { getPaymentRowBorderClass } from '#/lib/payment-row-styles.ts'
 import { cn } from '#/lib/utils.ts'
-import type { Id } from '../../../convex/_generated/dataModel'
+import type { Doc, Id } from '../../../convex/_generated/dataModel'
 
 const statusLabels: Record<PaymentStatus, string> = {
   unpaid: 'неплатено',
@@ -34,6 +34,7 @@ export interface PaymentRowProps {
   participantId: Id<'participants'>
   label: string
   totals: ParticipantTotals
+  payments?: Doc<'payments'>[]
   onOpenDetail?: () => void
   onOpenPaymentSettings?: () => void
 }
@@ -43,6 +44,7 @@ export function PaymentRow({
   participantId,
   label,
   totals,
+  payments,
   onOpenDetail,
   onOpenPaymentSettings,
 }: PaymentRowProps) {
@@ -122,6 +124,7 @@ export function PaymentRow({
         participantId={participantId}
         label={label}
         totals={totals}
+        payments={payments}
       />
     </div>
   )

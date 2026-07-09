@@ -1,11 +1,12 @@
 import { useMutation } from 'convex/react'
-import { AlertTriangleIcon, PlusIcon, Trash2Icon } from 'lucide-react'
+import { AlertTriangleIcon, PlusIcon, Trash2Icon, UsersIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AssignmentRow } from '#/components/bills/assignment-row.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
+import { Label } from '#/components/ui/label.tsx'
 import { useDebouncedCallback } from '#/hooks/use-debounced-callback.ts'
 import { parseEurInput } from '#/lib/format-currency.ts'
 import { ICON } from '#/lib/app-icons.ts'
@@ -31,6 +32,7 @@ export function ItemList({
 }: ItemListProps) {
   const addItem = useMutation(api.items.add)
   const removeItem = useMutation(api.items.remove)
+  const assignAll = useMutation(api.assignments.assignAll)
 
   const [newName, setNewName] = useState('')
   const [newPrice, setNewPrice] = useState('')
@@ -90,15 +92,37 @@ export function ItemList({
     }
   }
 
+  async function handleAssignAllUnassigned() {
+    try {
+      await assignAll({ billId, mode: 'unassigned_only' })
+      toast.success('Неразпределените артикули са разделени поравно')
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {unassignedCount > 0 && (
-        <button type="button" onClick={handleScrollToUnassigned}>
-          <Badge variant="destructive" className="gap-1">
-            <AlertTriangleIcon className="size-3" aria-hidden />
-            {unassignedCount} неразпределени
-          </Badge>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={handleScrollToUnassigned}>
+            <Badge variant="destructive" className="gap-1">
+              <AlertTriangleIcon className="size-3" aria-hidden />
+              {unassignedCount} неразпределени
+            </Badge>
+          </button>
+          {participants.length > 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11"
+              onClick={() => void handleAssignAllUnassigned()}
+            >
+              <UsersIcon className={ICON.button} aria-hidden />
+              Раздели поравно неразпределените
+            </Button>
+          ) : null}
+        </div>
       )}
 
       {items.length === 0 && (
@@ -134,27 +158,39 @@ export function ItemList({
       })}
 
       <div className="flex flex-col gap-3 rounded-lg border border-dashed p-4">
-        <Input
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          placeholder="Наименование на артикул"
-          className="h-11"
-        />
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="new-item-name">Наименование на артикул</Label>
+          <Input
+            id="new-item-name"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Наименование на артикул"
+            className="h-11"
+          />
+        </div>
         <div className="flex gap-2">
-          <Input
-            value={newPrice}
-            onChange={(e) => setNewPrice(e.target.value)}
-            inputMode="decimal"
-            placeholder="Цена (€)"
-            className="h-11 flex-1"
-          />
-          <Input
-            value={newQuantity}
-            onChange={(e) => setNewQuantity(e.target.value)}
-            inputMode="numeric"
-            placeholder="Бр."
-            className="h-11 w-16"
-          />
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <Label htmlFor="new-item-price">Цена (€)</Label>
+            <Input
+              id="new-item-price"
+              value={newPrice}
+              onChange={(e) => setNewPrice(e.target.value)}
+              inputMode="decimal"
+              placeholder="Цена (€)"
+              className="h-11 flex-1"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="new-item-quantity">Бр.</Label>
+            <Input
+              id="new-item-quantity"
+              value={newQuantity}
+              onChange={(e) => setNewQuantity(e.target.value)}
+              inputMode="numeric"
+              placeholder="Бр."
+              className="h-11 w-16"
+            />
+          </div>
         </div>
         <Button className="h-11" onClick={handleAdd} disabled={!newName.trim()}>
           <PlusIcon className={ICON.button} aria-hidden />

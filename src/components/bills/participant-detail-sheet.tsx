@@ -9,7 +9,7 @@ import {
   SheetTitle,
 } from '#/components/ui/sheet.tsx'
 import { ParticipantBreakdownContent } from '#/components/bills/participant-breakdown-content.tsx'
-import type { Id } from '../../../convex/_generated/dataModel'
+import type { Doc, Id } from '../../../convex/_generated/dataModel'
 
 export interface ParticipantDetailSheetProps {
   open: boolean
@@ -19,6 +19,7 @@ export interface ParticipantDetailSheetProps {
   label: string
   breakdownInput: BillBreakdownInput
   totals: ParticipantTotals
+  payments?: Doc<'payments'>[]
   onOpenPaymentSettings?: () => void
   showPaymentActions?: boolean
   showPayActions?: boolean
@@ -32,6 +33,7 @@ export function ParticipantDetailSheet({
   label,
   breakdownInput,
   totals,
+  payments,
   onOpenPaymentSettings,
   showPaymentActions = true,
   showPayActions = true,
@@ -52,6 +54,7 @@ export function ParticipantDetailSheet({
             label={label}
             breakdownInput={breakdownInput}
             totals={totals}
+            payments={payments}
             onOpenPaymentSettings={onOpenPaymentSettings}
             showPaymentActions={showPaymentActions}
             showPayActions={showPayActions}

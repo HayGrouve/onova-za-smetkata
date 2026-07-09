@@ -17,6 +17,7 @@ import { cn } from '#/lib/utils.ts'
 import { ParticipantPayActions } from '#/components/bills/participant-pay-actions.tsx'
 import { PaymentActions } from '#/components/bills/payment-actions.tsx'
 import type { Id } from '../../../convex/_generated/dataModel'
+import type { Doc } from '../../../convex/_generated/dataModel'
 
 const statusLabels: Record<PaymentStatus, string> = {
   unpaid: 'неплатено',
@@ -30,6 +31,7 @@ export interface ParticipantBreakdownContentProps {
   label: string
   breakdownInput: BillBreakdownInput
   totals: ParticipantTotals
+  payments?: Doc<'payments'>[]
   onOpenPaymentSettings?: () => void
   /** Host summary sheet: show mark-paid controls. Hidden for guests. */
   showPaymentActions?: boolean
@@ -52,6 +54,7 @@ export function ParticipantBreakdownContent({
   label,
   breakdownInput,
   totals,
+  payments,
   onOpenPaymentSettings,
   showPaymentActions = true,
   showPayActions = true,
@@ -172,6 +175,7 @@ export function ParticipantBreakdownContent({
           participantId={participantId}
           label={label}
           totals={totals}
+          payments={payments}
         />
       ) : null}
     </div>

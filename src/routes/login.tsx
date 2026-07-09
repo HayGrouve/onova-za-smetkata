@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
+import { Label } from '#/components/ui/label.tsx'
 import { Separator } from '#/components/ui/separator.tsx'
 import { isClientDevMode } from '#/lib/dev-mode.ts'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
@@ -108,8 +109,11 @@ function LoginPage() {
         </p>
       ) : (
         <form className="flex flex-col gap-3" onSubmit={handleEmailSignIn}>
-          <Input
-            type="email"
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="login-email">Имейл адрес</Label>
+            <Input
+              id="login-email"
+              type="email"
             inputMode="email"
             autoComplete="email"
             placeholder="Имейл адрес"
@@ -117,6 +121,7 @@ function LoginPage() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
+          </div>
           <Button
             type="submit"
             variant="outline"

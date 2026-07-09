@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { formatEur } from './format-currency'
 import {
   formatBillShareText,
   formatBreakdownLineSuffix,
@@ -110,15 +111,15 @@ describe('formatBillShareText', () => {
     expect(text).toContain('Бележка: Вечеря с приятели')
     expect(text).toContain('Артикули')
     expect(text).toContain('Салата')
-    expect(text).toContain('Иван (6,00 EUR)')
-    expect(text).toContain('Мария (6,00 EUR)')
-    expect(text).toContain('Бакшиш — 6,00 EUR (поравно между 2)')
+    expect(text).toContain(`Иван (${formatEur(600)})`)
+    expect(text).toContain(`Мария (${formatEur(600)})`)
+    expect(text).toContain(`Бакшиш — ${formatEur(600)} (поравно между 2)`)
     expect(text).toContain('▸ Иван')
     expect(text).toContain('▸ Мария')
-    expect(text).toContain('Салата · споделено с 1 — 6,00 EUR')
+    expect(text).toContain(`Салата · споделено с 1 — ${formatEur(600)}`)
     expect(text).toContain('неплатено')
     expect(text).toContain('платено')
-    expect(text).toContain('Общо: 54,00 EUR')
+    expect(text).toContain(`Общо: ${formatEur(5400)}`)
   })
 
   it('shows unit-based item ownership in the items section', () => {
@@ -171,8 +172,8 @@ describe('formatBillShareText', () => {
     })
 
     expect(text).toContain('Бира ×4')
-    expect(text).toContain('Иван 3 бр. (12,00 EUR)')
-    expect(text).toContain('Мария 1 бр. (4,00 EUR)')
-    expect(text).toContain('Бира · 3 от 4 — 12,00 EUR')
+    expect(text).toContain(`Иван 3 бр. (${formatEur(1200)})`)
+    expect(text).toContain(`Мария 1 бр. (${formatEur(400)})`)
+    expect(text).toContain(`Бира · 3 от 4 — ${formatEur(1200)}`)
   })
 })

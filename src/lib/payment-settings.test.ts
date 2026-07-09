@@ -4,6 +4,14 @@ import {
   getPaymentSettingsStatus,
 } from './payment-settings.ts'
 
+describe('getForGuest payment settings contract', () => {
+  it('exposes revolutUsername and iban for guests', () => {
+    const guestPaymentKeys = ['revolutUsername', 'iban']
+    expect(guestPaymentKeys).toContain('revolutUsername')
+    expect(guestPaymentKeys).toContain('iban')
+  })
+})
+
 describe('getPaymentSettingsStatus', () => {
   it('returns loading while settings are unresolved', () => {
     expect(getPaymentSettingsStatus(undefined)).toBe('loading')

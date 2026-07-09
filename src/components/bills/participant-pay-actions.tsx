@@ -54,8 +54,7 @@ export function ParticipantPayActions({
     <div className="flex flex-col gap-2">
       <Button
         variant="outline"
-        size="sm"
-        className="w-fit"
+        className="h-11 min-w-11 w-fit"
         onClick={handleRevolut}
       >
         <SendIcon className={ICON.button} aria-hidden />

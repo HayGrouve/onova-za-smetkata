@@ -156,7 +156,7 @@ export function GuestItemRow({
               aria-label="Намали"
               disabled={myUnits <= 0}
               onClick={() => void handleSetUnits(myUnits - 1)}
-              className="tap-feedback flex size-8 items-center justify-center rounded-full text-foreground hover:bg-foreground/10 disabled:opacity-40"
+              className="tap-feedback flex min-h-11 min-w-11 items-center justify-center rounded-full text-foreground hover:bg-foreground/10 disabled:opacity-40"
             >
               <MinusIcon className="size-4" />
             </button>
@@ -171,7 +171,7 @@ export function GuestItemRow({
               aria-label="Увеличи"
               disabled={myUnits >= remainingUnits}
               onClick={() => void handleSetUnits(myUnits + 1)}
-              className="tap-feedback flex size-8 items-center justify-center rounded-full text-foreground hover:bg-foreground/10 disabled:opacity-40"
+              className="tap-feedback flex min-h-11 min-w-11 items-center justify-center rounded-full text-foreground hover:bg-foreground/10 disabled:opacity-40"
             >
               <PlusIcon className="size-4" />
             </button>

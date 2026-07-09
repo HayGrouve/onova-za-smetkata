@@ -1,6 +1,6 @@
-const CACHE_VERSION = 'onova-static-v1'
+const CACHE_VERSION = 'onova-static-v2'
 
-/** Static shell + branding assets cached for offline / fast repeat visits. */
+/** Static assets only — bill data always requires network (Convex). */
 const PRECACHE_URLS = [
   '/',
   '/manifest.json',
@@ -58,11 +58,5 @@ self.addEventListener('fetch', (event) => {
       ),
     )
     return
-  }
-
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match('/') ?? Response.error()),
-    )
   }
 })

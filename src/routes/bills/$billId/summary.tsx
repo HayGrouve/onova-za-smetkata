@@ -48,6 +48,7 @@ import type {BillBreakdownInput, PaymentStatus} from '#/lib/bill-calculations.ts
 import { formatEur } from '#/lib/format-currency.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
+import { cn } from '#/lib/utils.ts'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
 import { BillHeaderTitleSync } from '#/components/layout/bill-header-title.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
@@ -78,6 +79,8 @@ function BillSummary() {
   const removeBill = useMutation(api.bills.remove)
   const [isFinalizing, setIsFinalizing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [finalizeOpen, setFinalizeOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
   const [detailParticipantId, setDetailParticipantId] =
     useState<Id<'participants'> | null>(null)
   const paymentSettingsStatus = usePaymentSettingsStatus()
@@ -192,11 +195,15 @@ function BillSummary() {
     return a.sortOrder - b.sortOrder
   })
   const isDraft = bill.status === 'draft'
+  const unpaidCount = participants.filter(
+    (participant) => totals.byParticipant[participant._id].status !== 'paid',
+  ).length
 
   async function handleFinalize() {
     setIsFinalizing(true)
     try {
       await finalizeBill({ billId })
+      setFinalizeOpen(false)
       toast.success('Сметката е завършена')
     } catch {
       toast.error('Неуспешно завършване на сметката')
@@ -209,6 +216,7 @@ function BillSummary() {
     setIsDeleting(true)
     try {
       await removeBill({ billId })
+      setDeleteOpen(false)
       await navigate({ to: '/' })
     } catch {
       toast.error('Неуспешно изтриване на сметката')
@@ -227,7 +235,7 @@ function BillSummary() {
         {isDraft ? (
           <Badge variant="secondary">Чернова</Badge>
         ) : (
-          <Badge>Завършена</Badge>
+          <Badge>Завършена — само преглед</Badge>
         )}
       </div>
 
@@ -321,6 +329,7 @@ function BillSummary() {
                   participantId={participant._id}
                   label={labels[participant._id] ?? participant.name}
                   totals={participantTotals}
+                  payments={data.payments}
                   onOpenDetail={() => setDetailParticipantId(participant._id)}
                   onOpenPaymentSettings={openPaymentSettings}
                 />
@@ -332,30 +341,84 @@ function BillSummary() {
         <Separator />
 
         {isDraft && errors.length === 0 && (
-          <Button
-            className="h-11 w-full bg-emerald-800 text-white transition-colors duration-200 hover:bg-emerald-900 focus-visible:ring-emerald-800/30 dark:bg-emerald-900 dark:hover:bg-emerald-950"
-            onClick={handleFinalize}
-            disabled={isFinalizing}
-          >
-            <CheckCircleIcon className={ICON.button} aria-hidden />
-            Завърши сметка
-          </Button>
+          <>
+            <Button
+              className="h-11 w-full bg-emerald-800 text-white transition-colors duration-200 hover:bg-emerald-900 focus-visible:ring-emerald-800/30 dark:bg-emerald-900 dark:hover:bg-emerald-950"
+              onClick={() => setFinalizeOpen(true)}
+            >
+              <CheckCircleIcon className={ICON.button} aria-hidden />
+              Завърши сметка
+            </Button>
+            <Dialog open={finalizeOpen} onOpenChange={setFinalizeOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Завършване на сметката?</DialogTitle>
+                  <DialogDescription asChild>
+                    <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+                      <p>
+                        Обща сума:{' '}
+                        <span className="font-medium text-foreground">
+                          {formatEur(totals.billTotalCents)}
+                        </span>
+                      </p>
+                      {unpaidCount > 0 ? (
+                        <p>
+                          {unpaidCount} участник{unpaidCount === 1 ? '' : 'а'}{' '}
+                          все още не {unpaidCount === 1 ? 'е' : 'са'} платил
+                          {unpaidCount === 1 ? '' : 'и'} напълно.
+                        </p>
+                      ) : (
+                        <p>Всички участници са платили.</p>
+                      )}
+                      <p>
+                        След завършване гостите няма да могат да променят
+                        артикулите си — само преглед.
+                      </p>
+                    </div>
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setFinalizeOpen(false)}
+                    disabled={isFinalizing}
+                  >
+                    Отказ
+                  </Button>
+                  <Button
+                    className="bg-emerald-800 text-white hover:bg-emerald-900 dark:bg-emerald-900 dark:hover:bg-emerald-950"
+                    onClick={() => void handleFinalize()}
+                    disabled={isFinalizing}
+                  >
+                    <CheckCircleIcon className={ICON.button} aria-hidden />
+                    {isFinalizing ? 'Завършване...' : 'Завърши сметка'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </>
         )}
 
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="h-11 flex-1"
-            onClick={() =>
-              void navigate({ to: '/bills/$billId', params: { billId } })
-            }
-          >
-            <PencilIcon className={ICON.button} aria-hidden />
-            Редактирай
-          </Button>
-          <Dialog>
+          {isDraft ? (
+            <Button
+              variant="outline"
+              className="h-11 flex-1"
+              onClick={() =>
+                void navigate({ to: '/bills/$billId', params: { billId } })
+              }
+            >
+              <PencilIcon className={ICON.button} aria-hidden />
+              Редактирай
+            </Button>
+          ) : null}
+          <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
             <DialogTrigger asChild>
-              <Button variant="destructive" className="h-11 flex-1">
+              <Button
+                variant="destructive"
+                className={cn('h-11', isDraft ? 'flex-1' : 'w-full')}
+              >
                 <Trash2Icon className={ICON.button} aria-hidden />
                 Изтрий
               </Button>
@@ -370,8 +433,16 @@ function BillSummary() {
               </DialogHeader>
               <DialogFooter>
                 <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isDeleting}
+                  onClick={() => setDeleteOpen(false)}
+                >
+                  Отказ
+                </Button>
+                <Button
                   variant="destructive"
-                  onClick={handleDelete}
+                  onClick={() => void handleDelete()}
                   disabled={isDeleting}
                 >
                   <Trash2Icon className={ICON.button} aria-hidden />
@@ -393,6 +464,7 @@ function BillSummary() {
             label={labels[detailParticipantId] ?? 'Участник'}
             breakdownInput={breakdownInput!}
             totals={totals.byParticipant[detailParticipantId]}
+            payments={data.payments}
             onOpenPaymentSettings={openPaymentSettings}
           />
         )}
