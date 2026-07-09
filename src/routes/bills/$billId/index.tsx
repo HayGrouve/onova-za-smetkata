@@ -37,7 +37,8 @@ import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
-import { parseEurInput } from '#/lib/format-currency.ts'
+import { parseTipInputToCents, validateBillMetadataField } from '#/lib/bill-metadata-schema.ts'
+import type { BillMetadataPatchInput } from '#/lib/bill-metadata-schema.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { cn } from '#/lib/utils.ts'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
@@ -141,6 +142,12 @@ function BillEditorContent({
   const [date, setDate] = useState(() => toDateInputValue(bill.date))
   const [note, setNote] = useState(bill.note ?? '')
   const [tip, setTip] = useState(() => formatEurInputValue(bill.tipCents ?? 0))
+  const [fieldErrors, setFieldErrors] = useState<{
+    restaurantName?: string
+    note?: string
+    tip?: string
+    date?: string
+  }>({})
   const initializedBillId = useRef(bill._id)
 
   useEffect(() => {
@@ -154,20 +161,36 @@ function BillEditorContent({
   }, [bill])
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  function scheduleSave(
-    patch: Partial<{
-      restaurantName: string
-      date: number
-      note: string
-      tipCents: number
-    }>,
-  ) {
+  function scheduleSave(patch: BillMetadataPatchInput) {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     saveTimeoutRef.current = setTimeout(() => {
       void updateBill({ billId, ...patch }).catch((error) => {
         toast.error(getConvexErrorMessage(error))
       })
     }, 500)
+  }
+
+  function clearFieldError(field: keyof typeof fieldErrors) {
+    setFieldErrors((prev) => {
+      if (!prev[field]) return prev
+      const next = { ...prev }
+      delete next[field]
+      return next
+    })
+  }
+
+  function scheduleValidatedSave(
+    field: 'restaurantName' | 'note' | 'tip' | 'date',
+    rawValue: string,
+    options?: { dateMs?: number },
+  ) {
+    const validated = validateBillMetadataField(field, rawValue, options)
+    if (!validated.ok) {
+      setFieldErrors((prev) => ({ ...prev, [field]: validated.message }))
+      return
+    }
+    clearFieldError(field)
+    scheduleSave(validated.patch)
   }
   useEffect(() => {
     return () => {
@@ -179,6 +202,11 @@ function BillEditorContent({
     () => buildParticipantLabels(participants),
     [participants],
   )
+
+  const tipCentsForTotals = useMemo(() => {
+    const parsed = parseTipInputToCents(tip)
+    return parsed.ok ? parsed.cents : 0
+  }, [tip])
 
   return (
     <div className="page-container">
@@ -296,12 +324,18 @@ function BillEditorContent({
                 inputMode="decimal"
                 value={tip}
                 onChange={(e) => {
-                  setTip(e.target.value)
-                  scheduleSave({ tipCents: parseEurInput(e.target.value) })
+                  const value = e.target.value
+                  setTip(value)
+                  if (fieldErrors.tip) clearFieldError('tip')
+                  scheduleValidatedSave('tip', value)
                 }}
                 placeholder="0,00"
                 className="h-11"
+                aria-invalid={Boolean(fieldErrors.tip)}
               />
+              {fieldErrors.tip ? (
+                <p className="text-xs text-destructive">{fieldErrors.tip}</p>
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 Разделя се поравно между всички участници.
               </p>
@@ -312,12 +346,20 @@ function BillEditorContent({
                 id="restaurantName"
                 value={restaurantName}
                 onChange={(e) => {
-                  setRestaurantName(e.target.value)
-                  scheduleSave({ restaurantName: e.target.value })
+                  const value = e.target.value
+                  setRestaurantName(value)
+                  if (fieldErrors.restaurantName) clearFieldError('restaurantName')
+                  scheduleValidatedSave('restaurantName', value)
                 }}
                 placeholder="Напр. Механа Крайречна"
                 className="h-11"
+                aria-invalid={Boolean(fieldErrors.restaurantName)}
               />
+              {fieldErrors.restaurantName ? (
+                <p className="text-xs text-destructive">
+                  {fieldErrors.restaurantName}
+                </p>
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 Попълва се автоматично при разпознаване на бележката, ако името
                 е видимо на снимката.
@@ -326,13 +368,19 @@ function BillEditorContent({
             <BillAdvancedSettings
               note={note}
               date={date}
+              noteError={fieldErrors.note}
+              dateError={fieldErrors.date}
               onNoteChange={(value) => {
                 setNote(value)
-                scheduleSave({ note: value })
+                if (fieldErrors.note) clearFieldError('note')
+                scheduleValidatedSave('note', value)
               }}
               onDateChange={(value) => {
                 setDate(value)
-                scheduleSave({ date: fromDateInputValue(value) })
+                if (fieldErrors.date) clearFieldError('date')
+                scheduleValidatedSave('date', value, {
+                  dateMs: fromDateInputValue(value),
+                })
               }}
             />
           </CardContent>
@@ -350,6 +398,8 @@ function BillEditorContent({
               billId={billId}
               participants={participants}
               labels={labels}
+              readOnly={bill.status === 'final'}
+              suggestedGroupName={bill.restaurantName}
             />
             <div className="mt-4">
               <BillInviteCard
@@ -378,6 +428,7 @@ function BillEditorContent({
               participants={participants}
               assignments={assignments}
               labels={labels}
+              readOnly={bill.status === 'final'}
             />
           </CardContent>
         </Card>
@@ -386,7 +437,7 @@ function BillEditorContent({
       {!reviewSheetOpen ? (
         <StickyTotalsBar
           billId={billId}
-          tipCents={parseEurInput(tip)}
+          tipCents={tipCentsForTotals}
           participants={participants}
           items={items}
           assignments={assignments}

@@ -17,11 +17,15 @@ import { cn } from '#/lib/utils.ts'
 export function BillAdvancedSettings({
   note,
   date,
+  noteError,
+  dateError,
   onNoteChange,
   onDateChange,
 }: {
   note: string
   date: string
+  noteError?: string
+  dateError?: string
   onNoteChange: (value: string) => void
   onDateChange: (value: string) => void
 }) {
@@ -67,7 +71,11 @@ export function BillAdvancedSettings({
             onChange={(e) => onNoteChange(e.target.value)}
             placeholder="Незадължителна бележка"
             className="h-11"
+            aria-invalid={Boolean(noteError)}
           />
+          {noteError ? (
+            <p className="text-xs text-destructive">{noteError}</p>
+          ) : null}
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="date">Дата</Label>
@@ -77,7 +85,11 @@ export function BillAdvancedSettings({
             value={date}
             onChange={(e) => onDateChange(e.target.value)}
             className="h-11"
+            aria-invalid={Boolean(dateError)}
           />
+          {dateError ? (
+            <p className="text-xs text-destructive">{dateError}</p>
+          ) : null}
         </div>
       </CollapsibleContent>
     </Collapsible>
