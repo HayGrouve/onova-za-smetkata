@@ -5,8 +5,25 @@ import {
   calculateBillTotals,
   calculateParticipantBreakdown,
   validateBillForFinalize,
+  totalOutstandingCents,
 } from './bill-calculations'
 import type { BillBreakdownInput, BillCalculationInput } from './bill-calculations'
+
+function assertBillReconciles(input: BillCalculationInput) {
+  const totals = calculateBillTotals(input)
+  const itemsTotal =
+    input.items.reduce(
+      (sum, item) => sum + item.unitPriceCents * item.quantity,
+      0,
+    ) + (input.tipCents ?? 0)
+  expect(totals.billTotalCents).toBe(itemsTotal)
+  const sumOwed = Object.values(totals.byParticipant).reduce(
+    (sum, participant) => sum + participant.owedCents,
+    0,
+  )
+  expect(sumOwed).toBe(totals.billTotalCents)
+  return totals
+}
 
 describe('splitLineTotal', () => {
   it('assigns full amount to one person', () => {
@@ -154,6 +171,90 @@ describe('validateBillForFinalize', () => {
       code: 'unassigned_items',
       message: 'Има 2 неразпределени артикула.',
     })
+  })
+})
+
+describe('bill reconciliation', () => {
+  it('sum(owed) equals bill total for mixed unit and cent splits', () => {
+    assertBillReconciles({
+      participants: [
+        { id: 'p1', sortOrder: 0 },
+        { id: 'p2', sortOrder: 1 },
+        { id: 'p3', sortOrder: 2 },
+      ],
+      items: [
+        { id: 'i1', unitPriceCents: 1200, quantity: 1 },
+        { id: 'i2', unitPriceCents: 229, quantity: 4 },
+      ],
+      assignments: [
+        { itemId: 'i1', participantId: 'p1' },
+        { itemId: 'i1', participantId: 'p2' },
+        { itemId: 'i2', participantId: 'p1', units: 2 },
+        { itemId: 'i2', participantId: 'p2', units: 1 },
+        { itemId: 'i2', participantId: 'p3', units: 1 },
+      ],
+      payments: [{ participantId: 'p1', amountCents: 500 }],
+      tipCents: 300,
+    })
+  })
+
+  it('splits €10.00 evenly among 3 participants (remainder cents)', () => {
+    const totals = assertBillReconciles({
+      participants: [
+        { id: 'p1', sortOrder: 0 },
+        { id: 'p2', sortOrder: 1 },
+        { id: 'p3', sortOrder: 2 },
+      ],
+      items: [{ id: 'i1', unitPriceCents: 1000, quantity: 1 }],
+      assignments: [
+        { itemId: 'i1', participantId: 'p1' },
+        { itemId: 'i1', participantId: 'p2' },
+        { itemId: 'i1', participantId: 'p3' },
+      ],
+      payments: [],
+    })
+    expect(totals.byParticipant.p1.owedCents).toBe(334)
+    expect(totals.byParticipant.p2.owedCents).toBe(333)
+    expect(totals.byParticipant.p3.owedCents).toBe(333)
+  })
+
+  it('splits €10.01 evenly among 3 participants', () => {
+    const totals = assertBillReconciles({
+      participants: [
+        { id: 'p1', sortOrder: 0 },
+        { id: 'p2', sortOrder: 1 },
+        { id: 'p3', sortOrder: 2 },
+      ],
+      items: [{ id: 'i1', unitPriceCents: 1001, quantity: 1 }],
+      assignments: [
+        { itemId: 'i1', participantId: 'p1' },
+        { itemId: 'i1', participantId: 'p2' },
+        { itemId: 'i1', participantId: 'p3' },
+      ],
+      payments: [],
+    })
+    expect(totals.byParticipant.p1.owedCents).toBe(334)
+    expect(totals.byParticipant.p2.owedCents).toBe(334)
+    expect(totals.byParticipant.p3.owedCents).toBe(333)
+  })
+
+  it('totalOutstandingCents sums positive balances only', () => {
+    const totals = calculateBillTotals({
+      participants: [
+        { id: 'p1', sortOrder: 0 },
+        { id: 'p2', sortOrder: 1 },
+      ],
+      items: [
+        { id: 'i1', unitPriceCents: 1000, quantity: 1 },
+        { id: 'i2', unitPriceCents: 2000, quantity: 1 },
+      ],
+      assignments: [
+        { itemId: 'i1', participantId: 'p1' },
+        { itemId: 'i2', participantId: 'p2' },
+      ],
+      payments: [{ participantId: 'p1', amountCents: 1000 }],
+    })
+    expect(totalOutstandingCents(totals)).toBe(2000)
   })
 })
 
