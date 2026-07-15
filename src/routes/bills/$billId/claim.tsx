@@ -358,6 +358,7 @@ function BillClaimContent({
           label={label}
           breakdownInput={breakdownInput}
           totals={participantTotals}
+          participantBalances={data.participantBalances}
           readOnly={readOnly}
         />
       ) : null}

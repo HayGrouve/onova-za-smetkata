@@ -2,6 +2,10 @@ import { SendIcon, PieChartIcon, CopyIcon } from 'lucide-react'
 import { useMutation, useQuery } from 'convex/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import {
+  CombinedPayChips,
+  type ParticipantBalance,
+} from '#/components/bills/combined-pay-chips.tsx'
 import { ParticipantBreakdownContent } from '#/components/bills/participant-breakdown-content.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
@@ -19,6 +23,7 @@ import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { itemUsesUnitAssignments } from '#/lib/guest-claim-items.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
+import { COMBINED_PAYMENT_MESSAGES } from '../../../shared/combined-payment-messages'
 
 const statusLabels: Record<PaymentStatus, string> = {
   unpaid: 'неплатено',
@@ -34,6 +39,7 @@ export interface GuestClaimFooterProps {
   label: string
   breakdownInput: BillBreakdownInput
   totals: ParticipantTotals
+  participantBalances: ParticipantBalance[]
   readOnly?: boolean
 }
 
@@ -45,12 +51,20 @@ export function GuestClaimFooter({
   label,
   breakdownInput,
   totals,
+  participantBalances,
   readOnly = false,
 }: GuestClaimFooterProps) {
   const settings = useQuery(api.paymentSettings.getForGuest, {
     billId,
     shareToken,
   })
+  const pending = useQuery(api.combinedPayments.getPendingForGuest, {
+    billId,
+    shareToken,
+    sessionToken,
+  })
+  const createCombined = useMutation(api.combinedPayments.create)
+  const cancelCombined = useMutation(api.combinedPayments.cancel)
   const toggleAssignment = useMutation(api.assignments.toggle)
   const setUnits = useMutation(api.assignments.setUnits)
   const revolutUsername = settings?.revolutUsername?.trim()
@@ -60,10 +74,40 @@ export function GuestClaimFooter({
   const hasPaymentMethod = hasRevolut || hasIban
   const footerRef = useRef<HTMLDivElement>(null)
   const [spacerHeight, setSpacerHeight] = useState(0)
+  const [selectedCoveredId, setSelectedCoveredId] =
+    useState<Id<'participants'> | null>(null)
 
   const remainingCents = Math.max(0, totals.balanceCents)
-  const amountLabel = totals.paidCents > 0 ? 'Остатък' : 'Вашият дял'
-  const amountCents = totals.paidCents > 0 ? remainingCents : totals.owedCents
+  const payerRemaining = remainingCents
+  const coveredRemaining = selectedCoveredId
+    ? (participantBalances.find((b) => b.participantId === selectedCoveredId)
+        ?.remainingCents ?? 0)
+    : 0
+  const isCombined = Boolean(selectedCoveredId) && coveredRemaining > 0
+  const amountLabelExisting =
+    totals.paidCents > 0 ? 'Остатък' : 'Вашият дял'
+  const amountCents = pending
+    ? pending.totalCents
+    : isCombined
+      ? payerRemaining + coveredRemaining
+      : totals.paidCents > 0
+        ? remainingCents
+        : totals.owedCents
+  const amountLabel =
+    isCombined || pending
+      ? COMBINED_PAYMENT_MESSAGES.combinedTotalLabel
+      : amountLabelExisting
+  const chipsDisabled = Boolean(pending) || readOnly
+  const coveredName = selectedCoveredId
+    ? participantBalances.find((b) => b.participantId === selectedCoveredId)
+        ?.name
+    : null
+
+  useEffect(() => {
+    if (pending) {
+      setSelectedCoveredId(pending.coveredParticipantId)
+    }
+  }, [pending])
 
   useEffect(() => {
     const footer = footerRef.current
@@ -77,20 +121,66 @@ export function GuestClaimFooter({
     return () => observer.disconnect()
   }, [])
 
+  async function resolvePayCents(): Promise<number | null> {
+    if (remainingCents <= 0 && !isCombined && !pending) return null
+    let payCents = amountCents
+    if (isCombined && !pending) {
+      try {
+        const result = await createCombined({
+          billId,
+          shareToken,
+          sessionToken,
+          coveredParticipantId: selectedCoveredId!,
+        })
+        payCents = result.totalCents
+      } catch (error) {
+        toast.error(getConvexErrorMessage(error))
+        return null
+      }
+    } else if (pending) {
+      payCents = pending.totalCents
+    }
+    return payCents
+  }
+
   async function handleRevolut() {
-    if (!revolutUsername || remainingCents <= 0) return
-    void copyToClipboard(formatCopyAmount(remainingCents))
-    window.open(buildRevolutUrl(revolutUsername, remainingCents))
+    if (!revolutUsername || (remainingCents <= 0 && !isCombined && !pending)) {
+      return
+    }
+    const payCents = await resolvePayCents()
+    if (payCents === null) return
+    void copyToClipboard(formatCopyAmount(payCents))
+    window.open(buildRevolutUrl(revolutUsername, payCents))
     toast.success('Отворен Revolut')
   }
 
   async function handleCopyIban() {
     if (!iban) return
-    const copied = await copyToClipboard(iban)
+    const payCents = await resolvePayCents()
+    if (payCents === null && (isCombined || pending)) return
+    const text =
+      payCents !== null
+        ? `${formatCopyAmount(payCents)}\n${iban}`
+        : iban
+    const copied = await copyToClipboard(text)
     if (copied) {
       toast.success('IBAN копиран')
     } else {
       toast.error('Неуспешно копиране')
+    }
+  }
+
+  async function handleCancelPending() {
+    if (!pending) return
+    try {
+      await cancelCombined({
+        billId,
+        sessionToken,
+        requestId: pending._id,
+      })
+      setSelectedCoveredId(null)
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
     }
   }
 
@@ -175,6 +265,34 @@ export function GuestClaimFooter({
             onRemoveItem={handleRemoveItem}
             summaryFooter={
               <>
+                <CombinedPayChips
+                  balances={participantBalances}
+                  payerParticipantId={participantId}
+                  selectedCoveredId={selectedCoveredId}
+                  onSelect={setSelectedCoveredId}
+                  disabled={chipsDisabled}
+                />
+                {isCombined && coveredName ? (
+                  <p className="text-xs text-muted-foreground">
+                    {coveredName}: {formatEur(coveredRemaining)}
+                  </p>
+                ) : null}
+                {pending ? (
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs text-amber-600 dark:text-amber-500">
+                      {COMBINED_PAYMENT_MESSAGES.statusPending}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 shrink-0 px-2 text-xs"
+                      onClick={() => void handleCancelPending()}
+                    >
+                      {COMBINED_PAYMENT_MESSAGES.cancelPending}
+                    </Button>
+                  </div>
+                ) : null}
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs text-muted-foreground">
@@ -192,8 +310,11 @@ export function GuestClaimFooter({
                       <Button
                         type="button"
                         className="h-11"
-                        disabled={remainingCents <= 0}
-                        onClick={handleRevolut}
+                        disabled={
+                          (remainingCents <= 0 && !isCombined) ||
+                          Boolean(pending)
+                        }
+                        onClick={() => void handleRevolut()}
                       >
                         <SendIcon className={ICON.button} aria-hidden />
                         Revolut
@@ -216,7 +337,7 @@ export function GuestClaimFooter({
                   <p className="text-xs text-muted-foreground">
                     Попитайте домакина за Revolut или банков превод.
                   </p>
-                ) : remainingCents <= 0 ? (
+                ) : remainingCents <= 0 && !isCombined && !pending ? (
                   <p className="text-xs text-muted-foreground">
                     Няма оставащо за плащане.
                   </p>

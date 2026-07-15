@@ -1,6 +1,5 @@
 // src/components/bills/combined-pay-chips.tsx
 import { Button } from '#/components/ui/button.tsx'
-import { cn } from '#/lib/utils.ts'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { COMBINED_PAYMENT_MESSAGES } from '../../../shared/combined-payment-messages'
 
