@@ -1,10 +1,13 @@
 import { ConvexError } from 'convex/values'
-import { query } from './_generated/server'
+import { mutation, query } from './_generated/server'
 import type { MutationCtx, QueryCtx } from './_generated/server'
 import { v } from 'convex/values'
 import type { Id } from './_generated/dataModel'
 import { requireBillOwner } from './lib/auth'
+import { validateCombinedPaymentCreate } from './lib/combinedPayment'
 import { assertShareToken } from './lib/guestAccess'
+import { GUEST_FLOW_MESSAGES } from './lib/guestFlowMessages'
+import { requireGuestSession } from './lib/requireGuestSession'
 import { calculateBillTotals, type BillTotals } from './lib/billCalculations'
 
 async function loadBillTotalsForCombinedPay(
@@ -96,5 +99,85 @@ export const listPendingForBill = query({
       )
       .collect()
     return pending
+  },
+})
+
+export const create = mutation({
+  args: {
+    billId: v.id('bills'),
+    shareToken: v.string(),
+    sessionToken: v.string(),
+    coveredParticipantId: v.id('participants'),
+  },
+  handler: async (ctx, args) => {
+    await assertShareToken(ctx, args.billId, args.shareToken)
+
+    const session = await ctx.db
+      .query('guestSessions')
+      .withIndex('by_sessionToken', (q) =>
+        q.eq('sessionToken', args.sessionToken),
+      )
+      .first()
+    if (!session || session.billId !== args.billId) {
+      throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
+    }
+
+    const { sessionId } = await requireGuestSession(ctx, {
+      billId: args.billId,
+      participantId: session.participantId,
+      sessionToken: args.sessionToken,
+    })
+
+    const covered = await ctx.db.get(args.coveredParticipantId)
+    if (!covered || covered.billId !== args.billId) {
+      throw new ConvexError(GUEST_FLOW_MESSAGES.participantNotOnBill)
+    }
+
+    const totals = await loadBillTotalsForCombinedPay(ctx, args.billId)
+
+    const existingForSession = await ctx.db
+      .query('combinedPaymentRequests')
+      .withIndex('by_guestSessionId', (q) => q.eq('guestSessionId', sessionId))
+      .collect()
+    const hasPendingForSession = existingForSession.some(
+      (r) => r.billId === args.billId && r.status === 'pending',
+    )
+
+    const billPending = await ctx.db
+      .query('combinedPaymentRequests')
+      .withIndex('by_billId_status', (q) =>
+        q.eq('billId', args.billId).eq('status', 'pending'),
+      )
+      .collect()
+    const coveredHasPending = billPending.some(
+      (r) => r.coveredParticipantId === args.coveredParticipantId,
+    )
+
+    const validated = validateCombinedPaymentCreate(
+      { coveredParticipantId: args.coveredParticipantId },
+      {
+        payerParticipantId: session.participantId,
+        hasPendingForSession,
+        coveredHasPending,
+        totals,
+      },
+    )
+    if (!validated.ok) {
+      throw new ConvexError(validated.message)
+    }
+
+    const requestId = await ctx.db.insert('combinedPaymentRequests', {
+      billId: args.billId,
+      payerParticipantId: session.participantId,
+      coveredParticipantId: args.coveredParticipantId,
+      payerAmountCents: validated.payerAmountCents,
+      coveredAmountCents: validated.coveredAmountCents,
+      totalCents: validated.totalCents,
+      status: 'pending',
+      guestSessionId: sessionId,
+      createdAt: Date.now(),
+    })
+
+    return { requestId, totalCents: validated.totalCents }
   },
 })
