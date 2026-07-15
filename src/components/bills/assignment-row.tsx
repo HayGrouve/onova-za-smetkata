@@ -7,6 +7,7 @@ import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
 import { Button } from '#/components/ui/button.tsx'
+import { Badge } from '#/components/ui/badge.tsx'
 
 export interface AssignmentRowProps {
   itemId: Id<'items'>
@@ -79,8 +80,12 @@ export function AssignmentRow({
     assignedUnitsTotal !== itemQuantity
 
   if (itemQuantity === 1) {
+    const assignedCount = itemAssignments.length
     return (
       <div className="flex flex-col gap-2">
+        {assignedCount > 1 ? (
+          <Badge variant="secondary">Споделено ({assignedCount})</Badge>
+        ) : null}
         <div className="flex flex-wrap gap-1.5">
           {participants.map((participant) => {
             const isAssigned = itemAssignments.some(

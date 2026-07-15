@@ -7,40 +7,59 @@ import { Button } from '#/components/ui/button.tsx'
 import { Card, CardContent } from '#/components/ui/card.tsx'
 import { formatEur } from '#/lib/format-currency.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { getCoveredParticipantIds } from '#/lib/combined-payment.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { COMBINED_PAYMENT_MESSAGES } from '../../../shared/combined-payment-messages'
 
-function formatHostBanner(
+function joinParticipantNames(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? ''
+  if (names.length === 2) return `${names[0]} и ${names[1]}`
+  return `${names.slice(0, -1).join(', ')} и ${names.at(-1)}`
+}
+
+function formatCombinedCopy(
   payerName: string,
-  coveredName: string,
+  coveredNames: string[],
   totalCents: number,
-): string {
-  return COMBINED_PAYMENT_MESSAGES.hostBanner
-    .replaceAll('{payer}', payerName)
-    .replace('{total}', formatEur(totalCents))
-    .replace('{covered}', coveredName)
-}
+): { banner: string; confirmPrompt: string; toast: string } {
+  const allNames = [payerName, ...coveredNames]
+  const joined = joinParticipantNames(allNames)
 
-function formatHostConfirmPrompt(payerName: string, coveredName: string): string {
-  return COMBINED_PAYMENT_MESSAGES.hostConfirmPrompt
-    .replace('{payer}', payerName)
-    .replace('{covered}', coveredName)
-}
+  if (coveredNames.length === 0) {
+    return {
+      banner: COMBINED_PAYMENT_MESSAGES.soloHostBanner
+        .replace('{payer}', payerName)
+        .replace('{total}', formatEur(totalCents)),
+      confirmPrompt: COMBINED_PAYMENT_MESSAGES.soloHostConfirmPrompt.replace(
+        '{payer}',
+        payerName,
+      ),
+      toast: `${payerName} е маркиран като платен`,
+    }
+  }
 
-function formatSoloHostBanner(payerName: string, totalCents: number): string {
-  return COMBINED_PAYMENT_MESSAGES.soloHostBanner
-    .replace('{payer}', payerName)
-    .replace('{total}', formatEur(totalCents))
-}
+  if (coveredNames.length === 1) {
+    const coveredName = coveredNames[0]!
+    return {
+      banner: COMBINED_PAYMENT_MESSAGES.hostBanner
+        .replaceAll('{payer}', payerName)
+        .replace('{total}', formatEur(totalCents))
+        .replace('{covered}', coveredName),
+      confirmPrompt: COMBINED_PAYMENT_MESSAGES.hostConfirmPrompt
+        .replace('{payer}', payerName)
+        .replace('{covered}', coveredName),
+      toast: `${payerName} и ${coveredName} са маркирани като платени`,
+    }
+  }
 
-function formatSoloHostConfirmPrompt(payerName: string): string {
-  return COMBINED_PAYMENT_MESSAGES.soloHostConfirmPrompt.replace(
-    '{payer}',
-    payerName,
-  )
+  return {
+    banner: `${payerName} плати ${formatEur(totalCents)} за ${joined}`,
+    confirmPrompt: `Маркира ${joined} като платени?`,
+    toast: `${joined} са маркирани като платени`,
+  }
 }
 
 export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
@@ -59,13 +78,12 @@ export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
 
   if (!pending?.length) return null
 
-  async function handleConfirmCombined(
+  async function handleConfirm(
     requestId: Id<'combinedPaymentRequests'>,
-    payerName: string,
-    coveredName: string,
+    copy: ReturnType<typeof formatCombinedCopy>,
   ) {
     const confirmed = await confirmAction({
-      title: formatHostConfirmPrompt(payerName, coveredName),
+      title: copy.confirmPrompt,
       confirmLabel: COMBINED_PAYMENT_MESSAGES.confirm,
       variant: 'default',
     })
@@ -74,29 +92,7 @@ export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
     setActiveRequestId(requestId)
     try {
       await confirmMutation({ billId, requestId })
-      toast.success(`${payerName} и ${coveredName} са маркирани като платени`)
-    } catch (error) {
-      toast.error(getConvexErrorMessage(error))
-    } finally {
-      setActiveRequestId(null)
-    }
-  }
-
-  async function handleConfirmSolo(
-    requestId: Id<'combinedPaymentRequests'>,
-    payerName: string,
-  ) {
-    const confirmed = await confirmAction({
-      title: formatSoloHostConfirmPrompt(payerName),
-      confirmLabel: COMBINED_PAYMENT_MESSAGES.confirm,
-      variant: 'default',
-    })
-    if (!confirmed) return
-
-    setActiveRequestId(requestId)
-    try {
-      await confirmMutation({ billId, requestId })
-      toast.success(`${payerName} е маркиран като платен`)
+      toast.success(copy.toast)
     } catch (error) {
       toast.error(getConvexErrorMessage(error))
     } finally {
@@ -124,14 +120,18 @@ export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
           bill?.participants.find((p) => p._id === request.payerParticipantId)
             ?.name ??
           'Участник'
-        const isSolo = !request.coveredParticipantId
-        const coveredName = isSolo
-          ? null
-          : (labels[request.coveredParticipantId] ??
-            bill?.participants.find(
-              (p) => p._id === request.coveredParticipantId,
-            )?.name ??
-            'Участник')
+        const coveredIds = getCoveredParticipantIds(request)
+        const coveredNames = coveredIds.map(
+          (id) =>
+            labels[id] ??
+            bill?.participants.find((p) => p._id === id)?.name ??
+            'Участник',
+        )
+        const copy = formatCombinedCopy(
+          payerName,
+          coveredNames,
+          request.totalCents,
+        )
         const isBusy = activeRequestId === request._id
 
         return (
@@ -145,30 +145,14 @@ export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
                   className={`${ICON.section} mt-0.5 shrink-0 text-amber-600 dark:text-amber-500`}
                   aria-hidden
                 />
-                <span>
-                  {isSolo
-                    ? formatSoloHostBanner(payerName, request.totalCents)
-                    : formatHostBanner(
-                        payerName,
-                        coveredName!,
-                        request.totalCents,
-                      )}
-                </span>
+                <span>{copy.banner}</span>
               </p>
               <div className="flex gap-2">
                 <Button
                   type="button"
                   className="h-11 flex-1 bg-success text-success-foreground hover:bg-success/90"
                   disabled={isBusy}
-                  onClick={() =>
-                    isSolo
-                      ? void handleConfirmSolo(request._id, payerName)
-                      : void handleConfirmCombined(
-                          request._id,
-                          payerName,
-                          coveredName!,
-                        )
-                  }
+                  onClick={() => void handleConfirm(request._id, copy)}
                 >
                   {COMBINED_PAYMENT_MESSAGES.confirm}
                 </Button>

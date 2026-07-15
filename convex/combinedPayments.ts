@@ -2,10 +2,12 @@ import { ConvexError } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import type { MutationCtx, QueryCtx } from './_generated/server'
 import { v } from 'convex/values'
-import type { Id } from './_generated/dataModel'
+import type { Doc, Id } from './_generated/dataModel'
 import { requireBillOwner } from './lib/auth'
 import {
   COMBINED_PAYMENT_MESSAGES,
+  getCoveredAmountsFromRequest,
+  getCoveredParticipantIds,
   isAwaitingHostConfirmation,
   isSoloPaymentRequest,
   participantRemainingCents,
@@ -13,6 +15,7 @@ import {
   validateCombinedPaymentCreate,
   validateInitiateTransfer,
   validateSoloPaymentCreate,
+  validateUpdateCovered,
 } from './lib/combinedPayment'
 import { validatePaymentAdd } from './lib/paymentAmountSchema'
 import { touchBill } from './lib/touchBill'
@@ -67,6 +70,34 @@ async function loadBillTotalsForCombinedPay(
     })),
     tipCents: bill.tipCents ?? 0,
   })
+}
+
+function buildCoveredPendingIds(
+  pending: Doc<'combinedPaymentRequests'>[],
+  excludeRequestId?: Id<'combinedPaymentRequests'>,
+): Set<string> {
+  const ids = new Set<string>()
+  for (const request of pending) {
+    if (excludeRequestId && request._id === excludeRequestId) continue
+    if (request.status !== 'pending') continue
+    for (const id of getCoveredParticipantIds(request)) {
+      ids.add(id)
+    }
+  }
+  return ids
+}
+
+async function validateCoveredParticipantsOnBill(
+  ctx: QueryCtx | MutationCtx,
+  billId: Id<'bills'>,
+  coveredParticipantIds: Id<'participants'>[],
+) {
+  for (const coveredId of coveredParticipantIds) {
+    const covered = await ctx.db.get(coveredId)
+    if (!covered || covered.billId !== billId) {
+      throw new ConvexError(GUEST_FLOW_MESSAGES.participantNotOnBill)
+    }
+  }
 }
 
 export const getPendingForGuest = query({
@@ -136,19 +167,19 @@ export const getPendingCoverForGuest = query({
       )
       .collect()
 
-    const cover = pending.find(
-      (request) =>
-        request.coveredParticipantId != null &&
-        request.coveredParticipantId === session.participantId,
+    const cover = pending.find((request) =>
+      getCoveredParticipantIds(request).includes(session.participantId),
     )
     if (!cover) return null
 
     const payer = await ctx.db.get(cover.payerParticipantId)
+    const coveredAmounts = getCoveredAmountsFromRequest(cover)
     return {
       requestId: cover._id,
       payerParticipantId: cover.payerParticipantId,
       payerName: payer?.name ?? 'Участник',
-      coveredAmountCents: cover.coveredAmountCents,
+      coveredAmountCents:
+        coveredAmounts[session.participantId] ?? cover.coveredAmountCents,
       totalCents: cover.totalCents,
     }
   },
@@ -159,7 +190,7 @@ export const create = mutation({
     billId: v.id('bills'),
     shareToken: v.string(),
     sessionToken: v.string(),
-    coveredParticipantId: v.id('participants'),
+    coveredParticipantIds: v.array(v.id('participants')),
   },
   handler: async (ctx, args) => {
     await assertShareToken(ctx, args.billId, args.shareToken)
@@ -180,10 +211,11 @@ export const create = mutation({
       sessionToken: args.sessionToken,
     })
 
-    const covered = await ctx.db.get(args.coveredParticipantId)
-    if (!covered || covered.billId !== args.billId) {
-      throw new ConvexError(GUEST_FLOW_MESSAGES.participantNotOnBill)
-    }
+    await validateCoveredParticipantsOnBill(
+      ctx,
+      args.billId,
+      args.coveredParticipantIds,
+    )
 
     const totals = await loadBillTotalsForCombinedPay(ctx, args.billId)
 
@@ -201,16 +233,14 @@ export const create = mutation({
         q.eq('billId', args.billId).eq('status', 'pending'),
       )
       .collect()
-    const coveredHasPending = billPending.some(
-      (r) => r.coveredParticipantId === args.coveredParticipantId,
-    )
+    const coveredPendingIds = buildCoveredPendingIds(billPending)
 
     const validated = validateCombinedPaymentCreate(
-      { coveredParticipantId: args.coveredParticipantId },
+      { coveredParticipantIds: args.coveredParticipantIds },
       {
         payerParticipantId: session.participantId,
         hasPendingForSession,
-        coveredHasPending,
+        coveredPendingIds,
         totals,
       },
     )
@@ -221,8 +251,9 @@ export const create = mutation({
     const requestId = await ctx.db.insert('combinedPaymentRequests', {
       billId: args.billId,
       payerParticipantId: session.participantId,
-      coveredParticipantId: args.coveredParticipantId,
+      coveredParticipantIds: args.coveredParticipantIds,
       payerAmountCents: validated.payerAmountCents,
+      coveredAmountsByParticipant: validated.coveredAmountsByParticipant,
       coveredAmountCents: validated.coveredAmountCents,
       totalCents: validated.totalCents,
       status: 'pending',
@@ -231,6 +262,84 @@ export const create = mutation({
     })
 
     return { requestId, totalCents: validated.totalCents }
+  },
+})
+
+export const updateCovered = mutation({
+  args: {
+    billId: v.id('bills'),
+    sessionToken: v.string(),
+    requestId: v.id('combinedPaymentRequests'),
+    coveredParticipantIds: v.array(v.id('participants')),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db
+      .query('guestSessions')
+      .withIndex('by_sessionToken', (q) =>
+        q.eq('sessionToken', args.sessionToken),
+      )
+      .first()
+    if (!session || session.billId !== args.billId) {
+      throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
+    }
+
+    const request = await ctx.db.get(args.requestId)
+    if (
+      !request ||
+      request.billId !== args.billId ||
+      request.guestSessionId !== session._id
+    ) {
+      throw new ConvexError(COMBINED_PAYMENT_MESSAGES.requestNotFound)
+    }
+    if (request.status !== 'pending') {
+      throw new ConvexError(COMBINED_PAYMENT_MESSAGES.requestNotPending)
+    }
+
+    if (args.coveredParticipantIds.length === 0) {
+      await ctx.db.patch(request._id, {
+        status: 'cancelled',
+        resolvedAt: Date.now(),
+      })
+      return { requestId: request._id, cancelled: true as const }
+    }
+
+    await validateCoveredParticipantsOnBill(
+      ctx,
+      args.billId,
+      args.coveredParticipantIds,
+    )
+
+    const totals = await loadBillTotalsForCombinedPay(ctx, args.billId)
+    const billPending = await ctx.db
+      .query('combinedPaymentRequests')
+      .withIndex('by_billId_status', (q) =>
+        q.eq('billId', args.billId).eq('status', 'pending'),
+      )
+      .collect()
+    const coveredPendingIds = buildCoveredPendingIds(billPending, request._id)
+
+    const validated = validateUpdateCovered(
+      { coveredParticipantIds: args.coveredParticipantIds },
+      {
+        payerParticipantId: session.participantId,
+        coveredPendingIds,
+        totals,
+        transferInitiatedAt: request.transferInitiatedAt,
+      },
+    )
+    if (!validated.ok) {
+      throw new ConvexError(validated.message)
+    }
+
+    await ctx.db.patch(request._id, {
+      coveredParticipantIds: args.coveredParticipantIds,
+      coveredAmountsByParticipant: validated.coveredAmountsByParticipant,
+      coveredAmountCents: validated.coveredAmountCents,
+      payerAmountCents: validated.payerAmountCents,
+      totalCents: validated.totalCents,
+    })
+
+    return { requestId: request._id, totalCents: validated.totalCents }
   },
 })
 
@@ -410,18 +519,23 @@ export const confirm = mutation({
       totals,
       request.payerParticipantId,
     )
-    const coveredRemaining = request.coveredParticipantId
-      ? participantRemainingCents(totals, request.coveredParticipantId)
-      : 0
+    const coveredAmounts = getCoveredAmountsFromRequest(request)
+    const coveredRemainingsByParticipant: Record<string, number> = {}
+    for (const coveredId of Object.keys(coveredAmounts)) {
+      coveredRemainingsByParticipant[coveredId] = participantRemainingCents(
+        totals,
+        coveredId,
+      )
+    }
 
     const validated = validateCombinedPaymentConfirm(
       {
         payerAmountCents: request.payerAmountCents,
-        coveredAmountCents: request.coveredAmountCents,
+        coveredAmountsByParticipant: coveredAmounts,
       },
       {
         payerRemainingCents: payerRemaining,
-        coveredRemainingCents: coveredRemaining,
+        coveredRemainingsByParticipant,
       },
     )
     if (!validated.ok) {
@@ -448,10 +562,10 @@ export const confirm = mutation({
             participantId: request.payerParticipantId,
             amountCents: request.payerAmountCents,
           },
-          {
-            participantId: request.coveredParticipantId!,
-            amountCents: request.coveredAmountCents,
-          },
+          ...Object.entries(coveredAmounts).map(([participantId, amountCents]) => ({
+            participantId: participantId as Id<'participants'>,
+            amountCents,
+          })),
         ]
 
     for (const entry of entries) {

@@ -249,3 +249,105 @@ test('guest can cancel pending combined payment', async ({ browser }) => {
   await setup.hostContext.close()
   await guestContext.close()
 })
+
+interface TriplePaySetup extends CombinedPaySetup {
+  participantC: string
+}
+
+async function setupTripleCombinedPaymentBill(
+  browser: Browser,
+): Promise<TriplePaySetup> {
+  const stamp = Date.now()
+  const participantA = `Alice ${stamp}`
+  const participantB = `Bob ${stamp}`
+  const participantC = `Carol ${stamp}`
+  const itemName = 'Пица'
+
+  const { context: hostContext, page: hostPage } = await openHostContext(browser)
+
+  await hostPage.getByRole('button', { name: 'Нова сметка' }).click()
+  await goToBillStep(hostPage, 2)
+
+  for (const name of [participantA, participantB, participantC]) {
+    await hostPage.getByPlaceholder('Име на участник').fill(name)
+    await hostPage.getByRole('button', { name: 'Добави' }).click()
+    await expect(hostPage.getByText(name)).toBeVisible()
+  }
+
+  const joinUrl = await getJoinUrl(hostPage)
+  await goToBillStep(hostPage, 3)
+
+  await hostPage.getByRole('button', { name: 'Добави артикул' }).click()
+  await hostPage.getByPlaceholder('Наименование на артикул').fill(itemName)
+  await hostPage.getByPlaceholder('Цена (€)').first().fill('6.00')
+  await hostPage.getByLabel('Бр.').fill('3')
+  await hostPage.getByRole('button', { name: 'Добави' }).click()
+  await expect(hostPage.getByText(itemName)).toBeVisible()
+
+  await configureRevolut(hostPage)
+
+  const billId = hostPage.url().match(/\/bills\/([^/?]+)/)?.[1]
+  expect(billId).toBeTruthy()
+
+  for (const name of [participantA, participantB, participantC]) {
+    const guestContext = await browser.newContext()
+    const guestPage = await guestContext.newPage()
+    await guestPage.goto(joinUrl)
+    await guestPage.getByRole('button', { name }).click()
+    await claimHalfOfItem(guestPage, itemName)
+    await guestContext.close()
+  }
+
+  return {
+    hostContext,
+    hostPage,
+    billId: billId!,
+    joinUrl,
+    participantA,
+    participantB,
+    participantC,
+    itemName,
+  }
+}
+
+test('guest pays for self plus two others — host confirms all three', async ({
+  browser,
+}) => {
+  const setup = await setupTripleCombinedPaymentBill(browser)
+
+  const guestContext = await browser.newContext()
+  const guestPage = await guestContext.newPage()
+  await guestPage.goto(setup.joinUrl)
+  await guestPage.getByRole('button', { name: setup.participantA }).click()
+  await expect(guestPage.getByText('Разбивка на дяла')).toBeVisible()
+
+  await guestPage.getByRole('button', { name: setup.participantB }).click()
+  await guestPage.getByRole('button', { name: setup.participantC }).click()
+  await expect(guestPage.getByText('Общо за плащане')).toBeVisible()
+
+  await guestPage.getByRole('button', { name: 'Revolut' }).click()
+  await expect(
+    guestPage.getByText('Чака потвърждение от домакина'),
+  ).toBeVisible({ timeout: 15_000 })
+
+  await goToBillStep(setup.hostPage, 4)
+  await expect(
+    setup.hostPage.getByText(new RegExp(`${setup.participantA}.*плати`)),
+  ).toBeVisible({ timeout: 15_000 })
+
+  await setup.hostPage
+    .locator('[class*="border-accent"]')
+    .getByRole('button', { name: 'Потвърди' })
+    .click()
+  await setup.hostPage
+    .getByRole('alertdialog')
+    .getByRole('button', { name: 'Потвърди' })
+    .click()
+
+  await assertParticipantPaid(setup.hostPage, setup.participantA)
+  await assertParticipantPaid(setup.hostPage, setup.participantB)
+  await assertParticipantPaid(setup.hostPage, setup.participantC)
+
+  await guestContext.close()
+  await setup.hostContext.close()
+})

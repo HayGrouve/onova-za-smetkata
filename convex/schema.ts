@@ -88,8 +88,10 @@ export default defineSchema({
     billId: v.id('bills'),
     payerParticipantId: v.id('participants'),
     coveredParticipantId: v.optional(v.id('participants')),
+    coveredParticipantIds: v.optional(v.array(v.id('participants'))),
     payerAmountCents: v.number(),
     coveredAmountCents: v.number(),
+    coveredAmountsByParticipant: v.optional(v.record(v.string(), v.number())),
     totalCents: v.number(),
     status: v.union(
       v.literal('pending'),

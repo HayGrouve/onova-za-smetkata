@@ -23,6 +23,7 @@ import {
 } from '#/lib/payment-settings.ts'
 import { copyToClipboard } from '#/lib/copy-to-clipboard.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { getCoveredParticipantIds } from '#/lib/combined-payment.ts'
 import { itemUsesUnitAssignments } from '#/lib/guest-claim-items.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -76,6 +77,7 @@ export function GuestClaimFooter({
     sessionToken,
   })
   const createCombined = useMutation(api.combinedPayments.create)
+  const updateCovered = useMutation(api.combinedPayments.updateCovered)
   const createSolo = useMutation(api.combinedPayments.createSolo)
   const initiateTransfer = useMutation(api.combinedPayments.initiateTransfer)
   const cancelCombined = useMutation(api.combinedPayments.cancel)
@@ -88,30 +90,37 @@ export function GuestClaimFooter({
   const hasPaymentMethod = hasRevolut || hasIban
   const footerRef = useRef<HTMLDivElement>(null)
   const [spacerHeight, setSpacerHeight] = useState(0)
-  const [selectedCoveredId, setSelectedCoveredId] =
-    useState<Id<'participants'> | null>(null)
+  const [selectedCoveredIds, setSelectedCoveredIds] = useState<
+    Id<'participants'>[]
+  >([])
   const [isSelectingCover, setIsSelectingCover] = useState(false)
 
   const transferInitiated = pending?.transferInitiatedAt != null
 
   const remainingCents = Math.max(0, totals.balanceCents)
   const payerRemaining = remainingCents
-  const coveredRemaining = selectedCoveredId
-    ? (participantBalances.find((b) => b.participantId === selectedCoveredId)
-        ?.remainingCents ?? 0)
-    : 0
-  const isCombined = Boolean(selectedCoveredId) && coveredRemaining > 0
+  const selectedCoveredRemainingTotal = selectedCoveredIds.reduce(
+    (sum, id) =>
+      sum +
+      (participantBalances.find((b) => b.participantId === id)?.remainingCents ??
+        0),
+    0,
+  )
+  const isCombined = selectedCoveredIds.length > 0
   const amountLabelExisting =
     totals.paidCents > 0 ? 'Остатък' : 'Вашият дял'
   const amountCents = pending
     ? pending.totalCents
     : isCombined
-      ? payerRemaining + coveredRemaining
+      ? payerRemaining + selectedCoveredRemainingTotal
       : totals.paidCents > 0
         ? remainingCents
         : totals.owedCents
+  const pendingCoveredIds = pending
+    ? (getCoveredParticipantIds(pending) as Id<'participants'>[])
+    : []
   const amountLabel =
-    isCombined || (pending && pending.coveredParticipantId)
+    isCombined || pendingCoveredIds.length > 0
       ? COMBINED_PAYMENT_MESSAGES.combinedTotalLabel
       : amountLabelExisting
   const chipsDisabled =
@@ -122,65 +131,66 @@ export function GuestClaimFooter({
   const payDisabledForCovered = Boolean(pendingCover)
   const payDisabledForPayer =
     Boolean(pendingCover) || (Boolean(pending) && transferInitiated)
-  const coveredName = selectedCoveredId
-    ? participantBalances.find((b) => b.participantId === selectedCoveredId)
-        ?.name
-    : null
 
   useEffect(() => {
     if (pending) {
-      setSelectedCoveredId(pending.coveredParticipantId ?? null)
+      setSelectedCoveredIds(
+        getCoveredParticipantIds(pending) as Id<'participants'>[],
+      )
       return
     }
-    setSelectedCoveredId(null)
+    setSelectedCoveredIds([])
   }, [pending])
 
-  const handleSelectCovered = useCallback(
-    async (id: Id<'participants'> | null) => {
+  const handleToggleCovered = useCallback(
+    async (id: Id<'participants'>) => {
       if (pendingCover || readOnly || isSelectingCover) return
-      if (pending && transferInitiated) return
+      if (pending && transferInitiated) {
+        toast.error(COMBINED_PAYMENT_MESSAGES.selectionLockedAfterTransfer)
+        return
+      }
 
-      if (id === null) {
-        setSelectedCoveredId(null)
-        if (pending) {
-          setIsSelectingCover(true)
-          try {
+      const next = selectedCoveredIds.includes(id)
+        ? selectedCoveredIds.filter((entry) => entry !== id)
+        : [...selectedCoveredIds, id]
+
+      setSelectedCoveredIds(next)
+      setIsSelectingCover(true)
+      try {
+        if (next.length === 0) {
+          if (pending) {
             await cancelCombined({
               billId,
               sessionToken,
               requestId: pending._id,
             })
-          } catch (error) {
-            toast.error(getConvexErrorMessage(error))
-            setSelectedCoveredId(pending.coveredParticipantId ?? null)
-          } finally {
-            setIsSelectingCover(false)
           }
+          return
         }
-        return
-      }
 
-      setSelectedCoveredId(id)
-      setIsSelectingCover(true)
-      try {
-        if (pending && pending.coveredParticipantId !== id) {
-          await cancelCombined({
-            billId,
-            sessionToken,
-            requestId: pending._id,
-          })
-        }
-        if (!pending || pending.coveredParticipantId !== id) {
+        if (!pending) {
           await createCombined({
             billId,
             shareToken,
             sessionToken,
-            coveredParticipantId: id,
+            coveredParticipantIds: next,
           })
+          return
         }
+
+        await updateCovered({
+          billId,
+          sessionToken,
+          requestId: pending._id,
+          coveredParticipantIds: next,
+        })
       } catch (error) {
         toast.error(getConvexErrorMessage(error))
-        setSelectedCoveredId(pending?.coveredParticipantId ?? null)
+        setSelectedCoveredIds(
+          pending
+            ? (getCoveredParticipantIds(pending) as Id<'participants'>[])
+            : [],
+        )
       } finally {
         setIsSelectingCover(false)
       }
@@ -193,9 +203,11 @@ export function GuestClaimFooter({
       pending,
       pendingCover,
       readOnly,
+      selectedCoveredIds,
       sessionToken,
       shareToken,
       transferInitiated,
+      updateCovered,
     ],
   )
 
@@ -214,7 +226,7 @@ export function GuestClaimFooter({
   async function resolvePayCents(): Promise<number | null> {
     if (remainingCents <= 0 && !isCombined && !pending) return null
     if (pending) return pending.totalCents
-    if (isCombined) return payerRemaining + coveredRemaining
+    if (isCombined) return payerRemaining + selectedCoveredRemainingTotal
     return totals.paidCents > 0 ? remainingCents : totals.owedCents
   }
 
@@ -248,10 +260,15 @@ export function GuestClaimFooter({
 
     void copyToClipboard(formatCopyAmount(payCents))
     const payingForOthers = Boolean(
-      (pending && pending.coveredParticipantId) || isCombined,
+      pendingCoveredIds.length > 0 || isCombined,
     )
     const participantNames = payingForOthers
-      ? [label, coveredName].filter((name): name is string => Boolean(name?.trim()))
+      ? [
+          label,
+          ...selectedCoveredIds.map(
+            (id) => participantLabels?.[id] ?? participantBalances.find((b) => b.participantId === id)?.name,
+          ),
+        ].filter((name): name is string => Boolean(name?.trim()))
       : [label]
     const note = buildRevolutPaymentNote(restaurantName, participantNames)
     window.open(buildRevolutUrl(revolutUsername, payCents, note))
@@ -288,7 +305,7 @@ export function GuestClaimFooter({
         sessionToken,
         requestId: pending._id,
       })
-      setSelectedCoveredId(null)
+      setSelectedCoveredIds([])
     } catch (error) {
       toast.error(getConvexErrorMessage(error))
     }
@@ -379,8 +396,8 @@ export function GuestClaimFooter({
                 <CombinedPayChips
                   balances={participantBalances}
                   payerParticipantId={participantId}
-                  selectedCoveredId={selectedCoveredId}
-                  onSelect={(id) => void handleSelectCovered(id)}
+                  selectedCoveredIds={selectedCoveredIds}
+                  onToggle={(id) => void handleToggleCovered(id)}
                   disabled={chipsDisabled}
                 />
                 {pendingCover ? (
@@ -388,10 +405,27 @@ export function GuestClaimFooter({
                     {COMBINED_PAYMENT_MESSAGES.coveredGuestHint}
                   </p>
                 ) : null}
-                {isCombined && coveredName ? (
-                  <p className="text-xs text-muted-foreground">
-                    {coveredName}: {formatEur(coveredRemaining)}
-                  </p>
+                {isCombined ? (
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">
+                      Вие: {formatEur(payerRemaining)}
+                    </p>
+                    {selectedCoveredIds.map((id) => {
+                      const coveredBalance = participantBalances.find(
+                        (b) => b.participantId === id,
+                      )
+                      if (!coveredBalance) return null
+                      return (
+                        <p
+                          key={id}
+                          className="text-xs text-muted-foreground"
+                        >
+                          {coveredBalance.name}:{' '}
+                          {formatEur(coveredBalance.remainingCents)}
+                        </p>
+                      )
+                    })}
+                  </div>
                 ) : null}
                 {pending && transferInitiated ? (
                   <div className="flex items-center justify-between gap-2">

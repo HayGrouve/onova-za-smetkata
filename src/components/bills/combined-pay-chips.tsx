@@ -12,14 +12,14 @@ export type ParticipantBalance = {
 export function CombinedPayChips({
   balances = [],
   payerParticipantId,
-  selectedCoveredId,
-  onSelect,
+  selectedCoveredIds,
+  onToggle,
   disabled,
 }: {
   balances?: ParticipantBalance[]
   payerParticipantId: Id<'participants'>
-  selectedCoveredId: Id<'participants'> | null
-  onSelect: (id: Id<'participants'> | null) => void
+  selectedCoveredIds: Id<'participants'>[]
+  onToggle: (id: Id<'participants'>) => void
   disabled?: boolean
 }) {
   const others = balances.filter(
@@ -33,21 +33,19 @@ export function CombinedPayChips({
       <p className="text-xs text-muted-foreground">
         {COMBINED_PAYMENT_MESSAGES.payForLabel}
       </p>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-1 flex-nowrap">
         {others.map((p) => {
-          const selected = selectedCoveredId === p.participantId
+          const selected = selectedCoveredIds.includes(p.participantId)
           return (
             <Button
               key={p.participantId}
               type="button"
               variant={selected ? 'default' : 'outline'}
               size="sm"
-              className="h-9"
+              className="h-9 shrink-0"
               disabled={disabled}
               aria-pressed={selected}
-              onClick={() =>
-                onSelect(selected ? null : p.participantId)
-              }
+              onClick={() => onToggle(p.participantId)}
             >
               {p.name}
             </Button>

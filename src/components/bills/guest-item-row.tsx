@@ -7,6 +7,10 @@ import {
   getGuestClaimItemState,
   getOtherClaimantLabels,
 } from '#/lib/guest-claim-items.ts'
+import {
+  formatShareParticipantCount,
+  previewShareCents,
+} from '#/lib/guest-share-preview.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
@@ -47,6 +51,9 @@ export function GuestItemRow({
   )
   const lineTotalCents = item.unitPriceCents * item.quantity
   const interactionDisabled = readOnly || isUnavailableToMe
+  const assigneeIds = itemAssignments.map(
+    (assignment) => assignment.participantId,
+  )
 
   async function handleToggle() {
     if (interactionDisabled) return
@@ -75,23 +82,78 @@ export function GuestItemRow({
       : 'border-border bg-card',
     !interactionDisabled && 'tap-feedback',
     readOnly && !isUnavailableToMe && 'opacity-80',
+    item.quantity === 1 &&
+      isSelectedByMe &&
+      'guest-claim-card--selected border-primary/50 bg-primary/10 dark:border-primary/40 dark:bg-primary/15',
   )
 
-  function renderClaimantHint() {
-    if (otherClaimants.length === 0) return null
+  function renderQty1ShareHint() {
+    const shareCents = previewShareCents(
+      lineTotalCents,
+      assigneeIds,
+      participantId,
+      !isSelectedByMe,
+    )
 
-    if (isUnavailableToMe) {
+    if (isSelectedByMe) {
+      return (
+        <>
+          <p className="text-xs font-medium text-primary">✓ Ваше</p>
+          <p className="text-xs text-muted-foreground">
+            Вашият дял: {formatEur(shareCents)}
+          </p>
+        </>
+      )
+    }
+
+    if (otherClaimants.length > 0) {
+      return (
+        <>
+          <p className="text-xs text-muted-foreground">
+            Споделено с {otherClaimants.join(', ')} (
+            {formatShareParticipantCount(otherClaimants.length)})
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Вашият дял: {formatEur(shareCents)}
+          </p>
+          {!readOnly && (
+            <p className="text-xs font-medium text-muted-foreground">
+              Присъедини се
+            </p>
+          )}
+        </>
+      )
+    }
+
+    if (!readOnly) {
       return (
         <p className="text-xs font-medium text-muted-foreground">
-          Заето от {otherClaimants.join(', ')}
+          Докоснете, за да отбележите
         </p>
       )
     }
 
+    return null
+  }
+
+  function renderClaimantHint() {
+    if (item.quantity === 1) return null
+
+    if (otherClaimants.length === 0 && assignedUnitsTotal === 0) return null
+
+    if (isUnavailableToMe) {
+      return (
+        <p className="text-xs font-medium text-muted-foreground">
+          Заето{otherClaimants.length > 0 ? ` · ${otherClaimants.join(', ')}` : ''}
+        </p>
+      )
+    }
+
+    const remainingCount = Math.max(0, item.quantity - assignedUnitsTotal)
     return (
       <p className="text-xs text-muted-foreground">
-        {otherClaimants.join(', ')} · {assignedUnitsTotal}/{item.quantity}{' '}
-        разпределени
+        {otherClaimants.length > 0 ? `${otherClaimants.join(', ')} · ` : ''}
+        {assignedUnitsTotal}/{item.quantity} разпределени · остават {remainingCount}
       </p>
     )
   }
@@ -112,16 +174,9 @@ export function GuestItemRow({
               {formatEur(item.unitPriceCents)} × {item.quantity}
             </p>
           </div>
-          <p className="money font-medium">
-            {formatEur(lineTotalCents)}
-          </p>
+          <p className="money font-medium">{formatEur(lineTotalCents)}</p>
         </div>
-        {renderClaimantHint()}
-        {!readOnly && !isUnavailableToMe && (
-          <p className="text-xs font-medium text-muted-foreground">
-            Докоснете, за да отбележите
-          </p>
-        )}
+        {renderQty1ShareHint()}
       </button>
     )
   }

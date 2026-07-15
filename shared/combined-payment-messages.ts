@@ -24,4 +24,8 @@ export const COMBINED_PAYMENT_MESSAGES = {
   soloHostConfirmPrompt: 'Маркира {payer} като платен?',
   transferNotInitiated: 'Първо отворете Revolut или копирайте IBAN.',
   transferAlreadyInitiated: 'Плащането вече е изпратено.',
+  selectionLockedAfterTransfer:
+    'Не можете да промените избора след изпращане на плащането.',
+  duplicateCovered: 'Избран е един и същ участник повече от веднъж.',
+  noCoveredSelected: 'Изберете поне един участник.',
 } as const
