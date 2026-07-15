@@ -13,6 +13,8 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { BillAdvancedSettings } from '#/components/bills/bill-advanced-settings.tsx'
+import { OcrActivityBar } from '#/components/bills/ocr-activity-bar.tsx'
+import { TipField } from '#/components/bills/tip-field.tsx'
 import { ItemList } from '#/components/bills/item-list.tsx'
 import { BillInviteCard } from '#/components/bills/bill-invite-card.tsx'
 import { ParticipantList } from '#/components/bills/participant-list.tsx'
@@ -40,6 +42,10 @@ import {
 import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { calculateBillTotals } from '#/lib/bill-calculations.ts'
+import {
+  calculateItemsSubtotalCents,
+  formatEurInputValue,
+} from '../../../../shared/tip-calculations.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { parseTipInputToCents, validateBillMetadataField } from '#/lib/bill-metadata-schema.ts'
@@ -81,11 +87,6 @@ function toDateInputValue(ms: number): string {
 function fromDateInputValue(value: string): number {
   const [year, month, day] = value.split('-').map(Number)
   return new Date(year, month - 1, day).getTime()
-}
-
-function formatEurInputValue(cents: number): string {
-  if (cents === 0) return ''
-  return (cents / 100).toFixed(2).replace('.', ',')
 }
 
 function BillEditor() {
@@ -145,6 +146,8 @@ function BillEditorContent({
     cameraInputRef,
     isUploading,
     isScanning,
+    isOcrBusy,
+    completedScan,
     handleReceiptChange,
     handleScanButtonClick,
     preScanDialogOpen,
@@ -171,10 +174,12 @@ function BillEditorContent({
   }>({})
   const [breakdownOpen, setBreakdownOpen] = useState(false)
   const initializedBillId = useRef(bill._id)
+  const appliedRestaurantFromScanRef = useRef<Id<'receiptScans'> | null>(null)
 
   useEffect(() => {
     if (initializedBillId.current !== bill._id) {
       initializedBillId.current = bill._id
+      appliedRestaurantFromScanRef.current = null
       setRestaurantName(bill.restaurantName)
       setDate(toDateInputValue(bill.date))
       setNote(bill.note ?? '')
@@ -226,10 +231,37 @@ function BillEditorContent({
     }
   }, [])
 
+  useEffect(() => {
+    if (!completedScan?.extractedRestaurantName?.trim()) return
+    if (appliedRestaurantFromScanRef.current === completedScan._id) return
+    if (bill.restaurantName.trim()) return
+
+    const extracted = completedScan.extractedRestaurantName.trim()
+    appliedRestaurantFromScanRef.current = completedScan._id
+    setRestaurantName(extracted)
+    scheduleSave({ restaurantName: extracted })
+  }, [bill.restaurantName, completedScan])
+
   const labels = useMemo(
     () => buildParticipantLabels(participants),
     [participants],
   )
+
+  const itemsSubtotalCents = useMemo(
+    () =>
+      calculateItemsSubtotalCents(
+        items.map((i) => ({
+          id: i._id,
+          unitPriceCents: i.unitPriceCents,
+          quantity: i.quantity,
+        })),
+      ),
+    [items],
+  )
+
+  function handleTipValidCents(cents: number) {
+    scheduleSave({ tipCents: cents })
+  }
 
   const tipCentsForTotals = useMemo(() => {
     const parsed = parseTipInputToCents(tip)
@@ -279,11 +311,15 @@ function BillEditorContent({
 
   return (
     <>
+      <OcrActivityBar isUploading={isUploading} isScanning={isScanning} />
       <BillHeaderTitleSync title={bill.restaurantName} />
       <BillStepsBar step={step} onStepSelect={goToStep} />
       <div
         key={step}
-        className="page-container animate-in fade-in slide-in-from-bottom-2 duration-[250ms]"
+        className={cn(
+          'page-container animate-in fade-in slide-in-from-bottom-2 duration-[250ms]',
+          isOcrBusy && 'pt-1',
+        )}
       >
         <div className="flex flex-col gap-4">
           {step === 1 && (
@@ -300,7 +336,7 @@ function BillEditorContent({
                     <button
                       type="button"
                       onClick={() => galleryInputRef.current?.click()}
-                      disabled={isUploading}
+                      disabled={isOcrBusy}
                       className={cn(
                         'tap-feedback flex w-full flex-col items-center gap-3 rounded-lg border border-dashed p-4 text-left',
                         'cursor-pointer transition-colors hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-50',
@@ -352,7 +388,7 @@ function BillEditorContent({
                     <button
                       type="button"
                       onClick={() => galleryInputRef.current?.click()}
-                      disabled={isUploading}
+                      disabled={isOcrBusy}
                       className="tap-feedback flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed text-sm text-muted-foreground disabled:opacity-50"
                     >
                       <ImageIcon className="size-4" aria-hidden />
@@ -361,7 +397,7 @@ function BillEditorContent({
                     <button
                       type="button"
                       onClick={() => cameraInputRef.current?.click()}
-                      disabled={isUploading}
+                      disabled={isOcrBusy}
                       className="tap-feedback flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed text-sm text-muted-foreground disabled:opacity-50"
                     >
                       <CameraIcon className="size-4" aria-hidden />
@@ -373,8 +409,8 @@ function BillEditorContent({
                       type="button"
                       variant="outline"
                       className="h-11"
-                      disabled={isScanning}
-                      aria-busy={isScanning}
+                      disabled={isOcrBusy}
+                      aria-busy={isOcrBusy}
                       onClick={handleScanButtonClick}
                     >
                       {isScanning ? (
@@ -402,31 +438,27 @@ function BillEditorContent({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="tip">Бакшиш</Label>
-                    <Input
-                      id="tip"
-                      inputMode="decimal"
-                      value={tip}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        setTip(value)
-                        if (fieldErrors.tip) clearFieldError('tip')
-                        scheduleValidatedSave('tip', value)
-                      }}
-                      placeholder="0,00"
-                      className="h-11"
-                      aria-invalid={Boolean(fieldErrors.tip)}
-                    />
-                    {fieldErrors.tip ? (
-                      <p className="text-xs text-destructive">
-                        {fieldErrors.tip}
-                      </p>
-                    ) : null}
-                    <p className="text-xs text-muted-foreground">
-                      Разделя се поравно между всички участници.
-                    </p>
-                  </div>
+                  <TipField
+                    key={bill._id}
+                    itemsSubtotalCents={itemsSubtotalCents}
+                    value={tip}
+                    onValueChange={(value) => {
+                      setTip(value)
+                      if (fieldErrors.tip) clearFieldError('tip')
+                      const validated = validateBillMetadataField('tip', value)
+                      if (!validated.ok) {
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          tip: validated.message,
+                        }))
+                        return
+                      }
+                      clearFieldError('tip')
+                    }}
+                    onValidCents={handleTipValidCents}
+                    error={fieldErrors.tip}
+                    onClearError={() => clearFieldError('tip')}
+                  />
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="restaurantName">Ресторант</Label>
                     <Input

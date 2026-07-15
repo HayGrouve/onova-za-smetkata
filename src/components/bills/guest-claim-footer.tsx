@@ -17,7 +17,10 @@ import type {
 } from '#/lib/bill-calculations.ts'
 import { formatCopyAmount } from '#/lib/bill-share.ts'
 import { formatEur } from '#/lib/format-currency.ts'
-import { buildRevolutUrl } from '#/lib/payment-settings.ts'
+import {
+  buildRevolutPaymentNote,
+  buildRevolutUrl,
+} from '#/lib/payment-settings.ts'
 import { copyToClipboard } from '#/lib/copy-to-clipboard.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { itemUsesUnitAssignments } from '#/lib/guest-claim-items.ts'
@@ -39,7 +42,13 @@ export interface GuestClaimFooterProps {
   label: string
   breakdownInput: BillBreakdownInput
   totals: ParticipantTotals
-  participantBalances: ParticipantBalance[]
+  participantBalances?: ParticipantBalance[]
+  participantLabels?: Record<string, string>
+  pendingCover?: {
+    payerName: string
+    coveredAmountCents: number
+  }
+  restaurantName?: string
   readOnly?: boolean
 }
 
@@ -51,7 +60,10 @@ export function GuestClaimFooter({
   label,
   breakdownInput,
   totals,
-  participantBalances,
+  participantBalances = [],
+  participantLabels,
+  pendingCover,
+  restaurantName = '',
   readOnly = false,
 }: GuestClaimFooterProps) {
   const settings = useQuery(api.paymentSettings.getForGuest, {
@@ -64,6 +76,8 @@ export function GuestClaimFooter({
     sessionToken,
   })
   const createCombined = useMutation(api.combinedPayments.create)
+  const createSolo = useMutation(api.combinedPayments.createSolo)
+  const initiateTransfer = useMutation(api.combinedPayments.initiateTransfer)
   const cancelCombined = useMutation(api.combinedPayments.cancel)
   const toggleAssignment = useMutation(api.assignments.toggle)
   const setUnits = useMutation(api.assignments.setUnits)
@@ -76,6 +90,9 @@ export function GuestClaimFooter({
   const [spacerHeight, setSpacerHeight] = useState(0)
   const [selectedCoveredId, setSelectedCoveredId] =
     useState<Id<'participants'> | null>(null)
+  const [isSelectingCover, setIsSelectingCover] = useState(false)
+
+  const transferInitiated = pending?.transferInitiatedAt != null
 
   const remainingCents = Math.max(0, totals.balanceCents)
   const payerRemaining = remainingCents
@@ -94,10 +111,17 @@ export function GuestClaimFooter({
         ? remainingCents
         : totals.owedCents
   const amountLabel =
-    isCombined || pending
+    isCombined || (pending && pending.coveredParticipantId)
       ? COMBINED_PAYMENT_MESSAGES.combinedTotalLabel
       : amountLabelExisting
-  const chipsDisabled = Boolean(pending) || readOnly
+  const chipsDisabled =
+    Boolean(pendingCover) ||
+    readOnly ||
+    isSelectingCover ||
+    (Boolean(pending) && transferInitiated)
+  const payDisabledForCovered = Boolean(pendingCover)
+  const payDisabledForPayer =
+    Boolean(pendingCover) || (Boolean(pending) && transferInitiated)
   const coveredName = selectedCoveredId
     ? participantBalances.find((b) => b.participantId === selectedCoveredId)
         ?.name
@@ -105,9 +129,75 @@ export function GuestClaimFooter({
 
   useEffect(() => {
     if (pending) {
-      setSelectedCoveredId(pending.coveredParticipantId)
+      setSelectedCoveredId(pending.coveredParticipantId ?? null)
+      return
     }
+    setSelectedCoveredId(null)
   }, [pending])
+
+  const handleSelectCovered = useCallback(
+    async (id: Id<'participants'> | null) => {
+      if (pendingCover || readOnly || isSelectingCover) return
+      if (pending && transferInitiated) return
+
+      if (id === null) {
+        setSelectedCoveredId(null)
+        if (pending) {
+          setIsSelectingCover(true)
+          try {
+            await cancelCombined({
+              billId,
+              sessionToken,
+              requestId: pending._id,
+            })
+          } catch (error) {
+            toast.error(getConvexErrorMessage(error))
+            setSelectedCoveredId(pending.coveredParticipantId ?? null)
+          } finally {
+            setIsSelectingCover(false)
+          }
+        }
+        return
+      }
+
+      setSelectedCoveredId(id)
+      setIsSelectingCover(true)
+      try {
+        if (pending && pending.coveredParticipantId !== id) {
+          await cancelCombined({
+            billId,
+            sessionToken,
+            requestId: pending._id,
+          })
+        }
+        if (!pending || pending.coveredParticipantId !== id) {
+          await createCombined({
+            billId,
+            shareToken,
+            sessionToken,
+            coveredParticipantId: id,
+          })
+        }
+      } catch (error) {
+        toast.error(getConvexErrorMessage(error))
+        setSelectedCoveredId(pending?.coveredParticipantId ?? null)
+      } finally {
+        setIsSelectingCover(false)
+      }
+    },
+    [
+      billId,
+      cancelCombined,
+      createCombined,
+      isSelectingCover,
+      pending,
+      pendingCover,
+      readOnly,
+      sessionToken,
+      shareToken,
+      transferInitiated,
+    ],
+  )
 
   useEffect(() => {
     const footer = footerRef.current
@@ -123,24 +213,27 @@ export function GuestClaimFooter({
 
   async function resolvePayCents(): Promise<number | null> {
     if (remainingCents <= 0 && !isCombined && !pending) return null
-    let payCents = amountCents
-    if (isCombined && !pending) {
-      try {
-        const result = await createCombined({
+    if (pending) return pending.totalCents
+    if (isCombined) return payerRemaining + coveredRemaining
+    return totals.paidCents > 0 ? remainingCents : totals.owedCents
+  }
+
+  async function recordTransferInitiated(): Promise<boolean> {
+    try {
+      if (!pending && !isCombined) {
+        await createSolo({ billId, shareToken, sessionToken })
+      } else if (pending && pending.transferInitiatedAt == null) {
+        await initiateTransfer({
           billId,
-          shareToken,
           sessionToken,
-          coveredParticipantId: selectedCoveredId!,
+          requestId: pending._id,
         })
-        payCents = result.totalCents
-      } catch (error) {
-        toast.error(getConvexErrorMessage(error))
-        return null
       }
-    } else if (pending) {
-      payCents = pending.totalCents
+      return true
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
+      return false
     }
-    return payCents
   }
 
   async function handleRevolut() {
@@ -149,8 +242,19 @@ export function GuestClaimFooter({
     }
     const payCents = await resolvePayCents()
     if (payCents === null) return
+
+    const recorded = await recordTransferInitiated()
+    if (!recorded) return
+
     void copyToClipboard(formatCopyAmount(payCents))
-    window.open(buildRevolutUrl(revolutUsername, payCents))
+    const payingForOthers = Boolean(
+      (pending && pending.coveredParticipantId) || isCombined,
+    )
+    const participantNames = payingForOthers
+      ? [label, coveredName].filter((name): name is string => Boolean(name?.trim()))
+      : [label]
+    const note = buildRevolutPaymentNote(restaurantName, participantNames)
+    window.open(buildRevolutUrl(revolutUsername, payCents, note))
     toast.success('Отворен Revolut')
   }
 
@@ -158,6 +262,12 @@ export function GuestClaimFooter({
     if (!iban) return
     const payCents = await resolvePayCents()
     if (payCents === null && (isCombined || pending)) return
+
+    if (payCents !== null) {
+      const recorded = await recordTransferInitiated()
+      if (!recorded) return
+    }
+
     const text =
       payCents !== null
         ? `${formatCopyAmount(payCents)}\n${iban}`
@@ -262,6 +372,7 @@ export function GuestClaimFooter({
             summaryVariant="claim-footer"
             removableItemLines
             readOnly={readOnly}
+            participantLabels={participantLabels}
             onRemoveItem={handleRemoveItem}
             summaryFooter={
               <>
@@ -269,15 +380,20 @@ export function GuestClaimFooter({
                   balances={participantBalances}
                   payerParticipantId={participantId}
                   selectedCoveredId={selectedCoveredId}
-                  onSelect={setSelectedCoveredId}
+                  onSelect={(id) => void handleSelectCovered(id)}
                   disabled={chipsDisabled}
                 />
+                {pendingCover ? (
+                  <p className="text-xs text-amber-600 dark:text-amber-500">
+                    {COMBINED_PAYMENT_MESSAGES.coveredGuestHint}
+                  </p>
+                ) : null}
                 {isCombined && coveredName ? (
                   <p className="text-xs text-muted-foreground">
                     {coveredName}: {formatEur(coveredRemaining)}
                   </p>
                 ) : null}
-                {pending ? (
+                {pending && transferInitiated ? (
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-xs text-amber-600 dark:text-amber-500">
                       {COMBINED_PAYMENT_MESSAGES.statusPending}
@@ -311,8 +427,8 @@ export function GuestClaimFooter({
                         type="button"
                         className="h-11"
                         disabled={
-                          (remainingCents <= 0 && !isCombined) ||
-                          Boolean(pending)
+                          (remainingCents <= 0 && !isCombined && !pending) ||
+                          payDisabledForPayer
                         }
                         onClick={() => void handleRevolut()}
                       >
@@ -325,6 +441,7 @@ export function GuestClaimFooter({
                         type="button"
                         variant="outline"
                         className="h-11"
+                        disabled={payDisabledForPayer}
                         onClick={() => void handleCopyIban()}
                       >
                         <CopyIcon className={ICON.button} aria-hidden />
@@ -337,7 +454,7 @@ export function GuestClaimFooter({
                   <p className="text-xs text-muted-foreground">
                     Попитайте домакина за Revolut или банков превод.
                   </p>
-                ) : remainingCents <= 0 && !isCombined && !pending ? (
+                ) : remainingCents <= 0 && !isCombined && !pending && !pendingCover ? (
                   <p className="text-xs text-muted-foreground">
                     Няма оставащо за плащане.
                   </p>

@@ -291,6 +291,7 @@ describe('calculateParticipantBreakdown', () => {
           label: 'Пица',
           amountCents: 600,
           sharedWithCount: 1,
+          sharedWithParticipantIds: ['p2'],
         }),
         expect.objectContaining({
           kind: 'item',

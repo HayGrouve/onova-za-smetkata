@@ -15,6 +15,7 @@ import {
 import { ICON } from '#/lib/app-icons.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { summarizeAddMembersToBill } from '#/lib/friend-group-schema.ts'
+import { writeLastFriendGroupId } from '#/lib/last-friend-group-storage.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
 
@@ -80,6 +81,7 @@ export function FriendGroupAddPreviewSheet({
         groupId: group._id,
         names,
       })
+      writeLastFriendGroupId(group._id)
       toast.success(summarizeAddMembersToBill(result))
       onOpenChange(false)
     } catch (error) {

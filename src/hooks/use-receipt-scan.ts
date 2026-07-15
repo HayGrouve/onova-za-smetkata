@@ -128,11 +128,18 @@ export function useReceiptScan({
     }
   }
 
+  const isOcrBusy = isUploading || isScanning
+
+  const completedScan =
+    latestScan?.status === 'done' ? latestScan : undefined
+
   return {
     galleryInputRef,
     cameraInputRef,
     isUploading,
     isScanning,
+    isOcrBusy,
+    completedScan,
     handleReceiptChange,
     handleScanButtonClick,
     preScanDialogOpen,

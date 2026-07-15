@@ -10,13 +10,13 @@ export type ParticipantBalance = {
 }
 
 export function CombinedPayChips({
-  balances,
+  balances = [],
   payerParticipantId,
   selectedCoveredId,
   onSelect,
   disabled,
 }: {
-  balances: ParticipantBalance[]
+  balances?: ParticipantBalance[]
   payerParticipantId: Id<'participants'>
   selectedCoveredId: Id<'participants'> | null
   onSelect: (id: Id<'participants'> | null) => void

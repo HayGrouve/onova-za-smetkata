@@ -129,12 +129,15 @@ export function getOtherClaimantLabels(
   participantId: Id<'participants'>,
   labels: Record<string, string>,
 ): string[] {
+  const usesUnits = itemAssignments.some(
+    (assignment) => assignment.units !== undefined,
+  )
   return itemAssignments
-    .filter(
-      (assignment) =>
-        assignment.participantId !== participantId &&
-        (assignment.units ?? 0) > 0,
-    )
+    .filter((assignment) => {
+      if (assignment.participantId === participantId) return false
+      if (usesUnits) return (assignment.units ?? 0) > 0
+      return true
+    })
     .map(
       (assignment) =>
         labels[assignment.participantId] ?? assignment.participantId,

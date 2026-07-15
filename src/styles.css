@@ -343,6 +343,41 @@ a {
     .receipt-scan-image-active {
       animation: receipt-scan-border-pulse 3s ease-in-out infinite;
     }
+
+    @keyframes ocr-activity-indeterminate {
+      0% {
+        transform: translateX(-100%);
+      }
+      100% {
+        transform: translateX(250%);
+      }
+    }
+
+    .ocr-activity-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      height: 3px;
+      overflow: hidden;
+      background: color-mix(in oklab, var(--primary) 12%, transparent);
+    }
+
+    .ocr-activity-bar__track {
+      height: 100%;
+      width: 40%;
+      background: var(--primary);
+      animation: ocr-activity-indeterminate 1.2s ease-in-out infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .ocr-activity-bar__track {
+        animation: none;
+        width: 100%;
+        opacity: 0.6;
+      }
+    }
   }
 }
 

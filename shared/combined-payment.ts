@@ -30,6 +30,67 @@ export type CombinedPaymentConfirmContext = {
   coveredRemainingCents: number
 }
 
+export type SoloPaymentCreateContext = {
+  payerParticipantId: string
+  hasPendingForSession: boolean
+  totals: BillTotals
+}
+
+export type PaymentRequestTransferState = {
+  status: string
+  coveredParticipantId?: string
+  transferInitiatedAt?: number
+}
+
+export function isSoloPaymentRequest(request: {
+  coveredParticipantId?: string
+}): boolean {
+  return !request.coveredParticipantId
+}
+
+export function isAwaitingHostConfirmation(request: {
+  status: string
+  transferInitiatedAt?: number
+}): boolean {
+  return request.status === 'pending' && request.transferInitiatedAt != null
+}
+
+export function validateSoloPaymentCreate(
+  ctx: SoloPaymentCreateContext,
+):
+  | { ok: true; payerAmountCents: number; totalCents: number }
+  | { ok: false; message: string } {
+  if (ctx.hasPendingForSession) {
+    return { ok: false, message: COMBINED_PAYMENT_MESSAGES.pendingExists }
+  }
+  const payerAmountCents = participantRemainingCents(
+    ctx.totals,
+    ctx.payerParticipantId,
+  )
+  if (payerAmountCents <= 0) {
+    return { ok: false, message: COMBINED_PAYMENT_MESSAGES.payerNothingOwed }
+  }
+  return { ok: true, payerAmountCents, totalCents: payerAmountCents }
+}
+
+export function validateInitiateTransfer(
+  request: PaymentRequestTransferState,
+): { ok: true } | { ok: false; message: string } {
+  if (request.status !== 'pending') {
+    return { ok: false, message: COMBINED_PAYMENT_MESSAGES.requestNotPending }
+  }
+  if (isSoloPaymentRequest(request)) {
+    return { ok: false, message: COMBINED_PAYMENT_MESSAGES.transferNotInitiated }
+  }
+  if (request.transferInitiatedAt != null) {
+    return {
+      ok: false,
+      message: COMBINED_PAYMENT_MESSAGES.transferAlreadyInitiated,
+    }
+  }
+  return { ok: true }
+}
+
 export function participantRemainingCents(
   totals: BillTotals,
   participantId: string,

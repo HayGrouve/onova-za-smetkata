@@ -87,7 +87,7 @@ export default defineSchema({
   combinedPaymentRequests: defineTable({
     billId: v.id('bills'),
     payerParticipantId: v.id('participants'),
-    coveredParticipantId: v.id('participants'),
+    coveredParticipantId: v.optional(v.id('participants')),
     payerAmountCents: v.number(),
     coveredAmountCents: v.number(),
     totalCents: v.number(),
@@ -99,6 +99,7 @@ export default defineSchema({
     ),
     guestSessionId: v.id('guestSessions'),
     createdAt: v.number(),
+    transferInitiatedAt: v.optional(v.number()),
     resolvedAt: v.optional(v.number()),
   })
     .index('by_billId_status', ['billId', 'status'])

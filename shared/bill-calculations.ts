@@ -178,6 +178,7 @@ export type ParticipantBreakdownLine =
       label: string
       amountCents: number
       sharedWithCount?: number
+      sharedWithParticipantIds?: string[]
       units?: number
       totalUnits?: number
     }
@@ -247,6 +248,7 @@ export function calculateParticipantBreakdown(
       label: item.name,
       amountCents: portion.cents,
       sharedWithCount: sortedIds.length - 1,
+      sharedWithParticipantIds: sortedIds.filter((id) => id !== participantId),
     })
   }
 

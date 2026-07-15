@@ -137,6 +137,62 @@ async function startGuestCombinedPayment(
   return { guestContext, guestPage }
 }
 
+test('host banner hidden until guest opens Revolut', async ({ browser }) => {
+  const setup = await setupCombinedPaymentBill(browser)
+  const guestContext = await browser.newContext()
+  const guestPage = await guestContext.newPage()
+  await guestPage.goto(setup.joinUrl)
+  await guestPage.getByRole('button', { name: setup.participantA }).click()
+  await guestPage.getByRole('button', { name: setup.participantB }).click()
+
+  await goToBillStep(setup.hostPage, 4)
+  await expect(
+    setup.hostPage.getByText(new RegExp(`${setup.participantA}.*плати`)),
+  ).not.toBeVisible()
+
+  await guestPage.getByRole('button', { name: 'Revolut' }).click()
+  await expect(
+    setup.hostPage.getByText(new RegExp(`${setup.participantA}.*плати`)),
+  ).toBeVisible({ timeout: 15_000 })
+
+  await guestContext.close()
+  await setup.hostContext.close()
+})
+
+test('guest solo pay — host confirms one', async ({ browser }) => {
+  const setup = await setupCombinedPaymentBill(browser)
+
+  const guestContext = await browser.newContext()
+  const guestPage = await guestContext.newPage()
+  await guestPage.goto(setup.joinUrl)
+  await guestPage.getByRole('button', { name: setup.participantA }).click()
+  await claimHalfOfItem(guestPage, setup.itemName)
+
+  await guestPage.getByRole('button', { name: 'Revolut' }).click()
+  await expect(
+    guestPage.getByText('Чака потвърждение от домакина'),
+  ).toBeVisible({ timeout: 15_000 })
+
+  await goToBillStep(setup.hostPage, 4)
+  await expect(
+    setup.hostPage.getByText(new RegExp(`${setup.participantA}.*плати`)),
+  ).toBeVisible({ timeout: 15_000 })
+
+  await setup.hostPage
+    .locator('[class*="border-accent"]')
+    .getByRole('button', { name: 'Потвърди' })
+    .click()
+  await setup.hostPage
+    .getByRole('alertdialog')
+    .getByRole('button', { name: 'Потвърди' })
+    .click()
+
+  await assertParticipantPaid(setup.hostPage, setup.participantA)
+
+  await guestContext.close()
+  await setup.hostContext.close()
+})
+
 test('guest combined pay flow — host confirms both', async ({ browser }) => {
   const setup = await setupCombinedPaymentBill(browser)
   const { guestContext, guestPage } = await startGuestCombinedPayment(

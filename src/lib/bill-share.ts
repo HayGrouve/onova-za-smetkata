@@ -64,6 +64,7 @@ export function formatBreakdownLineLabel(
 
 export function formatBreakdownLineSuffix(
   line: ParticipantBreakdownLine,
+  labels?: Record<string, string>,
 ): string {
   if (line.kind !== 'item') return ''
   if (line.units !== undefined && line.totalUnits !== undefined) {
@@ -71,6 +72,11 @@ export function formatBreakdownLineSuffix(
     return ` · ${line.units} от ${line.totalUnits}`
   }
   if (line.sharedWithCount !== undefined && line.sharedWithCount > 0) {
+    const ids = line.sharedWithParticipantIds ?? []
+    if (labels && ids.length > 0) {
+      const names = ids.map((id) => labels[id] ?? 'Участник')
+      return ` · споделено с ${names.join(', ')}`
+    }
     return ` · споделено с ${line.sharedWithCount}`
   }
   return ''
@@ -173,6 +179,7 @@ function formatParticipantSection(
   participant: ShareParticipantLine,
   breakdown: BillBreakdownInput,
   participantCount: number,
+  labels: Record<string, string>,
 ): string[] {
   const detail = calculateParticipantBreakdown(breakdown, participant.id)
   const lines: string[] = [`▸ ${participant.label}`]
@@ -182,7 +189,7 @@ function formatParticipantSection(
   } else {
     for (const line of detail.lines) {
       const label = formatBreakdownLineLabel(line, participantCount)
-      const suffix = line.kind === 'item' ? formatBreakdownLineSuffix(line) : ''
+      const suffix = line.kind === 'item' ? formatBreakdownLineSuffix(line, labels) : ''
       lines.push(
         `  • ${label}${suffix} — ${formatShareAmount(line.amountCents)}`,
       )
@@ -232,6 +239,7 @@ export function formatBillShareText(input: BillShareInput): string {
         participant,
         input.breakdown,
         participantCount,
+        labels,
       ),
     )
   }

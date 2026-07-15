@@ -4,6 +4,7 @@ import { SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { GuestClaimFooter } from '#/components/bills/guest-claim-footer.tsx'
+import { CombinedCoverNotice } from '#/components/bills/combined-cover-notice.tsx'
 import { GuestItemRow } from '#/components/bills/guest-item-row.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
@@ -70,6 +71,16 @@ function BillClaimContent({
           billId,
           shareToken,
           sessionToken: storedSession?.sessionToken,
+        }
+      : 'skip',
+  )
+  const pendingCover = useQuery(
+    api.combinedPayments.getPendingCoverForGuest,
+    shareToken && storedSession
+      ? {
+          billId,
+          shareToken,
+          sessionToken: storedSession.sessionToken,
         }
       : 'skip',
   )
@@ -266,6 +277,13 @@ function BillClaimContent({
           )}
         </div>
 
+        {pendingCover ? (
+          <CombinedCoverNotice
+            payerName={pendingCover.payerName}
+            coveredAmountCents={pendingCover.coveredAmountCents}
+          />
+        ) : null}
+
         {hasItems ? (
           <div
             className="grid grid-cols-2 gap-2 rounded-lg border bg-muted/40 p-1"
@@ -358,7 +376,10 @@ function BillClaimContent({
           label={label}
           breakdownInput={breakdownInput}
           totals={participantTotals}
-          participantBalances={data.participantBalances}
+          participantBalances={data.participantBalances ?? []}
+          participantLabels={labels}
+          pendingCover={pendingCover ?? undefined}
+          restaurantName={data.bill.restaurantName}
           readOnly={readOnly}
         />
       ) : null}

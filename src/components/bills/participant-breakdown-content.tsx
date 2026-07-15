@@ -48,6 +48,8 @@ export interface ParticipantBreakdownContentProps {
   removableItemLines?: boolean
   readOnly?: boolean
   onRemoveItem?: (itemId: Id<'items'>) => void | Promise<void>
+  /** Participant id → display label for shared-item suffixes. */
+  participantLabels?: Record<string, string>
 }
 
 export function ParticipantBreakdownContent({
@@ -66,6 +68,7 @@ export function ParticipantBreakdownContent({
   removableItemLines = false,
   readOnly = false,
   onRemoveItem,
+  participantLabels,
 }: ParticipantBreakdownContentProps) {
   const { confirm } = useConfirmAction()
   const breakdown = calculateParticipantBreakdown(breakdownInput, participantId)
@@ -123,7 +126,9 @@ export function ParticipantBreakdownContent({
               ) : null}
               <p className="text-muted-foreground">
                 {formatBreakdownLineLabel(line, participantCount)}
-                {line.kind === 'item' ? formatBreakdownLineSuffix(line) : ''}
+                {line.kind === 'item'
+                  ? formatBreakdownLineSuffix(line, participantLabels)
+                  : ''}
               </p>
             </div>
             <p className="money shrink-0">

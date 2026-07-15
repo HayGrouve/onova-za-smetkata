@@ -4,7 +4,7 @@ import {
   UserPlusIcon,
   XIcon,
 } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { toast } from 'sonner'
 import {
@@ -24,6 +24,12 @@ import { ICON } from '#/lib/app-icons.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { getParticipantRemoveCopy } from '#/lib/destructive-action-copy.ts'
 import { summarizeAddMembersToBill } from '#/lib/friend-group-schema.ts'
+import {
+  readLastFriendGroupId,
+  writeLastFriendGroupId,
+} from '#/lib/last-friend-group-storage.ts'
+import { sortFriendGroupsWithPinned } from '#/lib/sort-friend-groups-with-pinned.ts'
+import { cn } from '#/lib/utils.ts'
 import { validateParticipantAdd } from '#/lib/participant-schema.ts'
 import { Input } from '#/components/ui/input.tsx'
 import { Separator } from '#/components/ui/separator.tsx'
@@ -57,6 +63,10 @@ export function ParticipantList({
   const removeParticipant = useMutation(api.participants.remove)
   const recentNames = useQuery(api.participants.listRecentNames, { limit: 12 })
   const friendGroups = useQuery(api.friendGroups.list, {})
+  const { groups: orderedFriendGroups, pinnedId: pinnedGroupId } = useMemo(() => {
+    if (!friendGroups) return { groups: [], pinnedId: null }
+    return sortFriendGroupsWithPinned(friendGroups, readLastFriendGroupId())
+  }, [friendGroups])
   const { openNewFriendGroup } = useFriendGroups()
   const { confirm } = useConfirmAction()
 
@@ -130,6 +140,7 @@ export function ParticipantList({
   async function handleAddGroupAll(group: FriendGroupPreview) {
     try {
       const result = await addGroupToBill({ billId, groupId: group._id })
+      writeLastFriendGroupId(group._id)
       toast.success(summarizeAddMembersToBill(result))
     } catch (error) {
       toast.error(getConvexErrorMessage(error))
@@ -199,19 +210,33 @@ export function ParticipantList({
             <div className="flex flex-col gap-2">
               <p className="text-xs text-muted-foreground">От група</p>
               <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-                {friendGroups?.map((group) => (
+                {orderedFriendGroups.map((group) => (
                   <div
                     key={group._id}
-                    className="flex shrink-0 items-stretch overflow-hidden rounded-full border border-dashed"
+                    className={cn(
+                      'flex shrink-0 items-stretch overflow-hidden rounded-full border',
+                      group._id === pinnedGroupId
+                        ? 'border-solid border-primary/50'
+                        : 'border-dashed',
+                    )}
                   >
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-8 max-w-40 truncate rounded-r-none border-0 px-3"
+                      className="h-8 max-w-48 rounded-r-none border-0 px-3"
                       onClick={() => void handleAddGroupAll(group)}
                     >
-                      {group.name}
+                      {group._id === pinnedGroupId ? (
+                        <span className="flex items-center gap-1.5 truncate">
+                          <span className="text-[10px] font-medium uppercase tracking-wide text-primary">
+                            Последна
+                          </span>
+                          <span className="truncate">{group.name}</span>
+                        </span>
+                      ) : (
+                        <span className="truncate">{group.name}</span>
+                      )}
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -219,7 +244,12 @@ export function ParticipantList({
                           type="button"
                           variant="outline"
                           size="icon-sm"
-                          className="h-8 w-8 shrink-0 rounded-l-none border-0 border-l border-dashed"
+                          className={cn(
+                            'h-8 w-8 shrink-0 rounded-l-none border-0 border-l',
+                            group._id === pinnedGroupId
+                              ? 'border-solid border-primary/50'
+                              : 'border-dashed',
+                          )}
                           aria-label={`Опции за група ${group.name}`}
                         >
                           <MoreHorizontalIcon className="size-4" />

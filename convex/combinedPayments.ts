@@ -6,9 +6,13 @@ import type { Id } from './_generated/dataModel'
 import { requireBillOwner } from './lib/auth'
 import {
   COMBINED_PAYMENT_MESSAGES,
+  isAwaitingHostConfirmation,
+  isSoloPaymentRequest,
   participantRemainingCents,
   validateCombinedPaymentConfirm,
   validateCombinedPaymentCreate,
+  validateInitiateTransfer,
+  validateSoloPaymentCreate,
 } from './lib/combinedPayment'
 import { validatePaymentAdd } from './lib/paymentAmountSchema'
 import { touchBill } from './lib/touchBill'
@@ -105,7 +109,48 @@ export const listPendingForBill = query({
         q.eq('billId', args.billId).eq('status', 'pending'),
       )
       .collect()
-    return pending
+    return pending.filter((request) => isAwaitingHostConfirmation(request))
+  },
+})
+
+export const getPendingCoverForGuest = query({
+  args: {
+    billId: v.id('bills'),
+    shareToken: v.string(),
+    sessionToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await assertShareToken(ctx, args.billId, args.shareToken)
+    const session = await ctx.db
+      .query('guestSessions')
+      .withIndex('by_sessionToken', (q) =>
+        q.eq('sessionToken', args.sessionToken),
+      )
+      .first()
+    if (!session || session.billId !== args.billId) return null
+
+    const pending = await ctx.db
+      .query('combinedPaymentRequests')
+      .withIndex('by_billId_status', (q) =>
+        q.eq('billId', args.billId).eq('status', 'pending'),
+      )
+      .collect()
+
+    const cover = pending.find(
+      (request) =>
+        request.coveredParticipantId != null &&
+        request.coveredParticipantId === session.participantId,
+    )
+    if (!cover) return null
+
+    const payer = await ctx.db.get(cover.payerParticipantId)
+    return {
+      requestId: cover._id,
+      payerParticipantId: cover.payerParticipantId,
+      payerName: payer?.name ?? 'Участник',
+      coveredAmountCents: cover.coveredAmountCents,
+      totalCents: cover.totalCents,
+    }
   },
 })
 
@@ -189,6 +234,101 @@ export const create = mutation({
   },
 })
 
+export const createSolo = mutation({
+  args: {
+    billId: v.id('bills'),
+    shareToken: v.string(),
+    sessionToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await assertShareToken(ctx, args.billId, args.shareToken)
+
+    const session = await ctx.db
+      .query('guestSessions')
+      .withIndex('by_sessionToken', (q) =>
+        q.eq('sessionToken', args.sessionToken),
+      )
+      .first()
+    if (!session || session.billId !== args.billId) {
+      throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
+    }
+
+    const { sessionId } = await requireGuestSession(ctx, {
+      billId: args.billId,
+      participantId: session.participantId,
+      sessionToken: args.sessionToken,
+    })
+
+    const totals = await loadBillTotalsForCombinedPay(ctx, args.billId)
+    const existingForSession = await ctx.db
+      .query('combinedPaymentRequests')
+      .withIndex('by_guestSessionId', (q) => q.eq('guestSessionId', sessionId))
+      .collect()
+    const hasPendingForSession = existingForSession.some(
+      (r) => r.billId === args.billId && r.status === 'pending',
+    )
+
+    const validated = validateSoloPaymentCreate({
+      payerParticipantId: session.participantId,
+      hasPendingForSession,
+      totals,
+    })
+    if (!validated.ok) {
+      throw new ConvexError(validated.message)
+    }
+
+    const now = Date.now()
+    const requestId = await ctx.db.insert('combinedPaymentRequests', {
+      billId: args.billId,
+      payerParticipantId: session.participantId,
+      payerAmountCents: validated.payerAmountCents,
+      coveredAmountCents: 0,
+      totalCents: validated.totalCents,
+      status: 'pending',
+      guestSessionId: sessionId,
+      createdAt: now,
+      transferInitiatedAt: now,
+    })
+
+    return { requestId, totalCents: validated.totalCents }
+  },
+})
+
+export const initiateTransfer = mutation({
+  args: {
+    billId: v.id('bills'),
+    sessionToken: v.string(),
+    requestId: v.id('combinedPaymentRequests'),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db
+      .query('guestSessions')
+      .withIndex('by_sessionToken', (q) =>
+        q.eq('sessionToken', args.sessionToken),
+      )
+      .first()
+    if (!session || session.billId !== args.billId) {
+      throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
+    }
+
+    const request = await ctx.db.get(args.requestId)
+    if (
+      !request ||
+      request.billId !== args.billId ||
+      request.guestSessionId !== session._id
+    ) {
+      throw new ConvexError(COMBINED_PAYMENT_MESSAGES.requestNotFound)
+    }
+
+    const validated = validateInitiateTransfer(request)
+    if (!validated.ok) {
+      throw new ConvexError(validated.message)
+    }
+
+    await ctx.db.patch(request._id, { transferInitiatedAt: Date.now() })
+  },
+})
+
 export const cancel = mutation({
   args: {
     billId: v.id('bills'),
@@ -261,16 +401,18 @@ export const confirm = mutation({
     if (request.status !== 'pending') {
       throw new ConvexError(COMBINED_PAYMENT_MESSAGES.requestNotPending)
     }
+    if (request.transferInitiatedAt == null) {
+      throw new ConvexError(COMBINED_PAYMENT_MESSAGES.transferNotInitiated)
+    }
 
     const totals = await loadBillTotalsForCombinedPay(ctx, args.billId)
     const payerRemaining = participantRemainingCents(
       totals,
       request.payerParticipantId,
     )
-    const coveredRemaining = participantRemainingCents(
-      totals,
-      request.coveredParticipantId,
-    )
+    const coveredRemaining = request.coveredParticipantId
+      ? participantRemainingCents(totals, request.coveredParticipantId)
+      : 0
 
     const validated = validateCombinedPaymentConfirm(
       {
@@ -294,16 +436,25 @@ export const confirm = mutation({
       .withIndex('by_billId', (q) => q.eq('billId', args.billId))
       .collect()
 
-    for (const entry of [
-      {
-        participantId: request.payerParticipantId,
-        amountCents: request.payerAmountCents,
-      },
-      {
-        participantId: request.coveredParticipantId,
-        amountCents: request.coveredAmountCents,
-      },
-    ] as const) {
+    const entries = isSoloPaymentRequest(request)
+      ? [
+          {
+            participantId: request.payerParticipantId,
+            amountCents: request.payerAmountCents,
+          },
+        ]
+      : [
+          {
+            participantId: request.payerParticipantId,
+            amountCents: request.payerAmountCents,
+          },
+          {
+            participantId: request.coveredParticipantId!,
+            amountCents: request.coveredAmountCents,
+          },
+        ]
+
+    for (const entry of entries) {
       const owedCents =
         totals.byParticipant[entry.participantId]?.owedCents ?? 0
       const paidCents = payments

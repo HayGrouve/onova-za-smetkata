@@ -25,6 +25,30 @@ describe('formatBreakdownLineSuffix', () => {
     ).toBe(' · споделено с 1')
 
     expect(
+      formatBreakdownLineSuffix(
+        {
+          kind: 'item',
+          label: 'Салата',
+          amountCents: 600,
+          sharedWithCount: 1,
+          sharedWithParticipantIds: ['p2'],
+        },
+        { p2: 'Мария' },
+      ),
+    ).toBe(' · споделено с Мария')
+
+    expect(
+      formatBreakdownLineSuffix(
+        {
+          kind: 'item',
+          label: 'Пици',
+          amountCents: 600,
+          sharedWithCount: 1,
+        },
+      ),
+    ).toBe(' · споделено с 1')
+
+    expect(
       formatBreakdownLineSuffix({
         kind: 'item',
         label: 'Бира',
@@ -116,7 +140,7 @@ describe('formatBillShareText', () => {
     expect(text).toContain(`Бакшиш — ${formatEur(600)} (поравно между 2)`)
     expect(text).toContain('▸ Иван')
     expect(text).toContain('▸ Мария')
-    expect(text).toContain(`Салата · споделено с 1 — ${formatEur(600)}`)
+    expect(text).toContain(`Салата · споделено с Мария — ${formatEur(600)}`)
     expect(text).toContain('неплатено')
     expect(text).toContain('платено')
     expect(text).toContain(`Общо: ${formatEur(5400)}`)

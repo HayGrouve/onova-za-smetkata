@@ -30,6 +30,19 @@ function formatHostConfirmPrompt(payerName: string, coveredName: string): string
     .replace('{covered}', coveredName)
 }
 
+function formatSoloHostBanner(payerName: string, totalCents: number): string {
+  return COMBINED_PAYMENT_MESSAGES.soloHostBanner
+    .replace('{payer}', payerName)
+    .replace('{total}', formatEur(totalCents))
+}
+
+function formatSoloHostConfirmPrompt(payerName: string): string {
+  return COMBINED_PAYMENT_MESSAGES.soloHostConfirmPrompt.replace(
+    '{payer}',
+    payerName,
+  )
+}
+
 export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
   const pending = useQuery(api.combinedPayments.listPendingForBill, { billId })
   const confirmMutation = useMutation(api.combinedPayments.confirm)
@@ -46,7 +59,7 @@ export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
 
   if (!pending?.length) return null
 
-  async function handleConfirm(
+  async function handleConfirmCombined(
     requestId: Id<'combinedPaymentRequests'>,
     payerName: string,
     coveredName: string,
@@ -62,6 +75,28 @@ export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
     try {
       await confirmMutation({ billId, requestId })
       toast.success(`${payerName} и ${coveredName} са маркирани като платени`)
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
+    } finally {
+      setActiveRequestId(null)
+    }
+  }
+
+  async function handleConfirmSolo(
+    requestId: Id<'combinedPaymentRequests'>,
+    payerName: string,
+  ) {
+    const confirmed = await confirmAction({
+      title: formatSoloHostConfirmPrompt(payerName),
+      confirmLabel: COMBINED_PAYMENT_MESSAGES.confirm,
+      variant: 'default',
+    })
+    if (!confirmed) return
+
+    setActiveRequestId(requestId)
+    try {
+      await confirmMutation({ billId, requestId })
+      toast.success(`${payerName} е маркиран като платен`)
     } catch (error) {
       toast.error(getConvexErrorMessage(error))
     } finally {
@@ -89,11 +124,14 @@ export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
           bill?.participants.find((p) => p._id === request.payerParticipantId)
             ?.name ??
           'Участник'
-        const coveredName =
-          labels[request.coveredParticipantId] ??
-          bill?.participants.find((p) => p._id === request.coveredParticipantId)
-            ?.name ??
-          'Участник'
+        const isSolo = !request.coveredParticipantId
+        const coveredName = isSolo
+          ? null
+          : (labels[request.coveredParticipantId] ??
+            bill?.participants.find(
+              (p) => p._id === request.coveredParticipantId,
+            )?.name ??
+            'Участник')
         const isBusy = activeRequestId === request._id
 
         return (
@@ -108,11 +146,13 @@ export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
                   aria-hidden
                 />
                 <span>
-                  {formatHostBanner(
-                    payerName,
-                    coveredName,
-                    request.totalCents,
-                  )}
+                  {isSolo
+                    ? formatSoloHostBanner(payerName, request.totalCents)
+                    : formatHostBanner(
+                        payerName,
+                        coveredName!,
+                        request.totalCents,
+                      )}
                 </span>
               </p>
               <div className="flex gap-2">
@@ -121,7 +161,13 @@ export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
                   className="h-11 flex-1 bg-success text-success-foreground hover:bg-success/90"
                   disabled={isBusy}
                   onClick={() =>
-                    void handleConfirm(request._id, payerName, coveredName)
+                    isSolo
+                      ? void handleConfirmSolo(request._id, payerName)
+                      : void handleConfirmCombined(
+                          request._id,
+                          payerName,
+                          coveredName!,
+                        )
                   }
                 >
                   {COMBINED_PAYMENT_MESSAGES.confirm}

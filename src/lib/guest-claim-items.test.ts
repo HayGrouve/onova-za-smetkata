@@ -4,6 +4,7 @@ import {
   filterUnclaimedGuestClaimItems,
   filterClaimedGuestClaimItems,
   getGuestClaimItemState,
+  getOtherClaimantLabels,
   sortGuestClaimItems,
 } from './guest-claim-items'
 import type { Id } from '../../convex/_generated/dataModel'
@@ -178,5 +179,22 @@ describe('filterGuestClaimItemsBySearch', () => {
       { name: 'Бира' },
     ])
     expect(filterGuestClaimItemsBySearch(items, '')).toEqual(items)
+  })
+})
+
+describe('getOtherClaimantLabels', () => {
+  it('includes cent-split claimants on single-qty items', () => {
+    expect(
+      getOtherClaimantLabels(
+        [
+          {
+            itemId: 'item-1' as Id<'items'>,
+            participantId: participantB,
+          },
+        ],
+        participantA,
+        { [participantB]: 'Мария' },
+      ),
+    ).toEqual(['Мария'])
   })
 })
