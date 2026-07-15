@@ -18,6 +18,7 @@ import {
   parseBillMetadataPatch,
 } from './lib/billMetadataSchema'
 import { createShareToken } from './lib/shareToken'
+import { calculateBillTotals } from './lib/billCalculations'
 
 export const list = query({
   args: {},
@@ -92,12 +93,43 @@ export const getForGuest = query({
       }
     }
 
+    const totals = calculateBillTotals({
+      participants: participants.map((p) => ({
+        id: p._id,
+        sortOrder: p.sortOrder,
+      })),
+      items: items.map((i) => ({
+        id: i._id,
+        unitPriceCents: i.unitPriceCents,
+        quantity: i.quantity,
+      })),
+      assignments: assignments.map((a) => ({
+        itemId: a.itemId,
+        participantId: a.participantId,
+        units: a.units,
+      })),
+      payments: payments.map((p) => ({
+        participantId: p.participantId,
+        amountCents: p.amountCents,
+      })),
+      tipCents: bill.tipCents ?? 0,
+    })
+    const participantBalances = participants.map((p) => ({
+      participantId: p._id,
+      name: p.name,
+      remainingCents: Math.max(
+        0,
+        totals.byParticipant[p._id]?.balanceCents ?? 0,
+      ),
+    }))
+
     return {
       bill: toGuestVisibleBill(bill),
       participants,
       items,
       assignments,
       myPayments,
+      participantBalances,
     }
   },
 })

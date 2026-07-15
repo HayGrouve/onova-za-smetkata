@@ -8,6 +8,7 @@ describe('getForGuest contract', () => {
       'items',
       'assignments',
       'myPayments',
+      'participantBalances',
     ]
     expect(allowedKeys).not.toContain('payments')
     expect(allowedKeys).toContain('myPayments')
