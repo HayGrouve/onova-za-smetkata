@@ -11,6 +11,7 @@ import { useMutation, useQuery } from 'convex/react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
+import { CombinedPaymentBanner } from '#/components/bills/combined-payment-banner.tsx'
 import { ParticipantDetailSheet } from '#/components/bills/participant-detail-sheet.tsx'
 import { PaymentProgress } from '#/components/bills/payment-progress.tsx'
 import { PaymentRow } from '#/components/bills/payment-row.tsx'
@@ -312,6 +313,7 @@ export function BillSummaryContent({
           />
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
+          <CombinedPaymentBanner billId={billId} />
           {sortedParticipants.length === 0 && (
             <p className="text-sm text-muted-foreground">Няма участници.</p>
           )}
