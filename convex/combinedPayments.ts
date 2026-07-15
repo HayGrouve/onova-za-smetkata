@@ -4,7 +4,10 @@ import type { MutationCtx, QueryCtx } from './_generated/server'
 import { v } from 'convex/values'
 import type { Id } from './_generated/dataModel'
 import { requireBillOwner } from './lib/auth'
-import { validateCombinedPaymentCreate } from './lib/combinedPayment'
+import {
+  COMBINED_PAYMENT_MESSAGES,
+  validateCombinedPaymentCreate,
+} from './lib/combinedPayment'
 import { assertShareToken } from './lib/guestAccess'
 import { GUEST_FLOW_MESSAGES } from './lib/guestFlowMessages'
 import { requireGuestSession } from './lib/requireGuestSession'
@@ -179,5 +182,62 @@ export const create = mutation({
     })
 
     return { requestId, totalCents: validated.totalCents }
+  },
+})
+
+export const cancel = mutation({
+  args: {
+    billId: v.id('bills'),
+    sessionToken: v.string(),
+    requestId: v.id('combinedPaymentRequests'),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db
+      .query('guestSessions')
+      .withIndex('by_sessionToken', (q) =>
+        q.eq('sessionToken', args.sessionToken),
+      )
+      .first()
+    if (!session || session.billId !== args.billId) {
+      throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
+    }
+
+    const request = await ctx.db.get(args.requestId)
+    if (
+      !request ||
+      request.billId !== args.billId ||
+      request.guestSessionId !== session._id
+    ) {
+      throw new ConvexError(COMBINED_PAYMENT_MESSAGES.requestNotFound)
+    }
+    if (request.status !== 'pending') {
+      throw new ConvexError(COMBINED_PAYMENT_MESSAGES.requestNotPending)
+    }
+
+    await ctx.db.patch(request._id, {
+      status: 'cancelled',
+      resolvedAt: Date.now(),
+    })
+  },
+})
+
+export const reject = mutation({
+  args: {
+    billId: v.id('bills'),
+    requestId: v.id('combinedPaymentRequests'),
+  },
+  handler: async (ctx, args) => {
+    await requireBillOwner(ctx, args.billId)
+    const request = await ctx.db.get(args.requestId)
+    if (!request || request.billId !== args.billId) {
+      throw new ConvexError(COMBINED_PAYMENT_MESSAGES.requestNotFound)
+    }
+    if (request.status !== 'pending') {
+      throw new ConvexError(COMBINED_PAYMENT_MESSAGES.requestNotPending)
+    }
+    await ctx.db.patch(request._id, {
+      status: 'rejected',
+      resolvedAt: Date.now(),
+    })
   },
 })
