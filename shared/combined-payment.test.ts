@@ -5,19 +5,21 @@ import {
   validateCombinedPaymentCreate,
   validateCombinedPaymentConfirm,
 } from './combined-payment'
-import type { BillTotals } from './bill-calculations'
+import type { BillTotals, ParticipantTotals } from './bill-calculations'
 
-function totals(overrides: Partial<BillTotals['byParticipant']>): BillTotals {
+type ParticipantTotalsInput = Pick<ParticipantTotals, 'owedCents' | 'paidCents'>
+
+function totals(overrides: Record<string, ParticipantTotalsInput>): BillTotals {
   const byParticipant: BillTotals['byParticipant'] = {}
   for (const [id, t] of Object.entries(overrides)) {
     byParticipant[id] = {
-      owedCents: t.owedCents ?? 0,
-      paidCents: t.paidCents ?? 0,
-      balanceCents: (t.owedCents ?? 0) - (t.paidCents ?? 0),
+      owedCents: t.owedCents,
+      paidCents: t.paidCents,
+      balanceCents: t.owedCents - t.paidCents,
       status:
-        (t.paidCents ?? 0) <= 0
+        t.paidCents <= 0
           ? 'unpaid'
-          : (t.paidCents ?? 0) >= (t.owedCents ?? 0)
+          : t.paidCents >= t.owedCents
             ? 'paid'
             : 'partial',
     }

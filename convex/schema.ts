@@ -84,6 +84,26 @@ export default defineSchema({
     .index('by_billId', ['billId'])
     .index('by_participantId', ['participantId']),
 
+  combinedPaymentRequests: defineTable({
+    billId: v.id('bills'),
+    payerParticipantId: v.id('participants'),
+    coveredParticipantId: v.id('participants'),
+    payerAmountCents: v.number(),
+    coveredAmountCents: v.number(),
+    totalCents: v.number(),
+    status: v.union(
+      v.literal('pending'),
+      v.literal('confirmed'),
+      v.literal('rejected'),
+      v.literal('cancelled'),
+    ),
+    guestSessionId: v.id('guestSessions'),
+    createdAt: v.number(),
+    resolvedAt: v.optional(v.number()),
+  })
+    .index('by_billId_status', ['billId', 'status'])
+    .index('by_guestSessionId', ['guestSessionId']),
+
   paymentSettings: defineTable({
     userId: v.id('users'),
     revolutUsername: v.optional(v.string()),

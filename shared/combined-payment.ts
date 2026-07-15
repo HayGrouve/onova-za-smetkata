@@ -1,6 +1,8 @@
 import type { BillTotals } from './bill-calculations'
 import { COMBINED_PAYMENT_MESSAGES } from './combined-payment-messages'
 
+export { COMBINED_PAYMENT_MESSAGES } from './combined-payment-messages'
+
 export type CombinedPaymentCreateInput = {
   coveredParticipantId: string
 }
