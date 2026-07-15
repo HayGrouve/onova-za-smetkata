@@ -6,8 +6,12 @@ import type { Id } from './_generated/dataModel'
 import { requireBillOwner } from './lib/auth'
 import {
   COMBINED_PAYMENT_MESSAGES,
+  participantRemainingCents,
+  validateCombinedPaymentConfirm,
   validateCombinedPaymentCreate,
 } from './lib/combinedPayment'
+import { validatePaymentAdd } from './lib/paymentAmountSchema'
+import { touchBill } from './lib/touchBill'
 import { assertShareToken } from './lib/guestAccess'
 import { GUEST_FLOW_MESSAGES } from './lib/guestFlowMessages'
 import { requireGuestSession } from './lib/requireGuestSession'
@@ -239,5 +243,92 @@ export const reject = mutation({
       status: 'rejected',
       resolvedAt: Date.now(),
     })
+  },
+})
+
+export const confirm = mutation({
+  args: {
+    billId: v.id('bills'),
+    requestId: v.id('combinedPaymentRequests'),
+  },
+  handler: async (ctx, args) => {
+    await requireBillOwner(ctx, args.billId)
+
+    const request = await ctx.db.get(args.requestId)
+    if (!request || request.billId !== args.billId) {
+      throw new ConvexError(COMBINED_PAYMENT_MESSAGES.requestNotFound)
+    }
+    if (request.status !== 'pending') {
+      throw new ConvexError(COMBINED_PAYMENT_MESSAGES.requestNotPending)
+    }
+
+    const totals = await loadBillTotalsForCombinedPay(ctx, args.billId)
+    const payerRemaining = participantRemainingCents(
+      totals,
+      request.payerParticipantId,
+    )
+    const coveredRemaining = participantRemainingCents(
+      totals,
+      request.coveredParticipantId,
+    )
+
+    const validated = validateCombinedPaymentConfirm(
+      {
+        payerAmountCents: request.payerAmountCents,
+        coveredAmountCents: request.coveredAmountCents,
+      },
+      {
+        payerRemainingCents: payerRemaining,
+        coveredRemainingCents: coveredRemaining,
+      },
+    )
+    if (!validated.ok) {
+      throw new ConvexError(validated.message)
+    }
+
+    const note = COMBINED_PAYMENT_MESSAGES.combinedPaymentNote
+    const now = Date.now()
+
+    const payments = await ctx.db
+      .query('payments')
+      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
+      .collect()
+
+    for (const entry of [
+      {
+        participantId: request.payerParticipantId,
+        amountCents: request.payerAmountCents,
+      },
+      {
+        participantId: request.coveredParticipantId,
+        amountCents: request.coveredAmountCents,
+      },
+    ] as const) {
+      const owedCents =
+        totals.byParticipant[entry.participantId]?.owedCents ?? 0
+      const paidCents = payments
+        .filter((payment) => payment.participantId === entry.participantId)
+        .reduce((sum, payment) => sum + payment.amountCents, 0)
+      const paymentValidated = validatePaymentAdd(
+        { amountCents: entry.amountCents, note },
+        { owedCents, paidCents },
+      )
+      if (!paymentValidated.ok) {
+        throw new ConvexError(paymentValidated.message)
+      }
+      await ctx.db.insert('payments', {
+        billId: args.billId,
+        participantId: entry.participantId,
+        amountCents: paymentValidated.data.amountCents,
+        note: paymentValidated.data.note,
+        paidAt: now,
+      })
+    }
+
+    await ctx.db.patch(request._id, {
+      status: 'confirmed',
+      resolvedAt: now,
+    })
+    await touchBill(ctx, args.billId)
   },
 })
