@@ -36,6 +36,7 @@ import type * as lib_guestAccess from "../lib/guestAccess.js";
 import type * as lib_guestClaimSchema from "../lib/guestClaimSchema.js";
 import type * as lib_guestFlowMessages from "../lib/guestFlowMessages.js";
 import type * as lib_guestSession from "../lib/guestSession.js";
+import type * as lib_hostProfile from "../lib/hostProfile.js";
 import type * as lib_itemSchema from "../lib/itemSchema.js";
 import type * as lib_magicLinkEmail from "../lib/magicLinkEmail.js";
 import type * as lib_money from "../lib/money.js";
@@ -92,6 +93,7 @@ declare const fullApi: ApiFromModules<{
   "lib/guestClaimSchema": typeof lib_guestClaimSchema;
   "lib/guestFlowMessages": typeof lib_guestFlowMessages;
   "lib/guestSession": typeof lib_guestSession;
+  "lib/hostProfile": typeof lib_hostProfile;
   "lib/itemSchema": typeof lib_itemSchema;
   "lib/magicLinkEmail": typeof lib_magicLinkEmail;
   "lib/money": typeof lib_money;

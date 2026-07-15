@@ -11,6 +11,12 @@ describe('getForGuest payment settings contract', () => {
     expect(guestPaymentKeys).toContain('revolutUsername')
     expect(guestPaymentKeys).toContain('iban')
   })
+
+  it('does not expose Username / profile identity', () => {
+    const guestPaymentKeys = ['revolutUsername', 'iban']
+    expect(guestPaymentKeys).not.toContain('username')
+    expect(guestPaymentKeys).not.toContain('hostDisplayName')
+  })
 })
 
 describe('getPaymentSettingsStatus', () => {
