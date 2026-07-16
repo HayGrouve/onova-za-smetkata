@@ -1,7 +1,7 @@
 # Finalize Full Read-Only — Design Spec
 
 **Date:** 2026-07-16  
-**Status:** Draft  
+**Status:** Complete  
 **Scope:** After host taps **Завърши сметка** (`bill.status === 'final'`), the bill is hard read-only for every mutating action; delete remains allowed  
 **Approach:** 2 — Full finalize lock (server + UI), not payments-only  
 **Builds on:** Existing `final` status, guest claim `readOnly`, Area C UX-2 edit lock, `payments.undoLast`
