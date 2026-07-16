@@ -1,4 +1,11 @@
 import type { Page } from '@playwright/test'
+import {
+  billIdFromUrl,
+  expectBillItemVisible,
+  getHostParticipantName,
+  goToBillStep,
+} from './helpers/bill-editor'
+import { claimQty1Item } from './helpers/claim-drawer'
 import { expect, openHostContext, test } from './helpers/host-auth'
 
 async function getJoinUrl(hostPage: Page) {
@@ -7,14 +14,8 @@ async function getJoinUrl(hostPage: Page) {
   return joinUrl!
 }
 
-async function goToBillStep(hostPage: Page, step: 2 | 3 | 4) {
-  const labels = ['Бележка', 'Участници', 'Разпределение', 'Преглед'] as const
-  await hostPage.getByLabel(`Стъпка ${step}: ${labels[step - 1]}`).click()
-}
-
 async function claimItem(page: Page, itemName: string) {
-  await page.getByRole('button', { name: new RegExp(itemName) }).click()
-  await expect(page.getByText('Разбивка на дяла')).toBeVisible()
+  await claimQty1Item(page, itemName)
 }
 
 function participantRow(page: Page, participantName: string) {
@@ -33,22 +34,23 @@ test('finalized bill is read-only on guest claim page', async ({ browser }) => {
 
   await hostPage.getByRole('button', { name: 'Нова сметка' }).click()
   await hostPage.getByLabel('Ресторант').fill(restaurantName)
+  await hostPage.getByLabel('Ресторант').blur()
 
   await goToBillStep(hostPage, 2)
   await hostPage.getByPlaceholder('Име на участник').fill(participantName)
-  await hostPage.getByRole('button', { name: 'Добави' }).click()
+  await hostPage.getByRole('button', { name: 'Добави', exact: true }).click()
   await expect(hostPage.getByText(participantName)).toBeVisible()
 
   const joinUrl = await getJoinUrl(hostPage)
-  const billId = hostPage.url().match(/\/bills\/([^/?]+)/)?.[1]
+  const billId = billIdFromUrl(hostPage.url())
   expect(billId).toBeTruthy()
 
   await goToBillStep(hostPage, 3)
   await hostPage.getByRole('button', { name: 'Добави артикул' }).click()
   await hostPage.getByPlaceholder('Наименование на артикул').fill(itemName)
   await hostPage.getByPlaceholder('Цена (€)').first().fill('3.00')
-  await hostPage.getByRole('button', { name: 'Добави' }).click()
-  await expect(hostPage.getByText(itemName)).toBeVisible()
+  await hostPage.getByRole('button', { name: 'Добави', exact: true }).click()
+  await expectBillItemVisible(hostPage, itemName)
 
   const guestContext = await browser.newContext()
   const guestPage = await guestContext.newPage()
@@ -96,22 +98,23 @@ test('finalized bill hides payment undo for host and keeps delete', async ({
 
   await hostPage.getByRole('button', { name: 'Нова сметка' }).click()
   await hostPage.getByLabel('Ресторант').fill(restaurantName)
+  await hostPage.getByLabel('Ресторант').blur()
 
   await goToBillStep(hostPage, 2)
   await hostPage.getByPlaceholder('Име на участник').fill(guestName)
-  await hostPage.getByRole('button', { name: 'Добави' }).click()
+  await hostPage.getByRole('button', { name: 'Добави', exact: true }).click()
   await expect(hostPage.getByText(guestName)).toBeVisible()
 
   const joinUrl = await getJoinUrl(hostPage)
-  const billId = hostPage.url().match(/\/bills\/([^/?]+)/)?.[1]
+  const billId = billIdFromUrl(hostPage.url())
   expect(billId).toBeTruthy()
 
   await goToBillStep(hostPage, 3)
   await hostPage.getByRole('button', { name: 'Добави артикул' }).click()
   await hostPage.getByPlaceholder('Наименование на артикул').fill(itemName)
   await hostPage.getByPlaceholder('Цена (€)').first().fill('3.00')
-  await hostPage.getByRole('button', { name: 'Добави' }).click()
-  await expect(hostPage.getByText(itemName)).toBeVisible()
+  await hostPage.getByRole('button', { name: 'Добави', exact: true }).click()
+  await expectBillItemVisible(hostPage, itemName)
 
   const guestContext = await browser.newContext()
   const guestPage = await guestContext.newPage()

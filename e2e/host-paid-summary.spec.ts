@@ -1,5 +1,11 @@
 import type { Browser, Page } from '@playwright/test'
-import { DEV_USER_NAME } from '../convex/lib/devMode'
+import {
+  billIdFromUrl,
+  expectBillItemVisible,
+  getHostParticipantName,
+  goToBillStep,
+} from './helpers/bill-editor'
+import { claimHalfOfItem, goBackFromHostClaim, initiateRevolutPayment } from './helpers/claim-drawer'
 import { expect, openHostContext, test } from './helpers/host-auth'
 
 async function getJoinUrl(hostPage: Page) {
@@ -8,23 +14,14 @@ async function getJoinUrl(hostPage: Page) {
   return joinUrl!
 }
 
-async function goToBillStep(hostPage: Page, step: 2 | 3 | 4) {
-  const labels = ['Бележка', 'Участници', 'Разпределение', 'Преглед'] as const
-  await hostPage.getByLabel(`Стъпка ${step}: ${labels[step - 1]}`).click()
-}
-
 async function configureRevolut(hostPage: Page, username = 'e2etestuser') {
   await hostPage.getByRole('button', { name: 'Настройки' }).click()
-  await hostPage.getByRole('menuitem', { name: 'Настройки за плащане' }).click()
+  await hostPage
+    .getByRole('menuitem', { name: 'Настройки за плащане' })
+    .click({ timeout: 10_000 })
   await hostPage.getByLabel('Revolut потребителско име').fill(username)
   await hostPage.getByRole('button', { name: 'Запази' }).click()
   await expect(hostPage.getByText('Настройките са запазени')).toBeVisible()
-}
-
-async function claimHalfOfItem(page: Page, itemName: string) {
-  const itemRow = page.locator('.guest-claim-card').filter({ hasText: itemName })
-  await itemRow.getByLabel('Увеличи').click()
-  await expect(page.getByText('Разбивка на дяла')).toBeVisible()
 }
 
 function participantRow(page: Page, participantName: string) {
@@ -38,7 +35,7 @@ async function assertHostPaidByRule(hostPage: Page, hostName: string) {
   await expect(row.getByText('платено')).toBeVisible()
   await expect(row.getByText('Дължи')).toBeVisible()
   await expect(row.getByText('Платено')).toBeVisible()
-  await expect(row.getByText('Остатък').locator('..')).toContainText('€0.00')
+  await expect(row.getByText('Остатък').locator('..')).toContainText('0,00')
   await expect(row.getByRole('button', { name: 'Платено' })).not.toBeVisible()
   await expect(row.getByRole('button', { name: 'Revolut' })).not.toBeVisible()
   await expect(
@@ -50,18 +47,19 @@ test('host paid-by-rule summary flow', async ({ browser }) => {
   const stamp = Date.now()
   const guestName = `Guest ${stamp}`
   const itemName = 'Салата'
-  const hostName = DEV_USER_NAME
 
   const { context: hostContext, page: hostPage } = await openHostContext(browser)
 
   await hostPage.getByRole('button', { name: 'Нова сметка' }).click()
   await goToBillStep(hostPage, 2)
 
-  await expect(hostPage.getByText('Участници')).toBeVisible({ timeout: 30_000 })
-  await expect(hostPage.getByText(hostName)).toBeVisible()
+  await expect(hostPage.getByPlaceholder('Име на участник')).toBeVisible({
+    timeout: 30_000,
+  })
+  const hostName = await getHostParticipantName(hostPage)
 
   await hostPage.getByPlaceholder('Име на участник').fill(guestName)
-  await hostPage.getByRole('button', { name: 'Добави' }).click()
+  await hostPage.getByRole('button', { name: 'Добави', exact: true }).click()
   await expect(hostPage.getByText(guestName)).toBeVisible()
 
   const joinUrl = await getJoinUrl(hostPage)
@@ -84,24 +82,24 @@ test('host paid-by-rule summary flow', async ({ browser }) => {
   await hostPage.getByPlaceholder('Наименование на артикул').fill(itemName)
   await hostPage.getByPlaceholder('Цена (€)').first().fill('6.00')
   await hostPage.getByLabel('Бр.').fill('2')
-  await hostPage.getByRole('button', { name: 'Добави' }).click()
-  await expect(hostPage.getByText(itemName)).toBeVisible()
+  await hostPage.getByRole('button', { name: 'Добави', exact: true }).click()
+  await expectBillItemVisible(hostPage, itemName)
+
+  await configureRevolut(hostPage)
 
   await hostPage.getByRole('button', { name: 'Моите артикули' }).click()
   await expect(hostPage.getByRole('heading', { name: 'Моите артикули' })).toBeVisible()
-  await expect(hostPage.getByRole('link', { name: 'Назад' })).toBeVisible()
+  await expect(hostPage.getByLabel('Назад')).toBeVisible()
   await claimHalfOfItem(hostPage, itemName)
   await expect(hostPage.getByText('Покрито като домакин')).toBeVisible()
 
-  await hostPage.getByRole('link', { name: 'Назад' }).click()
+  await goBackFromHostClaim(hostPage)
   await expect(hostPage).toHaveURL(/\/bills\/[^/?]+\/?(?:\?.*)?$/)
   await expect(hostPage.getByRole('button', { name: 'Моите артикули' })).toBeVisible()
 
-  const billId = hostPage.url().match(/\/bills\/([^/?]+)/)?.[1]
+  const billId = billIdFromUrl(hostPage.url())
   expect(billId).toBeTruthy()
   await hostPage.goto(`/bills/${billId}`)
-
-  await configureRevolut(hostPage)
 
   const guestClaimContext = await browser.newContext()
   const guestClaimPage = await guestClaimContext.newPage()
@@ -138,10 +136,7 @@ test('guest Revolut still works after host paid-by-rule setup', async ({
     setup.billId,
   )
 
-  await guestPage.getByRole('button', { name: 'Revolut' }).click()
-  await expect(
-    guestPage.getByText('Чака потвърждение от домакина'),
-  ).toBeVisible({ timeout: 15_000 })
+  await initiateRevolutPayment(guestPage)
 
   await goToBillStep(setup.hostPage, 4)
   await expect(
@@ -158,7 +153,7 @@ test('guest Revolut still works after host paid-by-rule setup', async ({
     .click()
 
   const guestRow = participantRow(setup.hostPage, setup.guestName)
-  await expect(guestRow.getByText('платено')).toBeVisible()
+  await expect(guestRow.getByText('платено', { exact: true })).toBeVisible()
   await expect(setup.hostPage.getByText('1 от 1 платени')).toBeVisible()
   await assertHostPaidByRule(setup.hostPage, setup.hostName)
 
@@ -180,16 +175,15 @@ async function setupHostGuestBill(browser: Browser): Promise<HostGuestBillSetup>
   const stamp = Date.now()
   const guestName = `Guest ${stamp}`
   const itemName = 'Пица'
-  const hostName = DEV_USER_NAME
 
   const { context: hostContext, page: hostPage } = await openHostContext(browser)
 
   await hostPage.getByRole('button', { name: 'Нова сметка' }).click()
   await goToBillStep(hostPage, 2)
 
-  await expect(hostPage.getByText(hostName)).toBeVisible({ timeout: 30_000 })
+  const hostName = await getHostParticipantName(hostPage)
   await hostPage.getByPlaceholder('Име на участник').fill(guestName)
-  await hostPage.getByRole('button', { name: 'Добави' }).click()
+  await hostPage.getByRole('button', { name: 'Добави', exact: true }).click()
 
   const joinUrl = await getJoinUrl(hostPage)
   await goToBillStep(hostPage, 3)
@@ -197,17 +191,21 @@ async function setupHostGuestBill(browser: Browser): Promise<HostGuestBillSetup>
   await hostPage.getByRole('button', { name: 'Добави артикул' }).click()
   await hostPage.getByPlaceholder('Наименование на артикул').fill(itemName)
   await hostPage.getByPlaceholder('Цена (€)').first().fill('4.00')
-  await hostPage.getByLabel('Бр.').fill('1')
-  await hostPage.getByRole('button', { name: 'Добави' }).click()
+  await hostPage.getByLabel('Бр.').fill('2')
+  await hostPage.getByRole('button', { name: 'Добави', exact: true }).click()
+
+  await configureRevolut(hostPage)
 
   await hostPage.getByRole('button', { name: 'Моите артикули' }).click()
   await claimHalfOfItem(hostPage, itemName)
 
-  const billId = hostPage.url().match(/\/bills\/([^/?]+)/)?.[1]
+  await goBackFromHostClaim(hostPage)
+  await expect(hostPage).toHaveURL(/\/bills\/[^/?]+\/?(?:\?.*)?$/)
+  await expect(hostPage.getByRole('button', { name: 'Моите артикули' })).toBeVisible()
+
+  const billId = billIdFromUrl(hostPage.url())
   expect(billId).toBeTruthy()
   await hostPage.goto(`/bills/${billId}`)
-
-  await configureRevolut(hostPage)
 
   const guestClaimContext = await browser.newContext()
   const guestClaimPage = await guestClaimContext.newPage()

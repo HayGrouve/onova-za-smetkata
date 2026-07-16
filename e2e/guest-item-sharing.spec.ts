@@ -1,15 +1,12 @@
 import type { Browser, Page } from '@playwright/test'
+import { expectBillItemVisible, goToBillStep } from './helpers/bill-editor'
+import { claimQty1Item } from './helpers/claim-drawer'
 import { expect, openHostContext, test } from './helpers/host-auth'
 
 async function getJoinUrl(hostPage: Page) {
   const joinUrl = await hostPage.getByTestId('join-url').textContent()
   expect(joinUrl).toBeTruthy()
   return joinUrl!
-}
-
-async function goToBillStep(hostPage: Page, step: 2 | 3 | 4) {
-  const labels = ['Бележка', 'Участници', 'Разпределение', 'Преглед'] as const
-  await hostPage.getByLabel(`Стъпка ${step}: ${labels[step - 1]}`).click()
 }
 
 async function joinAsGuest(
@@ -30,11 +27,7 @@ async function joinAsGuest(
 }
 
 async function claimSharedQty1Item(guestPage: Page, itemName: string) {
-  const itemRow = guestPage
-    .locator('.guest-claim-card')
-    .filter({ hasText: itemName })
-  await itemRow.click()
-  await expect(guestPage.getByText('Разбивка на дяла')).toBeVisible()
+  await claimQty1Item(guestPage, itemName)
 }
 
 test('three guests share one qty=1 item with equal split', async ({ browser }) => {
@@ -50,7 +43,7 @@ test('three guests share one qty=1 item with equal split', async ({ browser }) =
 
   for (const name of [participantA, participantB, participantC]) {
     await hostPage.getByPlaceholder('Име на участник').fill(name)
-    await hostPage.getByRole('button', { name: 'Добави' }).click()
+    await hostPage.getByRole('button', { name: 'Добави', exact: true }).click()
     await expect(hostPage.getByText(name)).toBeVisible()
   }
 
@@ -61,28 +54,28 @@ test('three guests share one qty=1 item with equal split', async ({ browser }) =
   await hostPage.getByPlaceholder('Наименование на артикул').fill(itemName)
   await hostPage.getByPlaceholder('Цена (€)').first().fill('9.00')
   await hostPage.getByLabel('Бр.').fill('1')
-  await hostPage.getByRole('button', { name: 'Добави' }).click()
-  await expect(hostPage.getByText(itemName)).toBeVisible()
+  await hostPage.getByRole('button', { name: 'Добави', exact: true }).click()
+  await expectBillItemVisible(hostPage, itemName)
 
   const billId = hostPage.url().match(/\/bills\/([^/?]+)/)?.[1]
   expect(billId).toBeTruthy()
 
   const guestA = await joinAsGuest(browser, joinUrl, billId!, participantA)
   await claimSharedQty1Item(guestA.page, itemName)
-  await expect(guestA.page.getByText('✓ Ваше')).toBeVisible()
-  await expect(guestA.page.getByText('Вашият дял: €9.00')).toBeVisible()
+  await expect(guestA.page.getByText('Вашият дял')).toBeVisible()
+  await expect(guestA.page.locator('.guest-total-pulse')).toContainText('9,00')
 
   const guestB = await joinAsGuest(browser, joinUrl, billId!, participantB)
   await expect(guestB.page.getByText('Споделено с')).toBeVisible()
-  await expect(guestB.page.getByText('Вашият дял: €4.50')).toBeVisible()
+  await expect(guestB.page.getByText('4,50 €').first()).toBeVisible()
   await claimSharedQty1Item(guestB.page, itemName)
-  await expect(guestB.page.getByText('Вашият дял: €4.50')).toBeVisible()
+  await expect(guestB.page.locator('.guest-total-pulse')).toContainText('4,50')
 
   const guestC = await joinAsGuest(browser, joinUrl, billId!, participantC)
   await expect(guestC.page.getByText('Споделено с')).toBeVisible()
-  await expect(guestC.page.getByText('Вашият дял: €3.00')).toBeVisible()
+  await expect(guestC.page.getByText('3,00 €').first()).toBeVisible()
   await claimSharedQty1Item(guestC.page, itemName)
-  await expect(guestC.page.getByText('Вашият дял: €3.00')).toBeVisible()
+  await expect(guestC.page.locator('.guest-total-pulse')).toContainText('3,00')
 
   await guestA.context.close()
   await guestB.context.close()

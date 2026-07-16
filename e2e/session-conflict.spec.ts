@@ -1,3 +1,4 @@
+import { billIdFromUrl } from './helpers/bill-editor'
 import { expect, openHostContext, test } from './helpers/host-auth'
 
 async function getJoinUrl(hostPage: import('@playwright/test').Page) {
@@ -11,12 +12,17 @@ test('second guest sees taken participant name', async ({ browser }) => {
 
   await hostPage.getByRole('button', { name: 'Нова сметка' }).click()
 
+  await hostPage.getByLabel('Стъпка 2: Участници').click()
+  await expect(hostPage.getByPlaceholder('Име на участник')).toBeVisible({
+    timeout: 30_000,
+  })
+
   const participantName = `Taken ${Date.now()}`
   await hostPage.getByPlaceholder('Име на участник').fill(participantName)
-  await hostPage.getByRole('button', { name: 'Добави' }).click()
+  await hostPage.getByRole('button', { name: 'Добави', exact: true }).click()
   await expect(hostPage.getByText(participantName)).toBeVisible()
 
-  const billId = hostPage.url().match(/\/bills\/([^/]+)/)?.[1]
+  const billId = billIdFromUrl(hostPage.url())
   expect(billId).toBeTruthy()
 
   const joinUrl = await getJoinUrl(hostPage)

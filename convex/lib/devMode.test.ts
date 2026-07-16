@@ -36,4 +36,14 @@ describe('isDevModeEnabled', () => {
     vi.stubEnv('CONVEX_DEV_DEPLOYMENTS', 'my-custom-dev')
     expect(isDevModeEnabled()).toBe(true)
   })
+
+  it('derives deployment slug from CONVEX_CLOUD_URL when CONVEX_DEPLOYMENT is unset', () => {
+    vi.stubEnv('DEV_MODE', 'true')
+    vi.stubEnv('CONVEX_DEPLOYMENT', '')
+    vi.stubEnv(
+      'CONVEX_CLOUD_URL',
+      'https://striped-shepherd-984.convex.cloud',
+    )
+    expect(isDevModeEnabled()).toBe(true)
+  })
 })

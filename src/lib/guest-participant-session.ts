@@ -8,8 +8,32 @@ export type StoredGuestSession = {
   shareToken: string
 }
 
+function canUseLocalStorage(): boolean {
+  try {
+    return (
+      typeof window !== 'undefined' &&
+      typeof localStorage !== 'undefined' &&
+      typeof localStorage.getItem === 'function'
+    )
+  } catch {
+    return false
+  }
+}
+
+function canUseSessionStorage(): boolean {
+  try {
+    return (
+      typeof window !== 'undefined' &&
+      typeof sessionStorage !== 'undefined' &&
+      typeof sessionStorage.getItem === 'function'
+    )
+  } catch {
+    return false
+  }
+}
+
 function readSession(): StoredGuestSession | null {
-  if (typeof localStorage === 'undefined') return null
+  if (!canUseLocalStorage()) return null
   const raw = localStorage.getItem(STORAGE_KEY)
   if (!raw) return null
   try {
@@ -42,7 +66,7 @@ export function createGuestSessionToken(): string {
 }
 
 export function getOrCreateGuestDeviceId(): string {
-  if (typeof sessionStorage === 'undefined') return ''
+  if (!canUseSessionStorage()) return ''
   const existing = sessionStorage.getItem(DEVICE_KEY)
   if (existing) return existing
   const id = createGuestSessionToken()
@@ -64,7 +88,7 @@ export function getStoredGuestParticipant(billId: string): string | null {
 }
 
 export function setStoredGuestSession(session: StoredGuestSession): void {
-  if (typeof localStorage === 'undefined') return
+  if (!canUseLocalStorage()) return
   localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
 }
 
@@ -83,7 +107,7 @@ export function setStoredGuestParticipant(
 }
 
 export function clearStoredGuestParticipant(billId: string): void {
-  if (typeof localStorage === 'undefined') return
+  if (!canUseLocalStorage()) return
   const session = readSession()
   if (session?.billId === billId) {
     localStorage.removeItem(STORAGE_KEY)

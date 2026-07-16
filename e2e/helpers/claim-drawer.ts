@@ -1,0 +1,48 @@
+import { expect, type Page } from '@playwright/test'
+
+/** Expand the claim share drawer so combined-pay chips and breakdown are visible. */
+export async function expandClaimShareDrawer(page: Page) {
+  const details = page.getByTestId('claim-share-details')
+  if (await details.isVisible()) return
+  await page.getByRole('button', { name: /Разбивка на дяла/ }).click()
+  await expect(details).toBeVisible()
+}
+
+/** Toggle a combined-pay chip and wait for the server-backed combined request. */
+export async function selectCombinedPayChip(page: Page, participantName: string) {
+  await expandClaimShareDrawer(page)
+  const chip = page
+    .getByTestId('claim-share-details')
+    .getByRole('button', { name: participantName, exact: true })
+  await chip.click()
+  await expect(chip).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByText('Общо за плащане')).toBeVisible()
+}
+
+/** Open Revolut and wait until the pending-transfer state is shown. */
+export async function initiateRevolutPayment(page: Page) {
+  await expect(async () => {
+    await page.getByRole('button', { name: 'Revolut' }).click()
+    await expect(
+      page.getByText('Чака потвърждение от домакина'),
+    ).toBeVisible({ timeout: 2_000 })
+  }).toPass({ timeout: 20_000 })
+}
+
+export async function claimHalfOfItem(page: Page, itemName: string) {
+  const itemRow = page.locator('.guest-claim-card').filter({ hasText: itemName })
+  await itemRow.getByLabel('Увеличи').click()
+  await expect(page.getByText('Разбивка на дяла')).toBeVisible()
+}
+
+export async function claimQty1Item(page: Page, itemName: string) {
+  await page
+    .locator('.guest-claim-card')
+    .filter({ hasText: itemName })
+    .click()
+  await expect(page.getByText('Разбивка на дяла')).toBeVisible()
+}
+
+export async function goBackFromHostClaim(page: Page) {
+  await page.getByLabel('Назад').click()
+}

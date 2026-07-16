@@ -8,6 +8,16 @@ function normalizeDeploymentName(deployment: string): string {
   return deployment.replace(/^dev:/, '').trim()
 }
 
+/** Slug from CLI env or from Convex runtime `CONVEX_CLOUD_URL`. */
+function getDeploymentSlug(): string {
+  const fromCli = normalizeDeploymentName(process.env.CONVEX_DEPLOYMENT ?? '')
+  if (fromCli) return fromCli
+
+  const cloudUrl = process.env.CONVEX_CLOUD_URL ?? ''
+  const match = cloudUrl.match(/^https:\/\/([^.]+)\.convex\.cloud\/?$/)
+  return match?.[1] ?? ''
+}
+
 function getDevAllowlist(): string[] {
   const fromEnv =
     process.env.CONVEX_DEV_DEPLOYMENTS?.split(',')
@@ -19,7 +29,7 @@ function getDevAllowlist(): string[] {
 export function isDevModeEnabled(): boolean {
   if (process.env.DEV_MODE !== 'true') return false
 
-  const deployment = normalizeDeploymentName(process.env.CONVEX_DEPLOYMENT ?? '')
+  const deployment = getDeploymentSlug()
 
   if (
     PROD_DEPLOYMENT_SLUGS.includes(
