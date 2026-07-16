@@ -4,6 +4,7 @@ describe('getForGuest contract', () => {
   it('exposes myPayments instead of payments', () => {
     const allowedKeys = [
       'bill',
+      'hostParticipantId',
       'participants',
       'items',
       'assignments',

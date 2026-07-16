@@ -557,10 +557,28 @@ function BillEditorContent({
               )}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ShoppingBagIcon className={ICON.section} aria-hidden />
-                    Артикули
-                  </CardTitle>
+                  <div className="flex items-center justify-between gap-3">
+                    <CardTitle className="flex items-center gap-2">
+                      <ShoppingBagIcon className={ICON.section} aria-hidden />
+                      Артикули
+                    </CardTitle>
+                    {bill.hostParticipantId ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-9 shrink-0"
+                        onClick={() =>
+                          void navigate({
+                            to: '/bills/$billId/claim',
+                            params: { billId },
+                            search: { mode: 'host' },
+                          })
+                        }
+                      >
+                        Моите артикули
+                      </Button>
+                    ) : null}
+                  </div>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
                   <p className="text-xs text-muted-foreground">
