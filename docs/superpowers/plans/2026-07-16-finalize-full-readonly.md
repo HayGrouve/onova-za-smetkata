@@ -578,8 +578,6 @@ test('finalized bill hides payment undo for host and keeps delete', async ({
 })
 ```
 
-If `Добави артикул` opens a form that uses `Добави` vs a single-step add (as in older specs), match whichever control the current editor uses — same as `e2e/host-paid-summary.spec.ts`.
-
 - [ ] **Step 2: Run e2e file (when Convex + DEV_MODE available)**
 
 Run: `pnpm run test:e2e -- e2e/final-readonly.spec.ts`
