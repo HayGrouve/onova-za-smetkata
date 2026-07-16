@@ -7,6 +7,7 @@ import {
   query,
 } from './_generated/server'
 import { extractedItemValidator } from './schema'
+import { assertBillDraft } from './lib/assertBillDraft'
 import { requireBillOwner } from './lib/auth'
 import { restaurantNameSchema } from './lib/billMetadataSchema'
 import { validateReceiptImportItems } from './lib/receiptImportSchema'
@@ -23,6 +24,7 @@ export const startScan = mutation({
   args: { billId: v.id('bills') },
   handler: async (ctx, args) => {
     const bill = await requireBillOwner(ctx, args.billId)
+    assertBillDraft(bill)
     await assertRateLimit(ctx, `ocr:${args.billId}`, 10, 3_600_000)
     if (!bill.receiptStorageId) {
       throw new Error('Няма прикачена снимка на бележка за тази сметка')
@@ -69,9 +71,7 @@ export const importScannedItems = mutation({
     if (!scan) throw new Error('Сканирането не е намерено')
 
     const bill = await requireBillOwner(ctx, scan.billId)
-    if (bill.status === 'final') {
-      throw new ConvexError('Сметката е завършена.')
-    }
+    assertBillDraft(bill)
 
     const selectedIndexSet = new Set(args.selectedIndexes)
     const itemsToImport =

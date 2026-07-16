@@ -21,6 +21,7 @@ import type * as guestSessions from "../guestSessions.js";
 import type * as http from "../http.js";
 import type * as items from "../items.js";
 import type * as lib_assertAssignmentEditable from "../lib/assertAssignmentEditable.js";
+import type * as lib_assertBillDraft from "../lib/assertBillDraft.js";
 import type * as lib_assertCanMutateAssignment from "../lib/assertCanMutateAssignment.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_billCalculations from "../lib/billCalculations.js";
@@ -79,6 +80,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   items: typeof items;
   "lib/assertAssignmentEditable": typeof lib_assertAssignmentEditable;
+  "lib/assertBillDraft": typeof lib_assertBillDraft;
   "lib/assertCanMutateAssignment": typeof lib_assertCanMutateAssignment;
   "lib/auth": typeof lib_auth;
   "lib/billCalculations": typeof lib_billCalculations;

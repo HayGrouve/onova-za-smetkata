@@ -1,5 +1,6 @@
 import { mutation } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
+import { assertBillDraft } from './lib/assertBillDraft'
 import { requireBillOwner } from './lib/auth'
 import { sumAssignedUnits } from './lib/clampParticipantUnits'
 import {
@@ -115,7 +116,8 @@ export const remove = mutation({
       throw new ConvexError('Артикулът не е намерен.')
     }
 
-    await requireBillOwner(ctx, item.billId)
+    const bill = await requireBillOwner(ctx, item.billId)
+    assertBillDraft(bill)
 
     const assignments = await ctx.db
       .query('itemAssignments')

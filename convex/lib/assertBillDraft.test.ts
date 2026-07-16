@@ -14,7 +14,7 @@ describe('assertBillDraft', () => {
       assertBillDraft({ status: 'final' })
     } catch (error) {
       expect(error).toBeInstanceOf(ConvexError)
-      expect((error as ConvexError).data).toBe(
+      expect((error as ConvexError<string>).data).toBe(
         GUEST_FLOW_MESSAGES.billFinalNoEdit,
       )
     }

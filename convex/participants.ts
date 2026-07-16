@@ -1,5 +1,6 @@
 import { mutation, query } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
+import { assertBillDraft } from './lib/assertBillDraft'
 import { requireAuth, requireBillOwner } from './lib/auth'
 import { validateParticipantAdd } from './lib/participantSchema'
 import { touchBill } from './lib/touchBill'
@@ -82,11 +83,8 @@ export const remove = mutation({
       throw new ConvexError('Участникът не е намерен.')
     }
 
-    await requireBillOwner(ctx, participant.billId)
-    const bill = await ctx.db.get(participant.billId)
-    if (!bill) {
-      throw new ConvexError('Сметката не е намерена.')
-    }
+    const bill = await requireBillOwner(ctx, participant.billId)
+    assertBillDraft(bill)
 
     const assignments = await ctx.db
       .query('itemAssignments')

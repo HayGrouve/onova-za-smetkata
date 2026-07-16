@@ -47,7 +47,11 @@ test('finalized bill is read-only on guest claim page', async ({ browser }) => {
   await hostPage.getByRole('link', { name: 'Преглед' }).click()
   await expect(hostPage).toHaveURL(new RegExp(`/bills/${billId}/summary`))
   await hostPage.getByRole('button', { name: 'Завърши сметка' }).click()
-  await expect(hostPage.getByText('Завършена')).toBeVisible()
+  await hostPage
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Завърши сметка' })
+    .click()
+  await expect(hostPage.getByText(/Завършена/)).toBeVisible()
 
   const guestContext = await browser.newContext()
   const guestPage = await guestContext.newPage()
