@@ -22,6 +22,7 @@ export interface ParticipantDetailSheetProps {
   payments?: Doc<'payments'>[]
   onOpenPaymentSettings?: () => void
   showPaymentActions?: boolean
+  paymentActionsReadOnly?: boolean
   showPayActions?: boolean
 }
 
@@ -36,6 +37,7 @@ export function ParticipantDetailSheet({
   payments,
   onOpenPaymentSettings,
   showPaymentActions = true,
+  paymentActionsReadOnly = false,
   showPayActions = true,
 }: ParticipantDetailSheetProps) {
   return (
@@ -57,6 +59,7 @@ export function ParticipantDetailSheet({
             payments={payments}
             onOpenPaymentSettings={onOpenPaymentSettings}
             showPaymentActions={showPaymentActions}
+            paymentActionsReadOnly={paymentActionsReadOnly}
             showPayActions={showPayActions}
           />
         </div>

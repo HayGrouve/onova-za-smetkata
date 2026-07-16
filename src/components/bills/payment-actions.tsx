@@ -27,6 +27,7 @@ export interface PaymentActionsProps {
   label: string
   totals: ParticipantTotals
   payments?: Doc<'payments'>[]
+  readOnly?: boolean
 }
 
 export function PaymentActions({
@@ -35,6 +36,7 @@ export function PaymentActions({
   label,
   totals,
   payments = [],
+  readOnly = false,
 }: PaymentActionsProps) {
   const addPayment = useMutation(api.payments.add)
   const undoLastPayment = useMutation(api.payments.undoLast)
@@ -131,20 +133,22 @@ export function PaymentActions({
               </li>
             ))}
           </ul>
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-11 w-full justify-start px-0"
-            onClick={() => void handleUndoLastWithConfirm()}
-            disabled={isUndoing}
-          >
-            <Undo2Icon className={ICON.button} aria-hidden />
-            Отмени последно плащане
-          </Button>
+          {!readOnly ? (
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-11 w-full justify-start px-0"
+              onClick={() => void handleUndoLastWithConfirm()}
+              disabled={isUndoing}
+            >
+              <Undo2Icon className={ICON.button} aria-hidden />
+              Отмени последно плащане
+            </Button>
+          ) : null}
         </div>
       ) : null}
 
-      {remainingCents > 0 ? (
+      {!readOnly && remainingCents > 0 ? (
         <>
           <Button className="h-11 w-full" onClick={handleMarkPaid}>
             <CheckIcon className={ICON.button} aria-hidden />

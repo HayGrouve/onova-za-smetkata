@@ -337,6 +337,7 @@ export function BillSummaryContent({
                 totals={participantTotals}
                 payments={data.payments}
                 isHost={isHost}
+                readOnly={!isDraft}
                 onOpenDetail={() => setDetailParticipantId(participant._id)}
               />
             )
@@ -377,8 +378,9 @@ export function BillSummaryContent({
                       <p>Всички участници са платили.</p>
                     )}
                     <p>
-                      След завършване гостите няма да могат да променят
-                      артикулите си — само преглед.
+                      След завършване сметката е само за преглед — гостите не
+                      могат да променят артикулите, а плащанията не могат да се
+                      отменят или добавят.
                     </p>
                   </div>
                 </DialogDescription>
@@ -450,6 +452,7 @@ export function BillSummaryContent({
           showPaymentActions={
             !isHostParticipant(detailParticipantId, bill.hostParticipantId)
           }
+          paymentActionsReadOnly={!isDraft}
           showPayActions={false}
         />
       )}

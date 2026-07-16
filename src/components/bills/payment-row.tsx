@@ -34,6 +34,7 @@ export interface PaymentRowProps {
   payments?: Doc<'payments'>[]
   /** Host is paid-by-rule; never show collection affordances. */
   isHost?: boolean
+  readOnly?: boolean
   onOpenDetail?: () => void
 }
 
@@ -44,6 +45,7 @@ export function PaymentRow({
   totals,
   payments,
   isHost = false,
+  readOnly = false,
   onOpenDetail,
 }: PaymentRowProps) {
   const remainingCents = Math.max(0, totals.balanceCents)
@@ -117,6 +119,7 @@ export function PaymentRow({
           label={label}
           totals={totals}
           payments={payments}
+          readOnly={readOnly}
         />
       ) : null}
     </div>

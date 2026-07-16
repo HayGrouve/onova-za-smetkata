@@ -37,6 +37,8 @@ export interface ParticipantBreakdownContentProps {
   onOpenPaymentSettings?: () => void
   /** Host summary sheet: show mark-paid controls. Hidden for guests. */
   showPaymentActions?: boolean
+  /** When true, payment history stays visible but mutate controls are hidden. */
+  paymentActionsReadOnly?: boolean
   /** Show Revolut button in breakdown block. Claim page uses sticky footer instead. */
   showPayActions?: boolean
   /** Hide status badge (e.g. when shown in a parent header). */
@@ -62,6 +64,7 @@ export function ParticipantBreakdownContent({
   payments,
   onOpenPaymentSettings,
   showPaymentActions = true,
+  paymentActionsReadOnly = false,
   showPayActions = true,
   showStatusBadge = true,
   summaryVariant = 'default',
@@ -203,6 +206,7 @@ export function ParticipantBreakdownContent({
           label={label}
           totals={totals}
           payments={payments}
+          readOnly={paymentActionsReadOnly}
         />
       ) : null}
     </div>
