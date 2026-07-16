@@ -18,7 +18,7 @@ import type { Doc, Id } from '../../../convex/_generated/dataModel'
 export interface GuestItemRowProps {
   item: Doc<'items'>
   participantId: Id<'participants'>
-  sessionToken: string
+  sessionToken?: string
   itemAssignments: Doc<'itemAssignments'>[]
   participantLabels: Record<string, string>
   readOnly: boolean

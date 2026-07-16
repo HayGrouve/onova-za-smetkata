@@ -127,6 +127,7 @@ export const getForGuest = query({
 
     return {
       bill: toGuestVisibleBill(bill),
+      hostParticipantId: bill.hostParticipantId,
       participants,
       items,
       assignments,
