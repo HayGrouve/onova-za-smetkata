@@ -28,6 +28,8 @@ export interface BillCalculationInput {
   assignments: AssignmentInput[]
   payments: PaymentInput[]
   tipCents?: number
+  /** When set, collection status for this Participant is always paid. */
+  hostParticipantId?: string
 }
 
 export interface ParticipantTotals {
@@ -73,6 +75,29 @@ function paymentStatus(owedCents: number, paidCents: number): PaymentStatus {
   if (paidCents <= 0) return 'unpaid'
   if (paidCents >= owedCents) return 'paid'
   return 'partial'
+}
+
+function applyAlwaysPaidHostCollection(
+  totals: BillTotals,
+  hostParticipantId: string | undefined,
+): BillTotals {
+  if (!hostParticipantId) return totals
+
+  const host = totals.byParticipant[hostParticipantId]
+  if (!host) return totals
+
+  return {
+    ...totals,
+    byParticipant: {
+      ...totals.byParticipant,
+      [hostParticipantId]: {
+        owedCents: host.owedCents,
+        paidCents: host.owedCents,
+        balanceCents: 0,
+        status: 'paid',
+      },
+    },
+  }
 }
 
 export function calculateBillTotals(input: BillCalculationInput): BillTotals {
@@ -150,7 +175,10 @@ export function calculateBillTotals(input: BillCalculationInput): BillTotals {
     }
   }
 
-  return { billTotalCents, byParticipant }
+  return applyAlwaysPaidHostCollection(
+    { billTotalCents, byParticipant },
+    input.hostParticipantId,
+  )
 }
 
 export function totalOutstandingCents(totals: BillTotals): number {

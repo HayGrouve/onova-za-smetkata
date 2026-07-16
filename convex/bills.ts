@@ -114,6 +114,7 @@ export const getForGuest = query({
         amountCents: p.amountCents,
       })),
       tipCents: bill.tipCents ?? 0,
+      hostParticipantId: bill.hostParticipantId,
     })
     const participantBalances = participants.map((p) => ({
       participantId: p._id,

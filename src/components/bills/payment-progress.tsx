@@ -8,17 +8,23 @@ export interface PaymentProgressParticipant {
 export interface PaymentProgressProps {
   participants: PaymentProgressParticipant[]
   byParticipant: Record<string, ParticipantTotals>
+  /** When set, progress counts only Guest Participants. */
+  hostParticipantId?: string
 }
 
 export function PaymentProgress({
   participants,
   byParticipant,
+  hostParticipantId,
 }: PaymentProgressProps) {
-  if (participants.length === 0) return null
+  const progressParticipants = hostParticipantId
+    ? participants.filter((p) => p.id !== hostParticipantId)
+    : participants
+  if (progressParticipants.length === 0) return null
 
-  const totalCount = participants.length
-  const paidCount = participants.filter(
-    (p) => byParticipant[p.id].status === 'paid',
+  const totalCount = progressParticipants.length
+  const paidCount = progressParticipants.filter(
+    (p) => byParticipant[p.id]?.status === 'paid',
   ).length
   const progressPercent = (paidCount / totalCount) * 100
 

@@ -32,7 +32,11 @@ export async function loadBillRelations(ctx: QueryCtx, billId: Id<'bills'>) {
 export type BillRelations = Awaited<ReturnType<typeof loadBillRelations>>
 
 export function buildListSummaryFields(
-  bill: { status: 'draft' | 'final'; tipCents?: number },
+  bill: {
+    status: 'draft' | 'final'
+    tipCents?: number
+    hostParticipantId?: string
+  },
   relations: BillRelations,
 ): {
   listBillTotalCents: number
@@ -76,6 +80,7 @@ export function buildListSummaryFields(
       amountCents: payment.amountCents,
     })),
     tipCents: bill.tipCents ?? 0,
+    hostParticipantId: bill.hostParticipantId,
   })
 
   return {

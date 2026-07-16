@@ -61,6 +61,7 @@ export const add = mutation({
         amountCents: p.amountCents,
       })),
       tipCents: bill.tipCents ?? 0,
+      hostParticipantId: bill.hostParticipantId,
     })
 
     const owedCents = totals.byParticipant[args.participantId]?.owedCents ?? 0
