@@ -25,6 +25,7 @@ import type * as lib_assertBillDraft from "../lib/assertBillDraft.js";
 import type * as lib_assertCanMutateAssignment from "../lib/assertCanMutateAssignment.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_billCalculations from "../lib/billCalculations.js";
+import type * as lib_billListSearch from "../lib/billListSearch.js";
 import type * as lib_billListSummary from "../lib/billListSummary.js";
 import type * as lib_billMetadataSchema from "../lib/billMetadataSchema.js";
 import type * as lib_bill_ownership from "../lib/bill_ownership.js";
@@ -84,6 +85,7 @@ declare const fullApi: ApiFromModules<{
   "lib/assertCanMutateAssignment": typeof lib_assertCanMutateAssignment;
   "lib/auth": typeof lib_auth;
   "lib/billCalculations": typeof lib_billCalculations;
+  "lib/billListSearch": typeof lib_billListSearch;
   "lib/billListSummary": typeof lib_billListSummary;
   "lib/billMetadataSchema": typeof lib_billMetadataSchema;
   "lib/bill_ownership": typeof lib_bill_ownership;
