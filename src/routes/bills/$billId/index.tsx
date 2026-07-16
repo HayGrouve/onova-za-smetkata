@@ -329,8 +329,22 @@ function BillEditorContent({
           participantId: a.participantId,
           units: a.units,
         })),
+        payments: payments.map((p) => ({
+          participantId: p.participantId,
+          amountCents: p.amountCents,
+        })),
+        tipCents: tipCentsForTotals,
+        hostParticipantId: bill.hostParticipantId,
       }),
-    [restaurantName, participants, items, assignments],
+    [
+      restaurantName,
+      participants,
+      items,
+      assignments,
+      payments,
+      tipCentsForTotals,
+      bill.hostParticipantId,
+    ],
   )
 
   return (

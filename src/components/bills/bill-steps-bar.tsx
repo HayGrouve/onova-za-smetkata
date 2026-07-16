@@ -1,3 +1,4 @@
+import { CheckIcon } from 'lucide-react'
 import type { BillStepCompletion } from '#/lib/bill-step-completion.ts'
 import { cn } from '#/lib/utils.ts'
 
@@ -25,11 +26,6 @@ export function BillStepsBar({ step, completed, onStepSelect }: BillStepsBarProp
             const s = (i + 1) as BillStep
             const done = completed[s]
             const isCurrent = s === step
-            const segmentClass = isCurrent
-              ? 'bg-primary'
-              : done
-                ? 'bg-success'
-                : 'bg-border'
             const completionLabel = done ? 'завършена' : 'незавършена'
             return (
               <button
@@ -38,11 +34,28 @@ export function BillStepsBar({ step, completed, onStepSelect }: BillStepsBarProp
                 aria-label={`Стъпка ${s}: ${label}, ${completionLabel}`}
                 aria-current={isCurrent ? 'step' : undefined}
                 onClick={() => onStepSelect(s)}
-                className={cn(
-                  'h-1.5 flex-1 cursor-pointer rounded-full transition-colors',
-                  segmentClass,
-                )}
-              />
+                className="flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-1"
+              >
+                <span
+                  className={cn(
+                    'flex h-3.5 w-full items-center justify-center',
+                    !done && 'invisible',
+                  )}
+                  aria-hidden
+                >
+                  <CheckIcon className="size-3.5 text-success" strokeWidth={2.5} />
+                </span>
+                <span
+                  className={cn(
+                    'h-1.5 w-full rounded-full transition-colors',
+                    isCurrent
+                      ? 'bg-primary'
+                      : done
+                        ? 'bg-success'
+                        : 'bg-border',
+                  )}
+                />
+              </button>
             )
           })}
         </div>

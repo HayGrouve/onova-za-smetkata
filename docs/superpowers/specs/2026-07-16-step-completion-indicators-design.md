@@ -41,13 +41,13 @@ Hosts can still jump to any step. No persisted flags; no check icons.
 | 1 | Бележка | `restaurantName.trim()` non-empty |
 | 2 | Участници | `participants.length ≥ 1` |
 | 3 | Разпределение | ≥1 item **and** every item has at least one assignment |
-| 4 | Преглед | `validateBillForFinalize(...)` returns no errors |
+| 4 | Преглед | Finalize validation passes **and** every participant has payment status `paid` (host counts as paid when `hostParticipantId` is set) |
 
 ### Step 3 vs step 4
 
 - Step 3 does **not** require restaurant name or participants.
 - Step 3 treats “assigned” as presence of ≥1 assignment row per item (same idea as the unassigned-items finalize check). Unit-count mismatches for qty > 1 are **not** required for step 3 done; they still block step 4 via finalize validation.
-- Step 4 is exactly finalize-ready (restaurant, ≥1 participant, ≥1 priced item, no unassigned items, units match when unit assignments are used).
+- Step 4 requires finalize-ready (restaurant, ≥1 participant, ≥1 priced item, no unassigned items, units match when unit assignments are used) **and** all participants `paid` via `calculateBillTotals` (including host paid-by-rule).
 
 ### Edge cases
 
@@ -139,4 +139,4 @@ bill data → getBillStepCompletion → BillStepsBar(completed, step)
 1. Host can see at a glance which steps have required data.
 2. Current step remains visually distinct (primary).
 3. Navigation is never blocked by completion.
-4. Step 4 done matches ability to finalize (same validator).
+4. Step 4 done means finalize-ready **and** every participant is paid.

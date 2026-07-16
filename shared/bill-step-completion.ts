@@ -1,9 +1,11 @@
 import {
+  calculateBillTotals,
   validateBillForFinalize,
   type AssignmentInput,
   type ItemInput,
   type ParticipantInput,
-} from './bill-calculations.ts'
+  type PaymentInput,
+} from './bill-calculations'
 
 export type BillStepNumber = 1 | 2 | 3 | 4
 
@@ -14,6 +16,9 @@ export interface BillStepCompletionInput {
   participants: ParticipantInput[]
   items: ItemInput[]
   assignments: AssignmentInput[]
+  payments?: PaymentInput[]
+  tipCents?: number
+  hostParticipantId?: string
 }
 
 export function getBillStepCompletion(
@@ -26,6 +31,22 @@ export function getBillStepCompletion(
     input.items.every((item) =>
       input.assignments.some((a) => a.itemId === item.id),
     )
-  const step4 = validateBillForFinalize(input).length === 0
+
+  const finalizeReady = validateBillForFinalize(input).length === 0
+  const totals = calculateBillTotals({
+    participants: input.participants,
+    items: input.items,
+    assignments: input.assignments,
+    payments: input.payments ?? [],
+    tipCents: input.tipCents,
+    hostParticipantId: input.hostParticipantId,
+  })
+  const allPaid =
+    input.participants.length > 0 &&
+    input.participants.every(
+      (p) => totals.byParticipant[p.id]?.status === 'paid',
+    )
+  const step4 = finalizeReady && allPaid
+
   return { 1: step1, 2: step2, 3: step3, 4: step4 }
 }

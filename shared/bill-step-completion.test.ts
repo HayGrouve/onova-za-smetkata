@@ -94,23 +94,59 @@ describe('getBillStepCompletion', () => {
     ).toBe(true)
   })
 
-  it('marks step 4 done only when finalize validation passes', () => {
-    // step 3 done but missing restaurant → step 4 incomplete
+  it('marks step 4 incomplete when finalize validation fails', () => {
     expect(
       getBillStepCompletion({
         restaurantName: '',
         participants: [p1],
         items: [i1],
         assignments: [a1],
+        payments: [{ participantId: 'p1', amountCents: 1000 }],
       })[4],
     ).toBe(false)
+  })
+
+  it('marks step 4 incomplete when finalize-ready but someone is unpaid', () => {
     expect(
       getBillStepCompletion({
         restaurantName: 'Механа',
         participants: [p1],
         items: [i1],
         assignments: [a1],
+        payments: [],
+      })[4],
+    ).toBe(false)
+  })
+
+  it('marks step 4 done when finalize-ready and everyone is paid', () => {
+    expect(
+      getBillStepCompletion({
+        restaurantName: 'Механа',
+        participants: [p1],
+        items: [i1],
+        assignments: [a1],
+        payments: [{ participantId: 'p1', amountCents: 1000 }],
+      })[4],
+    ).toBe(true)
+  })
+
+  it('treats host as paid for step 4 when hostParticipantId is set', () => {
+    const host = { id: 'host', sortOrder: 0 }
+    const guest = { id: 'guest', sortOrder: 1 }
+    const item = { id: 'i1', unitPriceCents: 1000, quantity: 1 }
+    expect(
+      getBillStepCompletion({
+        restaurantName: 'Механа',
+        participants: [host, guest],
+        items: [item],
+        assignments: [
+          { itemId: 'i1', participantId: 'host' },
+          { itemId: 'i1', participantId: 'guest' },
+        ],
+        payments: [{ participantId: 'guest', amountCents: 500 }],
+        hostParticipantId: 'host',
       })[4],
     ).toBe(true)
   })
 })
+
