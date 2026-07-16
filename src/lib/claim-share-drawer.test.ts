@@ -1,21 +1,32 @@
 import { describe, expect, it } from 'vitest'
 import {
   CLAIM_SHARE_EXPANDED_FRACTION,
+  CLAIM_SHARE_EXPANDED_MAX_REM,
   buildClaimShareSnapPoints,
+  claimShareExpandedHeightPx,
   isClaimShareExpanded,
 } from './claim-share-drawer'
 
+describe('claimShareExpandedHeightPx', () => {
+  it('uses 70% of viewport when under the 36rem cap', () => {
+    expect(claimShareExpandedHeightPx(800, 16)).toBe(800 * CLAIM_SHARE_EXPANDED_FRACTION)
+  })
+
+  it('caps at 36rem on tall viewports', () => {
+    expect(claimShareExpandedHeightPx(1266, 16)).toBe(
+      CLAIM_SHARE_EXPANDED_MAX_REM * 16,
+    )
+  })
+})
+
 describe('buildClaimShareSnapPoints', () => {
-  it('uses rounded px for peek and fraction for expanded', () => {
-    expect(buildClaimShareSnapPoints(142.7)).toEqual([
-      '143px',
-      CLAIM_SHARE_EXPANDED_FRACTION,
-    ])
+  it('uses rounded px for peek and expanded', () => {
+    expect(buildClaimShareSnapPoints(142.7, 575.4)).toEqual(['143px', '575px'])
   })
 })
 
 describe('isClaimShareExpanded', () => {
-  const snaps = buildClaimShareSnapPoints(120)
+  const snaps = buildClaimShareSnapPoints(120, 560)
 
   it('is false on peek snap', () => {
     expect(isClaimShareExpanded(snaps[0]!, snaps)).toBe(false)

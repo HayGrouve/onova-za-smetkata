@@ -8,13 +8,20 @@ import {
 } from 'react'
 import { Drawer, DrawerContent } from '#/components/ui/drawer.tsx'
 import {
-  CLAIM_SHARE_EXPANDED_FRACTION,
   buildClaimShareSnapPoints,
+  claimShareExpandedHeightPx,
   isClaimShareExpanded,
 } from '#/lib/claim-share-drawer.ts'
 import { cn } from '#/lib/utils.ts'
 
 export type ClaimShareSnap = 'peek' | 'expanded'
+
+function readExpandedHeightPx(): number {
+  if (typeof window === 'undefined') return 0
+  const rootFontSizePx =
+    Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+  return claimShareExpandedHeightPx(window.innerHeight, rootFontSizePx)
+}
 
 export interface ClaimShareDrawerProps {
   title: ReactNode
@@ -43,12 +50,14 @@ export function ClaimShareDrawer({
   const headerRef = useRef<HTMLDivElement>(null)
   const summaryRef = useRef<HTMLDivElement>(null)
   const [peekHeightPx, setPeekHeightPx] = useState(initialPeekHeightPx)
+  const [expandedHeightPx, setExpandedHeightPx] = useState(readExpandedHeightPx)
   const snapPoints = useMemo(
-    () => buildClaimShareSnapPoints(peekHeightPx),
-    [peekHeightPx],
+    () => buildClaimShareSnapPoints(peekHeightPx, expandedHeightPx),
+    [peekHeightPx, expandedHeightPx],
   )
   const [activeSnapPoint, setActiveSnapPoint] = useState<number | string | null>(
-    () => buildClaimShareSnapPoints(initialPeekHeightPx)[0]!,
+    () =>
+      buildClaimShareSnapPoints(initialPeekHeightPx, readExpandedHeightPx())[0]!,
   )
 
   useEffect(() => {
@@ -71,6 +80,15 @@ export function ClaimShareDrawer({
     observer.observe(header)
     observer.observe(summaryEl)
     return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const updateExpandedHeight = () => {
+      setExpandedHeightPx(readExpandedHeightPx())
+    }
+    updateExpandedHeight()
+    window.addEventListener('resize', updateExpandedHeight)
+    return () => window.removeEventListener('resize', updateExpandedHeight)
   }, [])
 
   useEffect(() => {
@@ -122,7 +140,7 @@ export function ClaimShareDrawer({
         activeSnapPoint={activeSnapPoint}
         setActiveSnapPoint={commitSnapPoint}
       >
-        {/* Vaul offsets by windowHeight − snapHeight; shell is h-dvh, panel matches expanded fraction. */}
+        {/* Vaul offsets by windowHeight − snapHeight; shell is h-dvh, panel matches expanded px snap. */}
         <DrawerContent
           showOverlay={false}
           className="pointer-events-none z-50 mt-0 h-dvh gap-0 border-0 bg-transparent"
@@ -135,7 +153,8 @@ export function ClaimShareDrawer({
               'rounded-t-xl',
             )}
             style={{
-              height: `${CLAIM_SHARE_EXPANDED_FRACTION * 100}dvh`,
+              // Keep panel height in lockstep with Vaul expanded snap (px).
+              height: expandedHeightPx,
             }}
           >
             <div ref={headerRef} className="order-1 shrink-0 flex flex-col gap-3">
