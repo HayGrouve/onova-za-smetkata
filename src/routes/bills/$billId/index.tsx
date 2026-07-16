@@ -42,6 +42,7 @@ import {
 import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { calculateBillTotals } from '#/lib/bill-calculations.ts'
+import { getBillStepCompletion } from '#/lib/bill-step-completion.ts'
 import {
   calculateItemsSubtotalCents,
   formatEurInputValue,
@@ -310,11 +311,37 @@ function BillEditorContent({
     }).length
   }, [items, assignments])
 
+  const stepCompletion = useMemo(
+    () =>
+      getBillStepCompletion({
+        restaurantName,
+        participants: participants.map((p) => ({
+          id: p._id,
+          sortOrder: p.sortOrder,
+        })),
+        items: items.map((i) => ({
+          id: i._id,
+          unitPriceCents: i.unitPriceCents,
+          quantity: i.quantity,
+        })),
+        assignments: assignments.map((a) => ({
+          itemId: a.itemId,
+          participantId: a.participantId,
+          units: a.units,
+        })),
+      }),
+    [restaurantName, participants, items, assignments],
+  )
+
   return (
     <>
       <OcrActivityBar isUploading={isUploading} isScanning={isScanning} />
       <BillHeaderTitleSync title={bill.restaurantName} />
-      <BillStepsBar step={step} onStepSelect={goToStep} />
+      <BillStepsBar
+        step={step}
+        completed={stepCompletion}
+        onStepSelect={goToStep}
+      />
       <div
         key={step}
         className={cn(

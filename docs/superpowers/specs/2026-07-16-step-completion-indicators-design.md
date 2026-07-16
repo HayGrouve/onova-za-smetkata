@@ -1,7 +1,7 @@
 # Step Completion Indicators — Design Spec
 
 **Date:** 2026-07-16  
-**Status:** Approved  
+**Status:** Complete  
 **Scope:** Visual “done” state on the bill editor step progress bar when each step has the required data; free navigation unchanged  
 **Approach:** 1 — Pure completion helper + thin `BillStepsBar` props  
 **Builds on:** Existing `BillStepsBar`, `validateBillForFinalize`, editor route `?step=`
