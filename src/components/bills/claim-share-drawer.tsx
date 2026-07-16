@@ -6,7 +6,11 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { Drawer, DrawerContent } from '#/components/ui/drawer.tsx'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
+} from '#/components/ui/drawer.tsx'
 import {
   buildClaimShareSnapPoints,
   claimShareExpandedHeightPx,
@@ -17,10 +21,14 @@ import { cn } from '#/lib/utils.ts'
 export type ClaimShareSnap = 'peek' | 'expanded'
 
 function readExpandedHeightPx(): number {
-  if (typeof window === 'undefined') return 0
+  const viewportHeight =
+    typeof window !== 'undefined' ? window.innerHeight : 800
   const rootFontSizePx =
-    Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
-  return claimShareExpandedHeightPx(window.innerHeight, rootFontSizePx)
+    typeof window !== 'undefined'
+      ? Number.parseFloat(getComputedStyle(document.documentElement).fontSize) ||
+        16
+      : 16
+  return claimShareExpandedHeightPx(viewportHeight, rootFontSizePx)
 }
 
 export interface ClaimShareDrawerProps {
@@ -167,7 +175,9 @@ export function ClaimShareDrawer({
               >
                 <span className="bg-muted mx-auto mt-1 h-1.5 w-10 shrink-0 rounded-full" />
                 <span className="flex w-full items-center justify-between gap-3 text-left">
-                  <span className="text-base font-semibold">{title}</span>
+                  <DrawerTitle className="text-base font-semibold">
+                    {title}
+                  </DrawerTitle>
                   {status}
                 </span>
               </button>
