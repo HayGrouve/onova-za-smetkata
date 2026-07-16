@@ -51,6 +51,7 @@ import { getBillDeleteCopy } from '#/lib/destructive-action-copy.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
+import { isHostParticipant } from '../../../shared/host-bill-participant.ts'
 import { cn } from '#/lib/utils.ts'
 import { BillHeaderTitleSync } from '#/components/layout/bill-header-title.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
@@ -189,7 +190,9 @@ export function BillSummaryContent({
   })
   const isDraft = bill.status === 'draft'
   const unpaidCount = participants.filter(
-    (participant) => totals.byParticipant[participant._id].status !== 'paid',
+    (participant) =>
+      !isHostParticipant(participant._id, bill.hostParticipantId) &&
+      totals.byParticipant[participant._id].status !== 'paid',
   ).length
 
   async function handleFinalize() {
@@ -321,6 +324,10 @@ export function BillSummaryContent({
           )}
           {sortedParticipants.map((participant) => {
             const participantTotals = totals.byParticipant[participant._id]
+            const isHost = isHostParticipant(
+              participant._id,
+              bill.hostParticipantId,
+            )
             return (
               <PaymentRow
                 key={participant._id}
@@ -329,6 +336,7 @@ export function BillSummaryContent({
                 label={labels[participant._id] ?? participant.name}
                 totals={participantTotals}
                 payments={data.payments}
+                isHost={isHost}
                 onOpenDetail={() => setDetailParticipantId(participant._id)}
                 onOpenPaymentSettings={openPaymentSettings}
               />
@@ -440,6 +448,12 @@ export function BillSummaryContent({
           totals={totals.byParticipant[detailParticipantId]}
           payments={data.payments}
           onOpenPaymentSettings={openPaymentSettings}
+          showPaymentActions={
+            !isHostParticipant(detailParticipantId, bill.hostParticipantId)
+          }
+          showPayActions={
+            !isHostParticipant(detailParticipantId, bill.hostParticipantId)
+          }
         />
       )}
     </div>
