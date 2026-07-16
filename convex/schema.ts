@@ -45,6 +45,7 @@ export default defineSchema({
   })
     .index('by_updatedAt', ['updatedAt'])
     .index('by_ownerId_updatedAt', ['ownerId', 'updatedAt'])
+    .index('by_ownerId_status_updatedAt', ['ownerId', 'status', 'updatedAt'])
     .index('by_shareToken', ['shareToken']),
 
   participants: defineTable({

@@ -1,8 +1,14 @@
+import {
+  Component,
+  type ErrorInfo,
+  type ReactNode,
+  useEffect,
+  useState,
+} from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useMutation, useQuery } from 'convex/react'
-import { useMemo, useState } from 'react'
+import { useMutation, usePaginatedQuery } from 'convex/react'
 import { toast } from 'sonner'
-import { PlusIcon, SearchIcon } from 'lucide-react'
+import { Loader2Icon, PlusIcon, SearchIcon } from 'lucide-react'
 import { BillCard } from '#/components/bills/bill-card.tsx'
 import {
   PaymentSettingsOpenButton,
@@ -12,39 +18,106 @@ import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-pro
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
+import { QueryErrorPanel } from '#/components/ui/query-error-panel.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
 import { PwaInstallBanner } from '#/components/pwa-install-banner.tsx'
+import { ICON } from '#/lib/app-icons.ts'
+import {
+  HOME_BILL_PAGE_SIZE,
+  HOME_BILL_SEARCH_DEBOUNCE_MS,
+  homeBillListEmptyMessage,
+  homeBillStatusSearchParam,
+  parseHomeBillStatusSearch,
+  type HomeBillStatusFilter,
+} from '#/lib/home-bill-list.ts'
 import { buildHomeHead } from '#/lib/site-meta.ts'
+import { cn } from '#/lib/utils.ts'
 import { api } from '../../convex/_generated/api'
 
 export const Route = createFileRoute('/')({
+  validateSearch: (search: Record<string, unknown>) => ({
+    status: parseHomeBillStatusSearch(search.status),
+  }),
   head: () => buildHomeHead(),
   component: Home,
 })
 
+const STATUS_CHIPS = [
+  { value: undefined, label: 'Всички' },
+  { value: 'draft' as const, label: 'Чернови' },
+  { value: 'final' as const, label: 'Приключени' },
+] as const
+
+class HomeBillListErrorBoundary extends Component<
+  {
+    resetKey: number
+    onRetry: () => void
+    children: ReactNode
+  },
+  { hasError: boolean }
+> {
+  state = { hasError: false }
+
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('Home bill list failed', error, info)
+    toast.error('Неуспешно зареждане на сметките')
+  }
+
+  componentDidUpdate(prevProps: { resetKey: number }) {
+    if (prevProps.resetKey !== this.props.resetKey && this.state.hasError) {
+      this.setState({ hasError: false })
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <QueryErrorPanel
+          message="Неуспешно зареждане."
+          onRetry={this.props.onRetry}
+        />
+      )
+    }
+    return this.props.children
+  }
+}
+
 function Home() {
   const navigate = useNavigate()
+  const { status: statusFilter } = Route.useSearch()
   const { isAuthenticated, isLoading } = useRequireHostAuth('/')
-  const bills = useQuery(
-    api.bills.listWithSummary,
-    isAuthenticated ? {} : 'skip',
-  )
   const createBill = useMutation(api.bills.create)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [listResetKey, setListResetKey] = useState(0)
   const [isCreating, setIsCreating] = useState(false)
   const paymentSettingsStatus = usePaymentSettingsStatus()
   const { openPaymentSettings } = usePaymentSettingsSheet()
 
-  const filteredBills = useMemo(() => {
-    if (!bills) return null
-    const query = search.trim().toLowerCase()
-    if (!query) return bills
-    return bills.filter(({ bill, participantNames }) => {
-      if (bill.restaurantName.toLowerCase().includes(query)) return true
-      return participantNames.some((name) => name.toLowerCase().includes(query))
-    })
-  }, [bills, search])
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      setDebouncedSearch(search.trim())
+    }, HOME_BILL_SEARCH_DEBOUNCE_MS)
+    return () => window.clearTimeout(handle)
+  }, [search])
+
+  const listArgs = isAuthenticated
+    ? {
+        ...(statusFilter ? { status: statusFilter } : {}),
+        ...(debouncedSearch ? { search: debouncedSearch } : {}),
+      }
+    : 'skip'
+
+  const { results, status, loadMore } = usePaginatedQuery(
+    api.bills.listWithSummary,
+    listArgs,
+    { initialNumItems: HOME_BILL_PAGE_SIZE },
+  )
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -53,8 +126,6 @@ function Home() {
       </div>
     )
   }
-
-  const billsLoading = bills === undefined
 
   async function handleCreateBill() {
     setIsCreating(true)
@@ -71,6 +142,16 @@ function Home() {
       setIsCreating(false)
     }
   }
+
+  function selectStatus(next: HomeBillStatusFilter | undefined) {
+    void navigate({
+      to: '/',
+      search: homeBillStatusSearchParam(next),
+      replace: true,
+    })
+  }
+
+  const showFirstPageSkeletons = status === 'LoadingFirstPage'
 
   return (
     <div className="page-container">
@@ -103,25 +184,82 @@ function Home() {
         />
       </div>
 
-      <div className="flex flex-col gap-3">
-        {billsLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 w-full rounded-xl" />
-          ))}
-        {!billsLoading &&
-          filteredBills !== null &&
-          filteredBills.length === 0 && (
+      <div
+        className="mb-4 flex flex-wrap gap-2"
+        role="group"
+        aria-label="Филтър по статус"
+      >
+        {STATUS_CHIPS.map((chip) => {
+          const selected = statusFilter === chip.value
+          return (
+            <Button
+              key={chip.label}
+              type="button"
+              size="sm"
+              variant={selected ? 'default' : 'outline'}
+              className="h-9 px-3"
+              aria-pressed={selected}
+              onClick={() => selectStatus(chip.value)}
+            >
+              {chip.label}
+            </Button>
+          )
+        })}
+      </div>
+
+      <HomeBillListErrorBoundary
+        resetKey={listResetKey}
+        onRetry={() => setListResetKey((n) => n + 1)}
+      >
+        <div key={listResetKey} className="flex flex-col gap-3">
+          {showFirstPageSkeletons &&
+            Array.from({ length: 3 }).map((_, index) => (
+              <Skeleton key={index} className="h-20 w-full rounded-xl" />
+            ))}
+
+          {!showFirstPageSkeletons && results.length === 0 && (
             <p className="py-8 text-center text-muted-foreground">
-              {search
-                ? 'Няма намерени сметки.'
-                : 'Все още нямате сметки. Създайте първата си сметка!'}
+              {homeBillListEmptyMessage({
+                status: statusFilter,
+                search: debouncedSearch,
+              })}
             </p>
           )}
-        {!billsLoading &&
-          filteredBills?.map((summary) => (
-            <BillCard key={summary.bill._id} {...summary} />
-          ))}
-      </div>
+
+          {!showFirstPageSkeletons &&
+            results.map((summary) => (
+              <BillCard key={summary.bill._id} {...summary} />
+            ))}
+
+          {status === 'CanLoadMore' && (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 w-full"
+              onClick={() => loadMore(HOME_BILL_PAGE_SIZE)}
+            >
+              Зареди още
+            </Button>
+          )}
+
+          {status === 'LoadingMore' && (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 w-full"
+              disabled
+            >
+              <Loader2Icon
+                className={cn(
+                  ICON.button,
+                  'animate-spin motion-reduce:animate-none',
+                )}
+              />
+              Зареди още
+            </Button>
+          )}
+        </div>
+      </HomeBillListErrorBoundary>
     </div>
   )
 }

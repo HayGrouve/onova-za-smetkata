@@ -31,3 +31,7 @@ _Avoid_: owed (when talking about the host’s collection status — the host ha
 **Outstanding**:
 Money still to collect from guests toward their shares. The host never has outstanding.
 _Avoid_: unpaid balance for the host
+
+**Bill status**:
+Whether a bill is still being prepared (**draft**, product UI **Чернова** / chip **Чернови**) or locked after the host finishes it (**final**, product chip **Приключени**).
+_Avoid_: completed, closed, settled (settled is about collection, not bill status)

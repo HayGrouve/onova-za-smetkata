@@ -1,8 +1,14 @@
+import { paginationOptsValidator } from 'convex/server'
+import { filter } from 'convex-helpers/server/filter'
 import { mutation, query } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
 import { assertBillDraft } from './lib/assertBillDraft'
 import { requireAuth, requireBillOwner } from './lib/auth'
 import { assertBillCanFinalize } from './lib/validateBillForFinalize'
+import {
+  billMatchesHomeSearch,
+  normalizeHomeBillSearch,
+} from './lib/billListSearch'
 import { loadBillRelations } from './lib/billListSummary'
 import {
   cleanupBillReceiptStorage,
@@ -35,23 +41,45 @@ export const list = query({
 })
 
 export const listWithSummary = query({
-  args: { limit: v.optional(v.number()) },
+  args: {
+    paginationOpts: paginationOptsValidator,
+    status: v.optional(v.union(v.literal('draft'), v.literal('final'))),
+    search: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
     const userId = await requireAuth(ctx)
-    const maxBills = Math.min(Math.max(args.limit ?? 100, 1), 200)
-    const bills = await ctx.db
-      .query('bills')
-      .withIndex('by_ownerId_updatedAt', (q) => q.eq('ownerId', userId))
-      .order('desc')
-      .take(maxBills)
+    const normalizedSearch = normalizeHomeBillSearch(args.search)
 
-    return bills.map((bill) => ({
-      bill,
-      participantNames: bill.listParticipantNames ?? [],
-      billTotalCents: bill.listBillTotalCents ?? 0,
-      totalOutstandingCents:
-        bill.status === 'draft' ? null : (bill.listOutstandingCents ?? 0),
-    }))
+    const status = args.status
+    const ordered =
+      status === undefined
+        ? ctx.db
+            .query('bills')
+            .withIndex('by_ownerId_updatedAt', (q) => q.eq('ownerId', userId))
+            .order('desc')
+        : ctx.db
+            .query('bills')
+            .withIndex('by_ownerId_status_updatedAt', (q) =>
+              q.eq('ownerId', userId).eq('status', status),
+            )
+            .order('desc')
+
+    const filtered = normalizedSearch
+      ? filter(ordered, (bill) => billMatchesHomeSearch(bill, normalizedSearch))
+      : ordered
+
+    const result = await filtered.paginate(args.paginationOpts)
+
+    return {
+      ...result,
+      page: result.page.map((bill) => ({
+        bill,
+        participantNames: bill.listParticipantNames ?? [],
+        billTotalCents: bill.listBillTotalCents ?? 0,
+        totalOutstandingCents:
+          bill.status === 'draft' ? null : (bill.listOutstandingCents ?? 0),
+      })),
+    }
   },
 })
 
