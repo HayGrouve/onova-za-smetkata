@@ -77,7 +77,9 @@ export function AppFooter() {
                   onClick={() => setIosExpanded((open) => !open)}
                 >
                   <DownloadIcon className={ICON.button} aria-hidden />
-                  {iosExpanded ? 'Скрий инструкциите' : 'Добави на началния екран'}
+                  {iosExpanded
+                    ? 'Скрий инструкциите'
+                    : 'Добави на началния екран'}
                 </Button>
                 {iosExpanded ? (
                   <ol className="list-decimal space-y-1.5 pl-4 text-xs leading-relaxed text-muted-foreground">

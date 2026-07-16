@@ -132,10 +132,9 @@ export function ReceiptScanReviewSheet({
   const receiptTotalCents = scanReady?.receiptTotalCents
   const mismatch = detectTotalsMismatch(itemsTotalCents, receiptTotalCents)
 
-  const restaurantValidation =
-    updateRestaurantName
-      ? validateBillMetadataField('restaurantName', restaurantName)
-      : { ok: true as const }
+  const restaurantValidation = updateRestaurantName
+    ? validateBillMetadataField('restaurantName', restaurantName)
+    : { ok: true as const }
 
   const restaurantError =
     restaurantValidation.ok === false ? restaurantValidation.message : undefined
@@ -275,75 +274,79 @@ export function ReceiptScanReviewSheet({
           {rows.map((row, index) => {
             const errors = rowErrors[index]
             return (
-            <div
-              key={index}
-              className={cn(
-                'flex items-start gap-2 rounded-lg border p-3',
-                row.checked && errors && 'border-destructive',
-                row.confidence === 'low' &&
-                  !(row.checked && errors) &&
-                  'border-accent-foreground/50 bg-accent/50',
-              )}
-            >
-              <Checkbox
-                checked={row.checked}
-                onCheckedChange={(v) =>
-                  updateRow(index, { checked: v === true })
-                }
-                className="mt-3"
-              />
-              <div className="flex flex-1 flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={row.name}
-                    onChange={(e) => updateRow(index, { name: e.target.value })}
-                    placeholder="Наименование"
-                    className="h-10 flex-1"
-                    aria-invalid={Boolean(errors?.name)}
-                  />
-                  {row.confidence === 'low' && (
-                    <Badge
-                      variant="outline"
-                      className="border-accent-foreground/50 text-accent-foreground"
-                    >
-                      ?
-                    </Badge>
-                  )}
+              <div
+                key={index}
+                className={cn(
+                  'flex items-start gap-2 rounded-lg border p-3',
+                  row.checked && errors && 'border-destructive',
+                  row.confidence === 'low' &&
+                    !(row.checked && errors) &&
+                    'border-accent-foreground/50 bg-accent/50',
+                )}
+              >
+                <Checkbox
+                  checked={row.checked}
+                  onCheckedChange={(v) =>
+                    updateRow(index, { checked: v === true })
+                  }
+                  className="mt-3"
+                />
+                <div className="flex flex-1 flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={row.name}
+                      onChange={(e) =>
+                        updateRow(index, { name: e.target.value })
+                      }
+                      placeholder="Наименование"
+                      className="h-10 flex-1"
+                      aria-invalid={Boolean(errors?.name)}
+                    />
+                    {row.confidence === 'low' && (
+                      <Badge
+                        variant="outline"
+                        className="border-accent-foreground/50 text-accent-foreground"
+                      >
+                        ?
+                      </Badge>
+                    )}
+                  </div>
+                  {errors?.name ? (
+                    <p className="text-xs text-destructive">{errors.name}</p>
+                  ) : null}
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={row.priceInput}
+                      onChange={(e) =>
+                        updateRow(index, { priceInput: e.target.value })
+                      }
+                      inputMode="decimal"
+                      placeholder="Цена (€)"
+                      className="h-10 flex-1"
+                      aria-invalid={Boolean(errors?.price)}
+                    />
+                    <span className="text-muted-foreground">×</span>
+                    <Input
+                      value={row.quantity}
+                      onChange={(e) =>
+                        updateRow(index, { quantity: e.target.value })
+                      }
+                      inputMode="numeric"
+                      placeholder="Бр."
+                      className="h-10 w-16"
+                      aria-invalid={Boolean(errors?.quantity)}
+                    />
+                  </div>
+                  {errors?.price ? (
+                    <p className="text-xs text-destructive">{errors.price}</p>
+                  ) : null}
+                  {errors?.quantity ? (
+                    <p className="text-xs text-destructive">
+                      {errors.quantity}
+                    </p>
+                  ) : null}
                 </div>
-                {errors?.name ? (
-                  <p className="text-xs text-destructive">{errors.name}</p>
-                ) : null}
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={row.priceInput}
-                    onChange={(e) =>
-                      updateRow(index, { priceInput: e.target.value })
-                    }
-                    inputMode="decimal"
-                    placeholder="Цена (€)"
-                    className="h-10 flex-1"
-                    aria-invalid={Boolean(errors?.price)}
-                  />
-                  <span className="text-muted-foreground">×</span>
-                  <Input
-                    value={row.quantity}
-                    onChange={(e) =>
-                      updateRow(index, { quantity: e.target.value })
-                    }
-                    inputMode="numeric"
-                    placeholder="Бр."
-                    className="h-10 w-16"
-                    aria-invalid={Boolean(errors?.quantity)}
-                  />
-                </div>
-                {errors?.price ? (
-                  <p className="text-xs text-destructive">{errors.price}</p>
-                ) : null}
-                {errors?.quantity ? (
-                  <p className="text-xs text-destructive">{errors.quantity}</p>
-                ) : null}
               </div>
-            </div>
             )
           })}
         </div>

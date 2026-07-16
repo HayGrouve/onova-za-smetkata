@@ -49,7 +49,10 @@ import {
 } from '../../../../shared/tip-calculations.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
-import { parseTipInputToCents, validateBillMetadataField } from '#/lib/bill-metadata-schema.ts'
+import {
+  parseTipInputToCents,
+  validateBillMetadataField,
+} from '#/lib/bill-metadata-schema.ts'
 import type { BillMetadataPatchInput } from '#/lib/bill-metadata-schema.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { cn } from '#/lib/utils.ts'
@@ -293,7 +296,14 @@ function BillEditorContent({
         tipCents: tipCentsForTotals,
         hostParticipantId: bill.hostParticipantId,
       }),
-    [participants, items, assignments, payments, tipCentsForTotals, bill.hostParticipantId],
+    [
+      participants,
+      items,
+      assignments,
+      payments,
+      tipCentsForTotals,
+      bill.hostParticipantId,
+    ],
   )
 
   const unassignedItemsCount = useMemo(() => {
@@ -389,8 +399,8 @@ function BillEditorContent({
                         Снимка на касова бележка
                       </div>
                       <p className="self-start text-sm text-muted-foreground">
-                        Качете снимка на бележката, за да разпознаете
-                        артикулите автоматично.
+                        Качете снимка на бележката, за да разпознаете артикулите
+                        автоматично.
                       </p>
                     </button>
                   ) : (

@@ -70,9 +70,9 @@ describe('buildRevolutPaymentNote', () => {
   })
 
   it('returns restaurant and participants for combined payment', () => {
-    expect(
-      buildRevolutPaymentNote('Pizza Palace', ['Иван', 'Мария']),
-    ).toBe('Pizza Palace сметка за Иван и Мария')
+    expect(buildRevolutPaymentNote('Pizza Palace', ['Иван', 'Мария'])).toBe(
+      'Pizza Palace сметка за Иван и Мария',
+    )
   })
 
   it('omits restaurant when name is empty', () => {

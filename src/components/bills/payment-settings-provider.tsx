@@ -2,12 +2,11 @@ import { useConvexAuth } from '@convex-dev/auth/react'
 import { useQuery } from 'convex/react'
 import { createContext, useContext, useState } from 'react'
 import { PaymentSettingsSheet } from '#/components/bills/payment-settings-sheet.tsx'
-import {
-  getPaymentSettingsStatus
-  
-  
+import { getPaymentSettingsStatus } from '#/lib/payment-settings.ts'
+import type {
+  PaymentSettings,
+  PaymentSettingsStatus,
 } from '#/lib/payment-settings.ts'
-import type {PaymentSettings, PaymentSettingsStatus} from '#/lib/payment-settings.ts';
 import { api } from '../../../convex/_generated/api'
 
 interface PaymentSettingsContextValue {

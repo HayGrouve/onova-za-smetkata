@@ -55,10 +55,7 @@ export const itemNameSchema = z
   .string()
   .trim()
   .min(1, 'Наименованието не може да е празно')
-  .max(
-    ITEM_NAME_MAX,
-    `Наименованието може да е до ${ITEM_NAME_MAX} символа`,
-  )
+  .max(ITEM_NAME_MAX, `Наименованието може да е до ${ITEM_NAME_MAX} символа`)
 
 export function optionalNoteSchema(max = NOTE_MAX) {
   return z
@@ -90,10 +87,7 @@ export const quantityInputSchema = z
     (value) => Number.isInteger(value) && value >= 1,
     'Количеството трябва да е поне 1.',
   )
-  .refine(
-    (value) => value <= QUANTITY_MAX,
-    'Количеството е твърде голямо.',
-  )
+  .refine((value) => value <= QUANTITY_MAX, 'Количеството е твърде голямо.')
 
 export function nonNegativeCentsSchema(label = 'Сумата') {
   return z
@@ -114,10 +108,7 @@ export function positiveCentsSchema(label = 'Сумата') {
 export const billDateSchema = z
   .number()
   .int('Невалидна дата.')
-  .refine(
-    (value) => value >= BILL_DATE_MIN_MS,
-    'Невалидна дата.',
-  )
+  .refine((value) => value >= BILL_DATE_MIN_MS, 'Невалидна дата.')
   .refine(
     (value) => value <= Date.now() + BILL_DATE_MAX_FUTURE_MS,
     'Невалидна дата.',

@@ -33,9 +33,8 @@ const ConfirmActionContext = createContext<ConfirmActionContextValue | null>(
 export function ConfirmActionProvider({ children }: { children: ReactNode }) {
   const stateRef = useRef(createConfirmActionState())
   const [open, setOpen] = useState(false)
-  const [request, setRequest] = useState<
-    ReturnType<typeof stateRef.current.getPendingRequest>
-  >(null)
+  const [request, setRequest] =
+    useState<ReturnType<typeof stateRef.current.getPendingRequest>>(null)
   const [isConfirming, setIsConfirming] = useState(false)
 
   const close = useCallback((confirmed: boolean) => {
@@ -109,7 +108,9 @@ export function ConfirmActionProvider({ children }: { children: ReactNode }) {
 export function useConfirmAction() {
   const ctx = useContext(ConfirmActionContext)
   if (!ctx) {
-    throw new Error('useConfirmAction must be used within ConfirmActionProvider')
+    throw new Error(
+      'useConfirmAction must be used within ConfirmActionProvider',
+    )
   }
   return ctx
 }

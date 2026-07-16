@@ -14,10 +14,10 @@
 
 ## File map
 
-| File | Action | Responsibility |
-|------|--------|----------------|
-| `src/routes/bills/$billId/index.tsx` | Modify | Receipt file input — remove forced camera capture |
-| `docs/superpowers/specs/2026-07-07-personal-bill-splitter-design.md` | No change | Already documents camera/gallery intent |
+| File                                                                 | Action    | Responsibility                                    |
+| -------------------------------------------------------------------- | --------- | ------------------------------------------------- |
+| `src/routes/bills/$billId/index.tsx`                                 | Modify    | Receipt file input — remove forced camera capture |
+| `docs/superpowers/specs/2026-07-07-personal-bill-splitter-design.md` | No change | Already documents camera/gallery intent           |
 
 No new files. No backend changes.
 
@@ -26,6 +26,7 @@ No new files. No backend changes.
 ### Task 1: Remove forced camera capture on receipt input
 
 **Files:**
+
 - Modify: `src/routes/bills/$billId/index.tsx` (~355–362)
 
 - [ ] **Step 1: Update the hidden file input**
@@ -78,12 +79,12 @@ Expected: all tests pass (upload pipeline unchanged)
 
 ## Spec coverage check
 
-| Spec requirement | Task |
-|------------------|------|
-| One button, native camera + gallery | Task 1 |
-| Keep `accept` for images/HEIC | Task 1 |
-| Unchanged upload/OCR pipeline | Task 1 (no other edits) |
-| Manual mobile + desktop testing | Task 2 |
+| Spec requirement                    | Task                    |
+| ----------------------------------- | ----------------------- |
+| One button, native camera + gallery | Task 1                  |
+| Keep `accept` for images/HEIC       | Task 1                  |
+| Unchanged upload/OCR pipeline       | Task 1 (no other edits) |
+| Manual mobile + desktop testing     | Task 2                  |
 
 ## Notes
 

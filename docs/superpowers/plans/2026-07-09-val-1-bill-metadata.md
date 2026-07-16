@@ -17,6 +17,7 @@
 ## Task 1: Bill metadata schema (TDD)
 
 **Files:**
+
 - Create: `shared/bill-metadata-schema.ts`
 - Create: `shared/bill-metadata-schema.test.ts`
 
@@ -62,8 +63,9 @@ describe('parseBillMetadataPatch', () => {
 
   it('rejects restaurant over max', () => {
     expect(
-      parseBillMetadataPatch({ restaurantName: 'x'.repeat(RESTAURANT_NAME_MAX + 1) })
-        .success,
+      parseBillMetadataPatch({
+        restaurantName: 'x'.repeat(RESTAURANT_NAME_MAX + 1),
+      }).success,
     ).toBe(false)
   })
 
@@ -229,15 +231,16 @@ export function validateBillMetadataField(
   value: string,
   options?: { dateMs?: number },
 ):
-  | { ok: true; patch: BillMetadataPatchInput }
-  | { ok: false; message: string } {
+  { ok: true; patch: BillMetadataPatchInput } | { ok: false; message: string } {
   switch (field) {
     case 'restaurantName': {
       const result = parseBillMetadataPatch({ restaurantName: value })
       if (!result.success) {
         return {
           ok: false,
-          message: formatBillMetadataErrors(result.error).restaurantName ?? 'Невалидно име',
+          message:
+            formatBillMetadataErrors(result.error).restaurantName ??
+            'Невалидно име',
         }
       }
       return { ok: true, patch: { restaurantName: result.data.restaurantName } }
@@ -247,7 +250,8 @@ export function validateBillMetadataField(
       if (!result.success) {
         return {
           ok: false,
-          message: formatBillMetadataErrors(result.error).note ?? 'Невалидна бележка',
+          message:
+            formatBillMetadataErrors(result.error).note ?? 'Невалидна бележка',
         }
       }
       return { ok: true, patch: { note: result.data.note } }
@@ -261,7 +265,8 @@ export function validateBillMetadataField(
       if (!result.success) {
         return {
           ok: false,
-          message: formatBillMetadataErrors(result.error).tip ?? 'Невалидна сума',
+          message:
+            formatBillMetadataErrors(result.error).tip ?? 'Невалидна сума',
         }
       }
       return { ok: true, patch: { tipCents: result.data.tipCents } }
@@ -275,7 +280,8 @@ export function validateBillMetadataField(
       if (!result.success) {
         return {
           ok: false,
-          message: formatBillMetadataErrors(result.error).date ?? 'Невалидна дата.',
+          message:
+            formatBillMetadataErrors(result.error).date ?? 'Невалидна дата.',
         }
       }
       return { ok: true, patch: { date: result.data.date } }
@@ -296,6 +302,7 @@ Expected: PASS
 ## Task 2: Re-export shims
 
 **Files:**
+
 - Create: `src/lib/bill-metadata-schema.ts`
 - Create: `convex/lib/billMetadataSchema.ts`
 
@@ -333,11 +340,13 @@ export type { BillMetadataPatchData } from '../../shared/bill-metadata-schema'
 ## Task 3: Server — `bills.update`
 
 **Files:**
+
 - Modify: `convex/bills.ts`
 
 - [ ] **Step 1: Import parser; remove direct `assertNonNegativeIntCents` for tip**
 
 Add at top:
+
 ```ts
 import { ConvexError } from 'convex/values'
 import {
@@ -386,7 +395,9 @@ await ctx.db.patch(billId, {
   ...(normalized.date !== undefined ? { date: normalized.date } : {}),
   ...(normalized.note !== undefined ? { note: normalized.note } : {}),
   ...(receiptStorageId !== undefined ? { receiptStorageId } : {}),
-  ...(normalized.tipCents !== undefined ? { tipCents: normalized.tipCents } : {}),
+  ...(normalized.tipCents !== undefined
+    ? { tipCents: normalized.tipCents }
+    : {}),
 })
 ```
 
@@ -399,9 +410,11 @@ if ('note' in normalized) {
 ```
 
 Use:
+
 ```ts
 ...(note !== undefined ? { note: normalized.note } : {}),
 ```
+
 where `normalized.note` can be `undefined` to clear the field.
 
 - [ ] **Step 3: Run Convex TypeScript**
@@ -414,6 +427,7 @@ Expected: TypeScript passes
 ## Task 4: Server — `receiptScan.apply`
 
 **Files:**
+
 - Modify: `convex/receiptScan.ts`
 
 - [ ] **Step 1: Validate OCR restaurant name**
@@ -442,26 +456,33 @@ if (args.updateRestaurantName) {
 ## Task 5: UI — `BillAdvancedSettings`
 
 **Files:**
+
 - Modify: `src/components/bills/bill-advanced-settings.tsx`
 
 - [ ] **Step 1: Add error props and display**
 
 Extend props:
+
 ```ts
 noteError?: string
 dateError?: string
 ```
 
 On note `Input`:
+
 ```tsx
 aria-invalid={Boolean(noteError)}
 onChange={(e) => {
   onNoteChange(e.target.value)
 }}
 ```
+
 Add below note input:
+
 ```tsx
-{noteError ? <p className="text-xs text-destructive">{noteError}</p> : null}
+{
+  noteError ? <p className="text-xs text-destructive">{noteError}</p> : null
+}
 ```
 
 Same pattern for date input with `dateError`.
@@ -471,6 +492,7 @@ Same pattern for date input with `dateError`.
 ## Task 6: UI — Bill editor save gate + inline errors
 
 **Files:**
+
 - Modify: `src/routes/bills/$billId/index.tsx`
 
 - [ ] **Step 1: Add field error state and validated save helper**
@@ -512,6 +534,7 @@ function scheduleValidatedSave(
 - [ ] **Step 2: Wire field onChange handlers**
 
 Restaurant:
+
 ```tsx
 onChange={(e) => {
   const value = e.target.value
@@ -520,9 +543,11 @@ onChange={(e) => {
   scheduleValidatedSave('restaurantName', value)
 }}
 ```
+
 Add `aria-invalid` and error paragraph below input.
 
 Tip:
+
 ```tsx
 onChange={(e) => {
   const value = e.target.value
@@ -531,9 +556,11 @@ onChange={(e) => {
   scheduleValidatedSave('tip', value)
 }}
 ```
+
 Remove direct `parseEurInput` call from tip handler.
 
 Note (in `onNoteChange` callback):
+
 ```tsx
 onNoteChange={(value) => {
   setNote(value)
@@ -543,6 +570,7 @@ onNoteChange={(value) => {
 ```
 
 Date:
+
 ```tsx
 onDateChange={(value) => {
   setDate(value)
@@ -569,6 +597,7 @@ onDateChange={(value) => {
 ## Task 7: Docs & verification
 
 **Files:**
+
 - Modify: `docs/superpowers/specs/2026-07-09-val-1-bill-metadata-design.md` — Status → Approved
 - Modify: `docs/superpowers/specs/2026-07-09-app-validation-roadmap.md` — VAL-1 → ✅ Done
 
@@ -594,15 +623,15 @@ Expected: PASS
 
 ## Self-review (spec coverage)
 
-| Spec requirement | Task |
-|------------------|------|
-| Shared `bill-metadata-schema.ts` | Task 1 |
-| `bills.update` validation | Task 3 |
-| `receiptScan.apply` restaurant | Task 4 |
-| Inline errors all 4 fields | Tasks 5–6 |
+| Spec requirement                 | Task                           |
+| -------------------------------- | ------------------------------ |
+| Shared `bill-metadata-schema.ts` | Task 1                         |
+| `bills.update` validation        | Task 3                         |
+| `receiptScan.apply` restaurant   | Task 4                         |
+| Inline errors all 4 fields       | Tasks 5–6                      |
 | Skip debounced save when invalid | Task 6 `scheduleValidatedSave` |
-| Tip strict parse (no silent 0) | Task 1 `parseTipInputToCents` |
-| Tests | Task 1, 7 |
+| Tip strict parse (no silent 0)   | Task 1 `parseTipInputToCents`  |
+| Tests                            | Task 1, 7                      |
 
 ---
 

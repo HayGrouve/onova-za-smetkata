@@ -21,7 +21,10 @@ export function StepNavBar({
   return (
     <>
       {/* In-flow spacer — the fixed bar does not reserve layout space. */}
-      <div aria-hidden className="h-[calc(4.5rem+env(safe-area-inset-bottom,0px))]" />
+      <div
+        aria-hidden
+        className="h-[calc(4.5rem+env(safe-area-inset-bottom,0px))]"
+      />
       <div className="sticky-surface fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
           <button

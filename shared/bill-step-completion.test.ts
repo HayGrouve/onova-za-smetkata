@@ -171,4 +171,3 @@ describe('getBillStepCompletion', () => {
     ).toBe(true)
   })
 })
-

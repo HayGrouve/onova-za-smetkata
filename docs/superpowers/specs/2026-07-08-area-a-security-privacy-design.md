@@ -37,13 +37,13 @@ This spec scopes **Area A** from the application audit into implementable work. 
 
 **Chosen model:** **Option 1 — Capability links**
 
-| Principle | Decision |
-|-----------|----------|
-| Who may view/join a bill? | Anyone with **`billId` + `shareToken`** (secret link). |
-| Is `billId` alone sufficient? | **No** — after migration, guest APIs reject missing/invalid token. |
-| Revocation | Host rotates token → old links die. |
-| Finalized bills | Same link; **session locking applies** (no impersonation). |
-| Receipt images | Host-only via ownership; **never** expose `receiptStorageId` to guests. |
+| Principle                     | Decision                                                                |
+| ----------------------------- | ----------------------------------------------------------------------- |
+| Who may view/join a bill?     | Anyone with **`billId` + `shareToken`** (secret link).                  |
+| Is `billId` alone sufficient? | **No** — after migration, guest APIs reject missing/invalid token.      |
+| Revocation                    | Host rotates token → old links die.                                     |
+| Finalized bills               | Same link; **session locking applies** (no impersonation).              |
+| Receipt images                | Host-only via ownership; **never** expose `receiptStorageId` to guests. |
 
 **Join URL format:**
 
@@ -61,15 +61,15 @@ https://onova-za-smetkata.com/bills/{billId}/join?t={shareToken}
 
 ## Threat model (Area A)
 
-| Threat | Before | After |
-|--------|--------|-------|
-| Host A reads Host B's receipt | 🔴 Any `storageId` | ✅ `getUrl` scoped to owned bill |
-| Leaked join link | 🟡 Permanent, `billId`-only | ✅ Rotatable token; invalid without `t` |
-| Final bill: pick any name | 🔴 All names open | ✅ Same “Заето” rules as draft |
-| `DEV_MODE` on wrong deployment | 🔴 Fixed password auth | ✅ Dev auth only on explicit dev allowlist |
-| Storage fill / upload spam | 🟡 Unbounded uploads | ✅ Bill-scoped + rate limit |
-| Claim spam blocks table | 🟡 Shared per-bill bucket | ✅ Per-actor + per-bill limits |
-| Guest name hijack after 90s idle | 🟡 Accepted | 🟡 Documented; partial mitigation via final lock |
+| Threat                           | Before                      | After                                            |
+| -------------------------------- | --------------------------- | ------------------------------------------------ |
+| Host A reads Host B's receipt    | 🔴 Any `storageId`          | ✅ `getUrl` scoped to owned bill                 |
+| Leaked join link                 | 🟡 Permanent, `billId`-only | ✅ Rotatable token; invalid without `t`          |
+| Final bill: pick any name        | 🔴 All names open           | ✅ Same “Заето” rules as draft                   |
+| `DEV_MODE` on wrong deployment   | 🔴 Fixed password auth      | ✅ Dev auth only on explicit dev allowlist       |
+| Storage fill / upload spam       | 🟡 Unbounded uploads        | ✅ Bill-scoped + rate limit                      |
+| Claim spam blocks table          | 🟡 Shared per-bill bucket   | ✅ Per-actor + per-bill limits                   |
+| Guest name hijack after 90s idle | 🟡 Accepted                 | 🟡 Documented; partial mitigation via final lock |
 
 ---
 
@@ -99,9 +99,9 @@ export const getReceiptUrl = query({
 
 ### Client updates
 
-| File | Change |
-|------|--------|
-| `src/routes/bills/$billId/index.tsx` | `getReceiptUrl({ billId })` |
+| File                                            | Change                               |
+| ----------------------------------------------- | ------------------------------------ |
+| `src/routes/bills/$billId/index.tsx`            | `getReceiptUrl({ billId })`          |
 | `src/components/bills/receipt-preview-card.tsx` | Pass `billId` instead of `storageId` |
 
 ### Guest receipt access
@@ -140,9 +140,14 @@ const DEV_DEPLOYMENT_SLUGS = [
 
 export function isDevModeEnabled(): boolean {
   if (process.env.DEV_MODE !== 'true') return false
-  const deployment = normalizeDeploymentName(process.env.CONVEX_DEPLOYMENT ?? '')
+  const deployment = normalizeDeploymentName(
+    process.env.CONVEX_DEPLOYMENT ?? '',
+  )
   // Optional: CONVEX_DEV_DEPLOYMENTS=comma,separated,slugs
-  const fromEnv = process.env.CONVEX_DEV_DEPLOYMENTS?.split(',').map(s => s.trim()).filter(Boolean) ?? []
+  const fromEnv =
+    process.env.CONVEX_DEV_DEPLOYMENTS?.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean) ?? []
   const allowlist = [...DEV_DEPLOYMENT_SLUGS, ...fromEnv]
   return allowlist.includes(deployment)
 }
@@ -210,15 +215,15 @@ export async function assertShareToken(
 
 Use in **all guest-facing** queries/mutations:
 
-| Function | Add `shareToken: v.string()` |
-|----------|------------------------------|
-| `bills.getForGuest` | ✅ Required |
-| `paymentSettings.getForGuest` | ✅ Required |
-| `guestSessions.listActiveForBill` | ✅ Required |
-| `guestSessions.claim` | ✅ Required |
-| `guestSessions.heartbeat` | ✅ Required |
-| `guestSessions.release` | ✅ Required |
-| Guest assignment mutations | ✅ Via `requireGuestSession` — validate token matches bill at session creation (claim) and optionally re-check on mutation |
+| Function                          | Add `shareToken: v.string()`                                                                                               |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `bills.getForGuest`               | ✅ Required                                                                                                                |
+| `paymentSettings.getForGuest`     | ✅ Required                                                                                                                |
+| `guestSessions.listActiveForBill` | ✅ Required                                                                                                                |
+| `guestSessions.claim`             | ✅ Required                                                                                                                |
+| `guestSessions.heartbeat`         | ✅ Required                                                                                                                |
+| `guestSessions.release`           | ✅ Required                                                                                                                |
+| Guest assignment mutations        | ✅ Via `requireGuestSession` — validate token matches bill at session creation (claim) and optionally re-check on mutation |
 
 ### Response shaping (`getForGuest`)
 
@@ -226,7 +231,7 @@ Return a **sanitized** bill object:
 
 ```ts
 {
-  _id, restaurantName, date, note, status, tipCents, createdAt, updatedAt
+  ;(_id, restaurantName, date, note, status, tipCents, createdAt, updatedAt)
   // EXCLUDE: ownerId, receiptStorageId, shareToken
 }
 ```
@@ -269,7 +274,9 @@ export function buildBillJoinPath(billId: string, shareToken: string): string {
 
 ```ts
 // guest-participant-session.ts
-{ billId, participantId, sessionToken, shareToken }
+{
+  ;(billId, participantId, sessionToken, shareToken)
+}
 ```
 
 **Invite card / QR / share** — include token in generated URLs.
@@ -373,19 +380,19 @@ Use **both**: increment actor bucket first; if bill bucket exceeded, throw.
 For **claim without session yet**, use a client-stable `deviceId` in sessionStorage (generate once) as actor key fallback:
 
 ```ts
-`claim:device:${deviceId}:bill:${billId}`
+;`claim:device:${deviceId}:bill:${billId}`
 ```
 
 Pass optional `deviceId` arg to `claim` mutation (string, max 64 chars).
 
 ### Other guest mutations
 
-| Mutation | Limit |
-|----------|-------|
+| Mutation                  | Limit                      |
+| ------------------------- | -------------------------- |
 | `guestSessions.heartbeat` | 120/min per `sessionToken` |
-| `guestSessions.release` | 20/min per `sessionToken` |
-| `assignments.toggle` | 60/min per `sessionToken` |
-| `assignments.setUnits` | 60/min per `sessionToken` |
+| `guestSessions.release`   | 20/min per `sessionToken`  |
+| `assignments.toggle`      | 60/min per `sessionToken`  |
+| `assignments.setUnits`    | 60/min per `sessionToken`  |
 
 Implement via shared helper wrapping `requireGuestSession`.
 
@@ -430,36 +437,36 @@ Defer `getForGuest` rate limiting to Phase 2 (requires action/cron pattern or ex
 
 ### Phase A1 — Hotfixes (no link format change)
 
-| Task | Finding | Effort |
-|------|---------|--------|
-| A1.1 Replace `files.getUrl` with `getReceiptUrl(billId)` | SEC-1 | S |
-| A1.2 Dev allowlist gate + tests | SEC-3 | S |
-| A1.3 Deploy + verify | — | S |
+| Task                                                     | Finding | Effort |
+| -------------------------------------------------------- | ------- | ------ |
+| A1.1 Replace `files.getUrl` with `getReceiptUrl(billId)` | SEC-1   | S      |
+| A1.2 Dev allowlist gate + tests                          | SEC-3   | S      |
+| A1.3 Deploy + verify                                     | —       | S      |
 
 **Ship first.** No guest URL changes.
 
 ### Phase A2 — Share tokens + final impersonation fix
 
-| Task | Finding | Effort |
-|------|---------|--------|
-| A2.1 Schema: `shareToken` + index | SEC-4 | S |
-| A2.2 Generate on create + backfill | SEC-4 | S |
-| A2.3 `assertShareToken` + wire all guest APIs | SEC-4 | M |
-| A2.4 Sanitize `getForGuest` bill payload | SEC-1, SEC-4 | S |
-| A2.5 URL builders, join/claim token param + storage | SEC-4 | M |
-| A2.6 Invite card / QR / share text with `?t=` | SEC-4 | S |
-| A2.7 `rotateShareToken` + host UI | SEC-4 | S |
-| A2.8 Fix final `claim` + join UI (SEC-2) | SEC-2 | M |
-| A2.9 Update E2E + unit tests | All | M |
-| A2.10 Prod backfill + deploy | SEC-4 | S |
+| Task                                                | Finding      | Effort |
+| --------------------------------------------------- | ------------ | ------ |
+| A2.1 Schema: `shareToken` + index                   | SEC-4        | S      |
+| A2.2 Generate on create + backfill                  | SEC-4        | S      |
+| A2.3 `assertShareToken` + wire all guest APIs       | SEC-4        | M      |
+| A2.4 Sanitize `getForGuest` bill payload            | SEC-1, SEC-4 | S      |
+| A2.5 URL builders, join/claim token param + storage | SEC-4        | M      |
+| A2.6 Invite card / QR / share text with `?t=`       | SEC-4        | S      |
+| A2.7 `rotateShareToken` + host UI                   | SEC-4        | S      |
+| A2.8 Fix final `claim` + join UI (SEC-2)            | SEC-2        | M      |
+| A2.9 Update E2E + unit tests                        | All          | M      |
+| A2.10 Prod backfill + deploy                        | SEC-4        | S      |
 
 ### Phase A3 — Abuse hardening
 
-| Task | Finding | Effort |
-|------|---------|--------|
-| A3.1 Bill-scoped upload + rate limit | SEC-5 | S |
-| A3.2 Guest mutation rate limits + deviceId on claim | SEC-6 | M |
-| A3.3 Document SEC-7 accepted risks | SEC-7 | S |
+| Task                                                | Finding | Effort |
+| --------------------------------------------------- | ------- | ------ |
+| A3.1 Bill-scoped upload + rate limit                | SEC-5   | S      |
+| A3.2 Guest mutation rate limits + deviceId on claim | SEC-6   | M      |
+| A3.3 Document SEC-7 accepted risks                  | SEC-7   | S      |
 
 ---
 
@@ -489,32 +496,32 @@ Defer `getForGuest` rate limiting to Phase 2 (requires action/cron pattern or ex
 
 ## Files touched (expected)
 
-| Area | Files |
-|------|-------|
-| Schema | `convex/schema.ts` |
-| Backfill | `convex/backfill.ts` (new export) |
-| Auth/dev | `convex/lib/devMode.ts`, `convex/auth.ts` |
-| Files | `convex/files.ts` |
-| Bills | `convex/bills.ts` |
-| Guest | `convex/guestSessions.ts`, `convex/lib/guestAccess.ts` (new) |
-| Payments guest | `convex/paymentSettings.ts` |
-| Assignments | `convex/assignments.ts` (rate limits) |
-| Client URLs | `src/lib/bill-join-url.ts`, `bill-invite-card.tsx` |
-| Guest routes | `join.tsx`, `claim.tsx`, `guest-participant-session.ts` |
-| Receipt UI | `index.tsx`, `receipt-preview-card.tsx` |
-| Tests | `e2e/*`, new `devMode.test.ts`, `guestAccess.test.ts` |
-| Docs | `docs/DEPLOY.md` |
+| Area           | Files                                                        |
+| -------------- | ------------------------------------------------------------ |
+| Schema         | `convex/schema.ts`                                           |
+| Backfill       | `convex/backfill.ts` (new export)                            |
+| Auth/dev       | `convex/lib/devMode.ts`, `convex/auth.ts`                    |
+| Files          | `convex/files.ts`                                            |
+| Bills          | `convex/bills.ts`                                            |
+| Guest          | `convex/guestSessions.ts`, `convex/lib/guestAccess.ts` (new) |
+| Payments guest | `convex/paymentSettings.ts`                                  |
+| Assignments    | `convex/assignments.ts` (rate limits)                        |
+| Client URLs    | `src/lib/bill-join-url.ts`, `bill-invite-card.tsx`           |
+| Guest routes   | `join.tsx`, `claim.tsx`, `guest-participant-session.ts`      |
+| Receipt UI     | `index.tsx`, `receipt-preview-card.tsx`                      |
+| Tests          | `e2e/*`, new `devMode.test.ts`, `guestAccess.test.ts`        |
+| Docs           | `docs/DEPLOY.md`                                             |
 
 ---
 
 ## Open questions (defaults chosen)
 
-| Question | Default in this spec |
-|----------|----------------------|
-| Query param name | `t` |
-| Old links without token | Fail closed after A2 deploy |
-| Guest receipt viewing | Not in Area A |
-| Read rate limits on `getForGuest` | Deferred |
+| Question                          | Default in this spec        |
+| --------------------------------- | --------------------------- |
+| Query param name                  | `t`                         |
+| Old links without token           | Fail closed after A2 deploy |
+| Guest receipt viewing             | Not in Area A               |
+| Read rate limits on `getForGuest` | Deferred                    |
 
 ---
 

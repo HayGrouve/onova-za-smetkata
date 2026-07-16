@@ -6,9 +6,7 @@ export type GuestClaimInput = {
 
 export function parseGuestClaimInput(
   input: GuestClaimInput,
-):
-  | { ok: true; deviceId?: string }
-  | { ok: false; message: string } {
+): { ok: true; deviceId?: string } | { ok: false; message: string } {
   const parsed = deviceIdSchema.safeParse(input.deviceId)
   if (!parsed.success) {
     return {

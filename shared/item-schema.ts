@@ -142,9 +142,7 @@ export function validateItemAddForm(
 
 export function validateItemAddArgs(
   args: ItemAddArgs,
-):
-  | { ok: true; data: ItemAddData }
-  | { ok: false; message: string } {
+): { ok: true; data: ItemAddData } | { ok: false; message: string } {
   const issues: z.ZodIssue[] = []
   const output: ItemAddData = {
     name: '',
@@ -187,7 +185,10 @@ export function validateItemAddArgs(
   if (issues.length > 0) {
     return {
       ok: false,
-      message: firstZodIssueMessage(new z.ZodError(issues), 'Невалиден артикул'),
+      message: firstZodIssueMessage(
+        new z.ZodError(issues),
+        'Невалиден артикул',
+      ),
     }
   }
 
@@ -196,9 +197,7 @@ export function validateItemAddArgs(
 
 export function validateItemUpdatePatch(
   patch: ItemUpdatePatchInput,
-):
-  | { ok: true; data: ItemUpdatePatchData }
-  | { ok: false; message: string } {
+): { ok: true; data: ItemUpdatePatchData } | { ok: false; message: string } {
   const output: ItemUpdatePatchData = {}
   const issues: z.ZodIssue[] = []
 
@@ -243,7 +242,10 @@ export function validateItemUpdatePatch(
   if (issues.length > 0) {
     return {
       ok: false,
-      message: firstZodIssueMessage(new z.ZodError(issues), 'Невалиден артикул'),
+      message: firstZodIssueMessage(
+        new z.ZodError(issues),
+        'Невалиден артикул',
+      ),
     }
   }
 

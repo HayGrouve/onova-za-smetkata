@@ -8,11 +8,11 @@
 
 ## Decision summary
 
-| Topic | Choice |
-|-------|--------|
-| Goal | **Both** — data integrity on server + inline form UX on client |
+| Topic   | Choice                                                                                                    |
+| ------- | --------------------------------------------------------------------------------------------------------- |
+| Goal    | **Both** — data integrity on server + inline form UX on client                                            |
 | Pattern | Shared schema in `shared/` → re-export in `src/lib/` + `convex/lib/` shim → `safeParse` + `format*Errors` |
-| Rollout | Phased specs + plans (this document); one phase per implementation cycle |
+| Rollout | Phased specs + plans (this document); one phase per implementation cycle                                  |
 
 ---
 
@@ -41,18 +41,18 @@ Convex mutation               # parse on handler; ConvexError(first issue messag
 
 ## Current state
 
-| Surface | Client validation | Server validation | Notes |
-|---------|-------------------|-------------------|-------|
-| Payment settings (Revolut, IBAN) | ✅ Inline | ✅ Zod | Pre-roadmap |
-| Friend groups | ✅ Inline | ✅ Zod | Uses `personNameSchema` (VAL-0) |
-| Bill restaurant / note / tip / date | ✅ Inline | ✅ Zod | **VAL-1** — `bill-metadata-schema` |
-| Participants | ✅ Inline | ✅ Zod | **VAL-2** — duplicate, cap, finalized |
-| Items (add/edit) | ✅ Inline | ✅ Zod | **VAL-3** — `item-schema` |
-| Payments (partial) | ✅ Inline | ✅ Zod | **VAL-4** — `payment-amount-schema` |
-| Guest join/claim | N/A (pick name) | ✅ Zod + messages | **VAL-5** — `deviceId`, `guest-flow-messages` |
-| Receipt OCR import | ✅ Row errors | ✅ Shared schema | VAL-6 ✅ |
-| Finalize | ✅ Summary errors | ✅ `validateBillForFinalize` | Unchanged |
-| Validation framework | — | — | **VAL-0** — `shared/validation/` |
+| Surface                             | Client validation | Server validation            | Notes                                         |
+| ----------------------------------- | ----------------- | ---------------------------- | --------------------------------------------- |
+| Payment settings (Revolut, IBAN)    | ✅ Inline         | ✅ Zod                       | Pre-roadmap                                   |
+| Friend groups                       | ✅ Inline         | ✅ Zod                       | Uses `personNameSchema` (VAL-0)               |
+| Bill restaurant / note / tip / date | ✅ Inline         | ✅ Zod                       | **VAL-1** — `bill-metadata-schema`            |
+| Participants                        | ✅ Inline         | ✅ Zod                       | **VAL-2** — duplicate, cap, finalized         |
+| Items (add/edit)                    | ✅ Inline         | ✅ Zod                       | **VAL-3** — `item-schema`                     |
+| Payments (partial)                  | ✅ Inline         | ✅ Zod                       | **VAL-4** — `payment-amount-schema`           |
+| Guest join/claim                    | N/A (pick name)   | ✅ Zod + messages            | **VAL-5** — `deviceId`, `guest-flow-messages` |
+| Receipt OCR import                  | ✅ Row errors     | ✅ Shared schema             | VAL-6 ✅                                      |
+| Finalize                            | ✅ Summary errors | ✅ `validateBillForFinalize` | Unchanged                                     |
+| Validation framework                | —                 | —                            | **VAL-0** — `shared/validation/`              |
 
 ---
 
@@ -155,20 +155,20 @@ Phases are **sequential** (0 first). Phases 1–4 can be parallelized after Phas
 
 ### Surfaces
 
-| Action | UI | Mutation |
-|--------|-----|----------|
-| Add item | Item list form | `items.add` |
-| Edit item | Inline row fields | `items.update` |
+| Action    | UI                      | Mutation       |
+| --------- | ----------------------- | -------------- |
+| Add item  | Item list form          | `items.add`    |
+| Edit item | Inline row fields       | `items.update` |
 | Item note | Row expand (if present) | `items.update` |
 
 ### Proposed rules (draft)
 
-| Field | Rules |
-|-------|-------|
-| Name | Trim; 1–120 chars |
+| Field      | Rules                                                       |
+| ---------- | ----------------------------------------------------------- |
+| Name       | Trim; 1–120 chars                                           |
 | Unit price | EUR input → non-negative int cents; reject NaN/empty on add |
-| Quantity | Int ≥ 1; max e.g. 999 |
-| Note | Optional; max 200 chars |
+| Quantity   | Int ≥ 1; max e.g. 999                                       |
+| Note       | Optional; max 200 chars                                     |
 
 ### UX
 
@@ -193,17 +193,17 @@ Phases are **sequential** (0 first). Phases 1–4 can be parallelized after Phas
 
 ### Surfaces
 
-| Action | UI | Mutation |
-|--------|-----|----------|
+| Action          | UI                     | Mutation       |
+| --------------- | ---------------------- | -------------- |
 | Partial payment | `PaymentActions` input | `payments.add` |
-| Mark full paid | Button (no field) | `payments.add` |
+| Mark full paid  | Button (no field)      | `payments.add` |
 
 ### Proposed rules (draft)
 
-| Field | Rules |
-|-------|-------|
+| Field  | Rules                                                     |
+| ------ | --------------------------------------------------------- |
 | Amount | Positive cents; ≤ remaining balance; EUR input validation |
-| Note | Optional; max 200 chars (if exposed later) |
+| Note   | Optional; max 200 chars (if exposed later)                |
 
 ### UX
 
@@ -230,11 +230,11 @@ Phases are **sequential** (0 first). Phases 1–4 can be parallelized after Phas
 
 Guest flows are mostly **selection**, not free text. Scope is narrow:
 
-| Surface | Validation need |
-|---------|-----------------|
-| Join / claim | Participant must exist on bill; session rules unchanged |
-| `deviceId` | Max 64 chars (already trimmed server-side) |
-| Error copy | Map `ConvexError` codes to consistent Bulgarian messages |
+| Surface      | Validation need                                          |
+| ------------ | -------------------------------------------------------- |
+| Join / claim | Participant must exist on bill; session rules unchanged  |
+| `deviceId`   | Max 64 chars (already trimmed server-side)               |
+| Error copy   | Map `ConvexError` codes to consistent Bulgarian messages |
 
 ### Out of scope
 
@@ -258,16 +258,16 @@ Guest flows are mostly **selection**, not free text. Scope is narrow:
 
 ### Surfaces
 
-| Action | UI | Mutation |
-|--------|-----|----------|
+| Action         | UI                          | Mutation                         |
+| -------------- | --------------------------- | -------------------------------- |
 | Apply OCR rows | `receipt-scan-review-sheet` | `receiptScan.importScannedItems` |
 
 ### Rules
 
-| Check | Detail |
-|-------|--------|
-| Each imported row | Valid item name + non-negative price + qty ≥ 1 |
-| Row-level errors | Highlight invalid checked rows in review sheet before import |
+| Check                 | Detail                                                       |
+| --------------------- | ------------------------------------------------------------ |
+| Each imported row     | Valid item name + non-negative price + qty ≥ 1               |
+| Row-level errors      | Highlight invalid checked rows in review sheet before import |
 | Restaurant suggestion | Optional `restaurantName` uses VAL-1 rules (client + server) |
 
 ### Exit criteria
@@ -301,22 +301,22 @@ Guest flows are mostly **selection**, not free text. Scope is narrow:
 
 ## Tracking table
 
-| Phase | ID | Spec | Plan | Status |
-|-------|-----|------|------|--------|
-| Framework | VAL-0 | `val-0-validation-framework-design.md` | `val-0-validation-framework.md` | ✅ Done |
-| Bill metadata | VAL-1 | `val-1-bill-metadata-design.md` | `val-1-bill-metadata.md` | ✅ Done |
-| Participants | VAL-2 | `val-2-participants-design.md` | `val-2-participants.md` | ✅ Done |
-| Items | VAL-3 | `val-3-items-design.md` | `val-3-items.md` | ✅ Done |
-| Payments | VAL-4 | `val-4-payments-design.md` | `val-4-payments.md` | ✅ Done |
-| Guest flows | VAL-5 | `val-5-guest-flows-design.md` | `val-5-guest-flows.md` | ✅ Done |
-| Receipt import | VAL-6 | `val-6-receipt-import-design.md` | `val-6-receipt-import.md` | ✅ Done |
+| Phase          | ID    | Spec                                   | Plan                            | Status  |
+| -------------- | ----- | -------------------------------------- | ------------------------------- | ------- |
+| Framework      | VAL-0 | `val-0-validation-framework-design.md` | `val-0-validation-framework.md` | ✅ Done |
+| Bill metadata  | VAL-1 | `val-1-bill-metadata-design.md`        | `val-1-bill-metadata.md`        | ✅ Done |
+| Participants   | VAL-2 | `val-2-participants-design.md`         | `val-2-participants.md`         | ✅ Done |
+| Items          | VAL-3 | `val-3-items-design.md`                | `val-3-items.md`                | ✅ Done |
+| Payments       | VAL-4 | `val-4-payments-design.md`             | `val-4-payments.md`             | ✅ Done |
+| Guest flows    | VAL-5 | `val-5-guest-flows-design.md`          | `val-5-guest-flows.md`          | ✅ Done |
+| Receipt import | VAL-6 | `val-6-receipt-import-design.md`       | `val-6-receipt-import.md`       | ✅ Done |
 
 **Already done (pre-roadmap):**
 
-| Area | Spec |
-|------|------|
-| Payment settings | `2026-07-09-payment-settings-validation-design.md` ✅ |
-| Friend groups | `2026-07-09-friend-groups-design.md` ✅ (partial overlap with VAL-2) |
+| Area             | Spec                                                                 |
+| ---------------- | -------------------------------------------------------------------- |
+| Payment settings | `2026-07-09-payment-settings-validation-design.md` ✅                |
+| Friend groups    | `2026-07-09-friend-groups-design.md` ✅ (partial overlap with VAL-2) |
 
 ---
 

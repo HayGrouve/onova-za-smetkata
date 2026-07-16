@@ -19,30 +19,30 @@ Three friction points on the bill edit flow slow down the host:
 
 Add three small, isolated improvements on the bill edit page (`/bills/$billId`):
 
-| Feature | What changes |
-|---------|--------------|
-| Tip presets | 10% / 15% / 20% chips computed from items subtotal, plus existing custom EUR input |
-| Friend group pin | Last tapped group moves to first chip position with subtle visual highlight |
-| OCR activity bar | Fixed top indeterminate progress bar during upload or scan |
+| Feature          | What changes                                                                       |
+| ---------------- | ---------------------------------------------------------------------------------- |
+| Tip presets      | 10% / 15% / 20% chips computed from items subtotal, plus existing custom EUR input |
+| Friend group pin | Last tapped group moves to first chip position with subtle visual highlight        |
+| OCR activity bar | Fixed top indeterminate progress bar during upload or scan                         |
 
 No backend schema changes. Bill data still stores `tipCents` only; preferences live in `localStorage`.
 
 ## UX decisions
 
-| Topic | Choice |
-|-------|--------|
-| Tip % base | Items subtotal only (before tip is added) |
-| Tip default | Remember last used % or custom amount (`localStorage`) |
-| Tip UI | Preset chips + custom EUR input (user can override any time) |
-| Tip on item change | Active % chip auto-recalculates saved `tipCents`; custom amount stays fixed |
-| Empty bill tip | Chips disabled; helper text prompts user to add items first |
-| Friend group behavior | Pin last-used group as first chip; user still taps to add (no auto-add) |
-| Friend group storage | `localStorage` only (per device/browser) |
-| Friend group scope | Bill participant picker only; management screen unchanged |
-| OCR feedback | Fixed top indeterminate progress bar + disabled scan/upload controls |
-| OCR scope | All receipt scan paths (camera + gallery upload) |
-| OCR page scope | Bill edit page only |
-| Form during OCR | Rest of form stays editable while bar is visible |
+| Topic                 | Choice                                                                      |
+| --------------------- | --------------------------------------------------------------------------- |
+| Tip % base            | Items subtotal only (before tip is added)                                   |
+| Tip default           | Remember last used % or custom amount (`localStorage`)                      |
+| Tip UI                | Preset chips + custom EUR input (user can override any time)                |
+| Tip on item change    | Active % chip auto-recalculates saved `tipCents`; custom amount stays fixed |
+| Empty bill tip        | Chips disabled; helper text prompts user to add items first                 |
+| Friend group behavior | Pin last-used group as first chip; user still taps to add (no auto-add)     |
+| Friend group storage  | `localStorage` only (per device/browser)                                    |
+| Friend group scope    | Bill participant picker only; management screen unchanged                   |
+| OCR feedback          | Fixed top indeterminate progress bar + disabled scan/upload controls        |
+| OCR scope             | All receipt scan paths (camera + gallery upload)                            |
+| OCR page scope        | Bill edit page only                                                         |
+| Form during OCR       | Rest of form stays editable while bar is visible                            |
 
 ## Approach comparison
 
@@ -85,7 +85,7 @@ Replace the plain "Бакшиш" `<Input>` in `src/routes/bills/$billId/index.ts
 ### Calculation
 
 ```ts
-tipCentsFromPercent = Math.round(itemsSubtotalCents * percent / 100)
+tipCentsFromPercent = Math.round((itemsSubtotalCents * percent) / 100)
 ```
 
 - `itemsSubtotalCents` derived from current bill items (same source as `calculateBillTotals`)
@@ -108,15 +108,15 @@ type TipPreference =
 
 ### Behavior rules
 
-| Event | Action |
-|-------|--------|
-| Bill load + stored % preference | Select matching chip; compute and save `tipCents` if bill has items |
-| Bill load + stored custom preference | Fill custom input; no chip selected |
-| Chip tap | Select chip; compute `tipCents`; save preference + bill |
-| Custom input change | Deselect chip; save raw cents; store `{ mode: 'custom' }` |
-| Items subtotal changes + % chip active | Recompute `tipCents` and save |
-| Items subtotal changes + custom mode | Display unchanged; saved cents unchanged |
-| Zero items | Chips disabled; show "Добави артикули за да изчислиш бакшиш" |
+| Event                                  | Action                                                              |
+| -------------------------------------- | ------------------------------------------------------------------- |
+| Bill load + stored % preference        | Select matching chip; compute and save `tipCents` if bill has items |
+| Bill load + stored custom preference   | Fill custom input; no chip selected                                 |
+| Chip tap                               | Select chip; compute `tipCents`; save preference + bill             |
+| Custom input change                    | Deselect chip; save raw cents; store `{ mode: 'custom' }`           |
+| Items subtotal changes + % chip active | Recompute `tipCents` and save                                       |
+| Items subtotal changes + custom mode   | Display unchanged; saved cents unchanged                            |
+| Zero items                             | Chips disabled; show "Добави артикули за да изчислиш бакшиш"        |
 
 ### Data model
 
@@ -150,12 +150,12 @@ In `participant-list.tsx`, after `api.friendGroups.list` resolves:
 
 ### Edge cases
 
-| Case | Behavior |
-|------|----------|
-| No stored ID | Normal server order |
-| Stored ID deleted / invalid | Ignore; normal order |
-| Only one group | Same UI; that group is first regardless |
-| Multiple tabs | Last write wins (acceptable) |
+| Case                        | Behavior                                |
+| --------------------------- | --------------------------------------- |
+| No stored ID                | Normal server order                     |
+| Stored ID deleted / invalid | Ignore; normal order                    |
+| Only one group              | Same UI; that group is first regardless |
+| Multiple tabs               | Last write wins (acceptable)            |
 
 ### Scope exclusions
 
@@ -195,11 +195,11 @@ While visible, add top padding/spacer so fixed content is not obscured.
 
 ### Interaction
 
-| Control | While busy |
-|---------|------------|
-| Gallery / camera buttons | Disabled |
-| "Разпознай артикули" button | Disabled |
-| Tip, participants, items, metadata | Editable |
+| Control                            | While busy |
+| ---------------------------------- | ---------- |
+| Gallery / camera buttons           | Disabled   |
+| "Разпознай артикули" button        | Disabled   |
+| Tip, participants, items, metadata | Editable   |
 
 ### Existing feedback (retained)
 
@@ -217,16 +217,16 @@ While visible, add top padding/spacer so fixed content is not obscured.
 
 ## File map
 
-| File | Change |
-|------|--------|
-| `src/lib/tip-preferences-storage.ts` | New — read/write tip preference |
-| `src/lib/last-friend-group-storage.ts` | New — read/write last group ID |
-| `src/components/bills/tip-field.tsx` | New — preset chips + custom input |
-| `src/components/bills/ocr-activity-bar.tsx` | New — fixed indeterminate bar |
-| `src/hooks/use-receipt-scan.ts` | Export `isOcrBusy` |
-| `src/routes/bills/$billId/index.tsx` | Wire `TipField`, `OcrActivityBar` |
-| `src/components/bills/participant-list.tsx` | Reorder chips; write last-used on add |
-| `src/styles.css` | Indeterminate bar keyframes (if not inline) |
+| File                                        | Change                                      |
+| ------------------------------------------- | ------------------------------------------- |
+| `src/lib/tip-preferences-storage.ts`        | New — read/write tip preference             |
+| `src/lib/last-friend-group-storage.ts`      | New — read/write last group ID              |
+| `src/components/bills/tip-field.tsx`        | New — preset chips + custom input           |
+| `src/components/bills/ocr-activity-bar.tsx` | New — fixed indeterminate bar               |
+| `src/hooks/use-receipt-scan.ts`             | Export `isOcrBusy`                          |
+| `src/routes/bills/$billId/index.tsx`        | Wire `TipField`, `OcrActivityBar`           |
+| `src/components/bills/participant-list.tsx` | Reorder chips; write last-used on add       |
+| `src/styles.css`                            | Indeterminate bar keyframes (if not inline) |
 
 ## Testing
 

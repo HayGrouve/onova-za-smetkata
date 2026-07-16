@@ -26,14 +26,16 @@ self.addEventListener('activate', (event) => {
       .keys()
       .then((keys) =>
         Promise.all(
-          keys.filter((key) => key !== CACHE_VERSION).map((key) => caches.delete(key)),
+          keys
+            .filter((key) => key !== CACHE_VERSION)
+            .map((key) => caches.delete(key)),
         ),
       )
       .then(() => self.clients.claim()),
   )
 })
 
-function isStaticAsset(pathname: string): boolean {
+function isStaticAsset(pathname) {
   return /\.(png|ico|json|svg|css|js|woff2?)$/i.test(pathname)
 }
 
@@ -51,7 +53,9 @@ self.addEventListener('fetch', (event) => {
           fetch(event.request).then((response) => {
             if (response.ok) {
               const copy = response.clone()
-              void caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, copy))
+              void caches
+                .open(CACHE_VERSION)
+                .then((cache) => cache.put(event.request, copy))
             }
             return response
           }),

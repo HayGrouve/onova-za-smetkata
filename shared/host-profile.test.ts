@@ -63,8 +63,8 @@ describe('resolveHostParticipantName', () => {
 
   it('falls back to „домакин“ when Username and Auth name are missing', () => {
     expect(resolveHostParticipantName({})).toBe('домакин')
-    expect(
-      resolveHostParticipantName({ username: null, authName: '  ' }),
-    ).toBe('домакин')
+    expect(resolveHostParticipantName({ username: null, authName: '  ' })).toBe(
+      'домакин',
+    )
   })
 })

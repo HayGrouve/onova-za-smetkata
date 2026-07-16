@@ -38,14 +38,12 @@ describe('formatBreakdownLineSuffix', () => {
     ).toBe(' · споделено с Мария')
 
     expect(
-      formatBreakdownLineSuffix(
-        {
-          kind: 'item',
-          label: 'Пици',
-          amountCents: 600,
-          sharedWithCount: 1,
-        },
-      ),
+      formatBreakdownLineSuffix({
+        kind: 'item',
+        label: 'Пици',
+        amountCents: 600,
+        sharedWithCount: 1,
+      }),
     ).toBe(' · споделено с 1')
 
     expect(

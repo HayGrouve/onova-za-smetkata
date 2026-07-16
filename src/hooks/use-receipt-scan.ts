@@ -130,8 +130,7 @@ export function useReceiptScan({
 
   const isOcrBusy = isUploading || isScanning
 
-  const completedScan =
-    latestScan?.status === 'done' ? latestScan : undefined
+  const completedScan = latestScan?.status === 'done' ? latestScan : undefined
 
   return {
     galleryInputRef,

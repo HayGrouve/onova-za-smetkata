@@ -25,32 +25,34 @@
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `shared/combined-payment-messages.ts` | Bulgarian error/status strings |
-| `shared/combined-payment.ts` | Pure validation: remaining cents, create/confirm guards |
-| `shared/combined-payment.test.ts` | Vitest for shared helpers |
-| `convex/schema.ts` | `combinedPaymentRequests` table + indexes |
-| `convex/combinedPayments.ts` | create, cancel, confirm, reject, queries |
-| `convex/lib/combinedPayment.ts` | Server shim re-exporting shared helpers |
-| `convex/bills.ts` | Extend `getForGuest` with `participantBalances` |
-| `src/components/bills/combined-pay-chips.tsx` | Chip row UI (new, keeps footer focused) |
-| `src/components/bills/guest-claim-footer.tsx` | Wire chips, combined total, pending state |
-| `src/components/bills/combined-payment-banner.tsx` | Host pending banner (new) |
-| `src/components/bills/bill-summary-content.tsx` | Render host banner(s) |
-| `src/routes/bills/$billId/claim.tsx` | Pass balances + participant labels to footer |
-| `e2e/combined-guest-payment.spec.ts` | Happy path + cancel |
+| File                                               | Responsibility                                          |
+| -------------------------------------------------- | ------------------------------------------------------- |
+| `shared/combined-payment-messages.ts`              | Bulgarian error/status strings                          |
+| `shared/combined-payment.ts`                       | Pure validation: remaining cents, create/confirm guards |
+| `shared/combined-payment.test.ts`                  | Vitest for shared helpers                               |
+| `convex/schema.ts`                                 | `combinedPaymentRequests` table + indexes               |
+| `convex/combinedPayments.ts`                       | create, cancel, confirm, reject, queries                |
+| `convex/lib/combinedPayment.ts`                    | Server shim re-exporting shared helpers                 |
+| `convex/bills.ts`                                  | Extend `getForGuest` with `participantBalances`         |
+| `src/components/bills/combined-pay-chips.tsx`      | Chip row UI (new, keeps footer focused)                 |
+| `src/components/bills/guest-claim-footer.tsx`      | Wire chips, combined total, pending state               |
+| `src/components/bills/combined-payment-banner.tsx` | Host pending banner (new)                               |
+| `src/components/bills/bill-summary-content.tsx`    | Render host banner(s)                                   |
+| `src/routes/bills/$billId/claim.tsx`               | Pass balances + participant labels to footer            |
+| `e2e/combined-guest-payment.spec.ts`               | Happy path + cancel                                     |
 
 ---
 
 ### Task 1: Shared combined-payment helpers (TDD)
 
 **Files:**
+
 - Create: `shared/combined-payment-messages.ts`
 - Create: `shared/combined-payment.ts`
 - Create: `shared/combined-payment.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `COMBINED_PAYMENT_MESSAGES` — string constants
   - `participantRemainingCents(totals, participantId): number`
@@ -328,11 +330,13 @@ git commit -m "feat(combined-pay): add shared validation helpers"
 ### Task 2: Schema and Convex module scaffold
 
 **Files:**
+
 - Modify: `convex/schema.ts`
 - Create: `convex/lib/combinedPayment.ts`
 - Create: `convex/combinedPayments.ts` (queries + stubs)
 
 **Interfaces:**
+
 - Consumes: shared helpers from Task 1
 - Produces:
   - Table `combinedPaymentRequests` in schema
@@ -457,9 +461,11 @@ git commit -m "feat(combined-pay): add schema and query stubs"
 ### Task 3: `combinedPayments.create` mutation
 
 **Files:**
+
 - Modify: `convex/combinedPayments.ts`
 
 **Interfaces:**
+
 - Consumes: `validateCombinedPaymentCreate`, `requireGuestSession`, `assertShareToken`, `loadBillTotalsForCombinedPay`
 - Produces: `combinedPayments.create` returning `{ requestId: Id<'combinedPaymentRequests'>, totalCents: number }`
 
@@ -561,9 +567,11 @@ git commit -m "feat(combined-pay): add guest create mutation"
 ### Task 4: `cancel` and `reject` mutations
 
 **Files:**
+
 - Modify: `convex/combinedPayments.ts`
 
 **Interfaces:**
+
 - Produces:
   - `combinedPayments.cancel({ billId, sessionToken, requestId }) => void`
   - `combinedPayments.reject({ billId, requestId }) => void`
@@ -645,9 +653,11 @@ git commit -m "feat(combined-pay): add cancel and reject mutations"
 ### Task 5: `confirm` mutation (atomic payments)
 
 **Files:**
+
 - Modify: `convex/combinedPayments.ts`
 
 **Interfaces:**
+
 - Consumes: `validatePaymentAdd` from `convex/lib/paymentAmountSchema`, `touchBill`
 - Produces: `combinedPayments.confirm({ billId, requestId }) => void`
 
@@ -746,9 +756,11 @@ git commit -m "feat(combined-pay): add host confirm mutation"
 ### Task 6: Extend `bills.getForGuest` with participant balances
 
 **Files:**
+
 - Modify: `convex/bills.ts`
 
 **Interfaces:**
+
 - Produces: `getForGuest` return adds `participantBalances: Array<{ participantId, name, remainingCents }>` computed from all bill payments server-side
 
 - [ ] **Step 1: Compute balances in handler**
@@ -756,7 +768,7 @@ git commit -m "feat(combined-pay): add host confirm mutation"
 After loading relations (line 73–74), call `calculateBillTotals` with **all** payments (not just `myPayments`). Map participants:
 
 ```ts
-const totals = calculateBillTotals({ /* all relations + all payments */ })
+const totals = calculateBillTotals({/* all relations + all payments */})
 const participantBalances = participants.map((p) => ({
   participantId: p._id,
   name: p.name,
@@ -778,9 +790,11 @@ git commit -m "feat(combined-pay): expose participant balances to guests"
 ### Task 7: `CombinedPayChips` component
 
 **Files:**
+
 - Create: `src/components/bills/combined-pay-chips.tsx`
 
 **Interfaces:**
+
 - Consumes: `participantBalances` from claim page, `payerParticipantId`, `selectedCoveredId`, `onSelect`, `disabled`
 - Produces: `CombinedPayChips` component
 
@@ -813,8 +827,7 @@ export function CombinedPayChips({
   disabled?: boolean
 }) {
   const others = balances.filter(
-    (b) =>
-      b.participantId !== payerParticipantId && b.remainingCents > 0,
+    (b) => b.participantId !== payerParticipantId && b.remainingCents > 0,
   )
   if (others.length === 0) return null
 
@@ -835,9 +848,7 @@ export function CombinedPayChips({
               className="h-9"
               disabled={disabled}
               aria-pressed={selected}
-              onClick={() =>
-                onSelect(selected ? null : p.participantId)
-              }
+              onClick={() => onSelect(selected ? null : p.participantId)}
             >
               {p.name}
             </Button>
@@ -861,10 +872,12 @@ git commit -m "feat(combined-pay): add participant chip selector"
 ### Task 8: Extend `GuestClaimFooter`
 
 **Files:**
+
 - Modify: `src/components/bills/guest-claim-footer.tsx`
 - Modify: `src/routes/bills/$billId/claim.tsx`
 
 **Interfaces:**
+
 - Consumes: `api.combinedPayments.getPendingForGuest`, `api.combinedPayments.create`, `api.combinedPayments.cancel`, `CombinedPayChips`, `participantBalances` prop
 - Produces: Footer with chip row, combined total, pending state, cancel link
 
@@ -877,10 +890,15 @@ participantBalances: ParticipantBalance[]
 - [ ] **Step 2: Add state + queries**
 
 ```ts
-const pending = useQuery(api.combinedPayments.getPendingForGuest, { billId, shareToken, sessionToken })
+const pending = useQuery(api.combinedPayments.getPendingForGuest, {
+  billId,
+  shareToken,
+  sessionToken,
+})
 const createCombined = useMutation(api.combinedPayments.create)
 const cancelCombined = useMutation(api.combinedPayments.cancel)
-const [selectedCoveredId, setSelectedCoveredId] = useState<Id<'participants'> | null>(null)
+const [selectedCoveredId, setSelectedCoveredId] =
+  useState<Id<'participants'> | null>(null)
 ```
 
 When `pending` is non-null, force `selectedCoveredId` from pending.coveredParticipantId and set `disabled` mode.
@@ -911,7 +929,9 @@ async function handleRevolut() {
   let payCents = amountCents
   if (isCombined && !pending) {
     const result = await createCombined({
-      billId, shareToken, sessionToken,
+      billId,
+      shareToken,
+      sessionToken,
       coveredParticipantId: selectedCoveredId!,
     })
     payCents = result.totalCents
@@ -946,10 +966,12 @@ git commit -m "feat(combined-pay): expand guest footer for combined payment"
 ### Task 9: Host pending banner
 
 **Files:**
+
 - Create: `src/components/bills/combined-payment-banner.tsx`
 - Modify: `src/components/bills/bill-summary-content.tsx`
 
 **Interfaces:**
+
 - Consumes: `api.combinedPayments.listPendingForBill`, `confirm`, `reject`, `useConfirmAction`
 - Produces: `CombinedPaymentBanner` stacked above payment rows
 
@@ -1006,9 +1028,11 @@ git commit -m "feat(combined-pay): add host confirmation banner"
 ### Task 10: E2E test
 
 **Files:**
+
 - Create: `e2e/combined-guest-payment.spec.ts`
 
 **Interfaces:**
+
 - Consumes: `e2e/helpers/host-auth.ts` patterns from `happy-split.spec.ts`
 
 - [ ] **Step 1: Write E2E spec**
@@ -1017,7 +1041,8 @@ git commit -m "feat(combined-pay): add host confirmation banner"
 import { expect, openHostContext, test } from './helpers/host-auth'
 
 test('guest combined pay flow — host confirms both', async ({ browser }) => {
-  const { context: hostContext, page: hostPage } = await openHostContext(browser)
+  const { context: hostContext, page: hostPage } =
+    await openHostContext(browser)
 
   // Host: create bill with 2 participants + 1 item split between them
   // Host: configure Revolut username in payment settings
@@ -1089,6 +1114,7 @@ git commit -m "fix(combined-pay): address preflight findings"  # only if needed
 ## Self-review
 
 **Spec coverage:**
+
 - Expanded footer chips — Task 7, 8
 - Combined total + Revolut — Task 8
 - Pending state + cancel — Task 4, 8
@@ -1101,6 +1127,7 @@ git commit -m "fix(combined-pay): address preflight findings"  # only if needed
 - IBAN combined flow — Task 8 (extend IBAN handler same as Revolut: create pending when combined)
 
 **Gaps fixed during review:**
+
 - Added `participantBalances` to `getForGuest` (spec assumed full totals but API only returned `myPayments`)
 - IBAN path explicitly included in Task 8 Step 4
 

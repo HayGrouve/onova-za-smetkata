@@ -1,5 +1,9 @@
 import { claimQty1Item } from './helpers/claim-drawer'
-import { billIdFromUrl, expectBillItemVisible, goToBillStep } from './helpers/bill-editor'
+import {
+  billIdFromUrl,
+  expectBillItemVisible,
+  goToBillStep,
+} from './helpers/bill-editor'
 import { expect, openHostContext, test } from './helpers/host-auth'
 
 async function getJoinUrl(hostPage: import('@playwright/test').Page) {
@@ -9,7 +13,8 @@ async function getJoinUrl(hostPage: import('@playwright/test').Page) {
 }
 
 test('guest can claim an item after host setup', async ({ browser }) => {
-  const { context: hostContext, page: hostPage } = await openHostContext(browser)
+  const { context: hostContext, page: hostPage } =
+    await openHostContext(browser)
 
   await hostPage.getByRole('button', { name: 'Нова сметка' }).click()
 

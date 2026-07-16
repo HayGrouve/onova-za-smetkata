@@ -47,9 +47,10 @@ describe('PaymentProgress guest-only counting', () => {
   }
 
   it('excludes Host from progress when hostParticipantId is set', () => {
-    expect(
-      countPaymentProgress(participants, byParticipant, 'host'),
-    ).toEqual({ paidCount: 1, totalCount: 2 })
+    expect(countPaymentProgress(participants, byParticipant, 'host')).toEqual({
+      paidCount: 1,
+      totalCount: 2,
+    })
   })
 
   it('counts all participants when hostParticipantId is unset', () => {

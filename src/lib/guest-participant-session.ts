@@ -11,7 +11,6 @@ export type StoredGuestSession = {
 function canUseLocalStorage(): boolean {
   try {
     return (
-      typeof window !== 'undefined' &&
       typeof localStorage !== 'undefined' &&
       typeof localStorage.getItem === 'function'
     )
@@ -23,7 +22,6 @@ function canUseLocalStorage(): boolean {
 function canUseSessionStorage(): boolean {
   try {
     return (
-      typeof window !== 'undefined' &&
       typeof sessionStorage !== 'undefined' &&
       typeof sessionStorage.getItem === 'function'
     )

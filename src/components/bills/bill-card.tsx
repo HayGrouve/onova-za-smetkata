@@ -77,9 +77,7 @@ export function BillCard({
             </p>
           </div>
           <div className="shrink-0 text-right">
-            <p className="money font-semibold">
-              {formatEur(billTotalCents)}
-            </p>
+            <p className="money font-semibold">{formatEur(billTotalCents)}</p>
             {!isDraft && (
               <p className="money text-sm text-muted-foreground">
                 {totalOutstandingCents && totalOutstandingCents > 0

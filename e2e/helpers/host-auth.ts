@@ -19,9 +19,11 @@ export async function openHostContext(
   await page.goto('/')
 
   try {
-    await expect(page.getByRole('button', { name: 'Нова сметка' })).toBeVisible({
-      timeout: 45_000,
-    })
+    await expect(page.getByRole('button', { name: 'Нова сметка' })).toBeVisible(
+      {
+        timeout: 45_000,
+      },
+    )
   } catch {
     await context.close()
     throw new Error(E2E_HOST_AUTH_MESSAGE)

@@ -24,25 +24,27 @@
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `shared/bill-step-completion.ts` | Pure `getBillStepCompletion` |
-| `shared/bill-step-completion.test.ts` | Vitest for all four steps |
-| `src/lib/bill-step-completion.ts` | Re-export shim (same pattern as `bill-calculations.ts`) |
-| `src/components/bills/bill-steps-bar.tsx` | Accept `completed`; color matrix + aria-labels |
-| `src/routes/bills/$billId/index.tsx` | `useMemo` completion; pass into `BillStepsBar` |
-| Spec status | Mark Complete when done |
+| File                                      | Responsibility                                          |
+| ----------------------------------------- | ------------------------------------------------------- |
+| `shared/bill-step-completion.ts`          | Pure `getBillStepCompletion`                            |
+| `shared/bill-step-completion.test.ts`     | Vitest for all four steps                               |
+| `src/lib/bill-step-completion.ts`         | Re-export shim (same pattern as `bill-calculations.ts`) |
+| `src/components/bills/bill-steps-bar.tsx` | Accept `completed`; color matrix + aria-labels          |
+| `src/routes/bills/$billId/index.tsx`      | `useMemo` completion; pass into `BillStepsBar`          |
+| Spec status                               | Mark Complete when done                                 |
 
 ---
 
 ### Task 1: `getBillStepCompletion` (TDD)
 
 **Files:**
+
 - Create: `shared/bill-step-completion.ts`
 - Create: `shared/bill-step-completion.test.ts`
 - Create: `src/lib/bill-step-completion.ts` (re-export)
 
 **Interfaces:**
+
 - Consumes: `validateBillForFinalize`, `ParticipantInput`, `ItemInput`, `AssignmentInput` from `shared/bill-calculations.ts`
 - Produces:
 
@@ -259,9 +261,11 @@ EOF
 ### Task 2: `BillStepsBar` colors + a11y
 
 **Files:**
+
 - Modify: `src/components/bills/bill-steps-bar.tsx`
 
 **Interfaces:**
+
 - Consumes: `BillStepCompletion` type from `#/lib/bill-step-completion.ts` (or inline `Record<BillStep, boolean>`)
 - Produces: updated `BillStepsBarProps` with required `completed: BillStepCompletion`
 
@@ -323,9 +327,11 @@ EOF
 ### Task 3: Wire editor route
 
 **Files:**
+
 - Modify: `src/routes/bills/$billId/index.tsx`
 
 **Interfaces:**
+
 - Consumes: `getBillStepCompletion` from `#/lib/bill-step-completion.ts`
 - Passes `completed` into `<BillStepsBar />`
 
@@ -368,11 +374,7 @@ Change:
 to:
 
 ```tsx
-<BillStepsBar
-  step={step}
-  completed={stepCompletion}
-  onStepSelect={goToStep}
-/>
+<BillStepsBar step={step} completed={stepCompletion} onStepSelect={goToStep} />
 ```
 
 Use the controlled `restaurantName` state (not only `bill.restaurantName`) so step 1 tracks what the host sees before debounce save.
@@ -410,6 +412,7 @@ EOF
 ### Task 4: Spec status + regression tests
 
 **Files:**
+
 - Modify: `docs/superpowers/specs/2026-07-16-step-completion-indicators-design.md` (Status → Complete)
 
 - [ ] **Step 1: Re-run unit tests**
@@ -422,10 +425,10 @@ Expected: PASS.
 
 - [ ] **Step 2: Walk success criteria**
 
-- [ ] Done steps show success when not current  
-- [ ] Current step always primary  
-- [ ] Navigation never blocked  
-- [ ] Step 4 done matches finalize validator  
+- [ ] Done steps show success when not current
+- [ ] Current step always primary
+- [ ] Navigation never blocked
+- [ ] Step 4 done matches finalize validator
 
 - [ ] **Step 3: Mark spec Complete**
 
@@ -446,13 +449,13 @@ EOF
 
 ## Spec coverage check
 
-| Spec requirement | Task |
-|------------------|------|
-| `getBillStepCompletion` + unit tests | Task 1 |
-| Color matrix + a11y labels | Task 2 |
-| Editor wiring + local restaurant name | Task 3 |
-| Free navigation unchanged | Task 3 (no guards) |
-| Spec Complete + QA | Task 4 |
+| Spec requirement                      | Task               |
+| ------------------------------------- | ------------------ |
+| `getBillStepCompletion` + unit tests  | Task 1             |
+| Color matrix + a11y labels            | Task 2             |
+| Editor wiring + local restaurant name | Task 3             |
+| Free navigation unchanged             | Task 3 (no guards) |
+| Spec Complete + QA                    | Task 4             |
 
 ## Placeholder / consistency check
 

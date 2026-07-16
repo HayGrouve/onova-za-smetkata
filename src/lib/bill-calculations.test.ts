@@ -7,7 +7,10 @@ import {
   validateBillForFinalize,
   totalOutstandingCents,
 } from './bill-calculations'
-import type { BillBreakdownInput, BillCalculationInput } from './bill-calculations'
+import type {
+  BillBreakdownInput,
+  BillCalculationInput,
+} from './bill-calculations'
 
 function assertBillReconciles(input: BillCalculationInput) {
   const totals = calculateBillTotals(input)

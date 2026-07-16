@@ -33,7 +33,9 @@ describe('parseFriendGroupInput', () => {
     })
     expect(result.success).toBe(false)
     if (!result.success) {
-      expect(formatFriendGroupErrors(result.error).memberNameAt?.[1]).toBeTruthy()
+      expect(
+        formatFriendGroupErrors(result.error).memberNameAt?.[1],
+      ).toBeTruthy()
     }
   })
 })

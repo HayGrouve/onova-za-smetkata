@@ -317,7 +317,10 @@ describe('validateInitiateTransfer', () => {
 describe('isAwaitingHostConfirmation', () => {
   it('true when pending and transfer initiated', () => {
     expect(
-      isAwaitingHostConfirmation({ status: 'pending', transferInitiatedAt: 99 }),
+      isAwaitingHostConfirmation({
+        status: 'pending',
+        transferInitiatedAt: 99,
+      }),
     ).toBe(true)
   })
 

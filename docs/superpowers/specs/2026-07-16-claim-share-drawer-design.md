@@ -23,17 +23,17 @@ Shared shell used by both `GuestClaimFooter` and `HostClaimFooter`.
 
 ## UX decisions
 
-| Topic | Choice |
-|-------|--------|
-| Who gets it | Guest claim **and** host claim (`mode=host`) |
-| Collapsed content | Amount + pay actions (Revolut/IBAN guest; host coverage copy) |
-| Combined-pay chips | Expanded only |
-| Pending transfer + cancel | Stay in **peek** (actionable, not buried) |
-| Expanded layout | Sticky summary at bottom of drawer (Approach A) |
-| Fully dismissible | No — always at least peek |
-| Default snap | Peek |
-| Expanded dismiss | Swipe down to peek, or tap light scrim over the claim list |
-| Tech | shadcn Drawer (Vaul) with two snap points |
+| Topic                     | Choice                                                        |
+| ------------------------- | ------------------------------------------------------------- |
+| Who gets it               | Guest claim **and** host claim (`mode=host`)                  |
+| Collapsed content         | Amount + pay actions (Revolut/IBAN guest; host coverage copy) |
+| Combined-pay chips        | Expanded only                                                 |
+| Pending transfer + cancel | Stay in **peek** (actionable, not buried)                     |
+| Expanded layout           | Sticky summary at bottom of drawer (Approach A)               |
+| Fully dismissible         | No — always at least peek                                     |
+| Default snap              | Peek                                                          |
+| Expanded dismiss          | Swipe down to peek, or tap light scrim over the claim list    |
+| Tech                      | shadcn Drawer (Vaul) with two snap points                     |
 
 ---
 
@@ -51,21 +51,21 @@ Shared shell used by both `GuestClaimFooter` and `HostClaimFooter`.
 
 ### Peek (always visible)
 
-| Element | Guest | Host |
-|---------|-------|------|
-| Drag handle | Yes | Yes |
-| Title „Разбивка на дяла“ + status badge | Yes | Yes (badge reflects paid-by-rule / „платено“) |
-| Amount label + money | Вашият дял / Остатък / combined total as today | Дял / Остатък (0) as today |
-| Primary actions | Revolut / IBAN | „Покрито като домакин“ (no Revolut/IBAN) |
-| Pending transfer hint + Cancel | When `transferInitiated` | N/A |
+| Element                                 | Guest                                          | Host                                          |
+| --------------------------------------- | ---------------------------------------------- | --------------------------------------------- |
+| Drag handle                             | Yes                                            | Yes                                           |
+| Title „Разбивка на дяла“ + status badge | Yes                                            | Yes (badge reflects paid-by-rule / „платено“) |
+| Amount label + money                    | Вашият дял / Остатък / combined total as today | Дял / Остатък (0) as today                    |
+| Primary actions                         | Revolut / IBAN                                 | „Покрито като домакин“ (no Revolut/IBAN)      |
+| Pending transfer hint + Cancel          | When `transferInitiated`                       | N/A                                           |
 
 ### Expanded (above sticky summary)
 
-| Element | Guest | Host |
-|---------|-------|------|
-| Removable item lines + tip lines | Yes | Yes |
-| „Плати и за“ chips + combined copy | Yes | No |
-| Covered-guest / combined amount lines | Yes when relevant | N/A |
+| Element                               | Guest             | Host |
+| ------------------------------------- | ----------------- | ---- |
+| Removable item lines + tip lines      | Yes               | Yes  |
+| „Плати и за“ chips + combined copy    | Yes               | No   |
+| Covered-guest / combined amount lines | Yes when relevant | N/A  |
 
 Payment mutation behavior (solo/combined Revolut, IBAN copy, host paid-by-rule) is **unchanged** — only chrome and layout move.
 
@@ -104,14 +104,14 @@ Claim page
 
 ## Edge cases
 
-| Case | Behavior |
-|------|----------|
-| Zero claimed items | Peek still shows €0 / empty-state friendly totals; expanded shows existing empty copy |
-| Long item list in expanded | Scroll inside expanded region; sticky summary stays put |
+| Case                                  | Behavior                                                                                  |
+| ------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Zero claimed items                    | Peek still shows €0 / empty-state friendly totals; expanded shows existing empty copy     |
+| Long item list in expanded            | Scroll inside expanded region; sticky summary stays put                                   |
 | Combined pay selected while collapsed | Amount in peek updates; chips only visible after expand (user can expand to change chips) |
-| Read-only / finalized bill | Same drawer; remove controls disabled as today |
-| Desktop / no touch | Click handle or title toggles snap; keyboard button toggles |
-| Safe area | Bottom padding keeps `env(safe-area-inset-bottom)` |
+| Read-only / finalized bill            | Same drawer; remove controls disabled as today                                            |
+| Desktop / no touch                    | Click handle or title toggles snap; keyboard button toggles                               |
+| Safe area                             | Bottom padding keeps `env(safe-area-inset-bottom)`                                        |
 
 ---
 

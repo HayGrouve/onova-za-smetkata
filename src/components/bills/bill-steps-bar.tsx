@@ -17,7 +17,11 @@ export interface BillStepsBarProps {
   onStepSelect: (step: BillStep) => void
 }
 
-export function BillStepsBar({ step, completed, onStepSelect }: BillStepsBarProps) {
+export function BillStepsBar({
+  step,
+  completed,
+  onStepSelect,
+}: BillStepsBarProps) {
   return (
     <div className="sticky-surface sticky top-14 z-30 border-b">
       <div className="mx-auto flex max-w-lg flex-col gap-1.5 px-4 py-2">
@@ -43,7 +47,10 @@ export function BillStepsBar({ step, completed, onStepSelect }: BillStepsBarProp
                   )}
                   aria-hidden
                 >
-                  <CheckIcon className="size-3.5 text-success" strokeWidth={2.5} />
+                  <CheckIcon
+                    className="size-3.5 text-success"
+                    strokeWidth={2.5}
+                  />
                 </span>
                 <span
                   className={cn(

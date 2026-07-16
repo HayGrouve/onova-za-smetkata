@@ -8,7 +8,8 @@ async function getJoinUrl(hostPage: import('@playwright/test').Page) {
 }
 
 test('second guest sees taken participant name', async ({ browser }) => {
-  const { context: hostContext, page: hostPage } = await openHostContext(browser)
+  const { context: hostContext, page: hostPage } =
+    await openHostContext(browser)
 
   await hostPage.getByRole('button', { name: 'Нова сметка' }).click()
 

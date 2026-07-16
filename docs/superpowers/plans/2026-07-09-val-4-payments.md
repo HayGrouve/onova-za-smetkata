@@ -17,6 +17,7 @@
 ## Task 1: Payment amount schema (TDD)
 
 **Files:**
+
 - Create: `shared/payment-amount-schema.ts`
 - Create: `shared/payment-amount-schema.test.ts`
 
@@ -193,9 +194,7 @@ export function parsePaymentAmountInput(
 
 function validatePaymentAmountCents(
   amountCents: number,
-):
-  | { ok: true; amountCents: number }
-  | { ok: false; message: string } {
+): { ok: true; amountCents: number } | { ok: false; message: string } {
   const parsed = positiveCentsSchema('Сумата').safeParse(amountCents)
   if (!parsed.success) {
     return {
@@ -208,9 +207,7 @@ function validatePaymentAmountCents(
 
 function validatePaymentNote(
   note: string | undefined,
-):
-  | { ok: true; note?: string }
-  | { ok: false; message: string } {
+): { ok: true; note?: string } | { ok: false; message: string } {
   if (note === undefined) {
     return { ok: true }
   }
@@ -227,9 +224,7 @@ function validatePaymentNote(
 export function validatePaymentAddForm(
   input: PaymentAddFormInput,
   context: PaymentAddContext,
-):
-  | { ok: true; data: PaymentAddData }
-  | { ok: false; message: string } {
+): { ok: true; data: PaymentAddData } | { ok: false; message: string } {
   const parsedAmount = parsePaymentAmountInput(input.amountInput)
   if (!parsedAmount.ok) {
     return { ok: false, message: parsedAmount.message }
@@ -261,9 +256,7 @@ export function validatePaymentAddForm(
 export function validatePaymentAdd(
   args: PaymentAddArgs,
   context: PaymentAddServerContext,
-):
-  | { ok: true; data: PaymentAddData }
-  | { ok: false; message: string } {
+): { ok: true; data: PaymentAddData } | { ok: false; message: string } {
   const validatedAmount = validatePaymentAmountCents(args.amountCents)
   if (!validatedAmount.ok) {
     return { ok: false, message: validatedAmount.message }
@@ -298,6 +291,7 @@ Expected: PASS
 ## Task 2: Re-export shims
 
 **Files:**
+
 - Create: `src/lib/payment-amount-schema.ts`
 - Create: `convex/lib/paymentAmountSchema.ts`
 
@@ -336,6 +330,7 @@ export type {
 ## Task 3: Server — `payments.add`
 
 **Files:**
+
 - Modify: `convex/payments.ts`
 
 - [ ] **Step 1: Replace amount validation with schema**
@@ -384,6 +379,7 @@ Expected: TypeScript passes
 ## Task 4: UI — `PaymentActions`
 
 **Files:**
+
 - Modify: `src/components/bills/payment-actions.tsx`
 
 - [ ] **Step 1: Add imports and state**
@@ -442,7 +438,7 @@ async function handlePartialPayment() {
 Wrap partial input in `flex flex-col gap-1 min-w-0 flex-1`:
 
 ```tsx
-<Input
+;<Input
   value={partialAmount}
   onChange={(e) => {
     setPartialAmount(e.target.value)
@@ -453,9 +449,9 @@ Wrap partial input in `flex flex-col gap-1 min-w-0 flex-1`:
   className="h-11 min-w-0 flex-1"
   aria-invalid={Boolean(amountError)}
 />
-{amountError ? (
-  <p className="text-xs text-destructive">{amountError}</p>
-) : null}
+{
+  amountError ? <p className="text-xs text-destructive">{amountError}</p> : null
+}
 ```
 
 Submit button:
@@ -478,6 +474,7 @@ Submit button:
 ## Task 5: Docs & verification
 
 **Files:**
+
 - Modify: `docs/superpowers/specs/2026-07-09-val-4-payments-design.md` — Status → Approved
 - Modify: `docs/superpowers/specs/2026-07-09-app-validation-roadmap.md` — VAL-4 → ✅ Done
 
@@ -509,18 +506,18 @@ Mark this plan **Status:** ✅ Complete
 
 ## Self-review (spec coverage)
 
-| Spec requirement | Task |
-|------------------|------|
-| `shared/payment-amount-schema.ts` | Task 1 |
-| Comma decimal tests | Task 1 |
-| Cap client + server | Tasks 1, 3, 4 |
-| Note server validation | Task 1, 3 |
-| `payments.add` schema | Task 3 |
-| Remove `assertPositiveIntCents` | Task 3 |
-| Inline error in `PaymentActions` | Task 4 |
-| Disable invalid submit | Task 4 |
-| No `parseEurInput` on payment path | Task 4 |
-| Mark-full unchanged | Task 4 |
+| Spec requirement                   | Task          |
+| ---------------------------------- | ------------- |
+| `shared/payment-amount-schema.ts`  | Task 1        |
+| Comma decimal tests                | Task 1        |
+| Cap client + server                | Tasks 1, 3, 4 |
+| Note server validation             | Task 1, 3     |
+| `payments.add` schema              | Task 3        |
+| Remove `assertPositiveIntCents`    | Task 3        |
+| Inline error in `PaymentActions`   | Task 4        |
+| Disable invalid submit             | Task 4        |
+| No `parseEurInput` on payment path | Task 4        |
+| Mark-full unchanged                | Task 4        |
 
 ---
 

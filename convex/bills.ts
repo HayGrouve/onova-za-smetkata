@@ -267,10 +267,8 @@ export const finalize = mutation({
   handler: async (ctx, args) => {
     const bill = await requireBillOwner(ctx, args.billId)
 
-    const { participants, items, assignments, payments } = await loadBillRelations(
-      ctx,
-      args.billId,
-    )
+    const { participants, items, assignments, payments } =
+      await loadBillRelations(ctx, args.billId)
 
     assertBillCanFinalize({
       restaurantName: bill.restaurantName,

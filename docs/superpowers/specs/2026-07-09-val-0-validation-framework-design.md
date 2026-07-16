@@ -54,18 +54,18 @@ shared/item-schema.ts            # VAL-3
 
 Central caps referenced by field schemas and documented for later phases:
 
-| Constant | Value | Used in |
-|----------|-------|---------|
-| `PERSON_NAME_MAX` | 50 | VAL-2 participants, friend groups |
-| `RESTAURANT_NAME_MAX` | 80 | VAL-1 |
-| `GROUP_NAME_MAX` | 40 | friend groups (existing) |
-| `NOTE_MAX` | 500 | VAL-1 bill note, VAL-3 item note |
-| `PAYMENT_NOTE_MAX` | 200 | VAL-4 |
-| `ITEM_NAME_MAX` | 120 | VAL-3 |
-| `QUANTITY_MAX` | 999 | VAL-3 |
-| `EUR_CENTS_MAX` | 999_900 | €9 999 sanity cap |
-| `BILL_PARTICIPANTS_MAX` | 50 | VAL-2 |
-| `DEVICE_ID_MAX` | 64 | VAL-5 |
+| Constant                | Value   | Used in                           |
+| ----------------------- | ------- | --------------------------------- |
+| `PERSON_NAME_MAX`       | 50      | VAL-2 participants, friend groups |
+| `RESTAURANT_NAME_MAX`   | 80      | VAL-1                             |
+| `GROUP_NAME_MAX`        | 40      | friend groups (existing)          |
+| `NOTE_MAX`              | 500     | VAL-1 bill note, VAL-3 item note  |
+| `PAYMENT_NOTE_MAX`      | 200     | VAL-4                             |
+| `ITEM_NAME_MAX`         | 120     | VAL-3                             |
+| `QUANTITY_MAX`          | 999     | VAL-3                             |
+| `EUR_CENTS_MAX`         | 999_900 | €9 999 sanity cap                 |
+| `BILL_PARTICIPANTS_MAX` | 50      | VAL-2                             |
+| `DEVICE_ID_MAX`         | 64      | VAL-5                             |
 
 ---
 
@@ -181,7 +181,9 @@ export * from '../../shared/validation/constants'
 // convex/bills.ts (VAL-1 example)
 const parsed = parseBillMetadataPatch(args)
 if (!parsed.success) {
-  throw new ConvexError(firstZodIssueMessage(parsed.error, 'Невалидни данни за сметката'))
+  throw new ConvexError(
+    firstZodIssueMessage(parsed.error, 'Невалидни данни за сметката'),
+  )
 }
 ```
 
@@ -194,7 +196,14 @@ Shim file name: `convex/lib/validation.ts` (no hyphen; matches `billCalculations
 ```tsx
 const parsed = parseBillMetadataInput({ restaurantName, note, tip, date })
 if (!parsed.success) {
-  setFieldErrors(formatZodFieldErrors(parsed.error, ['restaurantName', 'note', 'tip', 'date']))
+  setFieldErrors(
+    formatZodFieldErrors(parsed.error, [
+      'restaurantName',
+      'note',
+      'tip',
+      'date',
+    ]),
+  )
   return
 }
 await updateBill({ billId, ...parsed.data })
@@ -208,10 +217,10 @@ Clear field error on `onChange` when that field had an error (existing payment-s
 
 Align existing schemas to import shared fragments **without changing messages or limits**:
 
-| File | Change |
-|------|--------|
-| `shared/friend-group-schema.ts` | `memberNameSchema` → `personNameSchema`; `groupName` uses `GROUP_NAME_MAX` from constants |
-| `shared/payment-settings-schema.ts` | No change (domain-specific IBAN/Revolut logic stays local) |
+| File                                | Change                                                                                    |
+| ----------------------------------- | ----------------------------------------------------------------------------------------- |
+| `shared/friend-group-schema.ts`     | `memberNameSchema` → `personNameSchema`; `groupName` uses `GROUP_NAME_MAX` from constants |
+| `shared/payment-settings-schema.ts` | No change (domain-specific IBAN/Revolut logic stays local)                                |
 
 If refactor risks message drift, skip and document "migrate in VAL-2".
 
@@ -219,11 +228,11 @@ If refactor risks message drift, skip and document "migrate in VAL-2".
 
 ## Testing
 
-| File | Cases |
-|------|-------|
+| File             | Cases                                                                                             |
+| ---------------- | ------------------------------------------------------------------------------------------------- |
 | `fields.test.ts` | personName empty/trim/max; restaurant required vs optional; note empty→undefined; quantity bounds |
-| `eur.test.ts` | `12,50` → 1250; empty → error; `abc` → error; negative → error; overflow → error |
-| `errors.test.ts` | Multi-field ZodError → correct partial map; first issue extraction |
+| `eur.test.ts`    | `12,50` → 1250; empty → error; `abc` → error; negative → error; overflow → error                  |
+| `errors.test.ts` | Multi-field ZodError → correct partial map; first issue extraction                                |
 
 Run: `pnpm run test`
 
@@ -241,16 +250,16 @@ Run: `pnpm run test`
 
 ## Files touched
 
-| File | Action |
-|------|--------|
-| `shared/validation/constants.ts` | Create |
-| `shared/validation/fields.ts` | Create |
-| `shared/validation/eur.ts` | Create |
-| `shared/validation/errors.ts` | Create |
-| `shared/validation/*.test.ts` | Create |
-| `src/lib/validation/index.ts` | Create |
-| `convex/lib/validation.ts` | Create |
-| `shared/friend-group-schema.ts` | Optional refactor |
+| File                                                          | Action              |
+| ------------------------------------------------------------- | ------------------- |
+| `shared/validation/constants.ts`                              | Create              |
+| `shared/validation/fields.ts`                                 | Create              |
+| `shared/validation/eur.ts`                                    | Create              |
+| `shared/validation/errors.ts`                                 | Create              |
+| `shared/validation/*.test.ts`                                 | Create              |
+| `src/lib/validation/index.ts`                                 | Create              |
+| `convex/lib/validation.ts`                                    | Create              |
+| `shared/friend-group-schema.ts`                               | Optional refactor   |
 | `docs/superpowers/specs/2026-07-09-app-validation-roadmap.md` | Update VAL-0 status |
 
 ---

@@ -17,6 +17,7 @@
 ## Task 1: Participant schema (TDD)
 
 **Files:**
+
 - Create: `shared/participant-schema.ts`
 - Create: `shared/participant-schema.test.ts`
 
@@ -126,9 +127,7 @@ export function formatParticipantNameError(error: z.ZodError): string {
 export function validateParticipantAdd(
   input: ParticipantAddInput,
   context: ParticipantAddContext,
-):
-  | { ok: true; name: string }
-  | { ok: false; message: string; field?: 'name' } {
+): { ok: true; name: string } | { ok: false; message: string; field?: 'name' } {
   const parsed = parseParticipantName(input.name)
   if (!parsed.success) {
     return {
@@ -166,6 +165,7 @@ Expected: PASS
 ## Task 2: Re-export shims
 
 **Files:**
+
 - Create: `src/lib/participant-schema.ts`
 - Create: `convex/lib/participantSchema.ts`
 
@@ -205,6 +205,7 @@ export type {
 ## Task 3: Server — `participants.add`
 
 **Files:**
+
 - Modify: `convex/participants.ts`
 
 - [ ] **Step 1: Add validation and finalized guard**
@@ -259,14 +260,19 @@ Expected: TypeScript passes
 ## Task 4: Server — `friendGroups.addToBill` cap
 
 **Files:**
+
 - Modify: `convex/friendGroups.ts`
 
 - [ ] **Step 1: Add cap + defensive name parse in loop**
 
 Add imports:
+
 ```ts
 import { BILL_PARTICIPANTS_MAX } from '../../shared/validation/constants'
-import { parseParticipantName, participantNameKey } from './lib/participantSchema'
+import {
+  parseParticipantName,
+  participantNameKey,
+} from './lib/participantSchema'
 ```
 
 Replace the `for (const name of selectedNames)` loop:
@@ -309,6 +315,7 @@ Remove the old inline trim/duplicate block.
 ## Task 5: UI — `ParticipantList`
 
 **Files:**
+
 - Modify: `src/components/bills/participant-list.tsx`
 
 - [ ] **Step 1: Add `nameError` state and validation in `handleAdd`**
@@ -352,6 +359,7 @@ async function handleAdd(participantName?: string) {
 - [ ] **Step 2: Wire inline error on manual input**
 
 On name `Input`:
+
 ```tsx
 onChange={(e) => {
   setName(e.target.value)
@@ -361,10 +369,11 @@ aria-invalid={Boolean(nameError)}
 ```
 
 Below input (inside manual add form):
+
 ```tsx
-{nameError ? (
-  <p className="text-xs text-destructive">{nameError}</p>
-) : null}
+{
+  nameError ? <p className="text-xs text-destructive">{nameError}</p> : null
+}
 ```
 
 Wrap input + error in `flex flex-col gap-1.5` inside the form if needed for layout.
@@ -382,6 +391,7 @@ Unchanged — validation still runs on submit for pasted whitespace-only edge ca
 ## Task 6: Docs & verification
 
 **Files:**
+
 - Modify: `docs/superpowers/specs/2026-07-09-val-2-participants-design.md` — Status → Approved
 - Modify: `docs/superpowers/specs/2026-07-09-app-validation-roadmap.md` — VAL-2 → ✅ Done
 
@@ -407,14 +417,14 @@ Expected: PASS
 
 ## Self-review (spec coverage)
 
-| Spec requirement | Task |
-|------------------|------|
-| `shared/participant-schema.ts` | Task 1 |
-| Duplicate client + server | Tasks 1, 3, 5 |
-| Cap on add | Tasks 1, 3, 4 |
-| Finalized guard | Task 3 |
-| Inline manual add errors | Task 5 |
-| Group bulk skip semantics | Task 4 |
+| Spec requirement               | Task          |
+| ------------------------------ | ------------- |
+| `shared/participant-schema.ts` | Task 1        |
+| Duplicate client + server      | Tasks 1, 3, 5 |
+| Cap on add                     | Tasks 1, 3, 4 |
+| Finalized guard                | Task 3        |
+| Inline manual add errors       | Task 5        |
+| Group bulk skip semantics      | Task 4        |
 
 ---
 

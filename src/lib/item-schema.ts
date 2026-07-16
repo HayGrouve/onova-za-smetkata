@@ -8,7 +8,10 @@ export {
   validateItemQuantityInput,
   validateItemUpdatePatch,
 } from '../../shared/item-schema'
-export { itemNameSchema, quantityInputSchema } from '../../shared/validation/fields'
+export {
+  itemNameSchema,
+  quantityInputSchema,
+} from '../../shared/validation/fields'
 export type {
   ItemAddArgs,
   ItemAddData,

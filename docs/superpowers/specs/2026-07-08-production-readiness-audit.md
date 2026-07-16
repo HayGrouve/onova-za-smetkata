@@ -8,17 +8,17 @@
 
 ## Remediation summary (2026-07-08)
 
-| Audit item | Status |
-|------------|--------|
-| Favicon + head links | ✅ `public/favicon.ico`, links in `__root.tsx` |
-| Guest claim rate limit | ✅ Keyed by `claim:bill:${billId}` |
-| Branded magic-link email | ✅ `convex/lib/magicLinkEmail.ts` + `auth.ts` |
-| Service worker | ✅ `public/sw.js` + prod registration |
-| Manifest `id` / `scope` | ✅ `public/manifest.json` |
-| OG image dimensions | ✅ `og:image:width/height` in `site-meta.ts` |
-| Security headers | ✅ Nitro `routeRules` in `vite.config.ts` |
-| E2E in CI | ✅ Optional job gated on `E2E_VITE_CONVEX_URL` secret |
-| Stray Zone.Identifier files | ✅ Removed |
+| Audit item                  | Status                                                |
+| --------------------------- | ----------------------------------------------------- |
+| Favicon + head links        | ✅ `public/favicon.ico`, links in `__root.tsx`        |
+| Guest claim rate limit      | ✅ Keyed by `claim:bill:${billId}`                    |
+| Branded magic-link email    | ✅ `convex/lib/magicLinkEmail.ts` + `auth.ts`         |
+| Service worker              | ✅ `public/sw.js` + prod registration                 |
+| Manifest `id` / `scope`     | ✅ `public/manifest.json`                             |
+| OG image dimensions         | ✅ `og:image:width/height` in `site-meta.ts`          |
+| Security headers            | ✅ Nitro `routeRules` in `vite.config.ts`             |
+| E2E in CI                   | ✅ Optional job gated on `E2E_VITE_CONVEX_URL` secret |
+| Stray Zone.Identifier files | ✅ Removed                                            |
 
 **Still manual:** prod env checklist, smoke test, link preview verification, optional Sentry DSN.
 
@@ -36,11 +36,11 @@ The app is **production-viable** for a small trusted-user bill splitter: host au
 
 ## Severity legend
 
-| Level | Meaning |
-|-------|---------|
-| 🔴 High | Fix before calling production “solid” |
-| 🟡 Medium | Fix soon or explicitly accept |
-| 🟢 Low | Nice-to-have / polish |
+| Level     | Meaning                               |
+| --------- | ------------------------------------- |
+| 🔴 High   | Fix before calling production “solid” |
+| 🟡 Medium | Fix soon or explicitly accept         |
+| 🟢 Low    | Nice-to-have / polish                 |
 
 ---
 
@@ -130,18 +130,18 @@ Lightweight SW (`public/sw.js`) precaches static branding assets; registered in 
 
 ### Verify manually (checklist)
 
-| Item | Where | Status |
-|------|--------|--------|
-| `VITE_CONVEX_URL` prod | Vercel | User reports app works ✅ |
-| `VITE_APP_ORIGIN` | Vercel | Confirm for OG URLs |
-| `SITE_URL` | Convex prod | Must match custom domain for magic links |
-| `AUTH_RESEND_FROM` | Convex prod | User configured ✅ |
-| `AUTH_RESEND_KEY`, JWT, Google OAuth | Convex prod | Verify in dashboard |
-| `GEMINI_API_KEY` | Convex prod | For OCR |
-| `DEV_MODE` | Convex prod | Must **not** be `true` |
-| Backfill `assignmentBillIds` | Convex prod | Run once if not done: `npx convex run backfill:assignmentBillIds` |
-| Domain + SSL | Vercel | User on custom domain |
-| Netlify decommissioned | Netlify | Confirm no stale DNS |
+| Item                                 | Where       | Status                                                            |
+| ------------------------------------ | ----------- | ----------------------------------------------------------------- |
+| `VITE_CONVEX_URL` prod               | Vercel      | User reports app works ✅                                         |
+| `VITE_APP_ORIGIN`                    | Vercel      | Confirm for OG URLs                                               |
+| `SITE_URL`                           | Convex prod | Must match custom domain for magic links                          |
+| `AUTH_RESEND_FROM`                   | Convex prod | User configured ✅                                                |
+| `AUTH_RESEND_KEY`, JWT, Google OAuth | Convex prod | Verify in dashboard                                               |
+| `GEMINI_API_KEY`                     | Convex prod | For OCR                                                           |
+| `DEV_MODE`                           | Convex prod | Must **not** be `true`                                            |
+| Backfill `assignmentBillIds`         | Convex prod | Run once if not done: `npx convex run backfill:assignmentBillIds` |
+| Domain + SSL                         | Vercel      | User on custom domain                                             |
+| Netlify decommissioned               | Netlify     | Confirm no stale DNS                                              |
 
 ### 🟢 E2E in CI (optional)
 
@@ -182,13 +182,13 @@ From `docs/DEPLOY.md`:
 
 ## Recommended fix order
 
-1. **Favicon** — quick win for tabs and professionalism  
-2. **Guest claim rate limit** — key by `billId`  
-3. **Verify prod env checklist** — Convex + Vercel  
-4. **Run backfill** on prod if never run  
-5. **Custom magic-link email** (optional branding)  
-6. **E2E in CI** or mandatory pre-release manual E2E  
-7. **Sentry DSN** on Vercel (optional observability)  
+1. **Favicon** — quick win for tabs and professionalism
+2. **Guest claim rate limit** — key by `billId`
+3. **Verify prod env checklist** — Convex + Vercel
+4. **Run backfill** on prod if never run
+5. **Custom magic-link email** (optional branding)
+6. **E2E in CI** or mandatory pre-release manual E2E
+7. **Sentry DSN** on Vercel (optional observability)
 8. **Manifest `id`**, OG image dimensions (polish)
 
 ---
@@ -204,9 +204,9 @@ From `docs/DEPLOY.md`:
 
 ## Success criteria for “100% confident”
 
-1. All 🔴 items resolved or explicitly waived  
-2. Prod env checklist signed off  
-3. Production smoke test completed once on custom domain  
-4. Join link preview verified in WhatsApp/Telegram/Facebook debugger  
-5. Favicon visible in browser tab  
+1. All 🔴 items resolved or explicitly waived
+2. Prod env checklist signed off
+3. Production smoke test completed once on custom domain
+4. Join link preview verified in WhatsApp/Telegram/Facebook debugger
+5. Favicon visible in browser tab
 6. No `DEV_MODE` on prod; magic links use custom domain

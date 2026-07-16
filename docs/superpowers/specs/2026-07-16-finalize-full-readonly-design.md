@@ -26,27 +26,27 @@ When `bill.status === 'final'`, treat the bill as **hard read-only** for host an
 
 ## Decisions
 
-| Topic | Choice |
-|-------|--------|
-| When lock applies | After **Завърши сметка** only (`status === 'final'`) — not “everyone paid” |
-| Depth | Full lock (server + UI), not UI-only |
-| Delete | Still allowed (`bills.remove`) |
-| Share / copy / view detail | Allowed (non-mutating) |
-| Rotate share token | Blocked on final |
-| Error copy | Reuse *„Сметката е приключена и не може да се редактира.“* |
+| Topic                      | Choice                                                                     |
+| -------------------------- | -------------------------------------------------------------------------- |
+| When lock applies          | After **Завърши сметка** only (`status === 'final'`) — not “everyone paid” |
+| Depth                      | Full lock (server + UI), not UI-only                                       |
+| Delete                     | Still allowed (`bills.remove`)                                             |
+| Share / copy / view detail | Allowed (non-mutating)                                                     |
+| Rotate share token         | Blocked on final                                                           |
+| Error copy                 | Reuse _„Сметката е приключена и не може да се редактира.“_                 |
 
 ---
 
 ## Allowed vs blocked
 
-| Allowed after finalize | Blocked after finalize |
-|------------------------|------------------------|
-| View summary / claim (read-only) | Payments: mark paid, partial, undo |
-| Share / copy amounts | Items, participants, assignments, tip, restaurant, note, date |
-| Open participant detail (view only) | Receipt scan / import |
-| Delete bill (`Изтрий`) | Friend-group add-to-bill, rotate share token |
-| | Combined-payment mutations that change bill payment state |
-| | Any other bill-scoped content mutation found in audit |
+| Allowed after finalize              | Blocked after finalize                                        |
+| ----------------------------------- | ------------------------------------------------------------- |
+| View summary / claim (read-only)    | Payments: mark paid, partial, undo                            |
+| Share / copy amounts                | Items, participants, assignments, tip, restaurant, note, date |
+| Open participant detail (view only) | Receipt scan / import                                         |
+| Delete bill (`Изтрий`)              | Friend-group add-to-bill, rotate share token                  |
+|                                     | Combined-payment mutations that change bill payment state     |
+|                                     | Any other bill-scoped content mutation found in audit         |
 
 ---
 
@@ -109,14 +109,14 @@ When `status === 'final'`:
 
 ## Files (expected)
 
-| Area | Likely touch |
-|------|----------------|
-| `convex/lib/assertBillDraft.ts` (new) + test | Shared guard |
-| `convex/payments.ts`, `convex/bills.ts`, `convex/combinedPayments.ts`, audit others | Call guard |
-| `src/components/bills/payment-row.tsx` / `bill-summary-content.tsx` / detail sheet | Hide payment actions when final |
-| `src/components/bills/bill-invite-card.tsx` | Disable rotate on final |
-| Finalize dialog copy in `bill-summary-content.tsx` | Payment lock mention |
-| `e2e/final-readonly.spec.ts` (or sibling) | Host payment lock + delete |
+| Area                                                                                | Likely touch                    |
+| ----------------------------------------------------------------------------------- | ------------------------------- |
+| `convex/lib/assertBillDraft.ts` (new) + test                                        | Shared guard                    |
+| `convex/payments.ts`, `convex/bills.ts`, `convex/combinedPayments.ts`, audit others | Call guard                      |
+| `src/components/bills/payment-row.tsx` / `bill-summary-content.tsx` / detail sheet  | Hide payment actions when final |
+| `src/components/bills/bill-invite-card.tsx`                                         | Disable rotate on final         |
+| Finalize dialog copy in `bill-summary-content.tsx`                                  | Payment lock mention            |
+| `e2e/final-readonly.spec.ts` (or sibling)                                           | Host payment lock + delete      |
 
 ---
 

@@ -81,9 +81,9 @@ describe('validateItemAddArgs', () => {
   })
 
   it('rejects negative cents', () => {
-    expect(
-      validateItemAddArgs({ name: 'Вода', unitPriceCents: -1 }).ok,
-    ).toBe(false)
+    expect(validateItemAddArgs({ name: 'Вода', unitPriceCents: -1 }).ok).toBe(
+      false,
+    )
   })
 })
 

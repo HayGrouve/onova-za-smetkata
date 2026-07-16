@@ -26,19 +26,19 @@ Keep the home list as the host’s bill finder, and move filter + search + chunk
 
 ## UX decisions
 
-| Topic | Choice |
-|-------|--------|
-| Product driver | Finding bills; load strategy follows scale |
-| Filters in scope | Search (restaurant + participant names) + status chips **Всички / Чернови / Приключени** |
-| Load UX | Explicit **«Зареди още»** only (v1) |
-| Chunk size | **20** for first page and each `loadMore` |
-| Filter location | Server-side; args on the paginated query |
-| Status ↔ URL | TanStack Router search param (e.g. `?status=draft` / `?status=final`; omit = Всички); **replace** history (no chip history stack) |
-| Search ↔ URL | Component-local only (v1) |
-| Search match | Case-insensitive **contains** on restaurant name **or** denormalized participant names; trim; empty/whitespace = no text filter |
-| Order | Recent-first (`updatedAt` desc); not FTS / relevance |
-| Debounce / min-length | Implementation-plan detail, not locked here |
-| Scale | Tens to low hundreds of bills per host; mobile-first |
+| Topic                 | Choice                                                                                                                            |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Product driver        | Finding bills; load strategy follows scale                                                                                        |
+| Filters in scope      | Search (restaurant + participant names) + status chips **Всички / Чернови / Приключени**                                          |
+| Load UX               | Explicit **«Зареди още»** only (v1)                                                                                               |
+| Chunk size            | **20** for first page and each `loadMore`                                                                                         |
+| Filter location       | Server-side; args on the paginated query                                                                                          |
+| Status ↔ URL          | TanStack Router search param (e.g. `?status=draft` / `?status=final`; omit = Всички); **replace** history (no chip history stack) |
+| Search ↔ URL          | Component-local only (v1)                                                                                                         |
+| Search match          | Case-insensitive **contains** on restaurant name **or** denormalized participant names; trim; empty/whitespace = no text filter   |
+| Order                 | Recent-first (`updatedAt` desc); not FTS / relevance                                                                              |
+| Debounce / min-length | Implementation-plan detail, not locked here                                                                                       |
+| Scale                 | Tens to low hundreds of bills per host; mobile-first                                                                              |
 
 ---
 
@@ -56,26 +56,26 @@ Keep the home list as the host’s bill finder, and move filter + search + chunk
 
 ### Controls (above the list)
 
-| Element | Behavior |
-|---------|----------|
-| Search input | Placeholder unchanged: „Търсене по ресторант или участник“; local state |
+| Element      | Behavior                                                                                   |
+| ------------ | ------------------------------------------------------------------------------------------ |
+| Search input | Placeholder unchanged: „Търсене по ресторант или участник“; local state                    |
 | Status chips | **Всички** / **Чернови** / **Приключени** — mutually exclusive; selected chip reflects URL |
 
 ### List body
 
-| State | UI |
-|-------|-----|
+| State                                                  | UI                                                                            |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------- |
 | First page loading (`LoadingFirstPage`) / filter reset | Three card skeletons (same pattern as today); chips + search stay interactive |
-| Has results | `BillCard` rows as today |
-| Empty — no bills at all (Всички, empty search) | „Все още нямате сметки. Създайте първата си сметка!“ |
-| Empty — search has no matches | „Няма намерени сметки.“ |
-| Empty — Чернови, empty search | „Няма чернови.“ |
-| Empty — Приключени, empty search | „Няма приключени.“ |
-| Can load more | **«Зареди още»** button enabled |
-| Loading more | Button disabled + inline loading; existing cards stay |
-| Exhausted | No load-more control |
-| Error — first page | Short retry message in the list area |
-| Error — later page / transient | Toast; keep last good list when present |
+| Has results                                            | `BillCard` rows as today                                                      |
+| Empty — no bills at all (Всички, empty search)         | „Все още нямате сметки. Създайте първата си сметка!“                          |
+| Empty — search has no matches                          | „Няма намерени сметки.“                                                       |
+| Empty — Чернови, empty search                          | „Няма чернови.“                                                               |
+| Empty — Приключени, empty search                       | „Няма приключени.“                                                            |
+| Can load more                                          | **«Зареди още»** button enabled                                               |
+| Loading more                                           | Button disabled + inline loading; existing cards stay                         |
+| Exhausted                                              | No load-more control                                                          |
+| Error — first page                                     | Short retry message in the list area                                          |
+| Error — later page / transient                         | Toast; keep last good list when present                                       |
 
 ---
 
@@ -105,9 +105,9 @@ args: {
 
 ### Indexes
 
-| Path | Index |
-|------|--------|
-| Всички (no status) | existing `by_ownerId_updatedAt` |
+| Path                 | Index                                                                              |
+| -------------------- | ---------------------------------------------------------------------------------- |
+| Всички (no status)   | existing `by_ownerId_updatedAt`                                                    |
 | Чернови / Приключени | new compound `by_ownerId_status_updatedAt` on `["ownerId", "status", "updatedAt"]` |
 
 Search uses case-insensitive contains on restaurant + denormalized participant names **inside** the owner (+ status) index range, applied **before** `.paginate` (not post-filter on `page`). No Convex FTS for v1.
@@ -137,13 +137,13 @@ Home `/`
 
 ## Edge cases
 
-| Case | Behavior |
-|------|----------|
-| Whitespace-only search | Treated as empty — no text filter |
-| Reactive page drift | Page length may grow/shrink under Convex reactivity; UI must not assume fixed chunk lengths after load |
-| Sparse search matches | Prefer filling pages via pre-paginate filtering; optional `maximumRowsRead` is an implementation detail if scans get heavy |
-| Back from a bill | Restores status chip from URL; search cleared (local state) |
-| Chip history | Replace only — Back leaves home or returns from a bill, does not step through chips |
+| Case                   | Behavior                                                                                                                   |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Whitespace-only search | Treated as empty — no text filter                                                                                          |
+| Reactive page drift    | Page length may grow/shrink under Convex reactivity; UI must not assume fixed chunk lengths after load                     |
+| Sparse search matches  | Prefer filling pages via pre-paginate filtering; optional `maximumRowsRead` is an implementation detail if scans get heavy |
+| Back from a bill       | Restores status chip from URL; search cleared (local state)                                                                |
+| Chip history           | Replace only — Back leaves home or returns from a bill, does not step through chips                                        |
 
 ---
 

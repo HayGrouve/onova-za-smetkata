@@ -27,9 +27,7 @@ export function formatParticipantNameError(error: z.ZodError): string {
 export function validateParticipantAdd(
   input: ParticipantAddInput,
   context: ParticipantAddContext,
-):
-  | { ok: true; name: string }
-  | { ok: false; message: string; field?: 'name' } {
+): { ok: true; name: string } | { ok: false; message: string; field?: 'name' } {
   const parsed = parseParticipantName(input.name)
   if (!parsed.success) {
     return {

@@ -125,9 +125,9 @@ function BillJoinContent({
 
   const { bill, participants, hostParticipantId } = data
   const labels = buildParticipantLabels(participants)
-  const sorted = [...joinableParticipants(participants, hostParticipantId)].sort(
-    (a, b) => a.sortOrder - b.sortOrder,
-  )
+  const sorted = [
+    ...joinableParticipants(participants, hostParticipantId),
+  ].sort((a, b) => a.sortOrder - b.sortOrder)
   const restaurantName = bill.restaurantName.trim() || 'Сметка'
   const dateLabel = new Intl.DateTimeFormat('bg-BG', {
     day: 'numeric',

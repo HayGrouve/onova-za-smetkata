@@ -19,16 +19,16 @@ Extend the guest claim footer with a **“Pay for”** chip row. The guest selec
 
 ## UX decisions
 
-| Topic | Choice |
-|-------|--------|
-| Scope | Same bill only; payer's share + exactly one other participant |
-| Actor | Guest initiates payment; host confirms |
-| Second person | Guest picks from unpaid participants on the bill (chip selection) |
-| UI placement | Chips + combined total in existing `GuestClaimFooter` (no new screens) |
-| Solo pay | Unchanged — Revolut without creating a pending request |
-| Combined pay | `create` pending request → Revolut with combined amount |
-| Host action | Banner on `BillSummaryContent` with Confirm / Reject |
-| Recording | `confirm` inserts two `payments` rows in one transaction |
+| Topic         | Choice                                                                 |
+| ------------- | ---------------------------------------------------------------------- |
+| Scope         | Same bill only; payer's share + exactly one other participant          |
+| Actor         | Guest initiates payment; host confirms                                 |
+| Second person | Guest picks from unpaid participants on the bill (chip selection)      |
+| UI placement  | Chips + combined total in existing `GuestClaimFooter` (no new screens) |
+| Solo pay      | Unchanged — Revolut without creating a pending request                 |
+| Combined pay  | `create` pending request → Revolut with combined amount                |
+| Host action   | Banner on `BillSummaryContent` with Confirm / Reject                   |
+| Recording     | `confirm` inserts two `payments` rows in one transaction               |
 
 ## User flow
 
@@ -75,6 +75,7 @@ Amounts are **snapshotted at creation** and validated again at confirm time agai
 **Args:** `billId`, `shareToken`, `sessionToken`, `coveredParticipantId`
 
 **Validation:**
+
 - Active guest session via `requireGuestSession`
 - Share token matches bill
 - `coveredParticipantId` belongs to bill and ≠ `payerParticipantId`
@@ -99,6 +100,7 @@ Amounts are **snapshotted at creation** and validated again at confirm time agai
 **Args:** `billId`, `requestId`
 
 **Validation:**
+
 - `requireBillOwner`
 - Request is `pending` on this bill
 - Snapshotted `payerAmountCents` ≤ payer's current remaining
@@ -106,6 +108,7 @@ Amounts are **snapshotted at creation** and validated again at confirm time agai
 - Both amounts pass `validatePaymentAdd` caps
 
 **Effect (atomic):**
+
 - Insert `payments` row for payer (`amountCents: payerAmountCents`, note: optional combined-pay note)
 - Insert `payments` row for covered (`amountCents: coveredAmountCents`, same note)
 - Set request `status: "confirmed"`, `resolvedAt: now`
@@ -141,18 +144,20 @@ Extend existing footer; no new routes.
 
 **Total line:**
 
-| State | Label | Amount |
-|-------|-------|--------|
-| Solo | „Вашият дял“ / „Остатък“ | payer only |
-| Combined | „Общо за плащане“ | payer + covered |
+| State    | Label                    | Amount          |
+| -------- | ------------------------ | --------------- |
+| Solo     | „Вашият дял“ / „Остатък“ | payer only      |
+| Combined | „Общо за плащане“        | payer + covered |
 
 **Revolut button:**
+
 - Solo: current behavior (open Revolut, no DB write).
 - Combined: `create` → then Revolut with `totalCents`.
 
 **IBAN:** When host has IBAN only, copy `totalCents` formatted amount + IBAN; still create pending on combined flow.
 
 **Pending state:**
+
 - Chips and Revolut disabled.
 - Amber status text + **„Отмени“** calls `cancel`.
 
@@ -176,16 +181,16 @@ Payment rows unchanged until confirm; existing `PaymentRow` / `PaymentActions` r
 
 ## Edge cases
 
-| Case | Behavior |
-|------|----------|
-| Covered person paid before confirm | Confirm fails: „Дялът на {name} вече е платен“ |
-| Payer share changed since create | Confirm validates at click; reject if snapshotted amount exceeds remaining |
-| Guest closes app with pending | Pending persists; footer restores on return via `getPendingForGuest` |
-| Two guests pay for same person | Second `create` rejected: „Вече има чакащо плащане за този участник“ |
-| Host manually marks one paid while pending | Confirm re-validates; may fail for that participant |
-| Finalized bill | Combined pay allowed (same as current `payments.add`) |
-| Guest session expires | Pending remains; guest cannot cancel until session re-established |
-| Solo Revolut after pending cancelled | Works as today |
+| Case                                       | Behavior                                                                   |
+| ------------------------------------------ | -------------------------------------------------------------------------- |
+| Covered person paid before confirm         | Confirm fails: „Дялът на {name} вече е платен“                             |
+| Payer share changed since create           | Confirm validates at click; reject if snapshotted amount exceeds remaining |
+| Guest closes app with pending              | Pending persists; footer restores on return via `getPendingForGuest`       |
+| Two guests pay for same person             | Second `create` rejected: „Вече има чакащо плащане за този участник“       |
+| Host manually marks one paid while pending | Confirm re-validates; may fail for that participant                        |
+| Finalized bill                             | Combined pay allowed (same as current `payments.add`)                      |
+| Guest session expires                      | Pending remains; guest cannot cancel until session re-established          |
+| Solo Revolut after pending cancelled       | Works as today                                                             |
 
 ## Out of scope (v1)
 
@@ -219,14 +224,14 @@ Payment rows unchanged until confirm; existing `PaymentRow` / `PaymentActions` r
 
 ## Files (expected touch points)
 
-| Area | Files |
-|------|-------|
-| Schema | `convex/schema.ts` |
-| API | `convex/combinedPayments.ts` (new) |
+| Area     | Files                                                                               |
+| -------- | ----------------------------------------------------------------------------------- |
+| Schema   | `convex/schema.ts`                                                                  |
+| API      | `convex/combinedPayments.ts` (new)                                                  |
 | Guest UI | `src/components/bills/guest-claim-footer.tsx`, `src/routes/bills/$billId/claim.tsx` |
-| Host UI | `src/components/bills/bill-summary-content.tsx` |
-| Shared | `shared/combined-payment-schema.ts` (new, if validation extracted) |
-| Tests | `convex/combinedPayments.test.ts`, `e2e/combined-guest-payment.spec.ts` |
+| Host UI  | `src/components/bills/bill-summary-content.tsx`                                     |
+| Shared   | `shared/combined-payment-schema.ts` (new, if validation extracted)                  |
+| Tests    | `convex/combinedPayments.test.ts`, `e2e/combined-guest-payment.spec.ts`             |
 
 ## Verification
 

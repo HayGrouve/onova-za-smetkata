@@ -23,8 +23,7 @@ export function CombinedPayChips({
   disabled?: boolean
 }) {
   const others = balances.filter(
-    (b) =>
-      b.participantId !== payerParticipantId && b.remainingCents > 0,
+    (b) => b.participantId !== payerParticipantId && b.remainingCents > 0,
   )
   if (others.length === 0) return null
 

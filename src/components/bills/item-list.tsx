@@ -278,7 +278,9 @@ export function ItemList({
                   aria-invalid={Boolean(fieldErrors.price)}
                 />
                 {fieldErrors.price ? (
-                  <p className="text-xs text-destructive">{fieldErrors.price}</p>
+                  <p className="text-xs text-destructive">
+                    {fieldErrors.price}
+                  </p>
                 ) : null}
               </div>
               <div className="flex flex-col gap-1.5">

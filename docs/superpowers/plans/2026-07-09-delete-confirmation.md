@@ -16,29 +16,30 @@
 
 ## File structure
 
-| File | Responsibility |
-|------|----------------|
-| `src/components/ui/alert-dialog.tsx` | shadcn AlertDialog primitives |
-| `src/lib/confirm-action-state.ts` | Pure promise queue (testable without DOM) |
-| `src/lib/confirm-action-state.test.ts` | Unit tests for open/resolve/cancel/supersede |
-| `src/lib/destructive-action-copy.ts` | Bulgarian `ConfirmOptions` templates |
-| `src/lib/destructive-action-copy.test.ts` | Copy interpolation + non-empty titles |
-| `src/components/confirm-action-provider.tsx` | Context, provider, hook, mounted AlertDialog |
-| `src/routes/__root.tsx` | Mount provider inside `ThemeProvider` |
-| `src/components/bills/bill-card.tsx` | Refactor bill delete → provider |
-| `src/components/bills/bill-summary-content.tsx` | Refactor bill delete → provider |
-| `src/components/bills/item-list.tsx` | Confirm before item delete |
-| `src/components/bills/participant-list.tsx` | Confirm before participant remove |
-| `src/components/bills/friend-group-editor-sheet.tsx` | Confirm group delete + member chip |
-| `src/components/bills/participant-breakdown-content.tsx` | Confirm guest claim unassign |
-| `src/components/bills/payment-actions.tsx` | Confirm payment undo |
-| `src/components/layout/app-header-menu.tsx` | Confirm sign-out |
+| File                                                     | Responsibility                               |
+| -------------------------------------------------------- | -------------------------------------------- |
+| `src/components/ui/alert-dialog.tsx`                     | shadcn AlertDialog primitives                |
+| `src/lib/confirm-action-state.ts`                        | Pure promise queue (testable without DOM)    |
+| `src/lib/confirm-action-state.test.ts`                   | Unit tests for open/resolve/cancel/supersede |
+| `src/lib/destructive-action-copy.ts`                     | Bulgarian `ConfirmOptions` templates         |
+| `src/lib/destructive-action-copy.test.ts`                | Copy interpolation + non-empty titles        |
+| `src/components/confirm-action-provider.tsx`             | Context, provider, hook, mounted AlertDialog |
+| `src/routes/__root.tsx`                                  | Mount provider inside `ThemeProvider`        |
+| `src/components/bills/bill-card.tsx`                     | Refactor bill delete → provider              |
+| `src/components/bills/bill-summary-content.tsx`          | Refactor bill delete → provider              |
+| `src/components/bills/item-list.tsx`                     | Confirm before item delete                   |
+| `src/components/bills/participant-list.tsx`              | Confirm before participant remove            |
+| `src/components/bills/friend-group-editor-sheet.tsx`     | Confirm group delete + member chip           |
+| `src/components/bills/participant-breakdown-content.tsx` | Confirm guest claim unassign                 |
+| `src/components/bills/payment-actions.tsx`               | Confirm payment undo                         |
+| `src/components/layout/app-header-menu.tsx`              | Confirm sign-out                             |
 
 ---
 
 ## Task 1: Install AlertDialog + copy module
 
 **Files:**
+
 - Create: `src/components/ui/alert-dialog.tsx` (via shadcn CLI)
 - Create: `src/lib/destructive-action-copy.ts`
 - Create: `src/lib/destructive-action-copy.test.ts`
@@ -219,6 +220,7 @@ Expected: PASS
 ## Task 2: Confirm state machine + provider
 
 **Files:**
+
 - Create: `src/lib/confirm-action-state.ts`
 - Create: `src/lib/confirm-action-state.test.ts`
 - Create: `src/components/confirm-action-provider.tsx`
@@ -362,9 +364,8 @@ const ConfirmActionContext = createContext<ConfirmActionContextValue | null>(
 export function ConfirmActionProvider({ children }: { children: ReactNode }) {
   const stateRef = useRef(createConfirmActionState())
   const [open, setOpen] = useState(false)
-  const [request, setRequest] = useState<
-    ReturnType<typeof stateRef.current.getPendingRequest>
-  >(null)
+  const [request, setRequest] =
+    useState<ReturnType<typeof stateRef.current.getPendingRequest>>(null)
   const [isConfirming, setIsConfirming] = useState(false)
 
   const close = useCallback((confirmed: boolean) => {
@@ -404,7 +405,9 @@ export function ConfirmActionProvider({ children }: { children: ReactNode }) {
           <AlertDialogHeader>
             <AlertDialogTitle>{request?.title}</AlertDialogTitle>
             {request?.description ? (
-              <AlertDialogDescription>{request.description}</AlertDialogDescription>
+              <AlertDialogDescription>
+                {request.description}
+              </AlertDialogDescription>
             ) : null}
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -436,7 +439,9 @@ export function ConfirmActionProvider({ children }: { children: ReactNode }) {
 export function useConfirmAction() {
   const ctx = useContext(ConfirmActionContext)
   if (!ctx) {
-    throw new Error('useConfirmAction must be used within ConfirmActionProvider')
+    throw new Error(
+      'useConfirmAction must be used within ConfirmActionProvider',
+    )
   }
   return ctx
 }
@@ -450,10 +455,8 @@ In `src/routes/__root.tsx`, import and wrap inside `ThemeProvider` (around `Conv
 import { ConfirmActionProvider } from '#/components/confirm-action-provider.tsx'
 
 // inside ThemeProvider:
-<ConfirmActionProvider>
-  <ConvexProvider>
-    ...
-  </ConvexProvider>
+;<ConfirmActionProvider>
+  <ConvexProvider>...</ConvexProvider>
 </ConfirmActionProvider>
 ```
 
@@ -467,6 +470,7 @@ Expected: PASS (no consumer wiring yet; provider compiles)
 ## Task 3: Refactor bill delete dialogs
 
 **Files:**
+
 - Modify: `src/components/bills/bill-card.tsx`
 - Modify: `src/components/bills/bill-summary-content.tsx`
 
@@ -542,6 +546,7 @@ Expected: PASS
 ## Task 4: Item + participant delete confirms
 
 **Files:**
+
 - Modify: `src/components/bills/item-list.tsx`
 - Modify: `src/components/bills/participant-list.tsx`
 
@@ -596,6 +601,7 @@ Expected: PASS
 ## Task 5: Friend groups confirm
 
 **Files:**
+
 - Modify: `src/components/bills/friend-group-editor-sheet.tsx`
 
 - [ ] **Step 1: Confirm group delete**
@@ -645,6 +651,7 @@ Expected: PASS
 ## Task 6: Guest claim + payment undo
 
 **Files:**
+
 - Modify: `src/components/bills/participant-breakdown-content.tsx`
 - Modify: `src/components/bills/payment-actions.tsx`
 
@@ -658,10 +665,7 @@ import { getClaimUnassignCopy } from '#/lib/destructive-action-copy.ts'
 
 const { confirm } = useConfirmAction()
 
-async function handleRemoveItemWithConfirm(
-  itemId: Id<'items'>,
-  label: string,
-) {
+async function handleRemoveItemWithConfirm(itemId: Id<'items'>, label: string) {
   const confirmed = await confirm(getClaimUnassignCopy(label))
   if (!confirmed) return
   await onRemoveItem?.(itemId)
@@ -710,6 +714,7 @@ Expected: PASS
 ## Task 7: Sign-out confirm
 
 **Files:**
+
 - Modify: `src/components/layout/app-header-menu.tsx`
 
 - [ ] **Step 1: Wire sign-out confirm**
@@ -784,18 +789,18 @@ Set this plan's **Status** to `✅ Complete`.
 
 ## Self-review (spec coverage)
 
-| Spec requirement | Task |
-|------------------|------|
-| AlertDialog + confirm provider | Task 2 |
-| Centralized copy map | Task 1 |
-| Bill delete refactor (×2) | Task 3 |
-| Item + participant + undo toasts kept | Task 4 |
-| Friend group delete + member chip | Task 5 |
-| Guest claim unassign | Task 6 |
-| Payment undo | Task 6 |
-| Sign-out | Task 7 |
-| Unit tests (copy + state) | Tasks 1–2 |
-| Manual QA + preflight | Task 8 |
-| Receipt replace (#10 optional) | **Out of scope** — keep existing dedicated Dialog |
+| Spec requirement                      | Task                                              |
+| ------------------------------------- | ------------------------------------------------- |
+| AlertDialog + confirm provider        | Task 2                                            |
+| Centralized copy map                  | Task 1                                            |
+| Bill delete refactor (×2)             | Task 3                                            |
+| Item + participant + undo toasts kept | Task 4                                            |
+| Friend group delete + member chip     | Task 5                                            |
+| Guest claim unassign                  | Task 6                                            |
+| Payment undo                          | Task 6                                            |
+| Sign-out                              | Task 7                                            |
+| Unit tests (copy + state)             | Tasks 1–2                                         |
+| Manual QA + preflight                 | Task 8                                            |
+| Receipt replace (#10 optional)        | **Out of scope** — keep existing dedicated Dialog |
 
 **Next after completion:** none — feature complete after Task 8.

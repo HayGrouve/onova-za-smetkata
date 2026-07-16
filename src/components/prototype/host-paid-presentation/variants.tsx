@@ -68,7 +68,8 @@ function PrototypeFrame({
 
 function guestBadge(p: PrototypeParticipant) {
   if (p.guestStatus === 'paid') return <Badge>платено</Badge>
-  if (p.guestStatus === 'partial') return <Badge variant="secondary">частично</Badge>
+  if (p.guestStatus === 'partial')
+    return <Badge variant="secondary">частично</Badge>
   return <Badge variant="outline">неплатено</Badge>
 }
 
@@ -151,11 +152,7 @@ export function VariantA() {
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-medium">{p.name}</p>
-                  {p.role === 'host' ? (
-                    <Badge>платено</Badge>
-                  ) : (
-                    guestBadge(p)
-                  )}
+                  {p.role === 'host' ? <Badge>платено</Badge> : guestBadge(p)}
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-sm text-muted-foreground">
                   <div>

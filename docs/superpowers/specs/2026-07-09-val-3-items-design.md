@@ -27,14 +27,14 @@ Validate bill line items using shared VAL-0 primitives, with the same client/ser
 
 ## Surfaces
 
-| Action | UI | Mutation |
-|--------|-----|----------|
-| Add item | `ItemList` dashed form | `items.add` |
-| Edit name | `ItemRow` inline input | `items.update` |
-| Edit unit price | `ItemRow` EUR input | `items.update` |
-| Edit quantity | `ItemRow` qty input | `items.update` |
-| Undo delete | Toast „Отмени“ | `items.add` (re-insert with prior fields) |
-| Note (API only) | — | `items.add` / `items.update` |
+| Action          | UI                     | Mutation                                  |
+| --------------- | ---------------------- | ----------------------------------------- |
+| Add item        | `ItemList` dashed form | `items.add`                               |
+| Edit name       | `ItemRow` inline input | `items.update`                            |
+| Edit unit price | `ItemRow` EUR input    | `items.update`                            |
+| Edit quantity   | `ItemRow` qty input    | `items.update`                            |
+| Undo delete     | Toast „Отмени“         | `items.add` (re-insert with prior fields) |
+| Note (API only) | —                      | `items.add` / `items.update`              |
 
 ---
 
@@ -42,48 +42,48 @@ Validate bill line items using shared VAL-0 primitives, with the same client/ser
 
 Composed in `shared/item-schema.ts` from VAL-0 primitives. Add `itemNameSchema` to `shared/validation/fields.ts` (trim; 1–`ITEM_NAME_MAX`; no control-char rule — same as restaurant names).
 
-| Field | Add form input | Inline edit input | Stored value | Rules |
-|-------|----------------|-------------------|--------------|-------|
-| Name | string | string | trimmed string | `itemNameSchema` |
-| Unit price | EUR string | EUR string | int cents ≥ 0 | Add/edit input: `parseEurInputStrict` → `nonNegativeCentsSchema('Цената')` |
-| Quantity | string (default `"1"`) | string | int ≥ 1 | `quantityInputSchema` (max `QUANTITY_MAX` = 999) |
-| Note | — | — | `string \| undefined` | `optionalNoteSchema(PAYMENT_NOTE_MAX)` — blank → `undefined` |
+| Field      | Add form input         | Inline edit input | Stored value          | Rules                                                                      |
+| ---------- | ---------------------- | ----------------- | --------------------- | -------------------------------------------------------------------------- |
+| Name       | string                 | string            | trimmed string        | `itemNameSchema`                                                           |
+| Unit price | EUR string             | EUR string        | int cents ≥ 0         | Add/edit input: `parseEurInputStrict` → `nonNegativeCentsSchema('Цената')` |
+| Quantity   | string (default `"1"`) | string            | int ≥ 1               | `quantityInputSchema` (max `QUANTITY_MAX` = 999)                           |
+| Note       | —                      | —                 | `string \| undefined` | `optionalNoteSchema(PAYMENT_NOTE_MAX)` — blank → `undefined`               |
 
 ### Price semantics
 
-| Context | Input | Result |
-|---------|-------|--------|
-| Add — empty / whitespace | `""`, `" "` | Invalid — inline error; no mutation |
-| Add — invalid | `"abc"`, `"-"` | Invalid — inline error; no mutation |
-| Add — valid zero | `"0"`, `"0,00"` | `unitPriceCents: 0` (allowed; finalize may still require priced assignments separately) |
-| Add — valid | `"12,50"` | `1250` |
-| Inline edit — invalid | same as add | Inline error; **skip debounced save** |
-| Inline edit — valid | `"3,99"` | Save `399` |
+| Context                  | Input           | Result                                                                                  |
+| ------------------------ | --------------- | --------------------------------------------------------------------------------------- |
+| Add — empty / whitespace | `""`, `" "`     | Invalid — inline error; no mutation                                                     |
+| Add — invalid            | `"abc"`, `"-"`  | Invalid — inline error; no mutation                                                     |
+| Add — valid zero         | `"0"`, `"0,00"` | `unitPriceCents: 0` (allowed; finalize may still require priced assignments separately) |
+| Add — valid              | `"12,50"`       | `1250`                                                                                  |
+| Inline edit — invalid    | same as add     | Inline error; **skip debounced save**                                                   |
+| Inline edit — valid      | `"3,99"`        | Save `399`                                                                              |
 
 Replaces `parseEurInput` in `item-list.tsx` for all item add/edit paths.
 
 ### Quantity semantics
 
-| Context | Input | Result |
-|---------|-------|--------|
-| Add — empty / invalid | `""`, `"0"`, `"abc"` | Invalid — inline error on submit |
-| Add — valid | `"1"` … `"999"` | Parsed int saved |
+| Context               | Input                 | Result                            |
+| --------------------- | --------------------- | --------------------------------- |
+| Add — empty / invalid | `""`, `"0"`, `"abc"`  | Invalid — inline error on submit  |
+| Add — valid           | `"1"` … `"999"`       | Parsed int saved                  |
 | Inline edit — invalid | `""`, `"0"`, `"1000"` | Inline error; skip debounced save |
-| Inline edit — valid | `"2"` | Save `2` |
+| Inline edit — valid   | `"2"`                 | Save `2`                          |
 
 Replaces silent `Math.max(1, Number.parseInt(...) || 1)` in `ItemRow`.
 
 ### Error messages
 
-| Field | Source |
-|-------|--------|
-| Name empty | `Наименованието не може да е празно` (new `itemNameSchema` message) |
-| Name too long | `Наименованието може да е до 120 символа` |
-| Price invalid / empty | `Невалидна сума.` (from `parseEurInputStrict`) |
-| Quantity | From `quantityInputSchema` (`Количеството трябва да е поне 1.` / `Количеството е твърде голямо.`) |
-| Note too long | `Бележката може да е до 200 символа` |
-| Finalized bill | `Сметката е завършена.` |
-| Qty reduction blocked | `Намалете разпределенията преди да намалите количеството.` (existing business rule — unchanged) |
+| Field                 | Source                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------- |
+| Name empty            | `Наименованието не може да е празно` (new `itemNameSchema` message)                               |
+| Name too long         | `Наименованието може да е до 120 символа`                                                         |
+| Price invalid / empty | `Невалидна сума.` (from `parseEurInputStrict`)                                                    |
+| Quantity              | From `quantityInputSchema` (`Количеството трябва да е поне 1.` / `Количеството е твърде голямо.`) |
+| Note too long         | `Бележката може да е до 200 символа`                                                              |
+| Finalized bill        | `Сметката е завършена.`                                                                           |
+| Qty reduction blocked | `Намалете разпределенията преди да намалите количеството.` (existing business rule — unchanged)   |
 
 ### Finalized bill
 
@@ -129,22 +129,40 @@ export function parseItemPriceInput(
   value: string,
 ): { ok: true; cents: number } | { ok: false; message: string }
 
-export function validateItemAddForm(
-  input: ItemAddFormInput,
-):
-  | { ok: true; data: { name: string; unitPriceCents: number; quantity: number; note?: string } }
+export function validateItemAddForm(input: ItemAddFormInput):
+  | {
+      ok: true
+      data: {
+        name: string
+        unitPriceCents: number
+        quantity: number
+        note?: string
+      }
+    }
   | { ok: false; fieldErrors: Partial<Record<ItemField, string>> }
 
-export function validateItemAddArgs(
-  args: ItemAddArgs,
-):
-  | { ok: true; data: { name: string; unitPriceCents: number; quantity: number; note?: string } }
+export function validateItemAddArgs(args: ItemAddArgs):
+  | {
+      ok: true
+      data: {
+        name: string
+        unitPriceCents: number
+        quantity: number
+        note?: string
+      }
+    }
   | { ok: false; message: string }
 
-export function validateItemUpdatePatch(
-  patch: ItemUpdatePatchInput,
-):
-  | { ok: true; data: Partial<{ name: string; unitPriceCents: number; quantity: number; note?: string }> }
+export function validateItemUpdatePatch(patch: ItemUpdatePatchInput):
+  | {
+      ok: true
+      data: Partial<{
+        name: string
+        unitPriceCents: number
+        quantity: number
+        note?: string
+      }>
+    }
   | { ok: false; message: string }
 
 // Client inline edit — validate single field from raw input
@@ -308,16 +326,16 @@ Pass `readOnly={bill.status === 'final'}` from bill editor to `ItemList` (same a
 
 ## Files
 
-| File | Action |
-|------|--------|
-| `shared/validation/fields.ts` | Add `itemNameSchema` |
-| `shared/item-schema.ts` | Create |
-| `shared/item-schema.test.ts` | Create |
-| `src/lib/item-schema.ts` | Create — re-export |
-| `convex/lib/itemSchema.ts` | Create — re-export |
-| `convex/items.ts` | Schema in `add` / `update`; finalized guard; remove `assert*` for format |
-| `src/components/bills/item-list.tsx` | Add form + `ItemRow` inline errors; strict parsers; `readOnly` prop |
-| `src/routes/bills/$billId/index.tsx` | Pass `readOnly` to `ItemList` |
+| File                                 | Action                                                                   |
+| ------------------------------------ | ------------------------------------------------------------------------ |
+| `shared/validation/fields.ts`        | Add `itemNameSchema`                                                     |
+| `shared/item-schema.ts`              | Create                                                                   |
+| `shared/item-schema.test.ts`         | Create                                                                   |
+| `src/lib/item-schema.ts`             | Create — re-export                                                       |
+| `convex/lib/itemSchema.ts`           | Create — re-export                                                       |
+| `convex/items.ts`                    | Schema in `add` / `update`; finalized guard; remove `assert*` for format |
+| `src/components/bills/item-list.tsx` | Add form + `ItemRow` inline errors; strict parsers; `readOnly` prop      |
+| `src/routes/bills/$billId/index.tsx` | Pass `readOnly` to `ItemList`                                            |
 
 ---
 

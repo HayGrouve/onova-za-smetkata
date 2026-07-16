@@ -118,9 +118,7 @@ export function HostClaimFooter({
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
               <p className="text-xs text-muted-foreground">Дял</p>
-              <p className="money font-medium">
-                {formatEur(totals.owedCents)}
-              </p>
+              <p className="money font-medium">{formatEur(totals.owedCents)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Остатък</p>
