@@ -1,3 +1,4 @@
+import type { BillStepCompletion } from '#/lib/bill-step-completion.ts'
 import { cn } from '#/lib/utils.ts'
 
 export type BillStep = 1 | 2 | 3 | 4
@@ -11,26 +12,35 @@ export const BILL_STEP_LABELS = [
 
 export interface BillStepsBarProps {
   step: BillStep
+  completed: BillStepCompletion
   onStepSelect: (step: BillStep) => void
 }
 
-export function BillStepsBar({ step, onStepSelect }: BillStepsBarProps) {
+export function BillStepsBar({ step, completed, onStepSelect }: BillStepsBarProps) {
   return (
     <div className="sticky-surface sticky top-14 z-30 border-b">
       <div className="mx-auto flex max-w-lg flex-col gap-1.5 px-4 py-2">
         <div className="flex gap-1.5">
           {BILL_STEP_LABELS.map((label, i) => {
             const s = (i + 1) as BillStep
+            const done = completed[s]
+            const isCurrent = s === step
+            const segmentClass = isCurrent
+              ? 'bg-primary'
+              : done
+                ? 'bg-success'
+                : 'bg-border'
+            const completionLabel = done ? 'завършена' : 'незавършена'
             return (
               <button
                 key={label}
                 type="button"
-                aria-label={`Стъпка ${s}: ${label}`}
-                aria-current={s === step ? 'step' : undefined}
+                aria-label={`Стъпка ${s}: ${label}, ${completionLabel}`}
+                aria-current={isCurrent ? 'step' : undefined}
                 onClick={() => onStepSelect(s)}
                 className={cn(
                   'h-1.5 flex-1 cursor-pointer rounded-full transition-colors',
-                  s <= step ? 'bg-primary' : 'bg-border',
+                  segmentClass,
                 )}
               />
             )
