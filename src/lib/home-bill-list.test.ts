@@ -29,8 +29,8 @@ describe('parseHomeBillStatusSearch', () => {
 })
 
 describe('homeBillStatusSearchParam', () => {
-  it('omits status for all', () => {
-    expect(homeBillStatusSearchParam(undefined)).toEqual({})
+  it('sets status undefined for all (URL omit)', () => {
+    expect(homeBillStatusSearchParam(undefined)).toEqual({ status: undefined })
   })
 
   it('includes status for chips', () => {

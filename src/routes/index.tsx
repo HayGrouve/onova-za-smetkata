@@ -18,6 +18,7 @@ import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-pro
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
+import { QueryErrorPanel } from '#/components/ui/query-error-panel.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
 import { PwaInstallBanner } from '#/components/pwa-install-banner.tsx'
@@ -26,6 +27,7 @@ import {
   HOME_BILL_PAGE_SIZE,
   HOME_BILL_SEARCH_DEBOUNCE_MS,
   homeBillListEmptyMessage,
+  homeBillStatusSearchParam,
   parseHomeBillStatusSearch,
   type HomeBillStatusFilter,
 } from '#/lib/home-bill-list.ts'
@@ -75,14 +77,10 @@ class HomeBillListErrorBoundary extends Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center gap-3 py-8">
-          <p className="text-center text-muted-foreground">
-            Неуспешно зареждане.
-          </p>
-          <Button type="button" variant="outline" onClick={this.props.onRetry}>
-            Опитай отново
-          </Button>
-        </div>
+        <QueryErrorPanel
+          message="Неуспешно зареждане."
+          onRetry={this.props.onRetry}
+        />
       )
     }
     return this.props.children
@@ -96,7 +94,7 @@ function Home() {
   const createBill = useMutation(api.bills.create)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [listEpoch, setListEpoch] = useState(0)
+  const [listResetKey, setListResetKey] = useState(0)
   const [isCreating, setIsCreating] = useState(false)
   const paymentSettingsStatus = usePaymentSettingsStatus()
   const { openPaymentSettings } = usePaymentSettingsSheet()
@@ -148,10 +146,12 @@ function Home() {
   function selectStatus(next: HomeBillStatusFilter | undefined) {
     void navigate({
       to: '/',
-      search: { status: next },
+      search: homeBillStatusSearchParam(next),
       replace: true,
     })
   }
+
+  const showFirstPageSkeletons = status === 'LoadingFirstPage'
 
   return (
     <div className="page-container">
@@ -208,16 +208,16 @@ function Home() {
       </div>
 
       <HomeBillListErrorBoundary
-        resetKey={listEpoch}
-        onRetry={() => setListEpoch((n) => n + 1)}
+        resetKey={listResetKey}
+        onRetry={() => setListResetKey((n) => n + 1)}
       >
-        <div key={listEpoch} className="flex flex-col gap-3">
-          {status === 'LoadingFirstPage' &&
+        <div key={listResetKey} className="flex flex-col gap-3">
+          {showFirstPageSkeletons &&
             Array.from({ length: 3 }).map((_, index) => (
               <Skeleton key={index} className="h-20 w-full rounded-xl" />
             ))}
 
-          {status !== 'LoadingFirstPage' && results.length === 0 && (
+          {!showFirstPageSkeletons && results.length === 0 && (
             <p className="py-8 text-center text-muted-foreground">
               {homeBillListEmptyMessage({
                 status: statusFilter,
@@ -226,9 +226,10 @@ function Home() {
             </p>
           )}
 
-          {results.map((summary) => (
-            <BillCard key={summary.bill._id} {...summary} />
-          ))}
+          {!showFirstPageSkeletons &&
+            results.map((summary) => (
+              <BillCard key={summary.bill._id} {...summary} />
+            ))}
 
           {status === 'CanLoadMore' && (
             <Button
@@ -249,7 +250,10 @@ function Home() {
               disabled
             >
               <Loader2Icon
-                className={cn(ICON.button, 'animate-spin motion-reduce:animate-none')}
+                className={cn(
+                  ICON.button,
+                  'animate-spin motion-reduce:animate-none',
+                )}
               />
               Зареди още
             </Button>

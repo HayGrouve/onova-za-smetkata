@@ -10,10 +10,11 @@ export function parseHomeBillStatusSearch(
   return undefined
 }
 
+/** Always includes `status` so TanStack Router search types stay satisfied; `undefined` omits the query param. */
 export function homeBillStatusSearchParam(
   status: HomeBillStatusFilter | undefined,
-): { status?: HomeBillStatusFilter } {
-  return status ? { status } : {}
+): { status: HomeBillStatusFilter | undefined } {
+  return { status }
 }
 
 export function homeBillListEmptyMessage(args: {
