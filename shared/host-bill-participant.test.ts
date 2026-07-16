@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   HOST_PARTICIPANT_SORT_ORDER,
+  isHostParticipant,
   nextParticipantSortOrder,
   planHostParticipantOnBillCreate,
   shouldClearHostParticipantId,
@@ -60,5 +61,16 @@ describe('shouldClearHostParticipantId', () => {
     expect(shouldClearHostParticipantId('participant_guest', undefined)).toBe(
       false,
     )
+  })
+})
+
+describe('isHostParticipant', () => {
+  it('returns true when participant matches hostParticipantId', () => {
+    expect(isHostParticipant('host', 'host')).toBe(true)
+  })
+
+  it('returns false for guests or when host link is unset', () => {
+    expect(isHostParticipant('guest', 'host')).toBe(false)
+    expect(isHostParticipant('host', undefined)).toBe(false)
   })
 })

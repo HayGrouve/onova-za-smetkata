@@ -38,3 +38,12 @@ export function shouldClearHostParticipantId(
     removedParticipantId === hostParticipantId
   )
 }
+
+export function isHostParticipant(
+  participantId: string,
+  hostParticipantId: string | undefined,
+) {
+  return (
+    hostParticipantId !== undefined && participantId === hostParticipantId
+  )
+}

@@ -41,6 +41,13 @@ export const add = mutation({
       throw new ConvexError('Сметката не е намерена.')
     }
 
+    if (
+      bill.hostParticipantId &&
+      args.participantId === bill.hostParticipantId
+    ) {
+      throw new ConvexError('Домакинът не се маркира като платил.')
+    }
+
     const totals = calculateBillTotals({
       participants: participants.map((p) => ({
         id: p._id,
@@ -100,6 +107,18 @@ export const undoLast = mutation({
     const participant = await ctx.db.get(args.participantId)
     if (!participant || participant.billId !== args.billId) {
       throw new ConvexError('Участникът не принадлежи на тази сметка.')
+    }
+
+    const bill = await ctx.db.get(args.billId)
+    if (!bill) {
+      throw new ConvexError('Сметката не е намерена.')
+    }
+
+    if (
+      bill.hostParticipantId &&
+      args.participantId === bill.hostParticipantId
+    ) {
+      throw new ConvexError('Домакинът не се маркира като платил.')
     }
 
     const payments = await ctx.db

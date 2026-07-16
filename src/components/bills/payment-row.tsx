@@ -35,6 +35,8 @@ export interface PaymentRowProps {
   label: string
   totals: ParticipantTotals
   payments?: Doc<'payments'>[]
+  /** Host is paid-by-rule; never show collection affordances. */
+  isHost?: boolean
   onOpenDetail?: () => void
   onOpenPaymentSettings?: () => void
 }
@@ -45,10 +47,12 @@ export function PaymentRow({
   label,
   totals,
   payments,
+  isHost = false,
   onOpenDetail,
   onOpenPaymentSettings,
 }: PaymentRowProps) {
   const remainingCents = Math.max(0, totals.balanceCents)
+  const showCollectionActions = !isHost && remainingCents > 0
 
   return (
     <div
@@ -112,20 +116,22 @@ export function PaymentRow({
           )}
         </div>
       </div>
-      {remainingCents > 0 ? (
+      {showCollectionActions ? (
         <ParticipantPayActions
           remainingCents={remainingCents}
           label={label}
           onOpenSettings={onOpenPaymentSettings}
         />
       ) : null}
-      <PaymentActions
-        billId={billId}
-        participantId={participantId}
-        label={label}
-        totals={totals}
-        payments={payments}
-      />
+      {!isHost ? (
+        <PaymentActions
+          billId={billId}
+          participantId={participantId}
+          label={label}
+          totals={totals}
+          payments={payments}
+        />
+      ) : null}
     </div>
   )
 }
