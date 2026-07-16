@@ -33,7 +33,7 @@ self.addEventListener('activate', (event) => {
   )
 })
 
-function isStaticAsset(pathname: string): boolean {
+function isStaticAsset(pathname) {
   return /\.(png|ico|json|svg|css|js|woff2?)$/i.test(pathname)
 }
 
