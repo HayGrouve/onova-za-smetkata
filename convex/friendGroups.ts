@@ -13,6 +13,7 @@ import {
 } from './lib/participantSchema'
 import { BILL_PARTICIPANTS_MAX } from './lib/validation'
 import { touchBill } from './lib/touchBill'
+import { nextParticipantSortOrder } from './lib/hostBillParticipant'
 
 async function requireFriendGroupOwner(
   ctx: MutationCtx,
@@ -188,7 +189,7 @@ export const addToBill = mutation({
 
     let added = 0
     let skipped = 0
-    let sortOrder = existing.length
+    let sortOrder = nextParticipantSortOrder(existing.length)
 
     for (const name of selectedNames) {
       if (existing.length + added >= BILL_PARTICIPANTS_MAX) {

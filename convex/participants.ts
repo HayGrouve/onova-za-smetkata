@@ -4,6 +4,10 @@ import { requireAuth, requireBillOwner } from './lib/auth'
 import { validateParticipantAdd } from './lib/participantSchema'
 import { touchBill } from './lib/touchBill'
 import { deleteGuestSessionsForParticipant } from './guestSessions'
+import {
+  nextParticipantSortOrder,
+  shouldClearHostParticipantId,
+} from './lib/hostBillParticipant'
 
 const RECENT_NAMES_BILL_SCAN_LIMIT = 24
 
@@ -63,7 +67,7 @@ export const add = mutation({
     const id = await ctx.db.insert('participants', {
       billId: args.billId,
       name: validated.name,
-      sortOrder: existing.length,
+      sortOrder: nextParticipantSortOrder(existing.length),
     })
     await touchBill(ctx, args.billId)
     return id
@@ -79,6 +83,10 @@ export const remove = mutation({
     }
 
     await requireBillOwner(ctx, participant.billId)
+    const bill = await ctx.db.get(participant.billId)
+    if (!bill) {
+      throw new ConvexError('Сметката не е намерена.')
+    }
 
     const assignments = await ctx.db
       .query('itemAssignments')
@@ -101,6 +109,16 @@ export const remove = mutation({
     await deleteGuestSessionsForParticipant(ctx, args.participantId)
 
     await ctx.db.delete(args.participantId)
+
+    if (
+      shouldClearHostParticipantId(
+        args.participantId,
+        bill.hostParticipantId,
+      )
+    ) {
+      await ctx.db.patch(participant.billId, { hostParticipantId: undefined })
+    }
+
     await touchBill(ctx, participant.billId)
   },
 })
