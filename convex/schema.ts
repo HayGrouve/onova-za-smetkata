@@ -38,6 +38,8 @@ export default defineSchema({
     listBillTotalCents: v.optional(v.number()),
     listOutstandingCents: v.optional(v.number()),
     listParticipantNames: v.optional(v.array(v.string())),
+    /** Participant seat for the Host; set at bill create. */
+    hostParticipantId: v.optional(v.id('participants')),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

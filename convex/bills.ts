@@ -1,6 +1,5 @@
 import { mutation, query } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
-import type { Id } from './_generated/dataModel'
 import { requireAuth, requireBillOwner } from './lib/auth'
 import { assertBillCanFinalize } from './lib/validateBillForFinalize'
 import { loadBillRelations } from './lib/billListSummary'
@@ -19,6 +18,8 @@ import {
 } from './lib/billMetadataSchema'
 import { createShareToken } from './lib/shareToken'
 import { calculateBillTotals } from './lib/billCalculations'
+import { planHostParticipantOnBillCreate } from './lib/hostBillParticipant'
+import { touchBill } from './lib/touchBill'
 
 export const list = query({
   args: {},
@@ -138,8 +139,13 @@ export const create = mutation({
   args: {},
   handler: async (ctx) => {
     const ownerId = await requireAuth(ctx)
+    const owner = await ctx.db.get(ownerId)
+    if (!owner) {
+      throw new ConvexError('Потребителят не е намерен.')
+    }
+
     const now = Date.now()
-    return await ctx.db.insert('bills', {
+    const billId = await ctx.db.insert('bills', {
       ownerId,
       restaurantName: '',
       date: now,
@@ -150,6 +156,20 @@ export const create = mutation({
       createdAt: now,
       updatedAt: now,
     })
+
+    const hostPlan = planHostParticipantOnBillCreate({
+      username: owner.username,
+      authName: owner.name,
+    })
+    const hostParticipantId = await ctx.db.insert('participants', {
+      billId,
+      name: hostPlan.name,
+      sortOrder: hostPlan.sortOrder,
+    })
+    await ctx.db.patch(billId, { hostParticipantId })
+    await touchBill(ctx, billId)
+
+    return billId
   },
 })
 
