@@ -156,7 +156,7 @@ export function ClaimShareDrawer({
           <div
             ref={contentRef}
             className={cn(
-              'pointer-events-auto mx-auto flex w-full max-w-lg min-h-0 flex-col border-t sticky-surface px-4 pt-2',
+              'pointer-events-auto mx-auto flex w-full max-w-lg min-h-0 flex-col sticky-surface px-4 pt-2',
               'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]',
               'rounded-t-xl',
             )}

@@ -338,7 +338,6 @@ export function BillSummaryContent({
                 payments={data.payments}
                 isHost={isHost}
                 onOpenDetail={() => setDetailParticipantId(participant._id)}
-                onOpenPaymentSettings={openPaymentSettings}
               />
             )
           })}
@@ -451,9 +450,7 @@ export function BillSummaryContent({
           showPaymentActions={
             !isHostParticipant(detailParticipantId, bill.hostParticipantId)
           }
-          showPayActions={
-            !isHostParticipant(detailParticipantId, bill.hostParticipantId)
-          }
+          showPayActions={false}
         />
       )}
     </div>

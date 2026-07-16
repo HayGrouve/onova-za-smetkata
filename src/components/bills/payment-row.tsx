@@ -1,8 +1,5 @@
 import { CopyIcon } from 'lucide-react'
-import {
-  copyRemainingAmount,
-  ParticipantPayActions,
-} from '#/components/bills/participant-pay-actions.tsx'
+import { copyRemainingAmount } from '#/components/bills/participant-pay-actions.tsx'
 import { PaymentActions } from '#/components/bills/payment-actions.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
 import type {
@@ -38,7 +35,6 @@ export interface PaymentRowProps {
   /** Host is paid-by-rule; never show collection affordances. */
   isHost?: boolean
   onOpenDetail?: () => void
-  onOpenPaymentSettings?: () => void
 }
 
 export function PaymentRow({
@@ -49,10 +45,8 @@ export function PaymentRow({
   payments,
   isHost = false,
   onOpenDetail,
-  onOpenPaymentSettings,
 }: PaymentRowProps) {
   const remainingCents = Math.max(0, totals.balanceCents)
-  const showCollectionActions = !isHost && remainingCents > 0
 
   return (
     <div
@@ -116,13 +110,6 @@ export function PaymentRow({
           )}
         </div>
       </div>
-      {showCollectionActions ? (
-        <ParticipantPayActions
-          remainingCents={remainingCents}
-          label={label}
-          onOpenSettings={onOpenPaymentSettings}
-        />
-      ) : null}
       {!isHost ? (
         <PaymentActions
           billId={billId}
