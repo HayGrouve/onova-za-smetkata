@@ -258,6 +258,100 @@ describe('bill reconciliation', () => {
   })
 })
 
+describe('always-paid Host collection rule', () => {
+  it('treats Host with Share > 0 and no payment rows as paid with zero outstanding', () => {
+    const totals = calculateBillTotals({
+      hostParticipantId: 'host',
+      participants: [
+        { id: 'host', sortOrder: 0 },
+        { id: 'guest', sortOrder: 1 },
+      ],
+      items: [{ id: 'i1', unitPriceCents: 1000, quantity: 1 }],
+      assignments: [
+        { itemId: 'i1', participantId: 'host' },
+        { itemId: 'i1', participantId: 'guest' },
+      ],
+      payments: [],
+    })
+
+    expect(totals.byParticipant.host).toMatchObject({
+      owedCents: 500,
+      paidCents: 500,
+      balanceCents: 0,
+      status: 'paid',
+    })
+    expect(totals.byParticipant.guest).toMatchObject({
+      owedCents: 500,
+      paidCents: 0,
+      balanceCents: 500,
+      status: 'unpaid',
+    })
+    expect(totalOutstandingCents(totals)).toBe(500)
+  })
+
+  it('still splits tip across all Participants including Host with no claimed items', () => {
+    const totals = calculateBillTotals({
+      hostParticipantId: 'host',
+      participants: [
+        { id: 'host', sortOrder: 0 },
+        { id: 'guest1', sortOrder: 1 },
+        { id: 'guest2', sortOrder: 2 },
+      ],
+      items: [{ id: 'i1', unitPriceCents: 900, quantity: 1 }],
+      assignments: [
+        { itemId: 'i1', participantId: 'guest1' },
+        { itemId: 'i1', participantId: 'guest2' },
+      ],
+      payments: [],
+      tipCents: 300,
+    })
+
+    expect(totals.billTotalCents).toBe(1200)
+    expect(totals.byParticipant.host.owedCents).toBe(100)
+    expect(totals.byParticipant.host.status).toBe('paid')
+    expect(totals.byParticipant.guest1.owedCents).toBe(550)
+    expect(totals.byParticipant.guest2.owedCents).toBe(550)
+  })
+
+  it('keeps Host non-outstanding when Share grows without payment rows', () => {
+    const before = calculateBillTotals({
+      hostParticipantId: 'host',
+      participants: [
+        { id: 'host', sortOrder: 0 },
+        { id: 'guest', sortOrder: 1 },
+      ],
+      items: [{ id: 'i1', unitPriceCents: 1000, quantity: 1 }],
+      assignments: [{ itemId: 'i1', participantId: 'guest' }],
+      payments: [],
+      tipCents: 0,
+    })
+    expect(before.byParticipant.host.owedCents).toBe(0)
+    expect(before.byParticipant.host.status).toBe('paid')
+
+    const after = calculateBillTotals({
+      hostParticipantId: 'host',
+      participants: [
+        { id: 'host', sortOrder: 0 },
+        { id: 'guest', sortOrder: 1 },
+      ],
+      items: [{ id: 'i1', unitPriceCents: 1000, quantity: 1 }],
+      assignments: [
+        { itemId: 'i1', participantId: 'host' },
+        { itemId: 'i1', participantId: 'guest' },
+      ],
+      payments: [],
+      tipCents: 0,
+    })
+    expect(after.byParticipant.host.owedCents).toBe(500)
+    expect(after.byParticipant.host).toMatchObject({
+      paidCents: 500,
+      balanceCents: 0,
+      status: 'paid',
+    })
+    expect(totalOutstandingCents(after)).toBe(500)
+  })
+})
+
 describe('calculateParticipantBreakdown', () => {
   const baseInput: BillBreakdownInput = {
     participants: [

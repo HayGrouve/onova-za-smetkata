@@ -69,6 +69,7 @@ async function loadBillTotalsForCombinedPay(
       amountCents: p.amountCents,
     })),
     tipCents: bill.tipCents ?? 0,
+    hostParticipantId: bill.hostParticipantId,
   })
 }
 

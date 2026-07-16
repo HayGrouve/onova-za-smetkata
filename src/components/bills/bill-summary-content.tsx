@@ -104,6 +104,7 @@ export function BillSummaryContent({
         units: a.units,
       })),
       tipCents: data.bill.tipCents ?? 0,
+      hostParticipantId: data.bill.hostParticipantId,
     }
   }, [data])
 
@@ -310,6 +311,7 @@ export function BillSummaryContent({
               sortOrder: p.sortOrder,
             }))}
             byParticipant={totals.byParticipant}
+            hostParticipantId={bill.hostParticipantId}
           />
         </CardHeader>
         <CardContent className="flex flex-col gap-3">

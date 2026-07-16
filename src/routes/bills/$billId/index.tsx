@@ -290,8 +290,9 @@ function BillEditorContent({
           amountCents: p.amountCents,
         })),
         tipCents: tipCentsForTotals,
+        hostParticipantId: bill.hostParticipantId,
       }),
-    [participants, items, assignments, payments, tipCentsForTotals],
+    [participants, items, assignments, payments, tipCentsForTotals, bill.hostParticipantId],
   )
 
   const unassignedItemsCount = useMemo(() => {

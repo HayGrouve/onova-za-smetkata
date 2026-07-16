@@ -51,4 +51,35 @@ describe('buildListSummaryFields', () => {
     expect(summary.listOutstandingCents).toBe(500)
     expect(summary.listParticipantNames).toEqual(['Иван', 'Мария'])
   })
+
+  it('excludes Host balance from list outstanding when hostParticipantId is set', () => {
+    const summary = buildListSummaryFields(
+      {
+        status: 'final',
+        tipCents: 0,
+        hostParticipantId: 'p1' as never,
+      },
+      {
+        participants: [
+          { _id: 'p1', name: 'Домакин', sortOrder: 0 } as never,
+          { _id: 'p2', name: 'Мария', sortOrder: 1 } as never,
+        ],
+        items: [
+          {
+            _id: 'i1',
+            unitPriceCents: 1000,
+            quantity: 1,
+          } as never,
+        ],
+        assignments: [
+          { itemId: 'i1', participantId: 'p1' } as never,
+          { itemId: 'i1', participantId: 'p2' } as never,
+        ],
+        payments: [],
+      },
+    )
+
+    expect(summary.listBillTotalCents).toBe(1000)
+    expect(summary.listOutstandingCents).toBe(500)
+  })
 })
