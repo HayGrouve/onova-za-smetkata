@@ -4,3 +4,4 @@ yarn.lock
 convex/_generated/**
 src/routeTree.gen.ts
 .env.example
+.agents/**

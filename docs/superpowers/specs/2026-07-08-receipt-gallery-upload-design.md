@@ -29,20 +29,20 @@ Two explicit actions: pick an existing image from the gallery, or take a new pho
 
 Two side-by-side buttons on the bill editor, each wired to its own hidden file input:
 
-| Button | Input | Behavior |
-|--------|-------|----------|
-| **От галерията** | `accept="image/*,.heic,.heif"` (no `capture`) | Native gallery / file picker |
-| **Снимай** | same `accept` + `capture="environment"` | Opens rear camera immediately on mobile |
+| Button           | Input                                         | Behavior                                |
+| ---------------- | --------------------------------------------- | --------------------------------------- |
+| **От галерията** | `accept="image/*,.heic,.heif"` (no `capture`) | Native gallery / file picker            |
+| **Снимай**       | same `accept` + `capture="environment"`       | Opens rear camera immediately on mobile |
 
 Shared `handleReceiptChange` → `prepareReceiptImage` → Convex upload → `receiptStorageId`.
 
 ### Expected platform behavior
 
-| Platform | Behavior after change |
-|----------|------------------------|
-| iOS Safari | Action sheet: Take Photo, Photo Library, Browse |
-| Android Chrome | Picker with Camera and Gallery/Files options |
-| Desktop | Standard file dialog (select image file; no live camera) |
+| Platform       | Behavior after change                                    |
+| -------------- | -------------------------------------------------------- |
+| iOS Safari     | Action sheet: Take Photo, Photo Library, Browse          |
+| Android Chrome | Picker with Camera and Gallery/Files options             |
+| Desktop        | Standard file dialog (select image file; no live camera) |
 
 ### UI copy
 

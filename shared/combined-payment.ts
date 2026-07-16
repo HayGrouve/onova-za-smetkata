@@ -54,8 +54,13 @@ export type PaymentRequestTransferState = CoveredPaymentRequest & {
   transferInitiatedAt?: number
 }
 
-export function getCoveredParticipantIds(request: CoveredPaymentRequest): string[] {
-  if (request.coveredParticipantIds && request.coveredParticipantIds.length > 0) {
+export function getCoveredParticipantIds(
+  request: CoveredPaymentRequest,
+): string[] {
+  if (
+    request.coveredParticipantIds &&
+    request.coveredParticipantIds.length > 0
+  ) {
     return request.coveredParticipantIds
   }
   if (request.coveredParticipantId) {
@@ -64,7 +69,9 @@ export function getCoveredParticipantIds(request: CoveredPaymentRequest): string
   return []
 }
 
-export function isCombinedPaymentRequest(request: CoveredPaymentRequest): boolean {
+export function isCombinedPaymentRequest(
+  request: CoveredPaymentRequest,
+): boolean {
   return getCoveredParticipantIds(request).length > 0
 }
 
@@ -104,7 +111,10 @@ export function validateInitiateTransfer(
     return { ok: false, message: COMBINED_PAYMENT_MESSAGES.requestNotPending }
   }
   if (isSoloPaymentRequest(request)) {
-    return { ok: false, message: COMBINED_PAYMENT_MESSAGES.transferNotInitiated }
+    return {
+      ok: false,
+      message: COMBINED_PAYMENT_MESSAGES.transferNotInitiated,
+    }
   }
   if (request.transferInitiatedAt != null) {
     return {
@@ -153,7 +163,10 @@ function validateCoveredParticipantIds(
     }
     const coveredAmountCents = participantRemainingCents(totals, coveredId)
     if (coveredAmountCents <= 0) {
-      return { ok: false, message: COMBINED_PAYMENT_MESSAGES.coveredAlreadyPaid }
+      return {
+        ok: false,
+        message: COMBINED_PAYMENT_MESSAGES.coveredAlreadyPaid,
+      }
     }
     coveredAmountsByParticipant[coveredId] = coveredAmountCents
   }
@@ -205,7 +218,9 @@ export function validateCombinedPaymentCreate(
 export function validateUpdateCovered(
   input: CombinedPaymentCreateInput,
   ctx: CombinedPaymentUpdateContext,
-): ({ ok: true } & CombinedPaymentCreateResult) | { ok: false; message: string } {
+):
+  | ({ ok: true } & CombinedPaymentCreateResult)
+  | { ok: false; message: string } {
   if (ctx.transferInitiatedAt != null) {
     return {
       ok: false,
@@ -257,17 +272,22 @@ export function validateCombinedPaymentConfirm(
   )) {
     const remaining = ctx.coveredRemainingsByParticipant[participantId] ?? 0
     if (amountCents > remaining) {
-      return { ok: false, message: COMBINED_PAYMENT_MESSAGES.coveredAlreadyPaid }
+      return {
+        ok: false,
+        message: COMBINED_PAYMENT_MESSAGES.coveredAlreadyPaid,
+      }
     }
   }
 
   return { ok: true }
 }
 
-export function getCoveredAmountsFromRequest(request: CoveredPaymentRequest & {
-  coveredAmountCents?: number
-  coveredAmountsByParticipant?: Record<string, number>
-}): Record<string, number> {
+export function getCoveredAmountsFromRequest(
+  request: CoveredPaymentRequest & {
+    coveredAmountCents?: number
+    coveredAmountsByParticipant?: Record<string, number>
+  },
+): Record<string, number> {
   if (
     request.coveredAmountsByParticipant &&
     Object.keys(request.coveredAmountsByParticipant).length > 0

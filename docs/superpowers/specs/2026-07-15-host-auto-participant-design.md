@@ -25,17 +25,17 @@ Guests keep Revolut/IBAN and combined-pay flows unchanged. Host still confirms g
 
 ## UX decisions
 
-| Topic | Choice |
-|-------|--------|
-| Host identity storage | `paymentSettings.hostDisplayName` |
-| Auto-add timing | At bill create only (when name is set) |
-| Host ↔ bill link | `bills.hostParticipantId` (not name-string matching) |
-| Join visibility | Show host name, greyed, labeled „домакин“, not tappable |
-| Host claim entry | Editor shortcut **Моите артикули** (Approach A) |
-| Host pay UI | **Плати** only — no Revolut, no IBAN, no „Плати и за“ |
-| Host pay effect | Immediate `payments` insert for remaining; no combined-payment banner |
-| Settings rename | Affects new bills only; does not rewrite existing bills |
-| Backfill existing bills | Out of scope for v1 |
+| Topic                   | Choice                                                                |
+| ----------------------- | --------------------------------------------------------------------- |
+| Host identity storage   | `paymentSettings.hostDisplayName`                                     |
+| Auto-add timing         | At bill create only (when name is set)                                |
+| Host ↔ bill link        | `bills.hostParticipantId` (not name-string matching)                  |
+| Join visibility         | Show host name, greyed, labeled „домакин“, not tappable               |
+| Host claim entry        | Editor shortcut **Моите артикули** (Approach A)                       |
+| Host pay UI             | **Плати** only — no Revolut, no IBAN, no „Плати и за“                 |
+| Host pay effect         | Immediate `payments` insert for remaining; no combined-payment banner |
+| Settings rename         | Affects new bills only; does not rewrite existing bills               |
+| Backfill existing bills | Out of scope for v1                                                   |
 
 ---
 
@@ -173,16 +173,16 @@ bills: {
 
 ## Edge cases
 
-| Case | Behavior |
-|------|----------|
-| No `hostDisplayName` | No auto-add; no claim shortcut |
-| Host participant removed | Clear `hostParticipantId`; shortcut gone |
-| Another participant same name | Only `hostParticipantId` is greyed |
-| Плати with €0 remaining | Disabled / no-op |
-| Partial payments already on host | Плати pays remaining only |
-| Settings name changed later | New bills only |
-| Finalize | Unchanged; host items must be assigned like anyone else’s |
-| Friend groups / recent names | Unrelated; auto-add on create is separate |
+| Case                             | Behavior                                                  |
+| -------------------------------- | --------------------------------------------------------- |
+| No `hostDisplayName`             | No auto-add; no claim shortcut                            |
+| Host participant removed         | Clear `hostParticipantId`; shortcut gone                  |
+| Another participant same name    | Only `hostParticipantId` is greyed                        |
+| Плати with €0 remaining          | Disabled / no-op                                          |
+| Partial payments already on host | Плати pays remaining only                                 |
+| Settings name changed later      | New bills only                                            |
+| Finalize                         | Unchanged; host items must be assigned like anyone else’s |
+| Friend groups / recent names     | Unrelated; auto-add on create is separate                 |
 
 ---
 
@@ -221,17 +221,17 @@ bills: {
 
 ## Files (expected touch points)
 
-| Area | Files |
-|------|-------|
-| Schema | `convex/schema.ts` |
-| Settings | `convex/paymentSettings.ts`, `shared/payment-settings-schema.ts`, payment settings UI |
-| Bills | `convex/bills.ts` |
-| Participants | `convex/participants.ts` (clear host link on remove) |
-| Guest join | `src/routes/bills/$billId/join.tsx`, guest bill query shape |
-| Claim | `src/routes/bills/$billId/claim.tsx`, `guest-claim-footer.tsx` (host variant) |
-| Editor | `src/routes/bills/$billId/index.tsx` (shortcut) |
-| Payments | `convex/payments.ts` (`markHostPaid`) |
-| Tests | settings schema tests, e2e host claim + join grey |
+| Area         | Files                                                                                 |
+| ------------ | ------------------------------------------------------------------------------------- |
+| Schema       | `convex/schema.ts`                                                                    |
+| Settings     | `convex/paymentSettings.ts`, `shared/payment-settings-schema.ts`, payment settings UI |
+| Bills        | `convex/bills.ts`                                                                     |
+| Participants | `convex/participants.ts` (clear host link on remove)                                  |
+| Guest join   | `src/routes/bills/$billId/join.tsx`, guest bill query shape                           |
+| Claim        | `src/routes/bills/$billId/claim.tsx`, `guest-claim-footer.tsx` (host variant)         |
+| Editor       | `src/routes/bills/$billId/index.tsx` (shortcut)                                       |
+| Payments     | `convex/payments.ts` (`markHostPaid`)                                                 |
+| Tests        | settings schema tests, e2e host claim + join grey                                     |
 
 ---
 

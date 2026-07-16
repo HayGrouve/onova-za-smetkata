@@ -79,15 +79,11 @@ export function PaymentRow({
       <div className="grid grid-cols-3 gap-2 text-sm text-muted-foreground">
         <div>
           <p className="text-xs">Дължи</p>
-          <p className="money text-foreground">
-            {formatEur(totals.owedCents)}
-          </p>
+          <p className="money text-foreground">{formatEur(totals.owedCents)}</p>
         </div>
         <div>
           <p className="text-xs">Платено</p>
-          <p className="money text-foreground">
-            {formatEur(totals.paidCents)}
-          </p>
+          <p className="money text-foreground">{formatEur(totals.paidCents)}</p>
         </div>
         <div>
           <p className="flex items-center gap-1 text-xs">
@@ -106,9 +102,7 @@ export function PaymentRow({
               {formatEur(remainingCents)}
             </button>
           ) : (
-            <p className="money text-foreground">
-              {formatEur(remainingCents)}
-            </p>
+            <p className="money text-foreground">{formatEur(remainingCents)}</p>
           )}
         </div>
       </div>

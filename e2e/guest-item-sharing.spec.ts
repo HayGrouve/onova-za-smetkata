@@ -18,9 +18,9 @@ async function joinAsGuest(
   const context = await browser.newContext()
   const page = await context.newPage()
   await page.goto(joinUrl)
-  await expect(
-    page.getByRole('heading', { name: 'Кой сте вие?' }),
-  ).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByRole('heading', { name: 'Кой сте вие?' })).toBeVisible(
+    { timeout: 30_000 },
+  )
   await page.getByRole('button', { name: participantName }).click()
   await expect(page).toHaveURL(new RegExp(`/bills/${billId}/claim`))
   return { context, page }
@@ -30,14 +30,17 @@ async function claimSharedQty1Item(guestPage: Page, itemName: string) {
   await claimQty1Item(guestPage, itemName)
 }
 
-test('three guests share one qty=1 item with equal split', async ({ browser }) => {
+test('three guests share one qty=1 item with equal split', async ({
+  browser,
+}) => {
   const stamp = Date.now()
   const participantA = `Alice ${stamp}`
   const participantB = `Bob ${stamp}`
   const participantC = `Carol ${stamp}`
   const itemName = '1L Напитка'
 
-  const { context: hostContext, page: hostPage } = await openHostContext(browser)
+  const { context: hostContext, page: hostPage } =
+    await openHostContext(browser)
   await hostPage.getByRole('button', { name: 'Нова сметка' }).click()
   await goToBillStep(hostPage, 2)
 

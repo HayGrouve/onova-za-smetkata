@@ -101,9 +101,10 @@ export function parsePaymentSettingsInput(input: PaymentSettingsFormInput) {
   return paymentSettingsFormSchema.safeParse(input)
 }
 
-export function formatPaymentSettingsErrors(
-  error: z.ZodError,
-): { revolutUsername?: string; iban?: string } {
+export function formatPaymentSettingsErrors(error: z.ZodError): {
+  revolutUsername?: string
+  iban?: string
+} {
   const fieldErrors: { revolutUsername?: string; iban?: string } = {}
 
   for (const issue of error.issues) {

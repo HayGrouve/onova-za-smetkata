@@ -26,25 +26,27 @@
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `package.json` / lockfile | Add `vaul` dependency |
-| `src/components/ui/drawer.tsx` | Thin Vaul wrappers (`Drawer`, `DrawerContent`, …) with project aliases |
-| `src/lib/claim-share-drawer.ts` | Pure snap helpers (testable) |
-| `src/lib/claim-share-drawer.test.ts` | Vitest for snap helpers |
-| `src/components/bills/claim-share-drawer.tsx` | Shared shell: snaps, handle, scrim, spacer, slots |
-| `src/components/bills/host-claim-footer.tsx` | Compose shell; host summary in peek; lines in details |
-| `src/components/bills/guest-claim-footer.tsx` | Compose shell; chips in details; pay + pending in summary |
+| File                                          | Responsibility                                                         |
+| --------------------------------------------- | ---------------------------------------------------------------------- |
+| `package.json` / lockfile                     | Add `vaul` dependency                                                  |
+| `src/components/ui/drawer.tsx`                | Thin Vaul wrappers (`Drawer`, `DrawerContent`, …) with project aliases |
+| `src/lib/claim-share-drawer.ts`               | Pure snap helpers (testable)                                           |
+| `src/lib/claim-share-drawer.test.ts`          | Vitest for snap helpers                                                |
+| `src/components/bills/claim-share-drawer.tsx` | Shared shell: snaps, handle, scrim, spacer, slots                      |
+| `src/components/bills/host-claim-footer.tsx`  | Compose shell; host summary in peek; lines in details                  |
+| `src/components/bills/guest-claim-footer.tsx` | Compose shell; chips in details; pay + pending in summary              |
 
 ---
 
 ### Task 1: Vaul dependency + UI drawer wrappers
 
 **Files:**
+
 - Modify: `package.json` (via pnpm)
 - Create: `src/components/ui/drawer.tsx`
 
 **Interfaces:**
+
 - Produces: `Drawer`, `DrawerPortal`, `DrawerOverlay`, `DrawerTrigger`, `DrawerClose`, `DrawerContent`, `DrawerHeader`, `DrawerFooter`, `DrawerTitle`, `DrawerDescription` — re-export/wrap `vaul` primitives styled like existing sheet (zinc tokens, `sticky-surface` where appropriate).
 
 - [ ] **Step 1: Install vaul**
@@ -134,10 +136,12 @@ EOF
 ### Task 2: Snap helpers (TDD)
 
 **Files:**
+
 - Create: `src/lib/claim-share-drawer.ts`
 - Create: `src/lib/claim-share-drawer.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `CLAIM_SHARE_EXPANDED_FRACTION = 0.7` (number snap = fraction of viewport)
   - `buildClaimShareSnapPoints(peekHeightPx: number): Array<number | string>`  
@@ -236,10 +240,12 @@ EOF
 ### Task 3: `ClaimShareDrawer` shell
 
 **Files:**
+
 - Create: `src/components/bills/claim-share-drawer.tsx`
 - Modify: none yet (footers in later tasks)
 
 **Interfaces:**
+
 - Consumes: `buildClaimShareSnapPoints`, `isClaimShareExpanded` from `#/lib/claim-share-drawer.ts`; Vaul via `#/components/ui/drawer.tsx`
 - Produces:
 
@@ -318,9 +324,9 @@ export function ClaimShareDrawer({
     () => buildClaimShareSnapPoints(peekHeightPx),
     [peekHeightPx],
   )
-  const [activeSnapPoint, setActiveSnapPoint] = useState<number | string | null>(
-    snapPoints[0]!,
-  )
+  const [activeSnapPoint, setActiveSnapPoint] = useState<
+    number | string | null
+  >(snapPoints[0]!)
 
   // ResizeObserver on peekChromeRef → setPeekHeightPx
   // Sync snapProp → activeSnapPoint
@@ -429,9 +435,11 @@ EOF
 ### Task 4: Wire `HostClaimFooter`
 
 **Files:**
+
 - Modify: `src/components/bills/host-claim-footer.tsx`
 
 **Interfaces:**
+
 - Consumes: `ClaimShareDrawer` from `#/components/bills/claim-share-drawer.tsx`
 - Keeps existing mutations (`toggle`, `setUnits`) and `ParticipantBreakdownContent` for lines
 
@@ -514,9 +522,11 @@ EOF
 ### Task 5: Wire `GuestClaimFooter`
 
 **Files:**
+
 - Modify: `src/components/bills/guest-claim-footer.tsx`
 
 **Interfaces:**
+
 - Consumes: `ClaimShareDrawer`
 - Payment handlers unchanged (`handleRevolut`, `handleCopyIban`, combined mutations)
 
@@ -568,15 +578,16 @@ EOF
 ### Task 6: Spec status + QA checklist
 
 **Files:**
+
 - Modify: `docs/superpowers/specs/2026-07-16-claim-share-drawer-design.md` (Status → Complete when done)
 
 - [ ] **Step 1: Walk success criteria from the spec**
 
-- [ ] Default claim view is a short peek; item list has most of the viewport  
-- [ ] Expand via swipe/tap without leaving the page  
-- [ ] Guest can pay from peek  
-- [ ] Guest and host share `ClaimShareDrawer`  
-- [ ] Scrim collapses to peek  
+- [ ] Default claim view is a short peek; item list has most of the viewport
+- [ ] Expand via swipe/tap without leaving the page
+- [ ] Guest can pay from peek
+- [ ] Guest and host share `ClaimShareDrawer`
+- [ ] Scrim collapses to peek
 - [ ] Safe-area padding OK on notched devices (or browser device mode)
 
 - [ ] **Step 2: Mark spec complete**
@@ -598,19 +609,19 @@ EOF
 
 ## Spec coverage check
 
-| Spec requirement | Task |
-|------------------|------|
-| Vaul snap drawer (not Base UI) | Task 1 |
-| Peek amount + pay; chips expanded-only | Tasks 4–5 |
-| Pending + Cancel in peek | Task 5 |
-| Sticky summary (Approach A) | Task 3 |
-| Never fully closes; default peek | Task 3 |
-| Scrim → peek | Task 3 |
-| Spacer = peek height | Task 3 |
-| Shared guest + host shell | Tasks 3–5 |
-| Payment APIs unchanged | Tasks 4–5 (layout only) |
-| Automated snap helper tests | Task 2 |
-| Manual gesture QA | Tasks 4–6 |
+| Spec requirement                       | Task                    |
+| -------------------------------------- | ----------------------- |
+| Vaul snap drawer (not Base UI)         | Task 1                  |
+| Peek amount + pay; chips expanded-only | Tasks 4–5               |
+| Pending + Cancel in peek               | Task 5                  |
+| Sticky summary (Approach A)            | Task 3                  |
+| Never fully closes; default peek       | Task 3                  |
+| Scrim → peek                           | Task 3                  |
+| Spacer = peek height                   | Task 3                  |
+| Shared guest + host shell              | Tasks 3–5               |
+| Payment APIs unchanged                 | Tasks 4–5 (layout only) |
+| Automated snap helper tests            | Task 2                  |
+| Manual gesture QA                      | Tasks 4–6               |
 
 ## Placeholder / consistency check
 

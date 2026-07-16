@@ -1,9 +1,5 @@
 import { useMutation, useQuery } from 'convex/react'
-import {
-  MoreHorizontalIcon,
-  UserPlusIcon,
-  XIcon,
-} from 'lucide-react'
+import { MoreHorizontalIcon, UserPlusIcon, XIcon } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { toast } from 'sonner'
@@ -70,10 +66,11 @@ export function ParticipantList({
   const removeAllGuests = useMutation(api.participants.removeAllGuests)
   const recentNames = useQuery(api.participants.listRecentNames, { limit: 12 })
   const friendGroups = useQuery(api.friendGroups.list, {})
-  const { groups: orderedFriendGroups, pinnedId: pinnedGroupId } = useMemo(() => {
-    if (!friendGroups) return { groups: [], pinnedId: null }
-    return sortFriendGroupsWithPinned(friendGroups, readLastFriendGroupId())
-  }, [friendGroups])
+  const { groups: orderedFriendGroups, pinnedId: pinnedGroupId } =
+    useMemo(() => {
+      if (!friendGroups) return { groups: [], pinnedId: null }
+      return sortFriendGroupsWithPinned(friendGroups, readLastFriendGroupId())
+    }, [friendGroups])
   const { openNewFriendGroup } = useFriendGroups()
   const { confirm } = useConfirmAction()
 
@@ -81,8 +78,7 @@ export function ParticipantList({
     participants.map((p) => p.name.trim().toLowerCase()),
   )
   const guestParticipants = participants.filter(
-    (participant) =>
-      !isHostParticipant(participant._id, hostParticipantId),
+    (participant) => !isHostParticipant(participant._id, hostParticipantId),
   )
   const quickAddNames =
     recentNames?.filter(
@@ -192,7 +188,10 @@ export function ParticipantList({
 
   return (
     <div className="flex flex-col gap-4">
-      <section aria-label="Участници на сметката" className="flex flex-col gap-2">
+      <section
+        aria-label="Участници на сметката"
+        className="flex flex-col gap-2"
+      >
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-medium text-muted-foreground">
             На сметката
@@ -365,7 +364,11 @@ export function ParticipantList({
                     autoComplete="off"
                     aria-invalid={Boolean(nameError)}
                   />
-                  <Button type="submit" className="h-11" disabled={!name.trim()}>
+                  <Button
+                    type="submit"
+                    className="h-11"
+                    disabled={!name.trim()}
+                  >
                     <UserPlusIcon className={ICON.button} aria-hidden />
                     Добави
                   </Button>

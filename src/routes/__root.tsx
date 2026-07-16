@@ -126,25 +126,25 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         >
           <ConfirmActionProvider>
             <TooltipProvider>
-            <ConvexProvider>
-              <SentryInit />
-              <ServiceWorkerRegister />
-              {children}
-              <Toaster />
-            {import.meta.env.DEV && (
-              <TanStackDevtools
-                config={{
-                  position: 'bottom-right',
-                }}
-                plugins={[
-                  {
-                    name: 'Tanstack Router',
-                    render: <TanStackRouterDevtoolsPanel />,
-                  },
-                ]}
-              />
-            )}
-            </ConvexProvider>
+              <ConvexProvider>
+                <SentryInit />
+                <ServiceWorkerRegister />
+                {children}
+                <Toaster />
+                {import.meta.env.DEV && (
+                  <TanStackDevtools
+                    config={{
+                      position: 'bottom-right',
+                    }}
+                    plugins={[
+                      {
+                        name: 'Tanstack Router',
+                        render: <TanStackRouterDevtoolsPanel />,
+                      },
+                    ]}
+                  />
+                )}
+              </ConvexProvider>
             </TooltipProvider>
           </ConfirmActionProvider>
         </ThemeProvider>

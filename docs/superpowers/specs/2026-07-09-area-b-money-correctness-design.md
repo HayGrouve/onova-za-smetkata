@@ -39,13 +39,13 @@ The core problem: split and validation logic lives in **three places** (`src/lib
 
 **Chosen approach:** Extract pure TypeScript into `shared/bill-calculations.ts` at repo root.
 
-| Principle | Decision |
-|-----------|----------|
-| Where does math live? | `shared/bill-calculations.ts` — no Convex or React imports |
-| Client imports | `src/lib/bill-calculations.ts` becomes a thin re-export (preserve existing `#/lib/bill-calculations.ts` paths) |
-| Convex imports | `convex/lib/bill-calculations.ts` re-exports from `../../shared/bill-calculations.ts` |
-| Tests | Primary suite at `shared/bill-calculations.test.ts`; existing `src/lib/bill-calculations.test.ts` can re-export or be migrated |
-| `splitUnits` | Merge `convex/lib/splitUnits.ts` duplicate into shared module; delete Convex copy |
+| Principle             | Decision                                                                                                                       |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Where does math live? | `shared/bill-calculations.ts` — no Convex or React imports                                                                     |
+| Client imports        | `src/lib/bill-calculations.ts` becomes a thin re-export (preserve existing `#/lib/bill-calculations.ts` paths)                 |
+| Convex imports        | `convex/lib/bill-calculations.ts` re-exports from `../../shared/bill-calculations.ts`                                          |
+| Tests                 | Primary suite at `shared/bill-calculations.test.ts`; existing `src/lib/bill-calculations.test.ts` can re-export or be migrated |
+| `splitUnits`          | Merge `convex/lib/splitUnits.ts` duplicate into shared module; delete Convex copy                                              |
 
 **Why not Convex-only?** Client needs totals for summary, claim footer, sticky bar, and finalize preview — all must match server without a round-trip.
 
@@ -57,10 +57,10 @@ The core problem: split and validation logic lives in **three places** (`src/lib
 
 **Chosen model:** Each item is in exactly one mode — **cent-split** or **unit-split** — never mixed on the same item.
 
-| Mode | When | Storage | Example |
-|------|------|---------|---------|
-| **Cent-split** | `quantity === 1` OR no `units` on any assignment for that item | Assignments **without** `units` field | €12 pizza shared by 3 → €4 + €4 + €4 |
-| **Unit-split** | `quantity > 1` AND at least one assignment has `units` | All assignments for item **must** have `units` | 4 beers, 2 units to Alice |
+| Mode           | When                                                           | Storage                                        | Example                              |
+| -------------- | -------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------ |
+| **Cent-split** | `quantity === 1` OR no `units` on any assignment for that item | Assignments **without** `units` field          | €12 pizza shared by 3 → €4 + €4 + €4 |
+| **Unit-split** | `quantity > 1` AND at least one assignment has `units`         | All assignments for item **must** have `units` | 4 beers, 2 units to Alice            |
 
 **Rules:**
 
@@ -75,14 +75,14 @@ The core problem: split and validation logic lives in **three places** (`src/lib
 
 ## Threat / impact model
 
-| Risk | Before | After |
-|------|--------|-------|
-| Dashboard outstanding ≠ summary | 🔴 Separate inline algorithm in `listWithSummary` | ✅ Same `calculateBillTotals` |
-| Client says “can finalize”, server rejects | 🔴 Duplicated `validateBillForFinalize` | ✅ One function, shared tests |
-| Mixed units/cents on one item | 🟡 Lost cents | ✅ Normalized on write; migration for existing |
-| Reduce item quantity | 🟡 `assignedUnits > quantity` | ✅ Clamp/rebalance on update |
-| `assignAll` wired to UI | 🔴 qty=1 gives 100% to one person | ✅ Correct semantics before exposure |
-| Cent regression undetected | 🟡 Per-case tests only | ✅ Global reconciliation + edge-case matrix |
+| Risk                                       | Before                                            | After                                          |
+| ------------------------------------------ | ------------------------------------------------- | ---------------------------------------------- |
+| Dashboard outstanding ≠ summary            | 🔴 Separate inline algorithm in `listWithSummary` | ✅ Same `calculateBillTotals`                  |
+| Client says “can finalize”, server rejects | 🔴 Duplicated `validateBillForFinalize`           | ✅ One function, shared tests                  |
+| Mixed units/cents on one item              | 🟡 Lost cents                                     | ✅ Normalized on write; migration for existing |
+| Reduce item quantity                       | 🟡 `assignedUnits > quantity`                     | ✅ Clamp/rebalance on update                   |
+| `assignAll` wired to UI                    | 🔴 qty=1 gives 100% to one person                 | ✅ Correct semantics before exposure           |
+| Cent regression undetected                 | 🟡 Per-case tests only                            | ✅ Global reconciliation + edge-case matrix    |
 
 ---
 
@@ -100,8 +100,15 @@ The core problem: split and validation logic lives in **three places** (`src/lib
 import { calculateBillTotals } from './lib/bill-calculations'
 
 const totals = calculateBillTotals({
-  participants: participants.map((p) => ({ id: p._id, sortOrder: p.sortOrder })),
-  items: items.map((i) => ({ id: i._id, unitPriceCents: i.unitPriceCents, quantity: i.quantity })),
+  participants: participants.map((p) => ({
+    id: p._id,
+    sortOrder: p.sortOrder,
+  })),
+  items: items.map((i) => ({
+    id: i._id,
+    unitPriceCents: i.unitPriceCents,
+    quantity: i.quantity,
+  })),
   assignments: assignments.map((a) => ({
     itemId: a.itemId,
     participantId: a.participantId,
@@ -122,13 +129,13 @@ const totalOutstandingCents = Object.values(totals.byParticipant).reduce(
 
 ### Files
 
-| File | Change |
-|------|--------|
-| `shared/bill-calculations.ts` | New — move logic from `src/lib/bill-calculations.ts` |
-| `src/lib/bill-calculations.ts` | Re-export from `shared/` |
-| `convex/lib/bill-calculations.ts` | Re-export from `../../shared/bill-calculations.ts` |
-| `convex/bills.ts` | Delete ~70 lines inline math; call shared function |
-| `convex/lib/splitUnits.ts` | Delete — use shared `splitUnits` |
+| File                              | Change                                               |
+| --------------------------------- | ---------------------------------------------------- |
+| `shared/bill-calculations.ts`     | New — move logic from `src/lib/bill-calculations.ts` |
+| `src/lib/bill-calculations.ts`    | Re-export from `shared/`                             |
+| `convex/lib/bill-calculations.ts` | Re-export from `../../shared/bill-calculations.ts`   |
+| `convex/bills.ts`                 | Delete ~70 lines inline math; call shared function   |
+| `convex/lib/splitUnits.ts`        | Delete — use shared `splitUnits`                     |
 
 ### Acceptance criteria
 
@@ -226,10 +233,10 @@ Defer payment removal (LIF-2) to Wave 3/4.
 
 **Write-path normalization** in `assignments.toggle`, `assignments.setUnits`, and `syncEvenAssignments`:
 
-| Item state | Action |
-|------------|--------|
-| `quantity === 1` | Insert/delete assignments **without** `units`; use cent-split in calculator |
-| `quantity > 1`, first assignment | If toggling on: use `units: 1` for first assignee; subsequent toggles use units |
+| Item state                                     | Action                                                                                                     |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `quantity === 1`                               | Insert/delete assignments **without** `units`; use cent-split in calculator                                |
+| `quantity > 1`, first assignment               | If toggling on: use `units: 1` for first assignee; subsequent toggles use units                            |
 | `quantity > 1`, existing cent-split (no units) | On next mutation, migrate item to unit mode: distribute `splitUnits(quantity, n)` across current assignees |
 
 **Backfill** (optional internal mutation `backfill:normalizeAssignmentModes`):
@@ -314,42 +321,42 @@ if (assignedUnits > newQuantity) {
 
 ### Phase B1 — Consolidation (MON-1 + MON-2)
 
-| Task | Finding | Size |
-|------|---------|------|
-| Create `shared/bill-calculations.ts` | MON-1, MON-2 | M |
-| Wire client + Convex re-exports | MON-1, MON-2 | S |
-| Replace `listWithSummary` inline math | MON-1 | S |
-| Delete duplicate `validateBillForFinalize` body | MON-2 | S |
-| `assertBillCanFinalize` → `ConvexError` | LIF-3 overlap | S |
+| Task                                            | Finding       | Size |
+| ----------------------------------------------- | ------------- | ---- |
+| Create `shared/bill-calculations.ts`            | MON-1, MON-2  | M    |
+| Wire client + Convex re-exports                 | MON-1, MON-2  | S    |
+| Replace `listWithSummary` inline math           | MON-1         | S    |
+| Delete duplicate `validateBillForFinalize` body | MON-2         | S    |
+| `assertBillCanFinalize` → `ConvexError`         | LIF-3 overlap | S    |
 
 ### Phase B2 — Test harness (MON-6)
 
-| Task | Finding | Size |
-|------|---------|------|
-| Reconciliation + edge-case tests | MON-6 | M |
-| `payments.add` validation | MON-6, LIF-3 | S |
-| Parity test: dashboard vs calculator | MON-1, MON-6 | S |
+| Task                                 | Finding      | Size |
+| ------------------------------------ | ------------ | ---- |
+| Reconciliation + edge-case tests     | MON-6        | M    |
+| `payments.add` validation            | MON-6, LIF-3 | S    |
+| Parity test: dashboard vs calculator | MON-1, MON-6 | S    |
 
 ### Phase B3 — Split semantics (MON-3 + MON-4 + MON-5)
 
-| Task | Finding | Size |
-|------|---------|------|
-| Normalize write paths in `assignments.ts` | MON-3, MON-4 | M |
-| Fix `syncEvenAssignments` qty=1 branch | MON-4 | S |
-| Quantity decrease guard in `items.update` | MON-5 | S |
-| Optional `backfill:normalizeAssignmentModes` | MON-3 | S |
+| Task                                         | Finding      | Size |
+| -------------------------------------------- | ------------ | ---- |
+| Normalize write paths in `assignments.ts`    | MON-3, MON-4 | M    |
+| Fix `syncEvenAssignments` qty=1 branch       | MON-4        | S    |
+| Quantity decrease guard in `items.update`    | MON-5        | S    |
+| Optional `backfill:normalizeAssignmentModes` | MON-3        | S    |
 
 ---
 
 ## Files touched (summary)
 
-| Area | Files |
-|------|-------|
-| **New** | `shared/bill-calculations.ts`, `shared/bill-calculations.test.ts`, `convex/lib/bill-calculations.ts` |
+| Area       | Files                                                                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **New**    | `shared/bill-calculations.ts`, `shared/bill-calculations.test.ts`, `convex/lib/bill-calculations.ts`                                                         |
 | **Modify** | `src/lib/bill-calculations.ts`, `convex/bills.ts`, `convex/lib/validateBillForFinalize.ts`, `convex/assignments.ts`, `convex/items.ts`, `convex/payments.ts` |
-| **Delete** | `convex/lib/splitUnits.ts` (merged into shared) |
-| **Tests** | Migrate/extend `src/lib/bill-calculations.test.ts` |
-| **Docs** | Update audit remediation table when complete |
+| **Delete** | `convex/lib/splitUnits.ts` (merged into shared)                                                                                                              |
+| **Tests**  | Migrate/extend `src/lib/bill-calculations.test.ts`                                                                                                           |
+| **Docs**   | Update audit remediation table when complete                                                                                                                 |
 
 ---
 
@@ -372,11 +379,11 @@ pnpm run preflight     # full gate before merge
 
 ## Relationship to future waves
 
-| Wave | Area | Depends on Area B |
-|------|------|-------------------|
-| **Wave 3** | Area C UX (UX-1–UX-7) | UX-4 equal-split shortcut needs MON-4 `assignAll` fix |
+| Wave         | Area                      | Depends on Area B                                      |
+| ------------ | ------------------------- | ------------------------------------------------------ |
+| **Wave 3**   | Area C UX (UX-1–UX-7)     | UX-4 equal-split shortcut needs MON-4 `assignAll` fix  |
 | **Wave 3/4** | UX-6 / LIF-2 payment undo | MON-6 payment validation is prerequisite for safe undo |
-| **Wave 4** | Area D lifecycle | LIF-3 error consistency partially done in B1/B2 |
+| **Wave 4**   | Area D lifecycle          | LIF-3 error consistency partially done in B1/B2        |
 
 ---
 
@@ -384,25 +391,25 @@ pnpm run preflight     # full gate before merge
 
 When Area B ships, update `docs/superpowers/specs/2026-07-08-application-audit.md`:
 
-| ID | Target status |
-|----|---------------|
-| MON-1 | ✅ Done |
-| MON-2 | ✅ Done |
-| MON-3 | ✅ Done |
+| ID    | Target status                 |
+| ----- | ----------------------------- |
+| MON-1 | ✅ Done                       |
+| MON-2 | ✅ Done                       |
+| MON-3 | ✅ Done                       |
 | MON-4 | ✅ Done (backend only; no UI) |
-| MON-5 | ✅ Done |
-| MON-6 | ✅ Done |
+| MON-5 | ✅ Done                       |
+| MON-6 | ✅ Done                       |
 
 ---
 
 ## Open questions (defaults chosen — change before implementation if needed)
 
-| Question | Default in this spec |
-|----------|----------------------|
-| Overpayment on `payments.add` | Hard reject |
+| Question                            | Default in this spec               |
+| ----------------------------------- | ---------------------------------- |
+| Overpayment on `payments.add`       | Hard reject                        |
 | Quantity decrease with excess units | Block with error (no silent clamp) |
-| Mixed-mode existing data | Optional backfill mutation |
-| `assignAll` UI | Not in Area B |
+| Mixed-mode existing data            | Optional backfill mutation         |
+| `assignAll` UI                      | Not in Area B                      |
 
 ---
 

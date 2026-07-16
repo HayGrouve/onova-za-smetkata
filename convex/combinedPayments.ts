@@ -596,10 +596,12 @@ export const confirm = mutation({
             participantId: request.payerParticipantId,
             amountCents: request.payerAmountCents,
           },
-          ...Object.entries(coveredAmounts).map(([participantId, amountCents]) => ({
-            participantId: participantId as Id<'participants'>,
-            amountCents,
-          })),
+          ...Object.entries(coveredAmounts).map(
+            ([participantId, amountCents]) => ({
+              participantId: participantId as Id<'participants'>,
+              amountCents,
+            }),
+          ),
         ]
 
     for (const entry of entries) {

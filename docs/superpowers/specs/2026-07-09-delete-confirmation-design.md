@@ -38,12 +38,12 @@ Post-delete **„Отмени" undo toasts** on items and participants remain un
 
 **Chosen approach:** shadcn `AlertDialog` mounted once at app root via `ConfirmActionProvider`.
 
-| Principle | Decision |
-|-----------|----------|
-| Dialog component | `AlertDialog` (semantic confirm/cancel; backdrop dismiss = cancel) |
-| API | Imperative: `const confirmed = await confirm(options)` → `boolean` |
-| Copy | Centralized in `src/lib/destructive-action-copy.ts` |
-| Provider mount | `__root.tsx`, inside `ThemeProvider`, alongside `Toaster` |
+| Principle                    | Decision                                                            |
+| ---------------------------- | ------------------------------------------------------------------- |
+| Dialog component             | `AlertDialog` (semantic confirm/cancel; backdrop dismiss = cancel)  |
+| API                          | Imperative: `const confirmed = await confirm(options)` → `boolean`  |
+| Copy                         | Centralized in `src/lib/destructive-action-copy.ts`                 |
+| Provider mount               | `__root.tsx`, inside `ThemeProvider`, alongside `Toaster`           |
 | Existing bill-delete dialogs | Refactored to provider (remove local `Dialog` + `deleteOpen` state) |
 
 **Why not per-screen `Dialog`?** Bill delete already uses this pattern twice (`bill-card`, `bill-summary-content`). Scaling to 11 touch points duplicates markup and drifts copy.
@@ -54,18 +54,18 @@ Post-delete **„Отмени" undo toasts** on items and participants remain un
 
 ## Action inventory
 
-| # | Surface | Trigger | Has confirm today? | Post-action behavior |
-|---|---------|---------|-------------------|---------------------|
-| 1 | `bill-card` | Dropdown → Изтрий | ✅ Dialog | Navigate away |
-| 2 | `bill-summary-content` | Изтрий button | ✅ Dialog | Navigate away |
-| 3 | `item-list` | Trash icon per item | ❌ | Toast + „Отмени" (restore item) |
-| 4 | `participant-list` | Chip ✕ | ❌ | Toast + „Отмени" (re-add participant) |
-| 5 | `friend-group-editor-sheet` | „Изтрий групата" | ❌ | Close sheet |
-| 6 | `friend-group-editor-sheet` | Member chip ✕ (local draft) | ❌ | Local state only; saved on „Запази" |
-| 7 | `participant-breakdown-content` | Guest claim ✕ | ❌ | Assignment mutation |
-| 8 | `payment-actions` | „Отмени последно плащане" | ❌ | Refresh payment list |
-| 9 | `app-header-menu` | „Изход" (destructive menu item) | ❌ | Redirect to login |
-| 10 | `index.tsx` (bill editor) | Receipt „Замени" | ✅ Dialog | Scan/import flow |
+| #   | Surface                         | Trigger                         | Has confirm today? | Post-action behavior                  |
+| --- | ------------------------------- | ------------------------------- | ------------------ | ------------------------------------- |
+| 1   | `bill-card`                     | Dropdown → Изтрий               | ✅ Dialog          | Navigate away                         |
+| 2   | `bill-summary-content`          | Изтрий button                   | ✅ Dialog          | Navigate away                         |
+| 3   | `item-list`                     | Trash icon per item             | ❌                 | Toast + „Отмени" (restore item)       |
+| 4   | `participant-list`              | Chip ✕                          | ❌                 | Toast + „Отмени" (re-add participant) |
+| 5   | `friend-group-editor-sheet`     | „Изтрий групата"                | ❌                 | Close sheet                           |
+| 6   | `friend-group-editor-sheet`     | Member chip ✕ (local draft)     | ❌                 | Local state only; saved on „Запази"   |
+| 7   | `participant-breakdown-content` | Guest claim ✕                   | ❌                 | Assignment mutation                   |
+| 8   | `payment-actions`               | „Отмени последно плащане"       | ❌                 | Refresh payment list                  |
+| 9   | `app-header-menu`               | „Изход" (destructive menu item) | ❌                 | Redirect to login                     |
+| 10  | `index.tsx` (bill editor)       | Receipt „Замени"                | ✅ Dialog          | Scan/import flow                      |
 
 Item #10 may optionally migrate to the provider for consistency; copy is contextual enough that a dedicated dialog is acceptable if migration adds complexity.
 
@@ -89,6 +89,7 @@ confirm(options: ConfirmOptions): Promise<boolean>
 **Hook:** `useConfirmAction()` — throws if used outside provider.
 
 **Provider behavior:**
+
 - Only one dialog open at a time (new `confirm()` call while open resolves previous as `false` or queues — implement as reject/resolve previous pending promise as `false`).
 - Confirm button: `variant="destructive"` by default; disabled + `aria-busy` while `onConfirm` async work runs.
 - Dialog stays open until mutation resolves; closes on success or error.
@@ -121,17 +122,17 @@ confirm(options: ConfirmOptions): Promise<boolean>
 
 Defined in `src/lib/destructive-action-copy.ts`. Each export returns `ConfirmOptions`.
 
-| Action key | Title | Description | Confirm label |
-|------------|-------|-------------|---------------|
-| `bill.delete` | Изтриване на сметка? | Това действие е необратимо. Всички участници, артикули и плащания ще бъдат изтрити. | Изтрий сметката |
-| `item.delete` | Изтриване на артикул? | „{name}" ще бъде премахнат от сметката. | Изтрий |
-| `participant.remove` | Премахване на участник? | „{name}" и разпределенията му ще бъдат премахнати. | Премахни |
-| `friendGroup.delete` | Изтриване на групата? | Групата „{name}" ще бъде изтрита завинаги. | Изтрий групата |
-| `friendGroup.memberRemove` | Премахване от групата? | „{name}" ще бъде премахнат от списъка (промяната се записва при „Запази"). | Премахни |
-| `claim.unassign` | Премахване на артикул? | „{name}" ще бъде премахнат от вашата част. | Премахни |
-| `payment.undo` | Отмяна на последното плащане? | Последното записано плащане ще бъде отменено. | Отмени плащането |
-| `auth.signOut` | Изход от профила? | Ще бъдете изведени от акаунта си. | Изход |
-| `receipt.replace` | Ще изтриете съществуващите артикули | Артикулите имат разпределения между участници. Замяната ще изтрие съществуващите артикули и разпределенията им. Продължавате ли? | Замени |
+| Action key                 | Title                               | Description                                                                                                                      | Confirm label    |
+| -------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `bill.delete`              | Изтриване на сметка?                | Това действие е необратимо. Всички участници, артикули и плащания ще бъдат изтрити.                                              | Изтрий сметката  |
+| `item.delete`              | Изтриване на артикул?               | „{name}" ще бъде премахнат от сметката.                                                                                          | Изтрий           |
+| `participant.remove`       | Премахване на участник?             | „{name}" и разпределенията му ще бъдат премахнати.                                                                               | Премахни         |
+| `friendGroup.delete`       | Изтриване на групата?               | Групата „{name}" ще бъде изтрита завинаги.                                                                                       | Изтрий групата   |
+| `friendGroup.memberRemove` | Премахване от групата?              | „{name}" ще бъде премахнат от списъка (промяната се записва при „Запази").                                                       | Премахни         |
+| `claim.unassign`           | Премахване на артикул?              | „{name}" ще бъде премахнат от вашата част.                                                                                       | Премахни         |
+| `payment.undo`             | Отмяна на последното плащане?       | Последното записано плащане ще бъде отменено.                                                                                    | Отмени плащането |
+| `auth.signOut`             | Изход от профила?                   | Ще бъдете изведени от акаунта си.                                                                                                | Изход            |
+| `receipt.replace`          | Ще изтриете съществуващите артикули | Артикулите имат разпределения между участници. Замяната ще изтрие съществуващите артикули и разпределенията им. Продължавате ли? | Замени           |
 
 ---
 
@@ -143,7 +144,7 @@ Existing handler logic is unchanged. A confirm guard is inserted before it:
 async function handleDeleteWithConfirm(item: Doc<'items'>) {
   const confirmed = await confirm(getItemDeleteCopy(item.name))
   if (!confirmed) return
-  await handleDelete(item)  // existing mutation + undo toast
+  await handleDelete(item) // existing mutation + undo toast
 }
 ```
 
@@ -153,20 +154,20 @@ Trigger wiring changes from `onClick={() => void handleDelete(item)}` to `onClic
 
 ## Files
 
-| File | Responsibility |
-|------|----------------|
-| `src/components/ui/alert-dialog.tsx` | **new** — shadcn AlertDialog primitives |
-| `src/components/confirm-action-provider.tsx` | **new** — context, provider, hook, mounted dialog |
-| `src/lib/destructive-action-copy.ts` | **new** — copy templates + `{name}` interpolation |
-| `src/routes/__root.tsx` | Mount `ConfirmActionProvider` |
-| `src/components/bills/bill-card.tsx` | Refactor delete → provider |
-| `src/components/bills/bill-summary-content.tsx` | Refactor delete → provider |
-| `src/components/bills/item-list.tsx` | Confirm before item delete |
-| `src/components/bills/participant-list.tsx` | Confirm before participant remove |
-| `src/components/bills/friend-group-editor-sheet.tsx` | Confirm group delete + member remove |
-| `src/components/bills/participant-breakdown-content.tsx` | Confirm guest claim unassign |
-| `src/components/bills/payment-actions.tsx` | Confirm payment undo |
-| `src/components/layout/app-header-menu.tsx` | Confirm sign-out |
+| File                                                     | Responsibility                                    |
+| -------------------------------------------------------- | ------------------------------------------------- |
+| `src/components/ui/alert-dialog.tsx`                     | **new** — shadcn AlertDialog primitives           |
+| `src/components/confirm-action-provider.tsx`             | **new** — context, provider, hook, mounted dialog |
+| `src/lib/destructive-action-copy.ts`                     | **new** — copy templates + `{name}` interpolation |
+| `src/routes/__root.tsx`                                  | Mount `ConfirmActionProvider`                     |
+| `src/components/bills/bill-card.tsx`                     | Refactor delete → provider                        |
+| `src/components/bills/bill-summary-content.tsx`          | Refactor delete → provider                        |
+| `src/components/bills/item-list.tsx`                     | Confirm before item delete                        |
+| `src/components/bills/participant-list.tsx`              | Confirm before participant remove                 |
+| `src/components/bills/friend-group-editor-sheet.tsx`     | Confirm group delete + member remove              |
+| `src/components/bills/participant-breakdown-content.tsx` | Confirm guest claim unassign                      |
+| `src/components/bills/payment-actions.tsx`               | Confirm payment undo                              |
+| `src/components/layout/app-header-menu.tsx`              | Confirm sign-out                                  |
 
 ---
 

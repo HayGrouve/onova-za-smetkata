@@ -18,7 +18,10 @@ export interface FriendGroupsSheetProps {
   onOpenChange: (open: boolean) => void
 }
 
-export function FriendGroupsSheet({ open, onOpenChange }: FriendGroupsSheetProps) {
+export function FriendGroupsSheet({
+  open,
+  onOpenChange,
+}: FriendGroupsSheetProps) {
   const groups = useQuery(api.friendGroups.listAll, open ? {} : 'skip')
   const [editorOpen, setEditorOpen] = useState(false)
   const [returnToSettings, setReturnToSettings] = useState(false)

@@ -189,7 +189,8 @@ function formatParticipantSection(
   } else {
     for (const line of detail.lines) {
       const label = formatBreakdownLineLabel(line, participantCount)
-      const suffix = line.kind === 'item' ? formatBreakdownLineSuffix(line, labels) : ''
+      const suffix =
+        line.kind === 'item' ? formatBreakdownLineSuffix(line, labels) : ''
       lines.push(
         `  • ${label}${suffix} — ${formatShareAmount(line.amountCents)}`,
       )

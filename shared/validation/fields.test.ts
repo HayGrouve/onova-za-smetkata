@@ -26,9 +26,9 @@ describe('personNameSchema', () => {
   })
 
   it('rejects names over max length', () => {
-    expect(personNameSchema.safeParse('x'.repeat(PERSON_NAME_MAX + 1)).success).toBe(
-      false,
-    )
+    expect(
+      personNameSchema.safeParse('x'.repeat(PERSON_NAME_MAX + 1)).success,
+    ).toBe(false)
   })
 })
 

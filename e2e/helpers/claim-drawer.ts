@@ -9,7 +9,10 @@ export async function expandClaimShareDrawer(page: Page) {
 }
 
 /** Toggle a combined-pay chip and wait for the server-backed combined request. */
-export async function selectCombinedPayChip(page: Page, participantName: string) {
+export async function selectCombinedPayChip(
+  page: Page,
+  participantName: string,
+) {
   await expandClaimShareDrawer(page)
   const chip = page
     .getByTestId('claim-share-details')
@@ -23,23 +26,22 @@ export async function selectCombinedPayChip(page: Page, participantName: string)
 export async function initiateRevolutPayment(page: Page) {
   await expect(async () => {
     await page.getByRole('button', { name: 'Revolut' }).click()
-    await expect(
-      page.getByText('Чака потвърждение от домакина'),
-    ).toBeVisible({ timeout: 2_000 })
+    await expect(page.getByText('Чака потвърждение от домакина')).toBeVisible({
+      timeout: 2_000,
+    })
   }).toPass({ timeout: 20_000 })
 }
 
 export async function claimHalfOfItem(page: Page, itemName: string) {
-  const itemRow = page.locator('.guest-claim-card').filter({ hasText: itemName })
+  const itemRow = page
+    .locator('.guest-claim-card')
+    .filter({ hasText: itemName })
   await itemRow.getByLabel('Увеличи').click()
   await expect(page.getByText('Разбивка на дяла')).toBeVisible()
 }
 
 export async function claimQty1Item(page: Page, itemName: string) {
-  await page
-    .locator('.guest-claim-card')
-    .filter({ hasText: itemName })
-    .click()
+  await page.locator('.guest-claim-card').filter({ hasText: itemName }).click()
   await expect(page.getByText('Разбивка на дяла')).toBeVisible()
 }
 

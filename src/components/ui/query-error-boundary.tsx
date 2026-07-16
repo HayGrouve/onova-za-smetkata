@@ -1,5 +1,5 @@
-import { Component  } from 'react'
-import type {ReactNode} from 'react';
+import { Component } from 'react'
+import type { ReactNode } from 'react'
 import { QueryErrorPanel } from '#/components/ui/query-error-panel.tsx'
 
 interface QueryErrorBoundaryProps {

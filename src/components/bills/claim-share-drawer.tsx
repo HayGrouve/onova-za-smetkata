@@ -6,11 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import {
-  Drawer,
-  DrawerContent,
-  DrawerTitle,
-} from '#/components/ui/drawer.tsx'
+import { Drawer, DrawerContent, DrawerTitle } from '#/components/ui/drawer.tsx'
 import {
   buildClaimShareSnapPoints,
   claimShareExpandedHeightPx,
@@ -25,8 +21,9 @@ function readExpandedHeightPx(): number {
     typeof window !== 'undefined' ? window.innerHeight : 800
   const rootFontSizePx =
     typeof window !== 'undefined'
-      ? Number.parseFloat(getComputedStyle(document.documentElement).fontSize) ||
-        16
+      ? Number.parseFloat(
+          getComputedStyle(document.documentElement).fontSize,
+        ) || 16
       : 16
   return claimShareExpandedHeightPx(viewportHeight, rootFontSizePx)
 }
@@ -63,9 +60,14 @@ export function ClaimShareDrawer({
     () => buildClaimShareSnapPoints(peekHeightPx, expandedHeightPx),
     [peekHeightPx, expandedHeightPx],
   )
-  const [activeSnapPoint, setActiveSnapPoint] = useState<number | string | null>(
+  const [activeSnapPoint, setActiveSnapPoint] = useState<
+    number | string | null
+  >(
     () =>
-      buildClaimShareSnapPoints(initialPeekHeightPx, readExpandedHeightPx())[0]!,
+      buildClaimShareSnapPoints(
+        initialPeekHeightPx,
+        readExpandedHeightPx(),
+      )[0]!,
   )
 
   useEffect(() => {
@@ -120,9 +122,7 @@ export function ClaimShareDrawer({
   function commitSnapPoint(next: number | string | null) {
     setActiveSnapPoint(next)
     if (next == null) return
-    onSnapChange?.(
-      isClaimShareExpanded(next, snapPoints) ? 'expanded' : 'peek',
-    )
+    onSnapChange?.(isClaimShareExpanded(next, snapPoints) ? 'expanded' : 'peek')
   }
 
   function toggleSnap() {
@@ -165,7 +165,10 @@ export function ClaimShareDrawer({
               height: expandedHeightPx,
             }}
           >
-            <div ref={headerRef} className="order-1 shrink-0 flex flex-col gap-3">
+            <div
+              ref={headerRef}
+              className="order-1 shrink-0 flex flex-col gap-3"
+            >
               <button
                 type="button"
                 className="mx-auto flex w-full flex-col items-center gap-2"

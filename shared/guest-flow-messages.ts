@@ -10,8 +10,7 @@ export const GUEST_FLOW_MESSAGES = {
   sessionExpired: 'Сесията изтече. Изберете името си отново.',
   sessionRequired: 'Изисква се валидна гост-сесия.',
   billFinalNoEdit: 'Сметката е приключена и не може да се редактира.',
-  sessionLostRedirect:
-    'Сесията изтече или името е заето. Изберете отново.',
+  sessionLostRedirect: 'Сесията изтече или името е заето. Изберете отново.',
   invalidJoinLink:
     'Невалиден линк за присъединяване. Попитайте домакина за нов линк.',
 } as const

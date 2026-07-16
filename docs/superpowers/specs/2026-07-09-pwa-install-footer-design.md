@@ -21,10 +21,10 @@
 
 ## Visibility rules
 
-| Surface | When shown |
-|---------|------------|
+| Surface     | When shown                                                                   |
+| ----------- | ---------------------------------------------------------------------------- |
 | Home banner | Home, authenticated, not standalone, banner not dismissed, install available |
-| Footer | Home (`/`) only, authenticated, not standalone, install available |
+| Footer      | Home (`/`) only, authenticated, not standalone, install available            |
 
 Hide both when `isStandalonePwa()`.
 
@@ -36,15 +36,15 @@ Hide both when `isStandalonePwa()`.
 
 ## Files
 
-| File | Action |
-|------|--------|
-| `src/lib/pwa-install-prompt.ts` | New — singleton capture |
-| `src/lib/pwa-install-routes.ts` | New — `isHostShellRoute` |
-| `src/components/pwa-install-provider.tsx` | New — context |
-| `src/components/layout/app-footer.tsx` | New |
-| `src/components/pwa-install-banner.tsx` | Refactor |
-| `src/components/layout/app-shell.tsx` | Footer + provider |
-| `src/lib/pwa-install.test.ts` | Route helper tests |
+| File                                      | Action                   |
+| ----------------------------------------- | ------------------------ |
+| `src/lib/pwa-install-prompt.ts`           | New — singleton capture  |
+| `src/lib/pwa-install-routes.ts`           | New — `isHostShellRoute` |
+| `src/components/pwa-install-provider.tsx` | New — context            |
+| `src/components/layout/app-footer.tsx`    | New                      |
+| `src/components/pwa-install-banner.tsx`   | Refactor                 |
+| `src/components/layout/app-shell.tsx`     | Footer + provider        |
+| `src/lib/pwa-install.test.ts`             | Route helper tests       |
 
 ## Testing
 

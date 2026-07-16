@@ -1,9 +1,6 @@
 import type { Id } from '../_generated/dataModel'
 import type { QueryCtx } from '../_generated/server'
-import {
-  calculateBillTotals,
-  totalOutstandingCents,
-} from './billCalculations'
+import { calculateBillTotals, totalOutstandingCents } from './billCalculations'
 
 export async function loadBillRelations(ctx: QueryCtx, billId: Id<'bills'>) {
   const participants = await ctx.db

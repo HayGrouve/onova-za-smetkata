@@ -135,9 +135,7 @@ export function ParticipantBreakdownContent({
                   : ''}
               </p>
             </div>
-            <p className="money shrink-0">
-              {formatEur(line.amountCents)}
-            </p>
+            <p className="money shrink-0">{formatEur(line.amountCents)}</p>
           </div>
         ))
       )}
@@ -182,9 +180,7 @@ export function ParticipantBreakdownContent({
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Остатък</p>
-                <p className="money font-medium">
-                  {formatEur(remainingCents)}
-                </p>
+                <p className="money font-medium">{formatEur(remainingCents)}</p>
               </div>
             </div>
           )}

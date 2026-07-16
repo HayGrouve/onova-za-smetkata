@@ -101,13 +101,12 @@ export function GuestClaimFooter({
   const selectedCoveredRemainingTotal = selectedCoveredIds.reduce(
     (sum, id) =>
       sum +
-      (participantBalances.find((b) => b.participantId === id)?.remainingCents ??
-        0),
+      (participantBalances.find((b) => b.participantId === id)
+        ?.remainingCents ?? 0),
     0,
   )
   const isCombined = selectedCoveredIds.length > 0
-  const amountLabelExisting =
-    totals.paidCents > 0 ? 'Остатък' : 'Вашият дял'
+  const amountLabelExisting = totals.paidCents > 0 ? 'Остатък' : 'Вашият дял'
   const amountCents = pending
     ? pending.totalCents
     : isCombined
@@ -245,14 +244,14 @@ export function GuestClaimFooter({
     if (!recorded) return
 
     void copyToClipboard(formatCopyAmount(payCents))
-    const payingForOthers = Boolean(
-      pendingCoveredIds.length > 0 || isCombined,
-    )
+    const payingForOthers = Boolean(pendingCoveredIds.length > 0 || isCombined)
     const participantNames = payingForOthers
       ? [
           label,
           ...selectedCoveredIds.map(
-            (id) => participantLabels?.[id] ?? participantBalances.find((b) => b.participantId === id)?.name,
+            (id) =>
+              participantLabels?.[id] ??
+              participantBalances.find((b) => b.participantId === id)?.name,
           ),
         ].filter((name): name is string => Boolean(name?.trim()))
       : [label]
@@ -272,9 +271,7 @@ export function GuestClaimFooter({
     }
 
     const text =
-      payCents !== null
-        ? `${formatCopyAmount(payCents)}\n${iban}`
-        : iban
+      payCents !== null ? `${formatCopyAmount(payCents)}\n${iban}` : iban
     const copied = await copyToClipboard(text)
     if (copied) {
       toast.success('IBAN копиран')

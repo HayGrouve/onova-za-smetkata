@@ -37,9 +37,9 @@ describe('formatEurInputValue', () => {
 
 describe('resolveInitialTipCents', () => {
   it('computes from percent preference', () => {
-    expect(
-      resolveInitialTipCents({ mode: 'percent', percent: 15 }, 2000),
-    ).toBe(300)
+    expect(resolveInitialTipCents({ mode: 'percent', percent: 15 }, 2000)).toBe(
+      300,
+    )
   })
 
   it('uses custom cents when stored', () => {

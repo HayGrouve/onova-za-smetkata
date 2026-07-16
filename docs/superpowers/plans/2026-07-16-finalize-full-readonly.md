@@ -24,32 +24,34 @@
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `convex/lib/assertBillDraft.ts` | `assertBillDraft({ status })` |
-| `convex/lib/assertBillDraft.test.ts` | Unit tests for draft vs final |
-| `convex/payments.ts` | Guard `add` / `undoLast` |
-| `convex/bills.ts` | Guard `update` / `rotateShareToken` (not `remove`) |
-| `convex/combinedPayments.ts` | Guard all mutating handlers |
-| `src/components/bills/payment-actions.tsx` | `readOnly` → history only |
-| `src/components/bills/payment-row.tsx` | Pass `readOnly` into `PaymentActions` |
-| `src/components/bills/participant-breakdown-content.tsx` | Pass `readOnly` into `PaymentActions` |
-| `src/components/bills/participant-detail-sheet.tsx` | Optional `paymentActionsReadOnly` prop |
-| `src/components/bills/bill-summary-content.tsx` | Wire draft vs final; finalize copy |
-| `src/components/bills/bill-invite-card.tsx` | Hide/disable rotate when final |
-| `src/routes/bills/$billId/index.tsx` | Pass `readOnly` into invite card when final |
-| `e2e/final-readonly.spec.ts` | Host: no payment undo after finalize; delete still present |
-| Spec status | Mark Complete when done |
+| File                                                     | Responsibility                                             |
+| -------------------------------------------------------- | ---------------------------------------------------------- |
+| `convex/lib/assertBillDraft.ts`                          | `assertBillDraft({ status })`                              |
+| `convex/lib/assertBillDraft.test.ts`                     | Unit tests for draft vs final                              |
+| `convex/payments.ts`                                     | Guard `add` / `undoLast`                                   |
+| `convex/bills.ts`                                        | Guard `update` / `rotateShareToken` (not `remove`)         |
+| `convex/combinedPayments.ts`                             | Guard all mutating handlers                                |
+| `src/components/bills/payment-actions.tsx`               | `readOnly` → history only                                  |
+| `src/components/bills/payment-row.tsx`                   | Pass `readOnly` into `PaymentActions`                      |
+| `src/components/bills/participant-breakdown-content.tsx` | Pass `readOnly` into `PaymentActions`                      |
+| `src/components/bills/participant-detail-sheet.tsx`      | Optional `paymentActionsReadOnly` prop                     |
+| `src/components/bills/bill-summary-content.tsx`          | Wire draft vs final; finalize copy                         |
+| `src/components/bills/bill-invite-card.tsx`              | Hide/disable rotate when final                             |
+| `src/routes/bills/$billId/index.tsx`                     | Pass `readOnly` into invite card when final                |
+| `e2e/final-readonly.spec.ts`                             | Host: no payment undo after finalize; delete still present |
+| Spec status                                              | Mark Complete when done                                    |
 
 ---
 
 ### Task 1: `assertBillDraft` helper (TDD)
 
 **Files:**
+
 - Create: `convex/lib/assertBillDraft.ts`
 - Create: `convex/lib/assertBillDraft.test.ts`
 
 **Interfaces:**
+
 - Consumes: `ConvexError` from `convex/values`; `GUEST_FLOW_MESSAGES` from `./guestFlowMessages`
 - Produces:
 
@@ -129,10 +131,12 @@ EOF
 ### Task 2: Guard payments + bill update/rotate
 
 **Files:**
+
 - Modify: `convex/payments.ts`
 - Modify: `convex/bills.ts` (`update`, `rotateShareToken` only — do **not** guard `remove`)
 
 **Interfaces:**
+
 - Consumes: `assertBillDraft` from `./lib/assertBillDraft`
 - Produces: mutations that reject when bill is final
 
@@ -199,9 +203,11 @@ EOF
 ### Task 3: Guard combined payment mutations
 
 **Files:**
+
 - Modify: `convex/combinedPayments.ts`
 
 **Interfaces:**
+
 - Consumes: `assertBillDraft`; bill loaded via `ctx.db.get(args.billId)` or `requireBillOwner`
 - Produces: all combined-payment mutators reject on final
 
@@ -260,6 +266,7 @@ EOF
 ### Task 4: UI — hide payment mutate controls when final
 
 **Files:**
+
 - Modify: `src/components/bills/payment-actions.tsx`
 - Modify: `src/components/bills/payment-row.tsx`
 - Modify: `src/components/bills/participant-breakdown-content.tsx`
@@ -267,6 +274,7 @@ EOF
 - Modify: `src/components/bills/bill-summary-content.tsx`
 
 **Interfaces:**
+
 - Consumes: `bill.status === 'draft'` already as `isDraft` in summary
 - Produces: `readOnly?: boolean` on `PaymentActions` / `PaymentRow` / breakdown / detail sheet
 
@@ -314,9 +322,7 @@ export function PaymentActions({
       ) : null}
 
       {!readOnly && remainingCents > 0 ? (
-        <>
-          {/* existing Платено + partial UI unchanged */}
-        </>
+        <>{/* existing Платено + partial UI unchanged */}</>
       ) : null}
     </div>
   )
@@ -334,16 +340,18 @@ export interface PaymentRowProps {
 }
 
 // in JSX:
-{!isHost ? (
-  <PaymentActions
-    billId={billId}
-    participantId={participantId}
-    label={label}
-    totals={totals}
-    payments={payments}
-    readOnly={readOnly}
-  />
-) : null}
+{
+  !isHost ? (
+    <PaymentActions
+      billId={billId}
+      participantId={participantId}
+      label={label}
+      totals={totals}
+      payments={payments}
+      readOnly={readOnly}
+    />
+  ) : null
+}
 ```
 
 `participant-breakdown-content.tsx` / `participant-detail-sheet.tsx`:
@@ -374,9 +382,8 @@ Replace the guest-only lock sentence with text that covers payments too, e.g.:
 
 ```tsx
 <p>
-  След завършване сметката е само за преглед — гостите не могат да
-  променят артикулите, а плащанията не могат да се отменят или
-  добавят.
+  След завършване сметката е само за преглед — гостите не могат да променят
+  артикулите, а плащанията не могат да се отменят или добавят.
 </p>
 ```
 
@@ -407,10 +414,12 @@ EOF
 ### Task 5: UI — disable invite rotate on final
 
 **Files:**
+
 - Modify: `src/components/bills/bill-invite-card.tsx`
 - Modify: `src/routes/bills/$billId/index.tsx` (where `BillInviteCard` is rendered)
 
 **Interfaces:**
+
 - Consumes: `bill.status`
 - Produces: `readOnly?: boolean` on `BillInviteCard` — when true, hide **Обнови линка** (share/QR still OK if not `disabled`)
 
@@ -433,17 +442,19 @@ export function BillInviteCard({
   // ...existing
 
   // In the shareToken branch, wrap the rotate button:
-  {!readOnly ? (
-    <Button
-      type="button"
-      variant="ghost"
-      className="h-10 w-full text-muted-foreground"
-      onClick={() => setRotateOpen(true)}
-    >
-      <Link2OffIcon className={ICON.button} aria-hidden />
-      Обнови линка
-    </Button>
-  ) : null}
+  {
+    !readOnly ? (
+      <Button
+        type="button"
+        variant="ghost"
+        className="h-10 w-full text-muted-foreground"
+        onClick={() => setRotateOpen(true)}
+      >
+        <Link2OffIcon className={ICON.button} aria-hidden />
+        Обнови линка
+      </Button>
+    ) : null
+  }
 }
 ```
 
@@ -478,10 +489,12 @@ EOF
 ### Task 6: E2E + mark spec complete
 
 **Files:**
+
 - Modify: `e2e/final-readonly.spec.ts`
 - Modify: `docs/superpowers/specs/2026-07-16-finalize-full-readonly-design.md` (Status → Complete)
 
 **Interfaces:**
+
 - Consumes: existing `openHostContext` helper; finalize flow from current e2e
 - Produces: host assertion that payment undo is absent after finalize; delete still visible
 
@@ -525,7 +538,8 @@ test('finalized bill hides payment undo for host and keeps delete', async ({
   const itemName = 'Кафе'
   const restaurantName = `E2E Final Pay ${stamp}`
 
-  const { context: hostContext, page: hostPage } = await openHostContext(browser)
+  const { context: hostContext, page: hostPage } =
+    await openHostContext(browser)
 
   await hostPage.getByRole('button', { name: 'Нова сметка' }).click()
   await hostPage.getByLabel('Ресторант').fill(restaurantName)
@@ -609,18 +623,18 @@ EOF
 
 ## Spec coverage checklist
 
-| Spec requirement | Task |
-|------------------|------|
-| `assertBillDraft` + `billFinalNoEdit` | Task 1 |
-| Guard `payments.add` / `undoLast` | Task 2 |
-| Guard `bills.update` / `rotateShareToken` | Task 2 |
-| Keep `bills.remove` | Task 2 (explicit non-change) |
-| Guard combined payments | Task 3 |
-| Hide payment mutate UI; history OK | Task 4 |
-| Finalize dialog copy | Task 4 |
-| Disable rotate link UI | Task 5 |
-| E2E host lock + delete | Task 6 |
-| Guest claim read-only unchanged | Task 6 (existing test kept) |
+| Spec requirement                          | Task                         |
+| ----------------------------------------- | ---------------------------- |
+| `assertBillDraft` + `billFinalNoEdit`     | Task 1                       |
+| Guard `payments.add` / `undoLast`         | Task 2                       |
+| Guard `bills.update` / `rotateShareToken` | Task 2                       |
+| Keep `bills.remove`                       | Task 2 (explicit non-change) |
+| Guard combined payments                   | Task 3                       |
+| Hide payment mutate UI; history OK        | Task 4                       |
+| Finalize dialog copy                      | Task 4                       |
+| Disable rotate link UI                    | Task 5                       |
+| E2E host lock + delete                    | Task 6                       |
+| Guest claim read-only unchanged           | Task 6 (existing test kept)  |
 
 ## Out of scope (do not implement)
 

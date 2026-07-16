@@ -12,6 +12,7 @@
 Today, combined guest payments create a pending request the host can confirm from a banner on step 4. Solo guest payments (Revolut/IBAN for own share only) create **no server-side signal** — the host must scroll through participant rows and manually tap **Платено** for each person.
 
 At a table with multiple guests paying, this splits the host workflow:
+
 - Combined pay → banner at top
 - Solo pay → buried in per-participant rows
 
@@ -27,15 +28,15 @@ Combined chip selection still creates a pending request immediately (so the cove
 
 ## UX decisions
 
-| Topic | Choice |
-|-------|--------|
-| Host layout | Stacked confirmation cards at top of payments card (option A) |
-| Bulk confirm | Out of scope for v1 |
-| Solo pay | Creates pending request on Revolut/IBAN tap |
-| Combined pay | Create on chip select; `transferInitiatedAt` on Revolut/IBAN tap |
-| Covered guest notice | Unchanged — appears on chip select (before transfer) |
-| Confirm action | Solo → 1 `payments` row; combined → 2 rows (atomic) |
-| Reject / cancel | Unchanged semantics; guest can retry |
+| Topic                | Choice                                                           |
+| -------------------- | ---------------------------------------------------------------- |
+| Host layout          | Stacked confirmation cards at top of payments card (option A)    |
+| Bulk confirm         | Out of scope for v1                                              |
+| Solo pay             | Creates pending request on Revolut/IBAN tap                      |
+| Combined pay         | Create on chip select; `transferInitiatedAt` on Revolut/IBAN tap |
+| Covered guest notice | Unchanged — appears on chip select (before transfer)             |
+| Confirm action       | Solo → 1 `payments` row; combined → 2 rows (atomic)              |
+| Reject / cancel      | Unchanged semantics; guest can retry                             |
 
 ## User flows
 
@@ -98,6 +99,7 @@ Amounts are snapshotted at creation and re-validated at confirm time against cur
 **Args:** `billId`, `shareToken`, `sessionToken`, `coveredParticipantId`
 
 **Unchanged validation** from existing combined flow:
+
 - Active guest session
 - `coveredParticipantId` required and ≠ payer
 - Both have `remainingCents > 0`
@@ -110,6 +112,7 @@ Amounts are snapshotted at creation and re-validated at confirm time against cur
 **Args:** `billId`, `shareToken`, `sessionToken`
 
 **Validation:**
+
 - Active guest session via `requireGuestSession`
 - Share token matches bill
 - Payer has `remainingCents > 0`
@@ -124,6 +127,7 @@ Amounts are snapshotted at creation and re-validated at confirm time against cur
 **Args:** `billId`, `sessionToken`, `requestId`
 
 **Validation:**
+
 - Request is `pending`, belongs to caller's guest session
 - `coveredParticipantId` is present (combined only)
 - `transferInitiatedAt` not already set
@@ -137,10 +141,12 @@ Amounts are snapshotted at creation and re-validated at confirm time against cur
 ### `combinedPayments.confirm` (host mutation)
 
 **Validation:**
+
 - `requireBillOwner`, request is `pending`, `transferInitiatedAt` is set
 - Snapshotted amounts pass `validatePaymentAdd` caps against current remaining
 
 **Effect (atomic):**
+
 - **Solo:** Insert 1 `payments` row for payer
 - **Combined:** Insert 2 `payments` rows for payer and covered
 - Set request `status: "confirmed"`, `resolvedAt: now`
@@ -152,11 +158,11 @@ Amounts are snapshotted at creation and re-validated at confirm time against cur
 
 ### Queries
 
-| Query | Change |
-|-------|--------|
-| `getPendingForGuest` | Return pending for session regardless of `transferInitiatedAt` (footer + cancel state) |
-| `getPendingCoverForGuest` | Unchanged — any pending combined request covering this participant |
-| `listPendingForBill` | **Rename behavior:** return `pending` where `transferInitiatedAt != null` (host banners only) |
+| Query                     | Change                                                                                        |
+| ------------------------- | --------------------------------------------------------------------------------------------- |
+| `getPendingForGuest`      | Return pending for session regardless of `transferInitiatedAt` (footer + cancel state)        |
+| `getPendingCoverForGuest` | Unchanged — any pending combined request covering this participant                            |
+| `listPendingForBill`      | **Rename behavior:** return `pending` where `transferInitiatedAt != null` (host banners only) |
 
 ## Guest UI — `GuestClaimFooter`
 
@@ -174,12 +180,12 @@ Amounts are snapshotted at creation and re-validated at confirm time against cur
 
 ### Disabled states
 
-| State | Chips | Revolut/IBAN | Pending message |
-|-------|-------|--------------|-----------------|
-| Solo, no pending | enabled | enabled | hidden |
-| Solo, pending | disabled | disabled | shown |
-| Combined, chip only | selected | enabled | hidden (for payer) |
-| Combined, transfer initiated | disabled | disabled | shown |
+| State                        | Chips    | Revolut/IBAN | Pending message    |
+| ---------------------------- | -------- | ------------ | ------------------ |
+| Solo, no pending             | enabled  | enabled      | hidden             |
+| Solo, pending                | disabled | disabled     | shown              |
+| Combined, chip only          | selected | enabled      | hidden (for payer) |
+| Combined, transfer initiated | disabled | disabled     | shown              |
 
 Covered guest: pay buttons disabled when `pendingCover` exists (unchanged).
 
@@ -190,31 +196,34 @@ Evolve `CombinedPaymentBanner` to handle solo and combined cards.
 **Location:** Top of payments card in `BillSummaryContent` (step 4 and `/summary`).
 
 **Solo card:**
+
 ```
 ⏳ Иван плати €10.50
    [Потвърди]  [Отхвърли]
 ```
+
 Confirm dialog: „Маркира Иван като платен?“
 
 **Combined card:** Existing copy and confirm dialog (unchanged).
 
 Toast on confirm:
+
 - Solo: „Иван е маркиран като платен“
 - Combined: „Иван и Мария са маркирани като платени“
 
 ## Edge cases
 
-| Case | Behavior |
-|------|----------|
-| Guest selects chip but never pays | Host sees nothing; Guest B sees notice; payer can cancel |
-| Guest opens Revolut then cancels | Request cancelled; guest can retry |
-| Two guests pay solo | Two stacked host cards |
-| Guest has solo pending, tries combined | Blocked: `pendingExists` |
-| Covered paid before combined confirm | Confirm fails with existing message |
-| Amount changed since create | Confirm re-validates; may fail |
-| Host rejects initiated request | Guest can retry; combined deselects chip |
-| Host manually marks paid while pending | Confirm re-validates; may fail |
-| Finalized bill | Guest payments and host confirm allowed (unchanged) |
+| Case                                   | Behavior                                                 |
+| -------------------------------------- | -------------------------------------------------------- |
+| Guest selects chip but never pays      | Host sees nothing; Guest B sees notice; payer can cancel |
+| Guest opens Revolut then cancels       | Request cancelled; guest can retry                       |
+| Two guests pay solo                    | Two stacked host cards                                   |
+| Guest has solo pending, tries combined | Blocked: `pendingExists`                                 |
+| Covered paid before combined confirm   | Confirm fails with existing message                      |
+| Amount changed since create            | Confirm re-validates; may fail                           |
+| Host rejects initiated request         | Guest can retry; combined deselects chip                 |
+| Host manually marks paid while pending | Confirm re-validates; may fail                           |
+| Finalized bill                         | Guest payments and host confirm allowed (unchanged)      |
 
 ## Out of scope (v1)
 
@@ -226,24 +235,24 @@ Toast on confirm:
 
 ## Testing
 
-| Layer | Coverage |
-|-------|----------|
-| Unit | `validateSoloPaymentCreate`, solo confirm (1 payment), `initiateTransfer` guards, host query filter |
-| E2E | Solo: guest Revolut → host card → confirm → paid |
-| E2E | Combined: no host card on chip alone; card after Revolut |
-| E2E | Mixed: two solo + one combined → three stacked cards |
-| E2E | Cancel solo and combined pending requests |
+| Layer | Coverage                                                                                            |
+| ----- | --------------------------------------------------------------------------------------------------- |
+| Unit  | `validateSoloPaymentCreate`, solo confirm (1 payment), `initiateTransfer` guards, host query filter |
+| E2E   | Solo: guest Revolut → host card → confirm → paid                                                    |
+| E2E   | Combined: no host card on chip alone; card after Revolut                                            |
+| E2E   | Mixed: two solo + one combined → three stacked cards                                                |
+| E2E   | Cancel solo and combined pending requests                                                           |
 
 ## Files to touch (implementation reference)
 
-| Area | Files |
-|------|-------|
-| Schema | `convex/schema.ts` |
-| Backend | `convex/combinedPayments.ts`, `convex/lib/combinedPayment.ts`, `shared/combined-payment.ts` |
-| Messages | `shared/combined-payment-messages.ts` |
-| Guest UI | `src/components/bills/guest-claim-footer.tsx` |
-| Host UI | `src/components/bills/combined-payment-banner.tsx` (rename/evolve) |
-| Tests | `shared/combined-payment.test.ts`, `e2e/combined-guest-payment.spec.ts`, new solo e2e |
+| Area     | Files                                                                                       |
+| -------- | ------------------------------------------------------------------------------------------- |
+| Schema   | `convex/schema.ts`                                                                          |
+| Backend  | `convex/combinedPayments.ts`, `convex/lib/combinedPayment.ts`, `shared/combined-payment.ts` |
+| Messages | `shared/combined-payment-messages.ts`                                                       |
+| Guest UI | `src/components/bills/guest-claim-footer.tsx`                                               |
+| Host UI  | `src/components/bills/combined-payment-banner.tsx` (rename/evolve)                          |
+| Tests    | `shared/combined-payment.test.ts`, `e2e/combined-guest-payment.spec.ts`, new solo e2e       |
 
 ## Relation to prior spec
 

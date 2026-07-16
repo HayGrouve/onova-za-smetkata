@@ -25,27 +25,29 @@
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `convex/schema.ts` | Optional `coveredParticipantId`, add `transferInitiatedAt` |
-| `shared/combined-payment-messages.ts` | Solo host banner/confirm/toast strings |
-| `shared/combined-payment.ts` | `validateSoloPaymentCreate`, `validateInitiateTransfer`, `isAwaitingHostConfirmation` |
-| `shared/combined-payment.test.ts` | Vitest for new helpers |
-| `convex/combinedPayments.ts` | `createSolo`, `initiateTransfer`; update `confirm`, `listPendingForBill` |
-| `src/components/bills/guest-claim-footer.tsx` | Wire solo/combined transfer lifecycle; drop local `transferInitiated` |
-| `src/components/bills/combined-payment-banner.tsx` | Solo + combined card rendering |
-| `e2e/combined-guest-payment.spec.ts` | Fix timing assertion; add solo + chip-only tests |
+| File                                               | Responsibility                                                                        |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `convex/schema.ts`                                 | Optional `coveredParticipantId`, add `transferInitiatedAt`                            |
+| `shared/combined-payment-messages.ts`              | Solo host banner/confirm/toast strings                                                |
+| `shared/combined-payment.ts`                       | `validateSoloPaymentCreate`, `validateInitiateTransfer`, `isAwaitingHostConfirmation` |
+| `shared/combined-payment.test.ts`                  | Vitest for new helpers                                                                |
+| `convex/combinedPayments.ts`                       | `createSolo`, `initiateTransfer`; update `confirm`, `listPendingForBill`              |
+| `src/components/bills/guest-claim-footer.tsx`      | Wire solo/combined transfer lifecycle; drop local `transferInitiated`                 |
+| `src/components/bills/combined-payment-banner.tsx` | Solo + combined card rendering                                                        |
+| `e2e/combined-guest-payment.spec.ts`               | Fix timing assertion; add solo + chip-only tests                                      |
 
 ---
 
 ### Task 1: Shared solo/transfer validation helpers (TDD)
 
 **Files:**
+
 - Modify: `shared/combined-payment-messages.ts`
 - Modify: `shared/combined-payment.ts`
 - Modify: `shared/combined-payment.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `validateSoloPaymentCreate(ctx): { ok: true; payerAmountCents: number; totalCents: number } | { ok: false; message: string }`
   - `validateInitiateTransfer(request): { ok: true } | { ok: false; message: string }`
@@ -131,13 +133,19 @@ describe('validateInitiateTransfer', () => {
 describe('isAwaitingHostConfirmation', () => {
   it('true when pending and transfer initiated', () => {
     expect(
-      isAwaitingHostConfirmation({ status: 'pending', transferInitiatedAt: 99 }),
+      isAwaitingHostConfirmation({
+        status: 'pending',
+        transferInitiatedAt: 99,
+      }),
     ).toBe(true)
   })
 
   it('false when pending but not initiated', () => {
     expect(
-      isAwaitingHostConfirmation({ status: 'pending', transferInitiatedAt: undefined }),
+      isAwaitingHostConfirmation({
+        status: 'pending',
+        transferInitiatedAt: undefined,
+      }),
     ).toBe(false)
   })
 })
@@ -220,7 +228,10 @@ export function validateInitiateTransfer(
     return { ok: false, message: COMBINED_PAYMENT_MESSAGES.requestNotPending }
   }
   if (isSoloPaymentRequest(request)) {
-    return { ok: false, message: COMBINED_PAYMENT_MESSAGES.transferNotInitiated }
+    return {
+      ok: false,
+      message: COMBINED_PAYMENT_MESSAGES.transferNotInitiated,
+    }
   }
   if (request.transferInitiatedAt != null) {
     return {
@@ -251,10 +262,12 @@ git commit -m "feat(payment-confirm): add solo and transfer validation helpers"
 ### Task 2: Schema + backend mutations
 
 **Files:**
+
 - Modify: `convex/schema.ts`
 - Modify: `convex/combinedPayments.ts`
 
 **Interfaces:**
+
 - Consumes: helpers from Task 1
 - Produces:
   - `api.combinedPayments.createSolo({ billId, shareToken, sessionToken }) → { requestId, totalCents }`
@@ -388,9 +401,17 @@ Replace fixed two-row insert loop with:
 
 ```ts
 const entries = isSoloPaymentRequest(request)
-  ? [{ participantId: request.payerParticipantId, amountCents: request.payerAmountCents }]
+  ? [
+      {
+        participantId: request.payerParticipantId,
+        amountCents: request.payerAmountCents,
+      },
+    ]
   : [
-      { participantId: request.payerParticipantId, amountCents: request.payerAmountCents },
+      {
+        participantId: request.payerParticipantId,
+        amountCents: request.payerAmountCents,
+      },
       {
         participantId: request.coveredParticipantId!,
         amountCents: request.coveredAmountCents,
@@ -427,9 +448,11 @@ git commit -m "feat(payment-confirm): add createSolo, initiateTransfer, host fil
 ### Task 3: Host pending payment banner (solo + combined)
 
 **Files:**
+
 - Modify: `src/components/bills/combined-payment-banner.tsx`
 
 **Interfaces:**
+
 - Consumes: `listPendingForBill` rows (may lack `coveredParticipantId`)
 - Produces: stacked cards with solo/combined copy and confirm dialogs
 
@@ -509,20 +532,24 @@ git commit -m "feat(payment-confirm): host banner supports solo payments"
 ### Task 4: Guest footer — solo create + combined initiateTransfer
 
 **Files:**
+
 - Modify: `src/components/bills/guest-claim-footer.tsx`
 
 **Interfaces:**
+
 - Consumes: `api.combinedPayments.createSolo`, `api.combinedPayments.initiateTransfer`, `pending.transferInitiatedAt`
 - Produces: server-driven pending state; no local `transferInitiated`
 
 - [ ] **Step 1: Remove local `transferInitiated` state**
 
 Delete:
+
 ```ts
 const [transferInitiated, setTransferInitiated] = useState(false)
 ```
 
 Replace usages with:
+
 ```ts
 const transferInitiated = pending?.transferInitiatedAt != null
 ```
@@ -538,7 +565,8 @@ const initiateTransfer = useMutation(api.combinedPayments.initiateTransfer)
 
 ```ts
 async function handleRevolut() {
-  if (!revolutUsername || (remainingCents <= 0 && !isCombined && !pending)) return
+  if (!revolutUsername || (remainingCents <= 0 && !isCombined && !pending))
+    return
 
   const payCents = await resolvePayCents()
   if (payCents === null) return
@@ -561,7 +589,9 @@ async function handleRevolut() {
   void copyToClipboard(formatCopyAmount(payCents))
   const payingForOthers = Boolean(pending || isCombined)
   const participantNames = payingForOthers
-    ? [label, coveredName].filter((name): name is string => Boolean(name?.trim()))
+    ? [label, coveredName].filter((name): name is string =>
+        Boolean(name?.trim()),
+      )
     : [label]
   const note = buildRevolutPaymentNote(restaurantName, participantNames)
   window.open(buildRevolutUrl(revolutUsername, payCents, note))
@@ -578,21 +608,18 @@ Remove `setTransferInitiated` calls.
 
 - [ ] **Step 5: Fix disabled/pending UI rules**
 
-| Condition | Pending message | Revolut disabled |
-|-----------|-----------------|------------------|
-| `pending?.transferInitiatedAt != null` | show + cancel | yes |
-| `pending` combined, no transfer yet | hidden | no |
-| solo `pending` (always initiated) | show + cancel | yes |
+| Condition                              | Pending message | Revolut disabled |
+| -------------------------------------- | --------------- | ---------------- |
+| `pending?.transferInitiatedAt != null` | show + cancel   | yes              |
+| `pending` combined, no transfer yet    | hidden          | no               |
+| solo `pending` (always initiated)      | show + cancel   | yes              |
 
 Update `chipsDisabled` / `payDisabledForPayer`:
 
 ```ts
 const transferInitiated = pending?.transferInitiatedAt != null
 const chipsDisabled =
-  Boolean(pendingCover) ||
-  readOnly ||
-  isSelectingCover ||
-  transferInitiated
+  Boolean(pendingCover) || readOnly || isSelectingCover || transferInitiated
 ```
 
 Show cancel row when `pending && transferInitiated` (unchanged condition, now server-backed).
@@ -613,10 +640,12 @@ git commit -m "feat(payment-confirm): guest footer solo create and transfer init
 ### Task 5: E2E — timing fix + solo flow
 
 **Files:**
+
 - Modify: `e2e/combined-guest-payment.spec.ts`
 - Create: `e2e/solo-guest-payment.spec.ts` (optional split) OR extend existing file
 
 **Interfaces:**
+
 - Consumes: full stack from Tasks 1–4
 
 - [ ] **Step 1: Add test — no host banner on chip select alone**
@@ -708,18 +737,18 @@ git commit -m "test(payment-confirm): solo flow and transfer-initiated host bann
 
 ## Spec coverage checklist
 
-| Spec requirement | Task |
-|------------------|------|
-| Optional `coveredParticipantId` + `transferInitiatedAt` | Task 2 |
-| `createSolo` on Revolut/IBAN tap | Tasks 2, 4 |
-| `initiateTransfer` on combined Revolut/IBAN tap | Tasks 2, 4 |
-| Host list filters initiated only | Task 2 |
-| Solo confirm → 1 payment | Task 2 |
-| Combined confirm → 2 payments | Task 2 (unchanged path) |
-| Guest B notice on chip select | Task 2 (`getPendingCoverForGuest` guard) |
-| Stacked host cards solo + combined | Task 3 |
-| Drop local `transferInitiated` | Task 4 |
-| E2E solo + timing fix | Task 5 |
+| Spec requirement                                        | Task                                     |
+| ------------------------------------------------------- | ---------------------------------------- |
+| Optional `coveredParticipantId` + `transferInitiatedAt` | Task 2                                   |
+| `createSolo` on Revolut/IBAN tap                        | Tasks 2, 4                               |
+| `initiateTransfer` on combined Revolut/IBAN tap         | Tasks 2, 4                               |
+| Host list filters initiated only                        | Task 2                                   |
+| Solo confirm → 1 payment                                | Task 2                                   |
+| Combined confirm → 2 payments                           | Task 2 (unchanged path)                  |
+| Guest B notice on chip select                           | Task 2 (`getPendingCoverForGuest` guard) |
+| Stacked host cards solo + combined                      | Task 3                                   |
+| Drop local `transferInitiated`                          | Task 4                                   |
+| E2E solo + timing fix                                   | Task 5                                   |
 
 ## Self-review
 

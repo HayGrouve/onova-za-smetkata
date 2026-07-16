@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { previewShareCents, formatShareParticipantCount } from './guest-share-preview'
+import {
+  previewShareCents,
+  formatShareParticipantCount,
+} from './guest-share-preview'
 
 describe('previewShareCents', () => {
   it('returns full line when unclaimed solo', () => {

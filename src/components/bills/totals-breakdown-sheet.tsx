@@ -55,9 +55,7 @@ export function TotalsBreakdownSheet({
           </div>
           <Separator />
           {sortedParticipants.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              Няма участници.
-            </p>
+            <p className="text-sm text-muted-foreground">Няма участници.</p>
           )}
           {sortedParticipants.map((p) => {
             const t = totals.byParticipant[p._id]

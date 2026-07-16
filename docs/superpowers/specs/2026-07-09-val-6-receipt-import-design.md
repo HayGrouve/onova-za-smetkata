@@ -27,11 +27,11 @@ Validate receipt import rows using the same item rules as VAL-3, with row-level 
 
 ## Surfaces
 
-| Action | UI | Mutation |
-|--------|-----|----------|
-| Import checked OCR rows | `receipt-scan-review-sheet.tsx` | `receiptScan.importScannedItems` |
+| Action                     | UI                                     | Mutation                                                  |
+| -------------------------- | -------------------------------------- | --------------------------------------------------------- |
+| Import checked OCR rows    | `receipt-scan-review-sheet.tsx`        | `receiptScan.importScannedItems`                          |
 | Optional restaurant update | Same sheet (when OCR extracted a name) | Same mutation (`updateRestaurantName` + `restaurantName`) |
-| Dismiss / cancel | Same sheet | `receiptScan.dismissScan` (unchanged) |
+| Dismiss / cancel           | Same sheet                             | `receiptScan.dismissScan` (unchanged)                     |
 
 > Roadmap refers generically to `receiptScan.apply`; the implemented mutation is **`importScannedItems`**.
 
@@ -60,56 +60,56 @@ Validate receipt import rows using the same item rules as VAL-3, with row-level 
 
 Reuse VAL-3 item primitives. Receipt rows map to `ItemAddFormInput`:
 
-| Receipt row field | `ItemAddFormInput` key | Rules (same as VAL-3 add form) |
-|-------------------|------------------------|--------------------------------|
-| `name` | `name` | `itemNameSchema` — trim; 1–120 chars |
-| `priceInput` | `priceInput` | `parseEurInputStrict` → `nonNegativeCentsSchema('Цената')` — zero allowed |
-| `quantity` | `quantityInput` | `quantityInputSchema` — int ≥ 1, max 999 |
-| Note | — | Not collected on import |
+| Receipt row field | `ItemAddFormInput` key | Rules (same as VAL-3 add form)                                            |
+| ----------------- | ---------------------- | ------------------------------------------------------------------------- |
+| `name`            | `name`                 | `itemNameSchema` — trim; 1–120 chars                                      |
+| `priceInput`      | `priceInput`           | `parseEurInputStrict` → `nonNegativeCentsSchema('Цената')` — zero allowed |
+| `quantity`        | `quantityInput`        | `quantityInputSchema` — int ≥ 1, max 999                                  |
+| Note              | —                      | Not collected on import                                                   |
 
 ### Row validation scope
 
-| Row state | Validated? |
-|-----------|------------|
-| Checked | Yes — all three fields |
+| Row state | Validated?                                               |
+| --------- | -------------------------------------------------------- |
+| Checked   | Yes — all three fields                                   |
 | Unchecked | No — user may leave junk rows unchecked; no errors shown |
 
 ### Restaurant (optional)
 
 When `updateRestaurantName === true`:
 
-| Field | Rules |
-|-------|-------|
+| Field            | Rules                                                                                               |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
 | `restaurantName` | `validateBillMetadataField('restaurantName', value)` (VAL-1) — optional empty allowed; max 80 chars |
 
 When checkbox off, restaurant value is not sent and not validated on client.
 
 ### Price semantics (receipt rows)
 
-| Input | Result |
-|-------|--------|
-| Empty / whitespace | Invalid — row error on price field |
-| Invalid | `"abc"`, `"-"` → `Невалидна сума.` |
-| Zero | `"0"`, `"0,00"` → `unitPriceCents: 0` (allowed) |
-| Valid | `"12,50"` → `1250` |
+| Input              | Result                                          |
+| ------------------ | ----------------------------------------------- |
+| Empty / whitespace | Invalid — row error on price field              |
+| Invalid            | `"abc"`, `"-"` → `Невалидна сума.`              |
+| Zero               | `"0"`, `"0,00"` → `unitPriceCents: 0` (allowed) |
+| Valid              | `"12,50"` → `1250`                              |
 
 ### Quantity semantics (receipt rows)
 
-| Input | Result |
-|-------|--------|
+| Input                   | Result                                                        |
+| ----------------------- | ------------------------------------------------------------- |
 | Empty / `"0"` / invalid | Invalid — row error (`Количеството трябва да е поне 1.` etc.) |
-| Valid | `"1"` … `"999"` → parsed int |
+| Valid                   | `"1"` … `"999"` → parsed int                                  |
 
 ### Error messages
 
-| Field | Source |
-|-------|--------|
-| Name | `itemNameSchema` messages (same as VAL-3) |
-| Price | `parseEurInputStrict` / `nonNegativeCentsSchema` |
-| Quantity | `quantityInputSchema` |
-| Restaurant | `validateBillMetadataField` / `formatBillMetadataErrors` |
-| Finalized bill | `Сметката е завършена.` |
-| Server batch | `Артикул {n}: {first field message}` when item index known |
+| Field          | Source                                                     |
+| -------------- | ---------------------------------------------------------- |
+| Name           | `itemNameSchema` messages (same as VAL-3)                  |
+| Price          | `parseEurInputStrict` / `nonNegativeCentsSchema`           |
+| Quantity       | `quantityInputSchema`                                      |
+| Restaurant     | `validateBillMetadataField` / `formatBillMetadataErrors`   |
+| Finalized bill | `Сметката е завършена.`                                    |
+| Server batch   | `Артикул {n}: {first field message}` when item index known |
 
 ### Finalized bill
 
@@ -194,9 +194,7 @@ if (bill.status === 'final') {
 
 const itemsToImport =
   args.items ??
-  (scan.extractedItems ?? []).filter((_, index) =>
-    selectedIndexSet.has(index),
-  )
+  (scan.extractedItems ?? []).filter((_, index) => selectedIndexSet.has(index))
 
 const validated = validateReceiptImportItems(itemsToImport)
 if (!validated.ok) {
@@ -239,8 +237,7 @@ const selection = validateReceiptImportSelection(
   })),
 )
 
-const rowErrors =
-  selection.ok === false ? selection.rowErrors : {}
+const rowErrors = selection.ok === false ? selection.rowErrors : {}
 const hasInvalidCheckedRows = selection.ok === false
 const importableData = selection.ok ? selection.data : []
 const importableIndexes = selection.ok ? selection.checkedIndexes : []
@@ -257,10 +254,9 @@ Recompute on every render (rows are local state; sheet is small). Optional: clea
 **Restaurant UI (when OCR block visible):**
 
 ```ts
-const restaurantError =
-  updateRestaurantName
-    ? validateBillMetadataField('restaurantName', restaurantName)
-    : { ok: true as const }
+const restaurantError = updateRestaurantName
+  ? validateBillMetadataField('restaurantName', restaurantName)
+  : { ok: true as const }
 ```
 
 Show inline error under restaurant input when `!restaurantError.ok`.
@@ -317,20 +313,20 @@ Toast on zero checked rows unchanged (`Изберете поне един арт
 
 **File:** `shared/receipt-import-schema.test.ts`
 
-| Case | Expect |
-|------|--------|
-| Single valid row | `validateReceiptImportRow` → ok |
-| Empty name | field error on `name` |
-| Whitespace-only name | field error on `name` |
-| Invalid price `"abc"` | field error on `price` |
-| Empty price | field error on `price` |
-| Zero price `"0,00"` | ok, `unitPriceCents: 0` |
-| Qty `0` / empty / `"abc"` | field error on `quantity` |
-| Unchecked invalid row | `validateReceiptImportSelection` → ok (row ignored) |
-| One checked invalid + one checked valid | `rowErrors` on invalid index only |
-| All checked valid | `data` length matches checked count |
-| Server batch — second item bad name | `validateReceiptImportItems` message contains `Артикул 2:` |
-| Server batch — valid items | ok, trimmed names |
+| Case                                    | Expect                                                     |
+| --------------------------------------- | ---------------------------------------------------------- |
+| Single valid row                        | `validateReceiptImportRow` → ok                            |
+| Empty name                              | field error on `name`                                      |
+| Whitespace-only name                    | field error on `name`                                      |
+| Invalid price `"abc"`                   | field error on `price`                                     |
+| Empty price                             | field error on `price`                                     |
+| Zero price `"0,00"`                     | ok, `unitPriceCents: 0`                                    |
+| Qty `0` / empty / `"abc"`               | field error on `quantity`                                  |
+| Unchecked invalid row                   | `validateReceiptImportSelection` → ok (row ignored)        |
+| One checked invalid + one checked valid | `rowErrors` on invalid index only                          |
+| All checked valid                       | `data` length matches checked count                        |
+| Server batch — second item bad name     | `validateReceiptImportItems` message contains `Артикул 2:` |
+| Server batch — valid items              | ok, trimmed names                                          |
 
 Reuse fixtures style from `shared/item-schema.test.ts` where possible.
 
@@ -338,14 +334,14 @@ Reuse fixtures style from `shared/item-schema.test.ts` where possible.
 
 ## Files to touch
 
-| File | Change |
-|------|--------|
-| `shared/receipt-import-schema.ts` | New batch validators |
-| `shared/receipt-import-schema.test.ts` | OCR junk + batch tests |
-| `src/lib/receipt-import-schema.ts` | Re-export shim |
-| `convex/lib/receiptImportSchema.ts` | Re-export shim |
-| `convex/receiptScan.ts` | Finalized guard + `validateReceiptImportItems` |
-| `src/components/bills/receipt-scan-review-sheet.tsx` | Row errors, strict footer sum, button guard |
+| File                                                 | Change                                         |
+| ---------------------------------------------------- | ---------------------------------------------- |
+| `shared/receipt-import-schema.ts`                    | New batch validators                           |
+| `shared/receipt-import-schema.test.ts`               | OCR junk + batch tests                         |
+| `src/lib/receipt-import-schema.ts`                   | Re-export shim                                 |
+| `convex/lib/receiptImportSchema.ts`                  | Re-export shim                                 |
+| `convex/receiptScan.ts`                              | Finalized guard + `validateReceiptImportItems` |
+| `src/components/bills/receipt-scan-review-sheet.tsx` | Row errors, strict footer sum, button guard    |
 
 No changes to `shared/item-schema.ts` unless a shared helper is genuinely missing (prefer composition in receipt-import module).
 

@@ -17,6 +17,7 @@
 ## Task 1: Guest flow messages
 
 **Files:**
+
 - Create: `shared/guest-flow-messages.ts`
 - Create: `shared/guest-flow-messages.test.ts`
 
@@ -72,8 +73,7 @@ export const GUEST_FLOW_MESSAGES = {
   sessionExpired: 'Сесията изтече. Изберете името си отново.',
   sessionRequired: 'Изисква се валидна гост-сесия.',
   billFinalNoEdit: 'Сметката е приключена и не може да се редактира.',
-  sessionLostRedirect:
-    'Сесията изтече или името е заето. Изберете отново.',
+  sessionLostRedirect: 'Сесията изтече или името е заето. Изберете отново.',
   invalidJoinLink:
     'Невалиден линк за присъединяване. Попитайте домакина за нов линк.',
 } as const
@@ -91,6 +91,7 @@ Expected: PASS
 ## Task 2: Guest claim schema (TDD)
 
 **Files:**
+
 - Create: `shared/guest-claim-schema.ts`
 - Create: `shared/guest-claim-schema.test.ts`
 
@@ -99,10 +100,7 @@ Expected: PASS
 ```ts
 // shared/guest-claim-schema.test.ts
 import { describe, expect, it } from 'vitest'
-import {
-  buildClaimActorKey,
-  parseGuestClaimInput,
-} from './guest-claim-schema'
+import { buildClaimActorKey, parseGuestClaimInput } from './guest-claim-schema'
 import { DEVICE_ID_MAX } from './validation/constants'
 
 describe('parseGuestClaimInput', () => {
@@ -146,9 +144,9 @@ describe('buildClaimActorKey', () => {
   })
 
   it('falls back to token prefix when deviceId absent', () => {
-    expect(buildClaimActorKey('0123456789abcdef0123456789abcdef', undefined)).toBe(
-      'token:0123456789abcdef0123456789abcdef',
-    )
+    expect(
+      buildClaimActorKey('0123456789abcdef0123456789abcdef', undefined),
+    ).toBe('token:0123456789abcdef0123456789abcdef')
   })
 })
 ```
@@ -170,9 +168,7 @@ export type GuestClaimInput = {
 
 export function parseGuestClaimInput(
   input: GuestClaimInput,
-):
-  | { ok: true; deviceId?: string }
-  | { ok: false; message: string } {
+): { ok: true; deviceId?: string } | { ok: false; message: string } {
   const parsed = deviceIdSchema.safeParse(input.deviceId)
   if (!parsed.success) {
     return {
@@ -202,6 +198,7 @@ Expected: PASS
 ## Task 3: Re-export shims
 
 **Files:**
+
 - Create: `src/lib/guest-flow-messages.ts`
 - Create: `src/lib/guest-claim-schema.ts`
 - Create: `convex/lib/guestFlowMessages.ts`
@@ -240,6 +237,7 @@ export {
 ## Task 4: Server — message refactor + claim validation
 
 **Files:**
+
 - Modify: `convex/lib/guestAccess.ts`
 - Modify: `convex/lib/requireGuestSession.ts`
 - Modify: `convex/lib/assertCanMutateAssignment.ts`
@@ -290,6 +288,7 @@ const errorMessages: Record<AssignmentEditableError, string> = {
 - [ ] **Step 5: `guestSessions.ts`**
 
 Add imports:
+
 ```ts
 import { GUEST_FLOW_MESSAGES } from './lib/guestFlowMessages'
 import {
@@ -301,11 +300,13 @@ import {
 Remove local `claimActorKey` function; use `buildClaimActorKey`.
 
 In `assertParticipantOnBill`:
+
 ```ts
 throw new ConvexError(GUEST_FLOW_MESSAGES.participantNotOnBill)
 ```
 
 In `assertClaimRateLimits`:
+
 ```ts
 const actor = buildClaimActorKey(sessionToken, deviceId)
 await assertRateLimit(
@@ -325,6 +326,7 @@ await assertRateLimit(
 ```
 
 In `claim` handler — **before** rate limits:
+
 ```ts
 const parsedDevice = parseGuestClaimInput({ deviceId: args.deviceId })
 if (!parsedDevice.ok) {
@@ -340,6 +342,7 @@ await assertClaimRateLimits(
 ```
 
 Replace name-taken error:
+
 ```ts
 throw new ConvexError(GUEST_FLOW_MESSAGES.nameTaken)
 ```
@@ -354,6 +357,7 @@ Expected: TypeScript passes
 ## Task 5: Client — join + claim static copy
 
 **Files:**
+
 - Modify: `src/routes/bills/$billId/join.tsx`
 - Modify: `src/routes/bills/$billId/claim.tsx`
 
@@ -372,6 +376,7 @@ import { GUEST_FLOW_MESSAGES } from '#/lib/guest-flow-messages.ts'
 ```
 
 In `handleSessionLost`:
+
 ```ts
 toast.error(GUEST_FLOW_MESSAGES.sessionLostRedirect)
 ```
@@ -381,6 +386,7 @@ toast.error(GUEST_FLOW_MESSAGES.sessionLostRedirect)
 ## Task 6: Docs & verification
 
 **Files:**
+
 - Modify: `docs/superpowers/specs/2026-07-09-val-5-guest-flows-design.md` — Status → Approved
 - Modify: `docs/superpowers/specs/2026-07-09-app-validation-roadmap.md` — VAL-5 → ✅ Done
 
@@ -411,17 +417,17 @@ Mark this plan **Status:** ✅ Complete
 
 ## Self-review (spec coverage)
 
-| Spec requirement | Task |
-|------------------|------|
-| `guest-flow-messages.ts` + tests | Task 1 |
-| Regression literals preserved | Task 1 |
-| `parseGuestClaimInput` + tests | Task 2 |
+| Spec requirement                               | Task      |
+| ---------------------------------------------- | --------- |
+| `guest-flow-messages.ts` + tests               | Task 1    |
+| Regression literals preserved                  | Task 1    |
+| `parseGuestClaimInput` + tests                 | Task 2    |
 | `buildClaimActorKey` (no `.slice` on deviceId) | Task 2, 4 |
-| Re-export shims | Task 3 |
-| `guestSessions.claim` validates deviceId | Task 4 |
-| Message constants in Convex guest paths | Task 4 |
-| Rate-limit keys/limits unchanged | Task 4 |
-| Client join/claim static copy | Task 5 |
+| Re-export shims                                | Task 3    |
+| `guestSessions.claim` validates deviceId       | Task 4    |
+| Message constants in Convex guest paths        | Task 4    |
+| Rate-limit keys/limits unchanged               | Task 4    |
+| Client join/claim static copy                  | Task 5    |
 
 ---
 

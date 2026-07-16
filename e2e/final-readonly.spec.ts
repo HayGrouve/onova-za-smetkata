@@ -30,7 +30,8 @@ test('finalized bill is read-only on guest claim page', async ({ browser }) => {
   const itemName = 'Кафе'
   const restaurantName = `E2E ${stamp}`
 
-  const { context: hostContext, page: hostPage } = await openHostContext(browser)
+  const { context: hostContext, page: hostPage } =
+    await openHostContext(browser)
 
   await hostPage.getByRole('button', { name: 'Нова сметка' }).click()
   await hostPage.getByLabel('Ресторант').fill(restaurantName)
@@ -76,11 +77,15 @@ test('finalized bill is read-only on guest claim page', async ({ browser }) => {
   await guestReadonlyPage.goto(joinUrl)
   await guestReadonlyPage.getByRole('button', { name: participantName }).click()
 
-  await expect(guestReadonlyPage).toHaveURL(new RegExp(`/bills/${billId}/claim`))
+  await expect(guestReadonlyPage).toHaveURL(
+    new RegExp(`/bills/${billId}/claim`),
+  )
   await expect(
     guestReadonlyPage.getByText('Сметката е приключена — само преглед.'),
   ).toBeVisible()
-  await expect(guestReadonlyPage.getByRole('button', { name: /Кафе/ })).toBeDisabled()
+  await expect(
+    guestReadonlyPage.getByRole('button', { name: /Кафе/ }),
+  ).toBeDisabled()
 
   await hostContext.close()
   await guestReadonlyContext.close()
@@ -94,7 +99,8 @@ test('finalized bill hides payment undo for host and keeps delete', async ({
   const itemName = 'Кафе'
   const restaurantName = `E2E Final Pay ${stamp}`
 
-  const { context: hostContext, page: hostPage } = await openHostContext(browser)
+  const { context: hostContext, page: hostPage } =
+    await openHostContext(browser)
 
   await hostPage.getByRole('button', { name: 'Нова сметка' }).click()
   await hostPage.getByLabel('Ресторант').fill(restaurantName)

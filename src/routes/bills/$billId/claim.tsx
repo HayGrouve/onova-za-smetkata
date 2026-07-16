@@ -56,7 +56,10 @@ function BillClaimPage() {
 
   return (
     <QueryErrorBoundary resetKey={`${billId}:${shareTokenFromUrl}`}>
-      <GuestClaimContent billId={billId} shareTokenFromUrl={shareTokenFromUrl} />
+      <GuestClaimContent
+        billId={billId}
+        shareTokenFromUrl={shareTokenFromUrl}
+      />
     </QueryErrorBoundary>
   )
 }
@@ -189,7 +192,11 @@ function GuestClaimContent({
     const filtered =
       itemTab === 'mine'
         ? filterClaimedGuestClaimItems(sorted, data.assignments, participantId)
-        : filterUnclaimedGuestClaimItems(sorted, data.assignments, participantId)
+        : filterUnclaimedGuestClaimItems(
+            sorted,
+            data.assignments,
+            participantId,
+          )
     return filterGuestClaimItemsBySearch(filtered, search)
   }, [data, itemTab, search, storedParticipantId])
 
@@ -406,10 +413,7 @@ function HostClaimContent({ billId }: { billId: Id<'bills'> }) {
   const [search, setSearch] = useState('')
   const [itemTab, setItemTab] = useState<'remaining' | 'mine'>('remaining')
 
-  const data = useQuery(
-    api.bills.get,
-    isAuthenticated ? { billId } : 'skip',
-  )
+  const data = useQuery(api.bills.get, isAuthenticated ? { billId } : 'skip')
 
   const redirectToEditor = useCallback(() => {
     void navigate({
@@ -524,7 +528,12 @@ function HostClaimContent({ billId }: { billId: Id<'bills'> }) {
     return map
   }, [data?.assignments])
 
-  if (authLoading || !isAuthenticated || data === undefined || !hostParticipantId) {
+  if (
+    authLoading ||
+    !isAuthenticated ||
+    data === undefined ||
+    !hostParticipantId
+  ) {
     return (
       <div className="page-container py-10 text-center text-muted-foreground">
         Зареждане...

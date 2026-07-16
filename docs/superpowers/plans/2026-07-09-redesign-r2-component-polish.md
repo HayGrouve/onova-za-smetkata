@@ -19,18 +19,20 @@
 ## Task 1: Emerald → success (finalize actions)
 
 **Files:**
+
 - Modify: `src/routes/bills/$billId/summary.tsx:346,390`
 
 - [x] **Step 1: Replace finalize button classes (line ~346)**
 
 ```tsx
-className="h-11 w-full bg-success text-success-foreground transition-colors hover:bg-success/90 focus-visible:ring-success/30"
+className =
+  'h-11 w-full bg-success text-success-foreground transition-colors hover:bg-success/90 focus-visible:ring-success/30'
 ```
 
 - [x] **Step 2: Replace confirm-dialog button classes (line ~390)**
 
 ```tsx
-className="bg-success text-success-foreground hover:bg-success/90"
+className = 'bg-success text-success-foreground hover:bg-success/90'
 ```
 
 - [x] **Step 3: Verify no emerald remains**
@@ -43,6 +45,7 @@ Expected: no matches
 ## Task 2: Amber → copper accent (attention states)
 
 **Files:**
+
 - Modify: `src/components/layout/offline-banner.tsx:15`
 - Modify: `src/components/bills/item-list.tsx:177`
 - Modify: `src/components/bills/assignment-row.tsx:160`
@@ -53,7 +56,8 @@ Expected: no matches
 - [x] **Step 1: Offline banner**
 
 ```tsx
-className="sticky top-14 z-40 border-b border-accent-foreground/30 bg-accent px-4 py-2 text-sm text-accent-foreground"
+className =
+  'sticky top-14 z-40 border-b border-accent-foreground/30 bg-accent px-4 py-2 text-sm text-accent-foreground'
 ```
 
 - [x] **Step 2: Unassigned item border (`item-list.tsx:177`)**
@@ -81,7 +85,7 @@ row.confidence === 'low' &&
 Line ~307 (low-confidence badge):
 
 ```tsx
-className="border-accent-foreground/50 text-accent-foreground"
+className = 'border-accent-foreground/50 text-accent-foreground'
 ```
 
 Line ~371 (totals mismatch warning):
@@ -114,6 +118,7 @@ Expected: tests PASS; no `amber-` matches
 Replace `tabular-nums` with `money` (the utility already sets `font-variant-numeric: tabular-nums`) on elements rendering `formatEur(...)` output.
 
 **Files (locate via `rg 'formatEur' src/ -l`):**
+
 - Modify: `src/components/bills/sticky-totals-bar.tsx` (3 spots: total, per-participant, sheet rows)
 - Modify: `src/components/bills/item-list.tsx` (item price displays)
 - Modify: `src/components/bills/assignment-row.tsx` (per-person amounts)
@@ -132,10 +137,16 @@ Replace `tabular-nums` with `money` (the utility already sets `font-variant-nume
 Pattern — for every element whose text content is a `formatEur(...)` amount:
 
 ```tsx
-{/* before */}
-<p className="font-semibold tabular-nums">{formatEur(totals.billTotalCents)}</p>
-{/* after */}
-<p className="money font-semibold">{formatEur(totals.billTotalCents)}</p>
+{
+  /* before */
+}
+;<p className="font-semibold tabular-nums">
+  {formatEur(totals.billTotalCents)}
+</p>
+{
+  /* after */
+}
+;<p className="money font-semibold">{formatEur(totals.billTotalCents)}</p>
 ```
 
 Where an amount element has no `tabular-nums`, add `money` alongside existing classes. Do **not** apply `.money` to non-monetary numbers (quantities, counts).
@@ -150,6 +161,7 @@ Expected: no remaining matches on money elements (quantity-only usages may stay)
 ## Task 4: Button press/hover polish
 
 **Files:**
+
 - Modify: `src/components/ui/button.tsx`
 
 - [x] **Step 1: Add lift + press to the base cva string**
@@ -190,12 +202,12 @@ Expected: PASS
 
 ## Self-review (spec coverage)
 
-| Spec requirement (§) | Task |
-|------------------|------|
-| §1.3 finalize/success token usage | Task 1 |
-| §1.3 + §5 amber → copper accent | Task 2 |
+| Spec requirement (§)               | Task   |
+| ---------------------------------- | ------ |
+| §1.3 finalize/success token usage  | Task 1 |
+| §1.3 + §5 amber → copper accent    | Task 2 |
 | §2 `.money` applied to all amounts | Task 3 |
-| §3 button hover/press behavior | Task 4 |
-| §5 offline banner | Task 2 |
+| §3 button hover/press behavior     | Task 4 |
+| §5 offline banner                  | Task 2 |
 
 **Next after completion:** R3 — `2026-07-09-redesign-r3-editor-stepper.md`

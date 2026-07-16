@@ -268,7 +268,9 @@ export function FriendGroupEditorSheet({
               </Button>
             </form>
             {fieldErrors.memberNames ? (
-              <p className="text-sm text-destructive">{fieldErrors.memberNames}</p>
+              <p className="text-sm text-destructive">
+                {fieldErrors.memberNames}
+              </p>
             ) : null}
           </div>
         </div>

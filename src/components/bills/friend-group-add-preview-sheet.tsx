@@ -164,9 +164,7 @@ export function FriendGroupAddPreviewSheet({
               )
             }
           >
-            {adding
-              ? 'Добавяне...'
-              : `Добави избраните (${selectedCount})`}
+            {adding ? 'Добавяне...' : `Добави избраните (${selectedCount})`}
           </Button>
           <Button
             type="button"

@@ -8,13 +8,13 @@
 
 ## Decisions
 
-| Decision | Choice |
-|----------|--------|
-| Scope | Option B — share-friendly, not full marketing site |
-| OG image | Dedicated `public/og-image.png` (1200×630) |
-| Join link OG | Generic copy (no restaurant/bill names in meta) |
-| Indexable routes | `/` only |
-| Base URL | `VITE_APP_ORIGIN` with fallback `https://onova-za-smetkata.com` |
+| Decision         | Choice                                                          |
+| ---------------- | --------------------------------------------------------------- |
+| Scope            | Option B — share-friendly, not full marketing site              |
+| OG image         | Dedicated `public/og-image.png` (1200×630)                      |
+| Join link OG     | Generic copy (no restaurant/bill names in meta)                 |
+| Indexable routes | `/` only                                                        |
+| Base URL         | `VITE_APP_ORIGIN` with fallback `https://onova-za-smetkata.com` |
 
 ---
 
@@ -29,13 +29,13 @@
 
 ## Route head policy
 
-| Route | robots | OG / Twitter |
-|-------|--------|--------------|
-| `/` | index (default) | Full homepage tags + canonical |
-| `/login` | noindex, nofollow | Title only |
-| `/bills/$billId/join` | noindex, nofollow | Full share preview tags |
-| Other `/bills/*` | noindex, nofollow | Title only |
-| `/$` (404) | noindex | Title only |
+| Route                 | robots            | OG / Twitter                   |
+| --------------------- | ----------------- | ------------------------------ |
+| `/`                   | index (default)   | Full homepage tags + canonical |
+| `/login`              | noindex, nofollow | Title only                     |
+| `/bills/$billId/join` | noindex, nofollow | Full share preview tags        |
+| Other `/bills/*`      | noindex, nofollow | Title only                     |
+| `/$` (404)            | noindex           | Title only                     |
 
 ---
 

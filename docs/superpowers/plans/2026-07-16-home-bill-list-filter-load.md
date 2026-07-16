@@ -25,28 +25,30 @@
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `convex/lib/billListSearch.ts` | Normalize search + `billMatchesHomeSearch` |
-| `convex/lib/billListSearch.test.ts` | Vitest for match rules |
-| `src/lib/home-bill-list.ts` | Page size, debounce ms, status URL parse/serialize, empty-state copy |
-| `src/lib/home-bill-list.test.ts` | Vitest for URL + empty copy |
-| `convex/schema.ts` | `by_ownerId_status_updatedAt` index |
-| `package.json` | Add `convex-helpers` |
-| `convex/bills.ts` | Paginated `listWithSummary` |
-| `src/routes/index.tsx` | `validateSearch`, chips, debounced search, paginated list + load more |
+| File                                | Responsibility                                                        |
+| ----------------------------------- | --------------------------------------------------------------------- |
+| `convex/lib/billListSearch.ts`      | Normalize search + `billMatchesHomeSearch`                            |
+| `convex/lib/billListSearch.test.ts` | Vitest for match rules                                                |
+| `src/lib/home-bill-list.ts`         | Page size, debounce ms, status URL parse/serialize, empty-state copy  |
+| `src/lib/home-bill-list.test.ts`    | Vitest for URL + empty copy                                           |
+| `convex/schema.ts`                  | `by_ownerId_status_updatedAt` index                                   |
+| `package.json`                      | Add `convex-helpers`                                                  |
+| `convex/bills.ts`                   | Paginated `listWithSummary`                                           |
+| `src/routes/index.tsx`              | `validateSearch`, chips, debounced search, paginated list + load more |
 
 ---
 
 ### Task 1: Pure helpers (search match, URL status, empty copy)
 
 **Files:**
+
 - Create: `convex/lib/billListSearch.ts`
 - Create: `convex/lib/billListSearch.test.ts`
 - Create: `src/lib/home-bill-list.ts`
 - Create: `src/lib/home-bill-list.test.ts`
 
 **Interfaces:**
+
 - Produces:
 
 ```ts
@@ -118,7 +120,10 @@ describe('billMatchesHomeSearch', () => {
 
   it('treats missing participant names as empty list', () => {
     expect(
-      billMatchesHomeSearch({ restaurantName: 'X', listParticipantNames: undefined }, 'иван'),
+      billMatchesHomeSearch(
+        { restaurantName: 'X', listParticipantNames: undefined },
+        'иван',
+      ),
     ).toBe(false)
   })
 })
@@ -208,9 +213,9 @@ describe('homeBillListEmptyMessage', () => {
   })
 
   it('search miss wins over status', () => {
-    expect(
-      homeBillListEmptyMessage({ status: 'draft', search: 'xyz' }),
-    ).toBe('Няма намерени сметки.')
+    expect(homeBillListEmptyMessage({ status: 'draft', search: 'xyz' })).toBe(
+      'Няма намерени сметки.',
+    )
   })
 
   it('status-only empties', () => {
@@ -287,11 +292,13 @@ EOF
 ### Task 2: Schema index + paginated `listWithSummary`
 
 **Files:**
+
 - Modify: `package.json` / lockfile (via pnpm)
 - Modify: `convex/schema.ts` (bills indexes)
 - Modify: `convex/bills.ts` (`listWithSummary`)
 
 **Interfaces:**
+
 - Consumes: `normalizeHomeBillSearch`, `billMatchesHomeSearch` from `./lib/billListSearch`
 - Produces: `bills.listWithSummary` args/result:
 
@@ -414,9 +421,11 @@ EOF
 ### Task 3: Home route — URL chips, debounced search, load more
 
 **Files:**
+
 - Modify: `src/routes/index.tsx`
 
 **Interfaces:**
+
 - Consumes: `HOME_BILL_PAGE_SIZE`, `HOME_BILL_SEARCH_DEBOUNCE_MS`, `parseHomeBillStatusSearch`, `homeBillStatusSearchParam`, `homeBillListEmptyMessage` from `#/lib/home-bill-list.ts`
 - Consumes: `usePaginatedQuery` from `convex/react`; `api.bills.listWithSummary`
 - Produces: `/` search `{ status?: 'draft' | 'final' }`
@@ -506,7 +515,11 @@ function Home() {
 
       {/* Search input — same id/placeholder; value={search} onChange */}
 
-      <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Филтър по статус">
+      <div
+        className="mb-4 flex flex-wrap gap-2"
+        role="group"
+        aria-label="Филтър по статус"
+      >
         {(
           [
             { value: undefined, label: 'Всички' },
@@ -562,7 +575,12 @@ function Home() {
         )}
 
         {status === 'LoadingMore' && (
-          <Button type="button" variant="outline" className="h-11 w-full" disabled>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 w-full"
+            disabled
+          >
             <Loader2Icon className={cn(ICON.button, 'animate-spin')} />
             Зареди още
           </Button>
@@ -620,16 +638,16 @@ EOF
 
 ## Spec coverage (self-review)
 
-| Spec requirement | Task |
-|------------------|------|
-| Paginated `listWithSummary` + drop `limit` | Task 2 |
-| `status?` + `search?` args; summary DTO | Task 2 |
-| `by_ownerId_status_updatedAt` + keep owner/updatedAt | Task 2 |
-| Contains match restaurant \| participants; empty = no filter | Task 1 + 2 |
-| Chunk size 20 + «Зареди още» | Task 1 constants + Task 3 |
-| Status URL replace; search local | Task 1 + 3 |
-| Empty / loading / load-more / error UX | Task 1 copy + Task 3 |
-| Debounce locked | Task 1 (`300`) + Task 3 |
-| Out of scope items not built | — |
+| Spec requirement                                             | Task                      |
+| ------------------------------------------------------------ | ------------------------- |
+| Paginated `listWithSummary` + drop `limit`                   | Task 2                    |
+| `status?` + `search?` args; summary DTO                      | Task 2                    |
+| `by_ownerId_status_updatedAt` + keep owner/updatedAt         | Task 2                    |
+| Contains match restaurant \| participants; empty = no filter | Task 1 + 2                |
+| Chunk size 20 + «Зареди още»                                 | Task 1 constants + Task 3 |
+| Status URL replace; search local                             | Task 1 + 3                |
+| Empty / loading / load-more / error UX                       | Task 1 copy + Task 3      |
+| Debounce locked                                              | Task 1 (`300`) + Task 3   |
+| Out of scope items not built                                 | —                         |
 
 No placeholders remain; helper and query signatures are consistent across tasks.

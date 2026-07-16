@@ -17,7 +17,11 @@ interface PwaInstallContextValue {
 
 const PwaInstallContext = createContext<PwaInstallContextValue | null>(null)
 
-export function PwaInstallProvider({ children }: { children: React.ReactNode }) {
+export function PwaInstallProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null)
   const [standalone, setStandalone] = useState(false)

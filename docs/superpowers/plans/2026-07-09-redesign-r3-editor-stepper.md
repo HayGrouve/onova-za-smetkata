@@ -18,21 +18,22 @@
 
 ## File structure
 
-| File | Responsibility |
-|------|----------------|
-| `src/routes/bills/$billId/index.tsx` (modify) | Step state from URL, renders step panels 1–4 |
-| `src/routes/bills/$billId/summary.tsx` (modify) | Thin wrapper around shared summary content |
-| `src/components/bills/bill-summary-content.tsx` (new) | Extracted summary body (totals, breakdown, payments, finalize) |
-| `src/components/bills/bill-steps-bar.tsx` (new) | 4-segment tappable progress bar |
-| `src/components/bills/step-nav-bar.tsx` (new) | Sticky bottom: total + breakdown sheet + Назад/Напред |
-| `src/components/bills/totals-breakdown-sheet.tsx` (new) | Breakdown sheet extracted from `StickyTotalsBar` |
-| `src/components/bills/sticky-totals-bar.tsx` (delete at end) | Replaced by `StepNavBar` + `TotalsBreakdownSheet` |
+| File                                                         | Responsibility                                                 |
+| ------------------------------------------------------------ | -------------------------------------------------------------- |
+| `src/routes/bills/$billId/index.tsx` (modify)                | Step state from URL, renders step panels 1–4                   |
+| `src/routes/bills/$billId/summary.tsx` (modify)              | Thin wrapper around shared summary content                     |
+| `src/components/bills/bill-summary-content.tsx` (new)        | Extracted summary body (totals, breakdown, payments, finalize) |
+| `src/components/bills/bill-steps-bar.tsx` (new)              | 4-segment tappable progress bar                                |
+| `src/components/bills/step-nav-bar.tsx` (new)                | Sticky bottom: total + breakdown sheet + Назад/Напред          |
+| `src/components/bills/totals-breakdown-sheet.tsx` (new)      | Breakdown sheet extracted from `StickyTotalsBar`               |
+| `src/components/bills/sticky-totals-bar.tsx` (delete at end) | Replaced by `StepNavBar` + `TotalsBreakdownSheet`              |
 
 ---
 
 ## Task 1: Step search param
 
 **Files:**
+
 - Modify: `src/routes/bills/$billId/index.tsx`
 
 - [x] **Step 1: Add search validation to the route**
@@ -75,6 +76,7 @@ Run dev server; open `/bills/<id>/?step=3`. Expected: route loads, `step === 3` 
 ## Task 2: Extract summary content
 
 **Files:**
+
 - Create: `src/components/bills/bill-summary-content.tsx`
 - Modify: `src/routes/bills/$billId/summary.tsx`
 
@@ -89,7 +91,10 @@ export interface BillSummaryContentProps {
   embedded?: boolean
 }
 
-export function BillSummaryContent({ billId, embedded = false }: BillSummaryContentProps) {
+export function BillSummaryContent({
+  billId,
+  embedded = false,
+}: BillSummaryContentProps) {
   // Move from summary.tsx: useQuery(api.bills.get), calcInputs, totals,
   // finalize/delete mutations + dialogs, participant detail sheet,
   // payment rows, receipt preview — unchanged.
@@ -104,7 +109,9 @@ Keep all hooks inside the component so both consumers get identical behavior. Th
 function BillSummary() {
   const params = Route.useParams()
   const billId = params.billId as Id<'bills'>
-  const { isAuthenticated, isLoading } = useRequireHostAuth(`/bills/${billId}/summary`)
+  const { isAuthenticated, isLoading } = useRequireHostAuth(
+    `/bills/${billId}/summary`,
+  )
   if (isLoading || !isAuthenticated) return <SummarySkeleton />
   return (
     <div className="page-container-summary">
@@ -124,6 +131,7 @@ Expected: PASS; `/summary` renders identically
 ## Task 3: Totals breakdown sheet extraction
 
 **Files:**
+
 - Create: `src/components/bills/totals-breakdown-sheet.tsx`
 - Modify: `src/components/bills/sticky-totals-bar.tsx`
 
@@ -138,7 +146,13 @@ export interface TotalsBreakdownSheetProps {
   labels: Record<string, string>
 }
 
-export function TotalsBreakdownSheet({ open, onOpenChange, totals, participants, labels }: TotalsBreakdownSheetProps) {
+export function TotalsBreakdownSheet({
+  open,
+  onOpenChange,
+  totals,
+  participants,
+  labels,
+}: TotalsBreakdownSheetProps) {
   // Move the <SheetContent side="bottom"> block from sticky-totals-bar.tsx
   // (title „Разбивка на сметката", total row, per-participant rows with status badges)
 }
@@ -151,15 +165,27 @@ export function TotalsBreakdownSheet({ open, onOpenChange, totals, participants,
 ## Task 4: Progress bar + step nav bar
 
 **Files:**
+
 - Create: `src/components/bills/bill-steps-bar.tsx`
 - Create: `src/components/bills/step-nav-bar.tsx`
 
 - [x] **Step 1: `BillStepsBar`**
 
 ```tsx
-const STEP_LABELS = ['Бележка', 'Участници', 'Разпределение', 'Преглед'] as const
+const STEP_LABELS = [
+  'Бележка',
+  'Участници',
+  'Разпределение',
+  'Преглед',
+] as const
 
-export function BillStepsBar({ step, onStepSelect }: { step: BillStep; onStepSelect: (s: BillStep) => void }) {
+export function BillStepsBar({
+  step,
+  onStepSelect,
+}: {
+  step: BillStep
+  onStepSelect: (s: BillStep) => void
+}) {
   return (
     <div className="sticky top-14 z-30 border-b sticky-surface">
       <div className="mx-auto flex max-w-lg flex-col gap-1.5 px-4 py-2">
@@ -201,13 +227,26 @@ export interface StepNavBarProps {
   onTotalClick: () => void
 }
 
-export function StepNavBar({ step, onStepChange, totalCents, unassignedCount, onTotalClick }: StepNavBarProps) {
+export function StepNavBar({
+  step,
+  onStepChange,
+  totalCents,
+  unassignedCount,
+  onTotalClick,
+}: StepNavBarProps) {
   return (
     <>
-      <div aria-hidden className="h-[calc(4.5rem+env(safe-area-inset-bottom,0px))]" />
+      <div
+        aria-hidden
+        className="h-[calc(4.5rem+env(safe-area-inset-bottom,0px))]"
+      />
       <div className="fixed inset-x-0 bottom-0 z-40 border-t sticky-surface pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
-          <button type="button" onClick={onTotalClick} className="tap-feedback text-left">
+          <button
+            type="button"
+            onClick={onTotalClick}
+            className="tap-feedback text-left"
+          >
             <p className="text-xs text-muted-foreground">Общо</p>
             <p className="money font-semibold">{formatEur(totalCents)}</p>
           </button>
@@ -218,11 +257,18 @@ export function StepNavBar({ step, onStepChange, totalCents, unassignedCount, on
           )}
           <div className="ml-auto flex gap-2">
             {step > 1 && (
-              <Button variant="outline" className="h-11" onClick={() => onStepChange((step - 1) as BillStep)}>
+              <Button
+                variant="outline"
+                className="h-11"
+                onClick={() => onStepChange((step - 1) as BillStep)}
+              >
                 Назад
               </Button>
             )}
-            <Button className="h-11" onClick={() => onStepChange((step + 1) as BillStep)}>
+            <Button
+              className="h-11"
+              onClick={() => onStepChange((step + 1) as BillStep)}
+            >
               Напред
             </Button>
           </div>
@@ -238,18 +284,19 @@ export function StepNavBar({ step, onStepChange, totalCents, unassignedCount, on
 ## Task 5: Step panels in the editor
 
 **Files:**
+
 - Modify: `src/routes/bills/$billId/index.tsx`
 
 - [x] **Step 1: Group existing cards into panels**
 
 Reorganize the JSX of `BillEditorContent` (no internal component changes):
 
-| Panel | Existing blocks moved in |
-|-------|--------------------------|
+| Panel        | Existing blocks moved in                                                                           |
+| ------------ | -------------------------------------------------------------------------------------------------- |
 | `step === 1` | Receipt card (photo/scan CTA) + „Данни за сметката" card (restaurant, tip, `BillAdvancedSettings`) |
-| `step === 2` | „Участници" card (`ParticipantList` + `BillInviteCard`) |
-| `step === 3` | „Артикули" card (`ItemList`) |
-| `step === 4` | `<BillSummaryContent billId={billId} embedded />` |
+| `step === 2` | „Участници" card (`ParticipantList` + `BillInviteCard`)                                            |
+| `step === 3` | „Артикули" card (`ItemList`)                                                                       |
+| `step === 4` | `<BillSummaryContent billId={billId} embedded />`                                                  |
 
 ```tsx
 <BillStepsBar step={step} onStepSelect={goToStep} />
@@ -282,8 +329,12 @@ Step 3, when `participants.length === 0`, show above `ItemList`:
 ```tsx
 <Card>
   <CardContent className="flex flex-col items-start gap-2 pt-6">
-    <p className="text-sm text-muted-foreground">Няма участници — добавете ги, за да разпределите артикулите.</p>
-    <Button variant="outline" className="h-11" onClick={() => goToStep(2)}>Към стъпка 2 · Участници</Button>
+    <p className="text-sm text-muted-foreground">
+      Няма участници — добавете ги, за да разпределите артикулите.
+    </p>
+    <Button variant="outline" className="h-11" onClick={() => goToStep(2)}>
+      Към стъпка 2 · Участници
+    </Button>
   </CardContent>
 </Card>
 ```
@@ -307,6 +358,7 @@ Delete import + `<StickyTotalsBar …/>` block and the old spacer.
 ## Task 6: Cleanup + payment settings hint
 
 **Files:**
+
 - Delete: `src/components/bills/sticky-totals-bar.tsx`
 - Modify: `src/styles.css` (remove `.sticky-totals-bar-spacer`)
 - Modify: `src/components/bills/bill-summary-content.tsx`
@@ -318,14 +370,19 @@ Delete import + `<StickyTotalsBar …/>` block and the old spacer.
 `BillSummaryContent` already uses `usePaymentSettingsStatus`. Ensure the unconfigured state renders a visible hint card near the payment rows (not only in the header menu):
 
 ```tsx
-{!paymentSettingsStatus.isConfigured && bill.status !== 'final' && (
-  <Card className="border-accent-foreground/40 bg-accent/40">
-    <CardContent className="flex flex-col items-start gap-2 pt-6">
-      <p className="text-sm">Настройте начин на плащане (Revolut / IBAN), за да могат гостите да плащат лесно.</p>
-      <PaymentSettingsOpenButton />
-    </CardContent>
-  </Card>
-)}
+{
+  !paymentSettingsStatus.isConfigured && bill.status !== 'final' && (
+    <Card className="border-accent-foreground/40 bg-accent/40">
+      <CardContent className="flex flex-col items-start gap-2 pt-6">
+        <p className="text-sm">
+          Настройте начин на плащане (Revolut / IBAN), за да могат гостите да
+          плащат лесно.
+        </p>
+        <PaymentSettingsOpenButton />
+      </CardContent>
+    </Card>
+  )
+}
 ```
 
 (Adapt to the actual `usePaymentSettingsStatus` return shape; if an equivalent nudge already exists in the moved summary code, restyle it to this copper card instead of duplicating.)
@@ -356,16 +413,16 @@ Expected: PASS
 
 ## Self-review (spec coverage)
 
-| Spec requirement (§) | Task |
-|------------------|------|
-| §4.1 4 steps, same route, `?step` param | Tasks 1, 5 |
-| §4.1 summary shared between route and step 4 | Task 2 |
-| §4.2 tappable progress bar | Task 4 |
-| §4.2 sticky nav: total + Назад/Напред + unassigned chip | Task 4 |
-| §4.2 breakdown sheet from total | Tasks 3, 5 |
-| §4.3 free navigation, empty-state guidance | Task 5 |
-| §4.1 finalized → step 4 | Task 5 |
-| §4.4 payment settings hint | Task 6 |
-| §3 step transition motion | Task 5 |
+| Spec requirement (§)                                    | Task       |
+| ------------------------------------------------------- | ---------- |
+| §4.1 4 steps, same route, `?step` param                 | Tasks 1, 5 |
+| §4.1 summary shared between route and step 4            | Task 2     |
+| §4.2 tappable progress bar                              | Task 4     |
+| §4.2 sticky nav: total + Назад/Напред + unassigned chip | Task 4     |
+| §4.2 breakdown sheet from total                         | Tasks 3, 5 |
+| §4.3 free navigation, empty-state guidance              | Task 5     |
+| §4.1 finalized → step 4                                 | Task 5     |
+| §4.4 payment settings hint                              | Task 6     |
+| §3 step transition motion                               | Task 5     |
 
 **Next after completion:** R4 — `2026-07-09-redesign-r4-cleanup-qa.md`

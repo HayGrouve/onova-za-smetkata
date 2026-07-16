@@ -37,9 +37,7 @@ export function parsePaymentAmountInput(
 
 function validatePaymentAmountCents(
   amountCents: number,
-):
-  | { ok: true; amountCents: number }
-  | { ok: false; message: string } {
+): { ok: true; amountCents: number } | { ok: false; message: string } {
   const parsed = positiveCentsSchema('Сумата').safeParse(amountCents)
   if (!parsed.success) {
     return {
@@ -52,9 +50,7 @@ function validatePaymentAmountCents(
 
 function validatePaymentNote(
   note: string | undefined,
-):
-  | { ok: true; note?: string }
-  | { ok: false; message: string } {
+): { ok: true; note?: string } | { ok: false; message: string } {
   if (note === undefined) {
     return { ok: true }
   }
@@ -71,9 +67,7 @@ function validatePaymentNote(
 export function validatePaymentAddForm(
   input: PaymentAddFormInput,
   context: PaymentAddContext,
-):
-  | { ok: true; data: PaymentAddData }
-  | { ok: false; message: string } {
+): { ok: true; data: PaymentAddData } | { ok: false; message: string } {
   const parsedAmount = parsePaymentAmountInput(input.amountInput)
   if (!parsedAmount.ok) {
     return { ok: false, message: parsedAmount.message }
@@ -105,9 +99,7 @@ export function validatePaymentAddForm(
 export function validatePaymentAdd(
   args: PaymentAddArgs,
   context: PaymentAddServerContext,
-):
-  | { ok: true; data: PaymentAddData }
-  | { ok: false; message: string } {
+): { ok: true; data: PaymentAddData } | { ok: false; message: string } {
   const validatedAmount = validatePaymentAmountCents(args.amountCents)
   if (!validatedAmount.ok) {
     return { ok: false, message: validatedAmount.message }

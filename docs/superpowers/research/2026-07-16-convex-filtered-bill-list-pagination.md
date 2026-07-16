@@ -40,11 +40,11 @@ Sources:
 
 `PaginationOptions` includes at least:
 
-| Field | Role |
-| --- | --- |
-| `numItems` | Initial page size (reactive pages may grow/shrink) |
-| `cursor` | `null` to start, or continue cursor from prior page |
-| `endCursor` | Used by reactive clients for gap-less pages / splits |
+| Field                                  | Role                                                                 |
+| -------------------------------------- | -------------------------------------------------------------------- |
+| `numItems`                             | Initial page size (reactive pages may grow/shrink)                   |
+| `cursor`                               | `null` to start, or continue cursor from prior page                  |
+| `endCursor`                            | Used by reactive clients for gap-less pages / splits                 |
 | `maximumRowsRead` / `maximumBytesRead` | Bound work **before** filters apply; not enforced for search queries |
 
 Sources: [PaginationOptions](https://docs.convex.dev/api/interfaces/server.PaginationOptions), [Paginated Queries](https://docs.convex.dev/database/pagination).
@@ -109,7 +109,7 @@ Source: [`usePaginatedQuery`](https://docs.convex.dev/api/modules/react#usepagin
 
 Docs allow `map` / `filter` on the returned `page` array before returning from the query (e.g. DTO mapping like today’s summary fields). Source: [Paginated Queries — Transforming results](https://docs.convex.dev/database/pagination).
 
-That is for **shaping** results. Predicates that define *which bills belong in the list* (status, text match) should run **before** `.paginate` via `withIndex` / `withSearchIndex` / `.filter`, so pagination counts matching documents. Post-paginate array filtering can under-fill pages and skip matches that never entered the raw page.
+That is for **shaping** results. Predicates that define _which bills belong in the list_ (status, text match) should run **before** `.paginate` via `withIndex` / `withSearchIndex` / `.filter`, so pagination counts matching documents. Post-paginate array filtering can under-fill pages and skip matches that never entered the raw page.
 
 ---
 
@@ -151,7 +151,7 @@ When using `.filter` for rare matches while paginating, consider `maximumRowsRea
 
 ### When the docs say use search
 
-If you need keyword matching *inside* a string field, Convex points to **full-text search**, not ordinary `.filter`. Source: [Filters](https://docs.convex.dev/database/reading-data/filters) (“If you need to filter to documents containing some keywords, use a search query.”), [Full Text Search](https://docs.convex.dev/search/text-search).
+If you need keyword matching _inside_ a string field, Convex points to **full-text search**, not ordinary `.filter`. Source: [Filters](https://docs.convex.dev/database/reading-data/filters) (“If you need to filter to documents containing some keywords, use a search query.”), [Full Text Search](https://docs.convex.dev/search/text-search).
 
 ### Search index model
 
@@ -178,18 +178,18 @@ Convex FTS searches **one string field**. Our list today matches restaurant and 
 
 Tradeoffs vs index + `.filter` / JS match:
 
-| Approach | Order | Matching | Schema |
-| --- | --- | --- | --- |
-| `searchIndex` + paginate | Relevance only | Keyword / prefix-on-last-term | Denormalized search string + search index |
-| `by_ownerId_updatedAt` (+ status) + `.filter` / JS | `updatedAt` desc (index order) | App-defined (substring, case-fold, etc.) | Minimal / reuse denormalized names |
+| Approach                                           | Order                          | Matching                                 | Schema                                    |
+| -------------------------------------------------- | ------------------------------ | ---------------------------------------- | ----------------------------------------- |
+| `searchIndex` + paginate                           | Relevance only                 | Keyword / prefix-on-last-term            | Denormalized search string + search index |
+| `by_ownerId_updatedAt` (+ status) + `.filter` / JS | `updatedAt` desc (index order) | App-defined (substring, case-fold, etc.) | Minimal / reuse denormalized names        |
 
 Sources for ordering/search behavior: [Full Text Search — Ordering / Typeahead](https://docs.convex.dev/search/text-search); for index order: [Indexes — Sorting](https://docs.convex.dev/database/reading-data/indexes).
 
-**Practical recommendation for this app:**  
+**Practical recommendation for this app:**
 
-- **Browse / filter-by-status (empty search):** paginate over `by_ownerId_updatedAt` or `by_ownerId_status_updatedAt`, `order("desc")`, `usePaginatedQuery` + `loadMore`.  
-- **Non-empty search:** either  
-  - (A) same index path + server-side string match via `.filter` / handler logic on the owner (and status) range — simplest, keeps recency order, fine at hundreds of bills; or  
+- **Browse / filter-by-status (empty search):** paginate over `by_ownerId_updatedAt` or `by_ownerId_status_updatedAt`, `order("desc")`, `usePaginatedQuery` + `loadMore`.
+- **Non-empty search:** either
+  - (A) same index path + server-side string match via `.filter` / handler logic on the owner (and status) range — simplest, keeps recency order, fine at hundreds of bills; or
   - (B) dedicated search query using `searchIndex` if product wants keyword/relevance search — expect different sort and a denormalized search field.
 
 Do **not** assume one FTS query can preserve “newest first” browsing; the docs forbid alternate search ordering.
@@ -214,13 +214,13 @@ Do **not** assume one FTS query can preserve “newest first” browsing; the do
 
 Given charting lean (server-side search + status, «Зареди още», tens–low hundreds):
 
-| Concern | Recommendation |
-| --- | --- |
-| Pagination mechanism | Successor to `listWithSummary`: paginated query + `usePaginatedQuery` + `loadMore` |
-| Status | Args `status?: "draft" \| "final"`; compound index `by_ownerId_status_updatedAt` for chips; `by_ownerId_updatedAt` when unset (“all”) |
-| Search | Keep recency order: apply server-side match on denormalized restaurant / participant fields within the owner(+status) index range; adopt `searchIndex` only if relevance ranking is desired |
-| Chunk size | Product decision (`initialNumItems` / `loadMore(n)`); not constrained by Convex beyond normal read limits |
-| Replace `limit` max-200 | Pagination supersedes a single large `take`; still bound work with page size (+ optional `maximumRowsRead` if using sparse `.filter`) |
+| Concern                 | Recommendation                                                                                                                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pagination mechanism    | Successor to `listWithSummary`: paginated query + `usePaginatedQuery` + `loadMore`                                                                                                          |
+| Status                  | Args `status?: "draft" \| "final"`; compound index `by_ownerId_status_updatedAt` for chips; `by_ownerId_updatedAt` when unset (“all”)                                                       |
+| Search                  | Keep recency order: apply server-side match on denormalized restaurant / participant fields within the owner(+status) index range; adopt `searchIndex` only if relevance ranking is desired |
+| Chunk size              | Product decision (`initialNumItems` / `loadMore(n)`); not constrained by Convex beyond normal read limits                                                                                   |
+| Replace `limit` max-200 | Pagination supersedes a single large `take`; still bound work with page size (+ optional `maximumRowsRead` if using sparse `.filter`)                                                       |
 
 This stays within primary Convex patterns and matches the map’s load UX without inventing manual cursor state on the client.
 
@@ -228,16 +228,16 @@ This stays within primary Convex patterns and matches the map’s load UX withou
 
 ## Primary sources
 
-| Topic | URL |
-| --- | --- |
-| Paginated queries | https://docs.convex.dev/database/pagination |
-| Reading data / indexes overview | https://docs.convex.dev/database/reading-data/ |
-| Filters | https://docs.convex.dev/database/reading-data/filters |
-| Indexes | https://docs.convex.dev/database/reading-data/indexes |
-| Indexes & query performance | https://docs.convex.dev/database/reading-data/indexes/indexes-and-query-perf |
-| Full text search | https://docs.convex.dev/search/text-search |
-| `usePaginatedQuery` | https://docs.convex.dev/api/modules/react#usepaginatedquery |
-| `paginationOptsValidator` | https://docs.convex.dev/api/modules/server#paginationoptsvalidator |
-| `PaginationOptions` | https://docs.convex.dev/api/interfaces/server.PaginationOptions |
-| `PaginationResult` | https://docs.convex.dev/api/interfaces/server.PaginationResult |
-| `Query` / `paginate` / `filter` | https://docs.convex.dev/api/interfaces/server.Query |
+| Topic                           | URL                                                                          |
+| ------------------------------- | ---------------------------------------------------------------------------- |
+| Paginated queries               | https://docs.convex.dev/database/pagination                                  |
+| Reading data / indexes overview | https://docs.convex.dev/database/reading-data/                               |
+| Filters                         | https://docs.convex.dev/database/reading-data/filters                        |
+| Indexes                         | https://docs.convex.dev/database/reading-data/indexes                        |
+| Indexes & query performance     | https://docs.convex.dev/database/reading-data/indexes/indexes-and-query-perf |
+| Full text search                | https://docs.convex.dev/search/text-search                                   |
+| `usePaginatedQuery`             | https://docs.convex.dev/api/modules/react#usepaginatedquery                  |
+| `paginationOptsValidator`       | https://docs.convex.dev/api/modules/server#paginationoptsvalidator           |
+| `PaginationOptions`             | https://docs.convex.dev/api/interfaces/server.PaginationOptions              |
+| `PaginationResult`              | https://docs.convex.dev/api/interfaces/server.PaginationResult               |
+| `Query` / `paginate` / `filter` | https://docs.convex.dev/api/interfaces/server.Query                          |

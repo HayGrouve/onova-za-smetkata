@@ -24,34 +24,36 @@
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `shared/guest-share-preview.ts` | Pure share preview cents for qty=1 cards |
-| `shared/guest-share-preview.test.ts` | Vitest for preview helper |
-| `shared/combined-payment.ts` | Extend validation for N covered participants |
-| `shared/combined-payment-messages.ts` | New banner/toast format strings |
-| `shared/combined-payment.test.ts` | Extend Vitest for multi-cover |
-| `convex/schema.ts` | Add `coveredParticipantIds`, `coveredAmountsByParticipant` |
-| `convex/combinedPayments.ts` | `create` array args, `updateCovered`, N-row `confirm` |
-| `convex/lib/combinedPayment.ts` | Re-export shared helpers + legacy ID resolver |
-| `src/components/bills/guest-item-row.tsx` | Share preview UI on qty=1; progress on qty>1 |
-| `src/components/bills/combined-pay-chips.tsx` | Multi-select chips |
-| `src/components/bills/guest-claim-footer.tsx` | Wire multi-select + `updateCovered` |
-| `src/components/bills/combined-payment-banner.tsx` | N-name banner/confirm/toast |
-| `src/components/bills/assignment-row.tsx` | Optional „Споделено (N)“ badge |
-| `e2e/guest-item-sharing.spec.ts` | 3-guest shared qty=1 item |
-| `e2e/combined-guest-payment.spec.ts` | Extend for 3-person combined pay |
+| File                                               | Responsibility                                             |
+| -------------------------------------------------- | ---------------------------------------------------------- |
+| `shared/guest-share-preview.ts`                    | Pure share preview cents for qty=1 cards                   |
+| `shared/guest-share-preview.test.ts`               | Vitest for preview helper                                  |
+| `shared/combined-payment.ts`                       | Extend validation for N covered participants               |
+| `shared/combined-payment-messages.ts`              | New banner/toast format strings                            |
+| `shared/combined-payment.test.ts`                  | Extend Vitest for multi-cover                              |
+| `convex/schema.ts`                                 | Add `coveredParticipantIds`, `coveredAmountsByParticipant` |
+| `convex/combinedPayments.ts`                       | `create` array args, `updateCovered`, N-row `confirm`      |
+| `convex/lib/combinedPayment.ts`                    | Re-export shared helpers + legacy ID resolver              |
+| `src/components/bills/guest-item-row.tsx`          | Share preview UI on qty=1; progress on qty>1               |
+| `src/components/bills/combined-pay-chips.tsx`      | Multi-select chips                                         |
+| `src/components/bills/guest-claim-footer.tsx`      | Wire multi-select + `updateCovered`                        |
+| `src/components/bills/combined-payment-banner.tsx` | N-name banner/confirm/toast                                |
+| `src/components/bills/assignment-row.tsx`          | Optional „Споделено (N)“ badge                             |
+| `e2e/guest-item-sharing.spec.ts`                   | 3-guest shared qty=1 item                                  |
+| `e2e/combined-guest-payment.spec.ts`               | Extend for 3-person combined pay                           |
 
 ---
 
 ### Task 1: Share preview helper (TDD)
 
 **Files:**
+
 - Create: `shared/guest-share-preview.ts`
 - Create: `shared/guest-share-preview.test.ts`
 - Create: `src/lib/guest-share-preview.ts` (re-export shim, matches `src/lib/bill-calculations.ts` pattern)
 
 **Interfaces:**
+
 - Produces:
   - `previewShareCents(lineTotalCents: number, assigneeCount: number, joining: boolean): number`
   - `formatShareParticipantCount(count: number): string` → e.g. `"2 души"`
@@ -61,7 +63,10 @@
 ```ts
 // shared/guest-share-preview.test.ts
 import { describe, expect, it } from 'vitest'
-import { previewShareCents, formatShareParticipantCount } from './guest-share-preview'
+import {
+  previewShareCents,
+  formatShareParticipantCount,
+} from './guest-share-preview'
 
 describe('previewShareCents', () => {
   it('returns full line when solo and not joining', () => {
@@ -112,9 +117,13 @@ export function previewShareCents(
   assigneeCount: number,
   joining: boolean,
 ): number {
-  const totalAssignees = joining ? assigneeCount + 1 : Math.max(assigneeCount, 1)
+  const totalAssignees = joining
+    ? assigneeCount + 1
+    : Math.max(assigneeCount, 1)
   if (totalAssignees <= 0) return lineTotalCents
-  const placeholderIds = Array.from({ length: totalAssignees }, (_, i) => String(i))
+  const placeholderIds = Array.from({ length: totalAssignees }, (_, i) =>
+    String(i),
+  )
   const portions = splitLineTotal(lineTotalCents, placeholderIds)
   const index = joining ? assigneeCount : 0
   return portions[index]?.cents ?? 0
@@ -147,9 +156,11 @@ git commit -m "feat: add guest share preview helper for qty=1 items"
 ### Task 2: GuestItemRow share preview UI
 
 **Files:**
+
 - Modify: `src/components/bills/guest-item-row.tsx`
 
 **Interfaces:**
+
 - Consumes: `previewShareCents`, `formatShareParticipantCount` from `#/lib/guest-share-preview.ts`
 - Consumes: existing `getOtherClaimantLabels`, `getGuestClaimItemState`
 
@@ -189,11 +200,13 @@ git commit -m "feat: show share preview on guest item cards"
 ### Task 3: Multi-person combined payment validation (TDD)
 
 **Files:**
+
 - Modify: `shared/combined-payment.ts`
 - Modify: `shared/combined-payment-messages.ts`
 - Modify: `shared/combined-payment.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `getCoveredParticipantIds(request: { coveredParticipantIds?: string[]; coveredParticipantId?: string }): string[]`
   - `isCombinedPaymentRequest(request): boolean` — true when covered IDs non-empty
@@ -282,7 +295,9 @@ describe('validateCombinedPaymentConfirm (multi-cover)', () => {
 
 describe('getCoveredParticipantIds', () => {
   it('reads legacy single id', () => {
-    expect(getCoveredParticipantIds({ coveredParticipantId: 'p2' })).toEqual(['p2'])
+    expect(getCoveredParticipantIds({ coveredParticipantId: 'p2' })).toEqual([
+      'p2',
+    ])
   })
 
   it('prefers array when present', () => {
@@ -306,6 +321,7 @@ Expected: FAIL on new tests
 - [ ] **Step 3: Implement validation**
 
 Key implementation notes:
+
 - Replace `coveredHasPending: boolean` with `coveredPendingIds: Set<string>` in context
 - Reject empty `coveredParticipantIds` on combined create (solo still uses `createSolo`)
 - Reject payer in covered list; reject duplicates via `new Set(ids).size !== ids.length`
@@ -329,9 +345,11 @@ git commit -m "feat: validate multi-person combined guest payments"
 ### Task 4: Convex schema extension
 
 **Files:**
+
 - Modify: `convex/schema.ts`
 
 **Interfaces:**
+
 - Produces schema fields on `combinedPaymentRequests`:
   - `coveredParticipantIds: v.optional(v.array(v.id('participants')))`
   - `coveredAmountsByParticipant: v.optional(v.record(v.string(), v.number()))`
@@ -362,10 +380,12 @@ git commit -m "feat: extend combinedPaymentRequests for multi-cover"
 ### Task 5: combinedPayments backend (create, updateCovered, confirm)
 
 **Files:**
+
 - Modify: `convex/combinedPayments.ts`
 - Modify: `convex/lib/combinedPayment.ts` (if shim needs new exports)
 
 **Interfaces:**
+
 - Consumes: `validateCombinedPaymentCreate`, `validateCombinedPaymentConfirm`, `validateUpdateCovered`, `getCoveredParticipantIds` from `./lib/combinedPayment`
 - Produces:
   - `create` args: `coveredParticipantIds: v.array(v.id('participants'))` (min length 1)
@@ -396,6 +416,7 @@ function buildCoveredPendingIds(
 Change arg from `coveredParticipantId` to `coveredParticipantIds: v.array(v.id('participants'))`.
 
 Insert row with:
+
 - `coveredParticipantIds`
 - `coveredAmountsByParticipant`
 - `coveredAmountCents` (sum)
@@ -443,9 +464,11 @@ git commit -m "feat: multi-cover combined payment mutations"
 ### Task 6: CombinedPayChips multi-select
 
 **Files:**
+
 - Modify: `src/components/bills/combined-pay-chips.tsx`
 
 **Interfaces:**
+
 - Props change:
   - `selectedCoveredIds: Id<'participants'>[]`
   - `onToggle: (id: Id<'participants'>) => void`
@@ -480,16 +503,20 @@ git commit -m "feat: multi-select combined pay chips"
 ### Task 7: GuestClaimFooter multi-cover wiring
 
 **Files:**
+
 - Modify: `src/components/bills/guest-claim-footer.tsx`
 
 **Interfaces:**
+
 - Consumes: `api.combinedPayments.create`, `api.combinedPayments.updateCovered`, `api.combinedPayments.cancel`
 - State: `selectedCoveredIds: Id<'participants'>[]`
 
 - [ ] **Step 1: Replace single-select state with array**
 
 ```tsx
-const [selectedCoveredIds, setSelectedCoveredIds] = useState<Id<'participants'>[]>([])
+const [selectedCoveredIds, setSelectedCoveredIds] = useState<
+  Id<'participants'>[]
+>([])
 ```
 
 Sync from pending via `getCoveredParticipantIds(pending)` on load.
@@ -507,22 +534,39 @@ async function handleToggleCovered(id: Id<'participants'>) {
   setIsSelectingCover(true)
   try {
     if (next.length === 0) {
-      if (pending) await cancelCombined({ billId, sessionToken, requestId: pending._id })
+      if (pending)
+        await cancelCombined({ billId, sessionToken, requestId: pending._id })
       return
     }
     if (!pending) {
-      await createCombined({ billId, shareToken, sessionToken, coveredParticipantIds: next })
+      await createCombined({
+        billId,
+        shareToken,
+        sessionToken,
+        coveredParticipantIds: next,
+      })
       return
     }
     if (transferInitiated) {
       toast.error(COMBINED_PAYMENT_MESSAGES.selectionLockedAfterTransfer)
-      setSelectedCoveredIds(getCoveredParticipantIds(pending) as Id<'participants'>[])
+      setSelectedCoveredIds(
+        getCoveredParticipantIds(pending) as Id<'participants'>[],
+      )
       return
     }
-    await updateCovered({ billId, sessionToken, requestId: pending._id, coveredParticipantIds: next })
+    await updateCovered({
+      billId,
+      sessionToken,
+      requestId: pending._id,
+      coveredParticipantIds: next,
+    })
   } catch (error) {
     toast.error(getConvexErrorMessage(error))
-    setSelectedCoveredIds(pending ? (getCoveredParticipantIds(pending) as Id<'participants'>[]) : [])
+    setSelectedCoveredIds(
+      pending
+        ? (getCoveredParticipantIds(pending) as Id<'participants'>[])
+        : [],
+    )
   } finally {
     setIsSelectingCover(false)
   }
@@ -536,19 +580,28 @@ Import `getCoveredParticipantIds` from shared via `#/lib/combined-payment` shim 
 When `selectedCoveredIds.length > 0`, render:
 
 ```tsx
-<p className="text-xs text-muted-foreground">Вие: {formatEur(payerRemaining)}</p>
-{selectedCoveredIds.map((id) => (
-  <p key={id} className="text-xs text-muted-foreground">
-    {participantLabels?.[id] ?? 'Участник'}: {formatEur(remainingFor(id))}
-  </p>
-))}
+;<p className="text-xs text-muted-foreground">
+  Вие: {formatEur(payerRemaining)}
+</p>
+{
+  selectedCoveredIds.map((id) => (
+    <p key={id} className="text-xs text-muted-foreground">
+      {participantLabels?.[id] ?? 'Участник'}: {formatEur(remainingFor(id))}
+    </p>
+  ))
+}
 ```
 
 - [ ] **Step 4: Update Revolut note participant list**
 
 ```tsx
 const participantNames = payingForOthers
-  ? [label, ...selectedCoveredIds.map((id) => participantLabels?.[id]).filter(Boolean)]
+  ? [
+      label,
+      ...selectedCoveredIds
+        .map((id) => participantLabels?.[id])
+        .filter(Boolean),
+    ]
   : [label]
 ```
 
@@ -564,10 +617,12 @@ git commit -m "feat: wire multi-cover selection in guest claim footer"
 ### Task 8: Host CombinedPaymentBanner for N names
 
 **Files:**
+
 - Modify: `src/components/bills/combined-payment-banner.tsx`
 - Modify: `shared/combined-payment-messages.ts`
 
 **Interfaces:**
+
 - Consumes: `getCoveredParticipantIds` for each pending request
 
 - [ ] **Step 1: Add format helpers**
@@ -578,11 +633,13 @@ function formatCoveredNames(
   coveredNames: string[],
 ): { banner: string; confirmPrompt: string; toast: string } {
   if (coveredNames.length === 0) return soloFormats(payerName)
-  if (coveredNames.length === 1) return twoPersonFormats(payerName, coveredNames[0]!)
+  if (coveredNames.length === 1)
+    return twoPersonFormats(payerName, coveredNames[0]!)
   const all = [payerName, ...coveredNames]
-  const joined = all.length <= 2
-    ? all.join(' и ')
-    : `${all.slice(0, -1).join(', ')} и ${all.at(-1)}`
+  const joined =
+    all.length <= 2
+      ? all.join(' и ')
+      : `${all.slice(0, -1).join(', ')} и ${all.at(-1)}`
   return {
     banner: `${payerName} плати {total} за ${joined}`,
     confirmPrompt: `Маркира ${joined} като платени?`,
@@ -609,14 +666,19 @@ git commit -m "feat: host banner for multi-person combined payments"
 ### Task 9: AssignmentRow shared badge (optional polish)
 
 **Files:**
+
 - Modify: `src/components/bills/assignment-row.tsx`
 
 - [ ] **Step 1: Show badge when qty=1 and assignees > 1**
 
 ```tsx
-{quantity === 1 && assignedParticipantIds.length > 1 ? (
-  <Badge variant="secondary">Споделено ({assignedParticipantIds.length})</Badge>
-) : null}
+{
+  quantity === 1 && assignedParticipantIds.length > 1 ? (
+    <Badge variant="secondary">
+      Споделено ({assignedParticipantIds.length})
+    </Badge>
+  ) : null
+}
 ```
 
 - [ ] **Step 2: Commit**
@@ -631,6 +693,7 @@ git commit -m "feat: shared item badge on host assignment row"
 ### Task 10: E2E tests
 
 **Files:**
+
 - Create: `e2e/guest-item-sharing.spec.ts`
 - Modify: `e2e/combined-guest-payment.spec.ts`
 
@@ -638,7 +701,9 @@ git commit -m "feat: shared item badge on host assignment row"
 
 ```ts
 // e2e/guest-item-sharing.spec.ts
-test('three guests share one qty=1 item with equal split', async ({ browser }) => {
+test('three guests share one qty=1 item with equal split', async ({
+  browser,
+}) => {
   // Host: 3 participants, 1 item qty=1 €9.00
   // Guest A joins item first
   // Guest B sees share preview, joins
@@ -694,20 +759,20 @@ git commit -m "fix: address preflight issues from guest sharing refactor"
 
 ## Spec coverage checklist
 
-| Spec requirement | Task |
-|------------------|------|
-| qty=1 share preview UI | Task 1, 2 |
-| qty>1 unit progress copy | Task 2 |
-| Multi-select chips | Task 6, 7 |
+| Spec requirement                    | Task         |
+| ----------------------------------- | ------------ |
+| qty=1 share preview UI              | Task 1, 2    |
+| qty>1 unit progress copy            | Task 2       |
+| Multi-select chips                  | Task 6, 7    |
 | `coveredParticipantIds` + snapshots | Task 3, 4, 5 |
-| `updateCovered` mutation | Task 5, 7 |
-| N-row confirm | Task 5 |
-| Legacy `coveredParticipantId` reads | Task 3, 5 |
-| Host banner N names | Task 8 |
-| AssignmentRow badge | Task 9 |
-| E2E sharing + multi-pay | Task 10 |
-| Scrollable chips | Task 6 |
-| Block chip changes after Revolut | Task 3, 7 |
+| `updateCovered` mutation            | Task 5, 7    |
+| N-row confirm                       | Task 5       |
+| Legacy `coveredParticipantId` reads | Task 3, 5    |
+| Host banner N names                 | Task 8       |
+| AssignmentRow badge                 | Task 9       |
+| E2E sharing + multi-pay             | Task 10      |
+| Scrollable chips                    | Task 6       |
+| Block chip changes after Revolut    | Task 3, 7    |
 
 ## Self-review notes
 

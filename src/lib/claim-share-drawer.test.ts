@@ -9,7 +9,9 @@ import {
 
 describe('claimShareExpandedHeightPx', () => {
   it('uses 70% of viewport when under the 36rem cap', () => {
-    expect(claimShareExpandedHeightPx(800, 16)).toBe(800 * CLAIM_SHARE_EXPANDED_FRACTION)
+    expect(claimShareExpandedHeightPx(800, 16)).toBe(
+      800 * CLAIM_SHARE_EXPANDED_FRACTION,
+    )
   })
 
   it('caps at 36rem on tall viewports', () => {

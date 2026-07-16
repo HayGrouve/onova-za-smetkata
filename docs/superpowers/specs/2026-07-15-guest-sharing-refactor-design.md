@@ -26,15 +26,15 @@ Two friction points at the table:
 
 ## UX decisions
 
-| Topic | Choice |
-|-------|--------|
-| Item assignment driver | Guest self-serve on claim screen |
-| qty=1 items (e.g. 1L drink) | Equal cost split among everyone who joins |
-| qty>1 items (e.g. 3 beers) | Unit claiming — guests take whole units via steppers |
-| Multi-person payment | One transfer, host confirms once |
-| Payer selection | Always includes self; guest picks additional unpaid participants |
-| UI approach | Evolve current claim screen (tabs + footer), not a full redesign |
-| Host assignment | No functional change; optional “shared (N)” badge polish |
+| Topic                       | Choice                                                           |
+| --------------------------- | ---------------------------------------------------------------- |
+| Item assignment driver      | Guest self-serve on claim screen                                 |
+| qty=1 items (e.g. 1L drink) | Equal cost split among everyone who joins                        |
+| qty>1 items (e.g. 3 beers)  | Unit claiming — guests take whole units via steppers             |
+| Multi-person payment        | One transfer, host confirms once                                 |
+| Payer selection             | Always includes self; guest picks additional unpaid participants |
+| UI approach                 | Evolve current claim screen (tabs + footer), not a full redesign |
+| Host assignment             | No functional change; optional “shared (N)” badge polish         |
 
 ---
 
@@ -103,11 +103,11 @@ Two friction points at the table:
 
 **Copy rules:**
 
-| State | CTA / hint |
-|-------|------------|
-| Unclaimed, no others | „Докоснете, за да отбележите“ |
-| Others sharing, guest not in | „Присъедини се“ + share preview |
-| Guest assigned | Highlighted card, „✓ Ваше“, show actual share |
+| State                        | CTA / hint                                    |
+| ---------------------------- | --------------------------------------------- |
+| Unclaimed, no others         | „Докоснете, за да отбележите“                 |
+| Others sharing, guest not in | „Присъедини се“ + share preview               |
+| Guest assigned               | Highlighted card, „✓ Ваше“, show actual share |
 
 **Share preview helper:** Pure function in `shared/` or `src/lib/`:
 
@@ -164,6 +164,7 @@ combinedPaymentRequests: {
 **Args:** `billId`, `shareToken`, `sessionToken`, `coveredParticipantIds: Id<"participants">[]`
 
 **Validation:**
+
 - Active guest session via `requireGuestSession`
 - Share token matches bill
 - `coveredParticipantIds` must not include payer
@@ -188,12 +189,14 @@ combinedPaymentRequests: {
 ### `combinedPayments.confirm` (updated)
 
 **Validation:**
+
 - Request is `pending`, `transferInitiatedAt` set
 - Snapshotted `payerAmountCents` ≤ payer's current remaining
 - For each entry in `coveredAmountsByParticipant`: amount ≤ that participant's current remaining
 - Each amount passes `validatePaymentAdd` caps
 
 **Effect (atomic):**
+
 - Insert `payments` row for payer
 - Insert `payments` row for each covered participant (individual snapshotted amounts)
 - Set request `status: "confirmed"`, `resolvedAt: now`
@@ -211,6 +214,7 @@ Return cover info if **any** pending request includes this guest's `participantI
 ### Shared validation (`shared/combined-payment.ts`)
 
 Extend:
+
 - `validateCombinedPaymentCreate` → accept `coveredParticipantIds: string[]`
 - `validateCombinedPaymentConfirm` → accept map of covered amounts vs remainings
 - `isSoloPaymentRequest` → `coveredParticipantIds.length === 0 && !coveredParticipantId`
@@ -220,6 +224,7 @@ Extend:
 ## Guest UI — `GuestItemRow`
 
 **Changes:**
+
 - Compute share preview using assignee count from `itemAssignments`
 - Show co-claimant names via existing `getOtherClaimantLabels`
 - Distinct visual for shared vs solo (badge or subtitle)
@@ -232,11 +237,13 @@ Extend:
 ## Guest UI — `CombinedPayChips` + `GuestClaimFooter`
 
 **`CombinedPayChips` changes:**
+
 - `selectedCoveredId: Id | null` → `selectedCoveredIds: Id[]`
 - `onSelect(id | null)` → `onToggle(id)` — toggle chip in/out of set
 - Multi-select visual (filled = selected)
 
 **`GuestClaimFooter` changes:**
+
 - Track `selectedCoveredIds` array
 - Show per-person breakdown lines when combined
 - Combined total = payer remaining + sum of selected covered remainings
@@ -263,19 +270,19 @@ Extend:
 
 ## Edge cases
 
-| Case | Behavior |
-|------|----------|
-| Guest joins shared qty=1 item | Even cent-split recalculated for all assignees (existing `toggle` + `syncEvenAssignments`) |
-| Solo claim on unclaimed qty=1 | Guest pays full line until others join |
-| qty>1 fully claimed | Card unavailable (`isUnavailableToMe`) |
-| Covered person paid before confirm | Confirm fails for that participant |
-| Assignments change after pending | Confirm re-validates snapshotted amounts; may fail |
-| Change chips after Revolut opened | Blocked — must cancel pending first |
-| Two guests pay for same person | Second create rejected |
-| Guest selects person with €0 remaining | Chip disabled or error on toggle |
-| 10+ unpaid participants | Scrollable chip row; only show `remainingCents > 0` |
-| Legacy pending requests | Read via `coveredParticipantId` fallback |
-| Finalized bill | Same rules as current combined pay |
+| Case                                   | Behavior                                                                                   |
+| -------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Guest joins shared qty=1 item          | Even cent-split recalculated for all assignees (existing `toggle` + `syncEvenAssignments`) |
+| Solo claim on unclaimed qty=1          | Guest pays full line until others join                                                     |
+| qty>1 fully claimed                    | Card unavailable (`isUnavailableToMe`)                                                     |
+| Covered person paid before confirm     | Confirm fails for that participant                                                         |
+| Assignments change after pending       | Confirm re-validates snapshotted amounts; may fail                                         |
+| Change chips after Revolut opened      | Blocked — must cancel pending first                                                        |
+| Two guests pay for same person         | Second create rejected                                                                     |
+| Guest selects person with €0 remaining | Chip disabled or error on toggle                                                           |
+| 10+ unpaid participants                | Scrollable chip row; only show `remainingCents > 0`                                        |
+| Legacy pending requests                | Read via `coveredParticipantId` fallback                                                   |
+| Finalized bill                         | Same rules as current combined pay                                                         |
 
 ---
 
@@ -325,17 +332,17 @@ Extend:
 
 ## Files (expected touch points)
 
-| Area | Files |
-|------|-------|
-| Schema | `convex/schema.ts` |
-| API | `convex/combinedPayments.ts` |
-| Shared validation | `shared/combined-payment.ts`, `shared/combined-payment-messages.ts` |
-| Shared preview | `shared/guest-share-preview.ts` (new) or `src/lib/guest-share-preview.ts` |
-| Guest item UI | `src/components/bills/guest-item-row.tsx` |
-| Guest pay UI | `src/components/bills/combined-pay-chips.tsx`, `src/components/bills/guest-claim-footer.tsx` |
-| Host UI | `src/components/bills/combined-payment-banner.tsx` |
-| Optional polish | `src/components/bills/assignment-row.tsx` |
-| Tests | `shared/combined-payment.test.ts`, `shared/guest-share-preview.test.ts`, `e2e/combined-guest-payment.spec.ts`, new `e2e/guest-item-sharing.spec.ts` |
+| Area              | Files                                                                                                                                               |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Schema            | `convex/schema.ts`                                                                                                                                  |
+| API               | `convex/combinedPayments.ts`                                                                                                                        |
+| Shared validation | `shared/combined-payment.ts`, `shared/combined-payment-messages.ts`                                                                                 |
+| Shared preview    | `shared/guest-share-preview.ts` (new) or `src/lib/guest-share-preview.ts`                                                                           |
+| Guest item UI     | `src/components/bills/guest-item-row.tsx`                                                                                                           |
+| Guest pay UI      | `src/components/bills/combined-pay-chips.tsx`, `src/components/bills/guest-claim-footer.tsx`                                                        |
+| Host UI           | `src/components/bills/combined-payment-banner.tsx`                                                                                                  |
+| Optional polish   | `src/components/bills/assignment-row.tsx`                                                                                                           |
+| Tests             | `shared/combined-payment.test.ts`, `shared/guest-share-preview.test.ts`, `e2e/combined-guest-payment.spec.ts`, new `e2e/guest-item-sharing.spec.ts` |
 
 ---
 

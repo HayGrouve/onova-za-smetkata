@@ -402,8 +402,8 @@ export function BillSummaryContent({
                     </p>
                     {unpaidCount > 0 ? (
                       <p>
-                        {unpaidCount} участник{unpaidCount === 1 ? '' : 'а'}{' '}
-                        все още не {unpaidCount === 1 ? 'е' : 'са'} платил
+                        {unpaidCount} участник{unpaidCount === 1 ? '' : 'а'} все
+                        още не {unpaidCount === 1 ? 'е' : 'са'} платил
                         {unpaidCount === 1 ? '' : 'и'} напълно.
                       </p>
                     ) : (

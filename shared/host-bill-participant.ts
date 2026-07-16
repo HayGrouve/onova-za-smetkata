@@ -43,7 +43,5 @@ export function isHostParticipant(
   participantId: string,
   hostParticipantId: string | undefined,
 ) {
-  return (
-    hostParticipantId !== undefined && participantId === hostParticipantId
-  )
+  return hostParticipantId !== undefined && participantId === hostParticipantId
 }

@@ -17,6 +17,7 @@
 ## Task 1: Receipt import schema (TDD)
 
 **Files:**
+
 - Create: `shared/receipt-import-schema.ts`
 - Create: `shared/receipt-import-schema.test.ts`
 
@@ -161,10 +162,7 @@ Expected: FAIL — module not found
 
 ```ts
 // shared/receipt-import-schema.ts
-import {
-  validateItemAddArgs,
-  validateItemAddForm,
-} from './item-schema'
+import { validateItemAddArgs, validateItemAddForm } from './item-schema'
 import type {
   ItemAddArgs,
   ItemAddData,
@@ -261,6 +259,7 @@ Expected: PASS
 ## Task 2: Re-export shims
 
 **Files:**
+
 - Create: `src/lib/receipt-import-schema.ts`
 - Create: `convex/lib/receiptImportSchema.ts`
 
@@ -293,6 +292,7 @@ export type { ItemAddData } from '../../shared/item-schema'
 ## Task 3: Server — `importScannedItems`
 
 **Files:**
+
 - Modify: `convex/receiptScan.ts`
 
 - [ ] **Step 1: Add import and capture bill from `requireBillOwner`**
@@ -349,6 +349,7 @@ Expected: TypeScript passes
 ## Task 4: UI — `receipt-scan-review-sheet.tsx`
 
 **Files:**
+
 - Modify: `src/components/bills/receipt-scan-review-sheet.tsx`
 
 - [ ] **Step 1: Update imports**
@@ -409,10 +410,9 @@ Keep `detectTotalsMismatch` + amber warning unchanged.
 - [ ] **Step 3: Restaurant validation**
 
 ```ts
-const restaurantValidation =
-  updateRestaurantName
-    ? validateBillMetadataField('restaurantName', restaurantName)
-    : { ok: true as const }
+const restaurantValidation = updateRestaurantName
+  ? validateBillMetadataField('restaurantName', restaurantName)
+  : { ok: true as const }
 
 const restaurantError =
   restaurantValidation.ok === false ? restaurantValidation.message : undefined
@@ -421,9 +421,11 @@ const restaurantError =
 Show under restaurant `Input` when `restaurantError` is set:
 
 ```tsx
-{restaurantError ? (
-  <p className="text-xs text-destructive">{restaurantError}</p>
-) : null}
+{
+  restaurantError ? (
+    <p className="text-xs text-destructive">{restaurantError}</p>
+  ) : null
+}
 ```
 
 - [ ] **Step 4: Per-row inline errors and row styling**
@@ -517,6 +519,7 @@ Remove `parseEurInput`, `Math.max(1, parseInt || 1)`, and empty-name filter.
 ## Task 5: Docs & verification
 
 **Files:**
+
 - Modify: `docs/superpowers/specs/2026-07-09-val-6-receipt-import-design.md` — Status → Approved
 - Modify: `docs/superpowers/specs/2026-07-09-app-validation-roadmap.md` — VAL-6 → ✅ Done, exit criteria checked
 
@@ -555,20 +558,20 @@ After Convex changes: `npx convex deploy`
 
 ## Self-review (spec coverage)
 
-| Spec requirement | Task |
-|------------------|------|
-| `shared/receipt-import-schema.ts` + tests | Task 1 |
-| OCR junk row cases (empty name, bad price, bad qty) | Task 1 |
+| Spec requirement                                           | Task   |
+| ---------------------------------------------------------- | ------ |
+| `shared/receipt-import-schema.ts` + tests                  | Task 1 |
+| OCR junk row cases (empty name, bad price, bad qty)        | Task 1 |
 | Re-export shims (no `#/lib/validation/index.ts` on client) | Task 2 |
-| `importScannedItems` validates all items | Task 3 |
-| Finalized bill guard before writes | Task 3 |
-| `extractedItems` fallback validated on server | Task 3 |
-| Per-row inline errors on checked rows | Task 4 |
-| Import blocked when checked rows invalid | Task 4 |
-| Restaurant client validation when checkbox on | Task 4 |
-| Remove `parseEurInput` / silent qty clamp | Task 4 |
-| Strict footer sum (valid checked rows only) | Task 4 |
-| Roadmap / spec status update | Task 5 |
+| `importScannedItems` validates all items                   | Task 3 |
+| Finalized bill guard before writes                         | Task 3 |
+| `extractedItems` fallback validated on server              | Task 3 |
+| Per-row inline errors on checked rows                      | Task 4 |
+| Import blocked when checked rows invalid                   | Task 4 |
+| Restaurant client validation when checkbox on              | Task 4 |
+| Remove `parseEurInput` / silent qty clamp                  | Task 4 |
+| Strict footer sum (valid checked rows only)                | Task 4 |
+| Roadmap / spec status update                               | Task 5 |
 
 ---
 

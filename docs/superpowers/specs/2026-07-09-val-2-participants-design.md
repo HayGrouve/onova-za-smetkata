@@ -25,13 +25,13 @@ Validate participant names on every add path using shared `personNameSchema`, bl
 
 ## Surfaces
 
-| Action | UI | Mutation |
-|--------|-----|----------|
-| Manual add | `ParticipantList` form | `participants.add` |
-| Quick-add pill | Recent name chip | `participants.add` |
-| Add group (all) | Group pill tap | `friendGroups.addToBill` |
-| Partial group add | Preview sheet | `friendGroups.addToBill` |
-| Undo remove | Toast „Отмени“ | `participants.add` |
+| Action            | UI                     | Mutation                 |
+| ----------------- | ---------------------- | ------------------------ |
+| Manual add        | `ParticipantList` form | `participants.add`       |
+| Quick-add pill    | Recent name chip       | `participants.add`       |
+| Add group (all)   | Group pill tap         | `friendGroups.addToBill` |
+| Partial group add | Preview sheet          | `friendGroups.addToBill` |
+| Undo remove       | Toast „Отмени“         | `participants.add`       |
 
 ---
 
@@ -39,21 +39,21 @@ Validate participant names on every add path using shared `personNameSchema`, bl
 
 Uses `personNameSchema` from `shared/validation/fields.ts`:
 
-| Rule | Detail |
-|------|--------|
-| Name | Trim; 1–50 chars; no control chars (`\x00-\x1f`) |
-| Duplicate | Case-insensitive unique per bill |
-| Max participants | `BILL_PARTICIPANTS_MAX` (50) per bill |
-| Finalized bill | No adds (existing guards in UI + `addToBill`; extend `participants.add`) |
+| Rule             | Detail                                                                   |
+| ---------------- | ------------------------------------------------------------------------ |
+| Name             | Trim; 1–50 chars; no control chars (`\x00-\x1f`)                         |
+| Duplicate        | Case-insensitive unique per bill                                         |
+| Max participants | `BILL_PARTICIPANTS_MAX` (50) per bill                                    |
+| Finalized bill   | No adds (existing guards in UI + `addToBill`; extend `participants.add`) |
 
 ### Error messages
 
-| Code | Message |
-|------|---------|
+| Code                 | Message                                                    |
+| -------------------- | ---------------------------------------------------------- |
 | Empty / invalid name | From `personNameSchema` (e.g. `Името не може да е празно`) |
-| Duplicate | `Този участник вече е на сметката` |
-| Cap reached | `Максимум 50 участника на сметка` |
-| Finalized bill | `Сметката е завършена.` |
+| Duplicate            | `Този участник вече е на сметката`                         |
+| Cap reached          | `Максимум 50 участника на сметка`                          |
+| Finalized bill       | `Сметката е завършена.`                                    |
 
 ### Duplicate semantics
 
@@ -87,14 +87,12 @@ export function participantNameKey(name: string): string
 
 export function parseParticipantName(
   name: string,
-): z.SafeParseReturnType<string, string>  // output: trimmed name
+): z.SafeParseReturnType<string, string> // output: trimmed name
 
 export function validateParticipantAdd(
   input: ParticipantAddInput,
   context: ParticipantAddContext,
-):
-  | { ok: true; name: string }
-  | { ok: false; message: string; field?: 'name' }
+): { ok: true; name: string } | { ok: false; message: string; field?: 'name' }
 
 export function formatParticipantNameError(error: z.ZodError): string
 ```
@@ -192,14 +190,14 @@ Unchanged — `readOnly` hides add UI; no validation needed.
 
 ## Files
 
-| File | Action |
-|------|--------|
-| `shared/participant-schema.ts` | Create |
-| `shared/participant-schema.test.ts` | Create |
-| `src/lib/participant-schema.ts` | Create — re-export |
-| `convex/lib/participantSchema.ts` | Create — re-export |
-| `convex/participants.ts` | Validate in `add`; finalized guard |
-| `convex/friendGroups.ts` | Cap + name parse in `addToBill` loop |
+| File                                        | Action                                |
+| ------------------------------------------- | ------------------------------------- |
+| `shared/participant-schema.ts`              | Create                                |
+| `shared/participant-schema.test.ts`         | Create                                |
+| `src/lib/participant-schema.ts`             | Create — re-export                    |
+| `convex/lib/participantSchema.ts`           | Create — re-export                    |
+| `convex/participants.ts`                    | Validate in `add`; finalized guard    |
+| `convex/friendGroups.ts`                    | Cap + name parse in `addToBill` loop  |
 | `src/components/bills/participant-list.tsx` | Inline `nameError` + client pre-check |
 
 ---

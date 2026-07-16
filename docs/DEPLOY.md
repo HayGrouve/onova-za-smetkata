@@ -15,26 +15,26 @@
 
 ## Environment variables
 
-| Variable             | Where                           | Required                                                        |
-| -------------------- | ------------------------------- | --------------------------------------------------------------- |
-| `VITE_CONVEX_URL`    | Vercel                          | Yes                                                             |
+| Variable             | Where                           | Required                                                           |
+| -------------------- | ------------------------------- | ------------------------------------------------------------------ |
+| `VITE_CONVEX_URL`    | Vercel                          | Yes                                                                |
 | `VITE_APP_ORIGIN`    | Vercel                          | Yes for production OG/share URLs (`https://onova-za-smetkata.com`) |
-| `VITE_SENTRY_DSN`    | Vercel                          | No (Sentry client errors in production)                         |
-| `GEMINI_API_KEY`     | Convex Dashboard                | Yes (for OCR)                                                   |
-| `GEMINI_MODEL`       | Convex Dashboard                | No                                                              |
-| `SITE_URL`           | Convex Dashboard (prod)         | Yes (auth; production HTTPS URL)                                |
-| `JWT_PRIVATE_KEY`    | Convex Dashboard (prod)         | Yes (auth; generate via `npx @convex-dev/auth`)                 |
-| `JWKS`               | Convex Dashboard (prod)         | Yes (auth)                                                      |
-| `AUTH_GOOGLE_ID`     | Convex Dashboard (prod)         | Yes (Google sign-in)                                            |
-| `AUTH_GOOGLE_SECRET` | Convex Dashboard (prod)         | Yes                                                             |
-| `AUTH_RESEND_KEY`    | Convex Dashboard (prod)         | Yes (magic link email)                                          |
-| `AUTH_RESEND_FROM`   | Convex Dashboard (prod)         | No (defaults to Resend onboarding address)                      |
-| `DEV_MODE`           | Convex Dashboard (**dev only**) | No — auto sign-in as `Dev User`; **never enable in production** |
-| `CONVEX_DEPLOYMENT`  | Local `.env.local`              | Yes for local `npx convex` CLI                                  |
-| `CONVEX_DEPLOY_KEY`  | GitHub Actions secret           | Yes — production deploy key (`deployment:deploy`)               |
-| `VERCEL_TOKEN`       | GitHub Actions secret           | Yes — Vercel access token for CLI deploys                       |
-| `VERCEL_ORG_ID`      | GitHub Actions secret           | Yes                                                             |
-| `VERCEL_PROJECT_ID`  | GitHub Actions secret           | Yes                                                             |
+| `VITE_SENTRY_DSN`    | Vercel                          | No (Sentry client errors in production)                            |
+| `GEMINI_API_KEY`     | Convex Dashboard                | Yes (for OCR)                                                      |
+| `GEMINI_MODEL`       | Convex Dashboard                | No                                                                 |
+| `SITE_URL`           | Convex Dashboard (prod)         | Yes (auth; production HTTPS URL)                                   |
+| `JWT_PRIVATE_KEY`    | Convex Dashboard (prod)         | Yes (auth; generate via `npx @convex-dev/auth`)                    |
+| `JWKS`               | Convex Dashboard (prod)         | Yes (auth)                                                         |
+| `AUTH_GOOGLE_ID`     | Convex Dashboard (prod)         | Yes (Google sign-in)                                               |
+| `AUTH_GOOGLE_SECRET` | Convex Dashboard (prod)         | Yes                                                                |
+| `AUTH_RESEND_KEY`    | Convex Dashboard (prod)         | Yes (magic link email)                                             |
+| `AUTH_RESEND_FROM`   | Convex Dashboard (prod)         | No (defaults to Resend onboarding address)                         |
+| `DEV_MODE`           | Convex Dashboard (**dev only**) | No — auto sign-in as `Dev User`; **never enable in production**    |
+| `CONVEX_DEPLOYMENT`  | Local `.env.local`              | Yes for local `npx convex` CLI                                     |
+| `CONVEX_DEPLOY_KEY`  | GitHub Actions secret           | Yes — production deploy key (`deployment:deploy`)                  |
+| `VERCEL_TOKEN`       | GitHub Actions secret           | Yes — Vercel access token for CLI deploys                          |
+| `VERCEL_ORG_ID`      | GitHub Actions secret           | Yes                                                                |
+| `VERCEL_PROJECT_ID`  | GitHub Actions secret           | Yes                                                                |
 
 Never put `GEMINI_API_KEY`, JWT keys, OAuth secrets, `DEV_MODE`, or deploy keys/tokens in the repo.
 
@@ -204,45 +204,45 @@ Do this **after** smoke tests pass on `https://<project>.vercel.app`.
 
 ## Troubleshooting
 
-| Symptom                                              | Likely cause                            | Fix                                                     |
-| ---------------------------------------------------- | --------------------------------------- | ------------------------------------------------------- |
-| Frontend live, Convex API/schema errors              | Old failure mode: UI shipped without Convex | Use Actions order; do not re-enable Git prod deploys on `main` |
-| Actions: Convex deploy fails                         | Missing/wrong `CONVEX_DEPLOY_KEY`       | Mint production deploy key with `deployment:deploy`; update secret |
-| Actions: Vercel deploy fails after Convex green      | Vercel secrets/env; CLI build error     | Fix `VERCEL_*` / dashboard env; re-run failed job or re-push (backend may already be ahead) |
-| Push to `main` deploys Vercel with no Actions        | Git auto-deploy still on for `main`     | Ensure `vercel.json` `git.deploymentEnabled.main: false` is on the branch Vercel reads |
-| Blank page / config message                          | Missing `VITE_CONVEX_URL` on Vercel     | Set env var; redeploy via Actions                       |
-| Build fails on Vercel (`ERR_PNPM_OUTDATED_LOCKFILE`) | `pnpm-lock.yaml` out of sync            | Run `pnpm install` locally; commit lockfile             |
-| Build fails on Vercel (other)                        | Missing `VITE_CONVEX_URL`               | Set in Vercel Production env (pulled by CLI)            |
-| Apex domain `DEPLOYMENT_NOT_FOUND`                   | Domain not assigned to Vercel project   | Add domain in Vercel project settings                   |
-| Preflight fails on PWA icons                         | PNGs not generated                      | Run `pnpm run generate-icons` and commit                |
-| Google sign-in `redirect_uri_mismatch`               | Wrong callback in Google Console        | Add prod `*.convex.site/api/auth/callback/google`       |
-| Magic link / `auth:signIn` fails in prod             | Auth env only on dev deployment         | Set `SITE_URL`, JWT keys, Resend key on **prod** Convex |
-| OCR always fails                                     | Missing `GEMINI_API_KEY` in Convex prod | Set in Convex Dashboard                                 |
-| Data from wrong environment                          | Dev Convex URL in Vercel                | Point Vercel at prod URL                                |
-| Guest assignment fails                               | Missing/expired session                 | Re-join and pick name again                             |
-| Assignment queries fail after upgrade                | Missing `billId` backfill               | Run `npx convex run backfill:assignmentBillIds`         |
+| Symptom                                              | Likely cause                                | Fix                                                                                         |
+| ---------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Frontend live, Convex API/schema errors              | Old failure mode: UI shipped without Convex | Use Actions order; do not re-enable Git prod deploys on `main`                              |
+| Actions: Convex deploy fails                         | Missing/wrong `CONVEX_DEPLOY_KEY`           | Mint production deploy key with `deployment:deploy`; update secret                          |
+| Actions: Vercel deploy fails after Convex green      | Vercel secrets/env; CLI build error         | Fix `VERCEL_*` / dashboard env; re-run failed job or re-push (backend may already be ahead) |
+| Push to `main` deploys Vercel with no Actions        | Git auto-deploy still on for `main`         | Ensure `vercel.json` `git.deploymentEnabled.main: false` is on the branch Vercel reads      |
+| Blank page / config message                          | Missing `VITE_CONVEX_URL` on Vercel         | Set env var; redeploy via Actions                                                           |
+| Build fails on Vercel (`ERR_PNPM_OUTDATED_LOCKFILE`) | `pnpm-lock.yaml` out of sync                | Run `pnpm install` locally; commit lockfile                                                 |
+| Build fails on Vercel (other)                        | Missing `VITE_CONVEX_URL`                   | Set in Vercel Production env (pulled by CLI)                                                |
+| Apex domain `DEPLOYMENT_NOT_FOUND`                   | Domain not assigned to Vercel project       | Add domain in Vercel project settings                                                       |
+| Preflight fails on PWA icons                         | PNGs not generated                          | Run `pnpm run generate-icons` and commit                                                    |
+| Google sign-in `redirect_uri_mismatch`               | Wrong callback in Google Console            | Add prod `*.convex.site/api/auth/callback/google`                                           |
+| Magic link / `auth:signIn` fails in prod             | Auth env only on dev deployment             | Set `SITE_URL`, JWT keys, Resend key on **prod** Convex                                     |
+| OCR always fails                                     | Missing `GEMINI_API_KEY` in Convex prod     | Set in Convex Dashboard                                                                     |
+| Data from wrong environment                          | Dev Convex URL in Vercel                    | Point Vercel at prod URL                                                                    |
+| Guest assignment fails                               | Missing/expired session                     | Re-join and pick name again                                                                 |
+| Assignment queries fail after upgrade                | Missing `billId` backfill                   | Run `npx convex run backfill:assignmentBillIds`                                             |
 
 ## Production launch checklist
 
 Complete once before calling production “solid”:
 
-| Item | Where | Notes |
-|------|--------|-------|
-| `VITE_CONVEX_URL` | Vercel | Prod Convex cloud URL |
-| `VITE_APP_ORIGIN` | Vercel | `https://onova-za-smetkata.com` for OG/QR |
-| `SITE_URL` | Convex prod | Same custom domain for magic links |
-| `AUTH_RESEND_FROM` | Convex prod | Verified domain, e.g. `Онова за сметката <noreply@onova-za-smetkata.com>` |
-| `AUTH_RESEND_KEY`, JWT, Google OAuth | Convex prod | Dashboard → Settings → Environment |
-| `GEMINI_API_KEY` | Convex prod | Receipt OCR |
-| `DEV_MODE` | Convex prod | Must **not** be `true` |
-| Backfill | Convex prod | Manual when needed (see release steps); not automated in Actions |
-| Domain + SSL | Vercel | Custom domain active |
-| Netlify decommissioned | Netlify | No stale DNS to old host |
-| GitHub Actions secrets | GitHub | `CONVEX_DEPLOY_KEY`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` |
-| `vercel.json` disables `main` Git prod deploy | Repo | Production only via Actions after Convex |
-| Smoke test | Production URL | See release steps above |
-| Link preview | WhatsApp/Telegram | Join URL shows OG image |
-| Optional Sentry | Vercel | `VITE_SENTRY_DSN` |
+| Item                                          | Where             | Notes                                                                     |
+| --------------------------------------------- | ----------------- | ------------------------------------------------------------------------- |
+| `VITE_CONVEX_URL`                             | Vercel            | Prod Convex cloud URL                                                     |
+| `VITE_APP_ORIGIN`                             | Vercel            | `https://onova-za-smetkata.com` for OG/QR                                 |
+| `SITE_URL`                                    | Convex prod       | Same custom domain for magic links                                        |
+| `AUTH_RESEND_FROM`                            | Convex prod       | Verified domain, e.g. `Онова за сметката <noreply@onova-za-smetkata.com>` |
+| `AUTH_RESEND_KEY`, JWT, Google OAuth          | Convex prod       | Dashboard → Settings → Environment                                        |
+| `GEMINI_API_KEY`                              | Convex prod       | Receipt OCR                                                               |
+| `DEV_MODE`                                    | Convex prod       | Must **not** be `true`                                                    |
+| Backfill                                      | Convex prod       | Manual when needed (see release steps); not automated in Actions          |
+| Domain + SSL                                  | Vercel            | Custom domain active                                                      |
+| Netlify decommissioned                        | Netlify           | No stale DNS to old host                                                  |
+| GitHub Actions secrets                        | GitHub            | `CONVEX_DEPLOY_KEY`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` |
+| `vercel.json` disables `main` Git prod deploy | Repo              | Production only via Actions after Convex                                  |
+| Smoke test                                    | Production URL    | See release steps above                                                   |
+| Link preview                                  | WhatsApp/Telegram | Join URL shows OG image                                                   |
+| Optional Sentry                               | Vercel            | `VITE_SENTRY_DSN`                                                         |
 
 ### E2E in CI (optional)
 

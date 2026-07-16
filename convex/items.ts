@@ -3,10 +3,7 @@ import { ConvexError, v } from 'convex/values'
 import { assertBillDraft } from './lib/assertBillDraft'
 import { requireBillOwner } from './lib/auth'
 import { sumAssignedUnits } from './lib/clampParticipantUnits'
-import {
-  validateItemAddArgs,
-  validateItemUpdatePatch,
-} from './lib/itemSchema'
+import { validateItemAddArgs, validateItemUpdatePatch } from './lib/itemSchema'
 import { touchBill } from './lib/touchBill'
 
 export const add = mutation({

@@ -144,7 +144,8 @@ export function GuestItemRow({
     if (isUnavailableToMe) {
       return (
         <p className="text-xs font-medium text-muted-foreground">
-          Заето{otherClaimants.length > 0 ? ` · ${otherClaimants.join(', ')}` : ''}
+          Заето
+          {otherClaimants.length > 0 ? ` · ${otherClaimants.join(', ')}` : ''}
         </p>
       )
     }
@@ -153,7 +154,8 @@ export function GuestItemRow({
     return (
       <p className="text-xs text-muted-foreground">
         {otherClaimants.length > 0 ? `${otherClaimants.join(', ')} · ` : ''}
-        {assignedUnitsTotal}/{item.quantity} разпределени · остават {remainingCount}
+        {assignedUnitsTotal}/{item.quantity} разпределени · остават{' '}
+        {remainingCount}
       </p>
     )
   }

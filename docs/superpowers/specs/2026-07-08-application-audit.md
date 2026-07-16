@@ -9,15 +9,15 @@
 
 ## Area A remediation status (2026-07-08)
 
-| ID | Severity | Status | Notes |
-|----|----------|--------|-------|
-| SEC-1 | 🔴 | ✅ Done | `files.getReceiptUrl({ billId })` replaces arbitrary `storageId`; client updated |
-| SEC-2 | 🔴 | ✅ Done | Final bills use same session-locking join UI as draft; no impersonation branch |
-| SEC-3 | 🔴 | ✅ Done | Dev auth gated by explicit dev deployment allowlist + prod block; `devMode.test.ts` |
-| SEC-4 | 🟡 | ✅ Done | `shareToken` on bills, `?t=` join URLs, backfill mutation, rotate UI |
-| SEC-5 | 🟡 | ✅ Done | `generateUploadUrl({ billId })` + 30/hour per-host rate limit |
-| SEC-6 | 🟡 | ✅ Done | Per-actor + per-bill claim limits; limits on heartbeat/release/toggle/setUnits |
-| SEC-7 | 🟡 | ✅ Documented | Accepted accountless guest identity risk documented in `docs/DEPLOY.md` |
+| ID    | Severity | Status        | Notes                                                                               |
+| ----- | -------- | ------------- | ----------------------------------------------------------------------------------- |
+| SEC-1 | 🔴       | ✅ Done       | `files.getReceiptUrl({ billId })` replaces arbitrary `storageId`; client updated    |
+| SEC-2 | 🔴       | ✅ Done       | Final bills use same session-locking join UI as draft; no impersonation branch      |
+| SEC-3 | 🔴       | ✅ Done       | Dev auth gated by explicit dev deployment allowlist + prod block; `devMode.test.ts` |
+| SEC-4 | 🟡       | ✅ Done       | `shareToken` on bills, `?t=` join URLs, backfill mutation, rotate UI                |
+| SEC-5 | 🟡       | ✅ Done       | `generateUploadUrl({ billId })` + 30/hour per-host rate limit                       |
+| SEC-6 | 🟡       | ✅ Done       | Per-actor + per-bill claim limits; limits on heartbeat/release/toggle/setUnits      |
+| SEC-7 | 🟡       | ✅ Documented | Accepted accountless guest identity risk documented in `docs/DEPLOY.md`             |
 
 **Deploy follow-up:** After schema deploy, run `npx convex run backfill:shareTokens` on dev and prod.
 
@@ -33,28 +33,28 @@
 
 ## Area C remediation status (2026-07-09)
 
-| ID | Severity | Status | Notes |
-|----|----------|--------|-------|
-| UX-1 | 🔴 | ✅ Done | `getForGuest` returns `iban`; guest footer copy button |
-| UX-2 | 🔴 | ✅ Done | Edit hidden on final; badge `Завършена — само преглед` |
-| UX-3 | 🔴 | ✅ Done | 44px targets on assignment/payment controls; `aria-pressed` on chips |
-| UX-4 | 🟡 | ✅ Done | `assignEven` + per-item / unassigned batch equal-split UI |
-| UX-5 | 🟡 | ✅ Done | Finalize confirm; delete „Отказ“ on summary + bill card |
-| UX-6 | 🟡 | ✅ Done | Payment log + `payments.undoLast` |
-| UX-7 | 🟡 | ✅ Done | Claim tabs „Остават“ / „Мои“; qty=1 cent-split fix |
-| UX-8 | 🟡 | ✅ Done | Honest offline banner; SW static-only (no navigate shell cache) |
-| UX-9 | 🟢 | ✅ Done | Labels, Затвори SR, viewport-fit, theme-color, share € format |
+| ID   | Severity | Status  | Notes                                                                |
+| ---- | -------- | ------- | -------------------------------------------------------------------- |
+| UX-1 | 🔴       | ✅ Done | `getForGuest` returns `iban`; guest footer copy button               |
+| UX-2 | 🔴       | ✅ Done | Edit hidden on final; badge `Завършена — само преглед`               |
+| UX-3 | 🔴       | ✅ Done | 44px targets on assignment/payment controls; `aria-pressed` on chips |
+| UX-4 | 🟡       | ✅ Done | `assignEven` + per-item / unassigned batch equal-split UI            |
+| UX-5 | 🟡       | ✅ Done | Finalize confirm; delete „Отказ“ on summary + bill card              |
+| UX-6 | 🟡       | ✅ Done | Payment log + `payments.undoLast`                                    |
+| UX-7 | 🟡       | ✅ Done | Claim tabs „Остават“ / „Мои“; qty=1 cent-split fix                   |
+| UX-8 | 🟡       | ✅ Done | Honest offline banner; SW static-only (no navigate shell cache)      |
+| UX-9 | 🟢       | ✅ Done | Labels, Затвори SR, viewport-fit, theme-color, share € format        |
 
 ---
 
 ## Area D remediation status (2026-07-09)
 
-| ID | Severity | Status | Notes |
-|----|----------|--------|-------|
-| LIF-1 | 🟡 | ✅ Done | `cleanup.run` cron (6h); finalize purges guest sessions |
-| LIF-2 | 🟡 | ✅ Done | `payments.undoLast` (Area C UX-6) |
-| LIF-3 | 🟡 | ✅ Done | Throw `ConvexError` on missing entities; payments participant check |
-| LIF-4 | 🟢 | ✅ Done | `convex/lib/money.ts`; `by_participantId`; removed `by_status` |
+| ID    | Severity | Status  | Notes                                                               |
+| ----- | -------- | ------- | ------------------------------------------------------------------- |
+| LIF-1 | 🟡       | ✅ Done | `cleanup.run` cron (6h); finalize purges guest sessions             |
+| LIF-2 | 🟡       | ✅ Done | `payments.undoLast` (Area C UX-6)                                   |
+| LIF-3 | 🟡       | ✅ Done | Throw `ConvexError` on missing entities; payments participant check |
+| LIF-4 | 🟢       | ✅ Done | `convex/lib/money.ts`; `by_participantId`; removed `by_status`      |
 
 **Next wave:** All audit areas complete (ARC-6 deferred by design).
 
@@ -62,14 +62,14 @@
 
 ## Area E remediation status (2026-07-09)
 
-| ID | Severity | Status | Notes |
-|----|----------|--------|-------|
-| ARC-1 | 🟡 | ✅ Done | Denormalized list summary on `bills`; `touchBill` refresh; `listWithSummary` O(1) |
-| ARC-2 | 🟢 | ✅ Done | `listRecentNames` capped at 24 recent bills |
-| ARC-3 | 🟢 | ✅ Done | `convex/lib/billListSummary.ts`; thin `bills.ts` |
-| ARC-4 | 🟢 | ✅ Done | `useReceiptScan` hook extracted from bill editor |
-| ARC-5 | 🟢 | ✅ Done | `by_itemId_participantId` index; upsert in `setUnits`; dedupe backfill |
-| ARC-6 | 🟢 | ⏸ Deferred | Audit log / soft deletes / multi-currency — product decision |
+| ID    | Severity | Status     | Notes                                                                             |
+| ----- | -------- | ---------- | --------------------------------------------------------------------------------- |
+| ARC-1 | 🟡       | ✅ Done    | Denormalized list summary on `bills`; `touchBill` refresh; `listWithSummary` O(1) |
+| ARC-2 | 🟢       | ✅ Done    | `listRecentNames` capped at 24 recent bills                                       |
+| ARC-3 | 🟢       | ✅ Done    | `convex/lib/billListSummary.ts`; thin `bills.ts`                                  |
+| ARC-4 | 🟢       | ✅ Done    | `useReceiptScan` hook extracted from bill editor                                  |
+| ARC-5 | 🟢       | ✅ Done    | `by_itemId_participantId` index; upsert in `setUnits`; dedupe backfill            |
+| ARC-6 | 🟢       | ⏸ Deferred | Audit log / soft deletes / multi-currency — product decision                      |
 
 **Deploy follow-up:** `npx convex run backfill:refreshBillListSummaries` once after schema deploy (optional: `backfill:dedupeAssignments`).
 
@@ -79,14 +79,14 @@
 
 ## Area B remediation status (2026-07-09)
 
-| ID | Severity | Status | Notes |
-|----|----------|--------|-------|
-| MON-1 | 🔴 | ✅ Done | `shared/bill-calculations.ts`; `listWithSummary` uses `calculateBillTotals` |
-| MON-2 | 🔴 | ✅ Done | Single `validateBillForFinalize`; `assertBillCanFinalize` throws `ConvexError` |
-| MON-3 | 🟡 | ✅ Done | `normalizeItemAssignmentModes` on write; optional backfill |
-| MON-4 | 🟡 | ✅ Done | `syncEvenAssignments` cent-split for qty=1 (backend only) |
-| MON-5 | 🟡 | ✅ Done | Block quantity decrease when units exceed new qty |
-| MON-6 | 🟢 | ✅ Done | Reconciliation tests; `payments.add` validation |
+| ID    | Severity | Status  | Notes                                                                          |
+| ----- | -------- | ------- | ------------------------------------------------------------------------------ |
+| MON-1 | 🔴       | ✅ Done | `shared/bill-calculations.ts`; `listWithSummary` uses `calculateBillTotals`    |
+| MON-2 | 🔴       | ✅ Done | Single `validateBillForFinalize`; `assertBillCanFinalize` throws `ConvexError` |
+| MON-3 | 🟡       | ✅ Done | `normalizeItemAssignmentModes` on write; optional backfill                     |
+| MON-4 | 🟡       | ✅ Done | `syncEvenAssignments` cent-split for qty=1 (backend only)                      |
+| MON-5 | 🟡       | ✅ Done | Block quantity decrease when units exceed new qty                              |
+| MON-6 | 🟢       | ✅ Done | Reconciliation tests; `payments.add` validation                                |
 
 **Deploy follow-up:** `npx convex run backfill:normalizeAssignmentModes` once after deploy (optional, idempotent).
 
@@ -100,11 +100,11 @@ Every finding includes: **severity**, **evidence** (file/line), **why it matters
 
 Severity legend:
 
-| Level | Meaning |
-|-------|---------|
-| 🔴 High | Concrete risk (security, data loss, money error) — fix before further growth |
-| 🟡 Medium | Real problem or notable gap — fix soon or explicitly accept |
-| 🟢 Low | Polish / hardening / future-proofing |
+| Level     | Meaning                                                                      |
+| --------- | ---------------------------------------------------------------------------- |
+| 🔴 High   | Concrete risk (security, data loss, money error) — fix before further growth |
+| 🟡 Medium | Real problem or notable gap — fix soon or explicitly accept                  |
+| 🟢 Low    | Polish / hardening / future-proofing                                         |
 
 ---
 
@@ -168,7 +168,11 @@ export const getUrl = query({
 if (isDevModeEnabled()) {
   providers.push(
     Password({
-      profile: () => ({ email: DEV_USER_EMAIL, name: DEV_USER_NAME, emailVerified: true }),
+      profile: () => ({
+        email: DEV_USER_EMAIL,
+        name: DEV_USER_NAME,
+        emailVerified: true,
+      }),
       validatePasswordRequirements: () => {},
     }),
   )
@@ -399,6 +403,7 @@ if (isDevModeEnabled()) {
 ## UX-9 🟢 A11y and formatting polish
 
 **Evidence & items:**
+
 - Assignment chips lack `aria-pressed` (`assignment-row.tsx:77-84`).
 - Sticky totals opener unlabeled (`src/components/bills/sticky-totals-bar.tsx:93-96`).
 - Login email has no label (`src/routes/login.tsx:111-118`); item inputs placeholder-only (`item-list.tsx`).
@@ -476,14 +481,14 @@ if (isDevModeEnabled()) {
 
 # Area E — Architecture & scalability (lower urgency)
 
-| ID | Sev | Finding | Evidence | Recommendation |
-|----|-----|---------|----------|----------------|
-| ARC-1 | 🟡 | `listWithSummary` N+1 (per-bill relation loads) | `convex/bills.ts:62-179` | Batch/paginate or denormalize summary fields |
-| ARC-2 | 🟢 | `participants.listRecentNames` N+1 | `convex/participants.ts:19-23` | Cap bills scanned or denormalize recent names |
-| ARC-3 | 🟢 | `bills.ts` (346 lines) mixes summary math | `convex/bills.ts` | Move math to shared lib; keep file thin |
-| ARC-4 | 🟢 | `src/routes/bills/$billId/index.tsx` (~537 lines) | file | Extract receipt upload/scan orchestration to hooks |
-| ARC-5 | 🟢 | No `(itemId, participantId)` uniqueness | `schema.ts:45-53` | App-level dedupe on insert (or unique index if supported) |
-| ARC-6 | 🟢 | No audit log / soft deletes / multi-currency | schema | Consider if product needs history or undo of bill delete |
+| ID    | Sev | Finding                                           | Evidence                       | Recommendation                                            |
+| ----- | --- | ------------------------------------------------- | ------------------------------ | --------------------------------------------------------- |
+| ARC-1 | 🟡  | `listWithSummary` N+1 (per-bill relation loads)   | `convex/bills.ts:62-179`       | Batch/paginate or denormalize summary fields              |
+| ARC-2 | 🟢  | `participants.listRecentNames` N+1                | `convex/participants.ts:19-23` | Cap bills scanned or denormalize recent names             |
+| ARC-3 | 🟢  | `bills.ts` (346 lines) mixes summary math         | `convex/bills.ts`              | Move math to shared lib; keep file thin                   |
+| ARC-4 | 🟢  | `src/routes/bills/$billId/index.tsx` (~537 lines) | file                           | Extract receipt upload/scan orchestration to hooks        |
+| ARC-5 | 🟢  | No `(itemId, participantId)` uniqueness           | `schema.ts:45-53`              | App-level dedupe on insert (or unique index if supported) |
+| ARC-6 | 🟢  | No audit log / soft deletes / multi-currency      | schema                         | Consider if product needs history or undo of bill delete  |
 
 ---
 
@@ -518,6 +523,6 @@ Before implementing Area A, decide the **guest access model**:
 2. ~~**Area A** — SEC-1, SEC-3 (unconditional), then SEC-4 → SEC-2, SEC-5, SEC-6.~~ ✅ Done
 3. ~~**Area B** — MON-1/MON-2 consolidation + MON-6 reconciliation test, then MON-3/4/5.~~ ✅ Done → `docs/superpowers/plans/2026-07-09-area-b-money-correctness.md`
 4. ~~**Area C** — UX-1 through UX-7.~~ ✅ Done → `docs/superpowers/plans/2026-07-09-area-c-guest-payment-ux.md`
-4b. ~~**Area C polish** — UX-8, UX-9.~~ ✅ Done
+   4b. ~~**Area C polish** — UX-8, UX-9.~~ ✅ Done
 5. ~~**Area D** — LIF-1..4.~~ ✅ Done → `docs/superpowers/plans/2026-07-09-area-d-lifecycle-correctness.md`
 6. ~~**Area E** — ARC-1..5.~~ ✅ Done → `docs/superpowers/plans/2026-07-09-area-e-architecture-scalability.md` (ARC-6 deferred)

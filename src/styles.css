@@ -28,7 +28,9 @@
   --success: oklch(0.53 0.1 155); /* #2e7d4f */
   --success-foreground: oklch(1 0 0);
   --border: oklch(0.905 0.009 84); /* #e5e2da — decorative separators */
-  --input: oklch(0.64 0.01 84); /* form field borders: ≥3:1 vs card/bg (WCAG 1.4.11) */
+  --input: oklch(
+    0.64 0.01 84
+  ); /* form field borders: ≥3:1 vs card/bg (WCAG 1.4.11) */
   --ring: oklch(0.52 0.13 55 / 40%);
   --chart-1: oklch(0.52 0.13 55);
   --chart-2: oklch(0.3 0.012 286);
@@ -71,7 +73,9 @@
   --success: oklch(0.71 0.1 155); /* #5cba8a */
   --success-foreground: oklch(0.22 0.04 155); /* #0b2417 */
   --border: oklch(0.3 0.006 286); /* #333338 — decorative separators */
-  --input: oklch(0.53 0.008 286); /* form field borders: ≥3:1 vs card/bg (WCAG 1.4.11) */
+  --input: oklch(
+    0.53 0.008 286
+  ); /* form field borders: ≥3:1 vs card/bg (WCAG 1.4.11) */
   --ring: oklch(0.7 0.14 55 / 40%);
   --chart-1: oklch(0.7 0.14 55);
   --chart-2: oklch(0.92 0.006 84);

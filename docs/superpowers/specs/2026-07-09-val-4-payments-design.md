@@ -27,11 +27,11 @@ Validate payment amounts using shared VAL-0 primitives, with the same client/ser
 
 ## Surfaces
 
-| Action | UI | Mutation |
-|--------|-----|----------|
-| Partial payment | `PaymentActions` EUR input + „Плати“ | `payments.add` |
-| Mark full paid | „Платено“ button (no field) | `payments.add` (`amountCents: remainingCents`) |
-| Note (API only) | — | `payments.add` |
+| Action          | UI                                   | Mutation                                       |
+| --------------- | ------------------------------------ | ---------------------------------------------- |
+| Partial payment | `PaymentActions` EUR input + „Плати“ | `payments.add`                                 |
+| Mark full paid  | „Платено“ button (no field)          | `payments.add` (`amountCents: remainingCents`) |
+| Note (API only) | —                                    | `payments.add`                                 |
 
 `PaymentActions` is rendered from `PaymentRow` and `participant-breakdown-content` on the summary/breakdown views.
 
@@ -41,22 +41,22 @@ Validate payment amounts using shared VAL-0 primitives, with the same client/ser
 
 Composed in `shared/payment-amount-schema.ts` from VAL-0 primitives.
 
-| Field | Partial input | Mark-full button | Stored value | Rules |
-|-------|---------------|------------------|--------------|-------|
-| Amount | EUR string | `remainingCents` number | int cents > 0 | `parseEurInputStrict` → `positiveCentsSchema('Сумата')` |
-| Cap | client + server | server only | — | `amountCents ≤ remainingCents` where `remainingCents = max(0, owedCents - paidCents)` |
-| Note | — | — | `string \| undefined` | `optionalNoteSchema(PAYMENT_NOTE_MAX)` when provided |
+| Field  | Partial input   | Mark-full button        | Stored value          | Rules                                                                                 |
+| ------ | --------------- | ----------------------- | --------------------- | ------------------------------------------------------------------------------------- |
+| Amount | EUR string      | `remainingCents` number | int cents > 0         | `parseEurInputStrict` → `positiveCentsSchema('Сумата')`                               |
+| Cap    | client + server | server only             | —                     | `amountCents ≤ remainingCents` where `remainingCents = max(0, owedCents - paidCents)` |
+| Note   | —               | —                       | `string \| undefined` | `optionalNoteSchema(PAYMENT_NOTE_MAX)` when provided                                  |
 
 ### Amount semantics (partial payment)
 
-| Input | Result |
-|-------|--------|
+| Input              | Result                                                                 |
+| ------------------ | ---------------------------------------------------------------------- |
 | Empty / whitespace | Invalid — inline error on submit; button stays disabled when `!trim()` |
-| Invalid | `"abc"`, `"-"` → `Невалидна сума.`; no mutation |
-| Zero | `"0"`, `"0,00"` → Invalid — `Сумата трябва да е положителна.` |
-| Valid | `"12,50"` → `1250` |
-| Over remaining | Inline error `Сумата надвишава дължимото.`; no mutation |
-| Exact remaining | Allowed (equivalent to mark-full) |
+| Invalid            | `"abc"`, `"-"` → `Невалидна сума.`; no mutation                        |
+| Zero               | `"0"`, `"0,00"` → Invalid — `Сумата трябва да е положителна.`          |
+| Valid              | `"12,50"` → `1250`                                                     |
+| Over remaining     | Inline error `Сумата надвишава дължимото.`; no mutation                |
+| Exact remaining    | Allowed (equivalent to mark-full)                                      |
 
 Replaces `parseEurInput` in `payment-actions.tsx` for partial payments.
 
@@ -69,13 +69,13 @@ Replaces `parseEurInput` in `payment-actions.tsx` for partial payments.
 
 ### Error messages
 
-| Code | Message |
-|------|---------|
-| Invalid / empty EUR | `Невалидна сума.` (from `parseEurInputStrict`) |
-| Non-positive | `Сумата трябва да е положителна.` (from `positiveCentsSchema`) |
-| Over cap | `Сумата надвишава дължимото.` (existing server message — reuse client-side) |
-| Participant mismatch | `Участникът не принадлежи на тази сметка.` (unchanged) |
-| Note too long | `Бележката може да е до 200 символа` |
+| Code                 | Message                                                                     |
+| -------------------- | --------------------------------------------------------------------------- |
+| Invalid / empty EUR  | `Невалидна сума.` (from `parseEurInputStrict`)                              |
+| Non-positive         | `Сумата трябва да е положителна.` (from `positiveCentsSchema`)              |
+| Over cap             | `Сумата надвишава дължимото.` (existing server message — reuse client-side) |
+| Participant mismatch | `Участникът не принадлежи на тази сметка.` (unchanged)                      |
+| Note too long        | `Бележката може да е до 200 символа`                                        |
 
 ### Cap semantics
 
@@ -246,14 +246,14 @@ Unchanged — `handleMarkPaid` sends `remainingCents`; toast on server error onl
 
 ## Files
 
-| File | Action |
-|------|--------|
-| `shared/payment-amount-schema.ts` | Create |
-| `shared/payment-amount-schema.test.ts` | Create |
-| `src/lib/payment-amount-schema.ts` | Create — re-export |
-| `convex/lib/paymentAmountSchema.ts` | Create — re-export |
-| `convex/payments.ts` | `validatePaymentAdd` in `add`; remove `assertPositiveIntCents` |
-| `src/components/bills/payment-actions.tsx` | Inline error; strict parser; disable invalid submit |
+| File                                       | Action                                                         |
+| ------------------------------------------ | -------------------------------------------------------------- |
+| `shared/payment-amount-schema.ts`          | Create                                                         |
+| `shared/payment-amount-schema.test.ts`     | Create                                                         |
+| `src/lib/payment-amount-schema.ts`         | Create — re-export                                             |
+| `convex/lib/paymentAmountSchema.ts`        | Create — re-export                                             |
+| `convex/payments.ts`                       | `validatePaymentAdd` in `add`; remove `assertPositiveIntCents` |
+| `src/components/bills/payment-actions.tsx` | Inline error; strict parser; disable invalid submit            |
 
 ---
 

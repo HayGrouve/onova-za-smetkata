@@ -29,33 +29,35 @@
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `src/lib/tip-preferences-storage.ts` | Read/write tip preference (`percent` or `custom`) |
-| `src/lib/tip-preferences-storage.test.ts` | Storage round-trip + invalid JSON |
-| `shared/tip-calculations.ts` | Pure tip % → cents + items subtotal helper |
-| `shared/tip-calculations.test.ts` | Vitest for tip math |
-| `src/components/bills/tip-field.tsx` | Preset chips + custom input UI |
-| `src/lib/last-friend-group-storage.ts` | Read/write last-used group ID |
-| `src/lib/last-friend-group-storage.test.ts` | Storage tests |
-| `src/lib/sort-friend-groups-with-pinned.ts` | Pure reorder helper |
-| `src/lib/sort-friend-groups-with-pinned.test.ts` | Reorder edge cases |
-| `src/components/bills/participant-list.tsx` | Pinned chip UI + write on add-all |
-| `src/components/bills/friend-group-add-preview-sheet.tsx` | Write last-used on partial add |
-| `src/hooks/use-receipt-scan.ts` | Export `isOcrBusy` |
-| `src/components/bills/ocr-activity-bar.tsx` | Fixed indeterminate bar |
-| `src/styles.css` | `ocr-activity-indeterminate` keyframes |
-| `src/routes/bills/$billId/index.tsx` | Wire `TipField`, `OcrActivityBar`, items subtotal |
+| File                                                      | Responsibility                                    |
+| --------------------------------------------------------- | ------------------------------------------------- |
+| `src/lib/tip-preferences-storage.ts`                      | Read/write tip preference (`percent` or `custom`) |
+| `src/lib/tip-preferences-storage.test.ts`                 | Storage round-trip + invalid JSON                 |
+| `shared/tip-calculations.ts`                              | Pure tip % → cents + items subtotal helper        |
+| `shared/tip-calculations.test.ts`                         | Vitest for tip math                               |
+| `src/components/bills/tip-field.tsx`                      | Preset chips + custom input UI                    |
+| `src/lib/last-friend-group-storage.ts`                    | Read/write last-used group ID                     |
+| `src/lib/last-friend-group-storage.test.ts`               | Storage tests                                     |
+| `src/lib/sort-friend-groups-with-pinned.ts`               | Pure reorder helper                               |
+| `src/lib/sort-friend-groups-with-pinned.test.ts`          | Reorder edge cases                                |
+| `src/components/bills/participant-list.tsx`               | Pinned chip UI + write on add-all                 |
+| `src/components/bills/friend-group-add-preview-sheet.tsx` | Write last-used on partial add                    |
+| `src/hooks/use-receipt-scan.ts`                           | Export `isOcrBusy`                                |
+| `src/components/bills/ocr-activity-bar.tsx`               | Fixed indeterminate bar                           |
+| `src/styles.css`                                          | `ocr-activity-indeterminate` keyframes            |
+| `src/routes/bills/$billId/index.tsx`                      | Wire `TipField`, `OcrActivityBar`, items subtotal |
 
 ---
 
 ### Task 1: Tip preference storage (TDD)
 
 **Files:**
+
 - Create: `src/lib/tip-preferences-storage.ts`
 - Create: `src/lib/tip-preferences-storage.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `TIP_PREFERENCE_KEY` — `'tip-preference'`
   - `type TipPercent = 10 | 15 | 20`
@@ -211,10 +213,12 @@ git commit -m "feat: add tip preference localStorage helpers"
 ### Task 2: Tip calculation helpers (TDD)
 
 **Files:**
+
 - Create: `shared/tip-calculations.ts`
 - Create: `shared/tip-calculations.test.ts`
 
 **Interfaces:**
+
 - Consumes: `lineTotalCents`, `ItemInput` from `shared/bill-calculations.ts`
 - Produces:
   - `TIP_PRESETS: readonly TipPercent[]` — `[10, 15, 20]`
@@ -266,9 +270,9 @@ describe('formatEurInputValue', () => {
 
 describe('resolveInitialTipCents', () => {
   it('computes from percent preference', () => {
-    expect(
-      resolveInitialTipCents({ mode: 'percent', percent: 15 }, 2000),
-    ).toBe(300)
+    expect(resolveInitialTipCents({ mode: 'percent', percent: 15 }, 2000)).toBe(
+      300,
+    )
   })
 
   it('uses custom cents when stored', () => {
@@ -350,10 +354,12 @@ git commit -m "feat: add shared tip percent calculation helpers"
 ### Task 3: TipField component + bill page wiring
 
 **Files:**
+
 - Create: `src/components/bills/tip-field.tsx`
 - Modify: `src/routes/bills/$billId/index.tsx` (replace tip `<Input>` block ~L405–428; add `itemsSubtotalCents` memo; apply preference on bill load)
 
 **Interfaces:**
+
 - Consumes:
   - `readTipPreference`, `writeTipPreference`, `TipPercent`, `TipPreference` from `src/lib/tip-preferences-storage.ts`
   - `TIP_PRESETS`, `tipCentsFromPercent`, `formatEurInputValue`, `resolveInitialTipCents` from `shared/tip-calculations.ts`
@@ -519,6 +525,7 @@ export function TipField({
 In `src/routes/bills/$billId/index.tsx`:
 
 1. Add imports:
+
 ```ts
 import { TipField } from '#/components/bills/tip-field.tsx'
 import { calculateItemsSubtotalCents } from '../../../shared/tip-calculations.ts'
@@ -534,6 +541,7 @@ import {
 ```
 
 3. Add items subtotal memo after `labels` memo (~L229):
+
 ```ts
 const itemsSubtotalCents = useMemo(
   () =>
@@ -549,6 +557,7 @@ const itemsSubtotalCents = useMemo(
 ```
 
 4. Add stable save callback for TipField:
+
 ```ts
 const handleTipValidCents = useCallback(
   (cents: number) => {
@@ -559,6 +568,7 @@ const handleTipValidCents = useCallback(
 ```
 
 Wrap `scheduleSave` in `useCallback` if needed, or inline:
+
 ```ts
 function handleTipValidCents(cents: number) {
   scheduleSave({ tipCents: cents })
@@ -566,6 +576,7 @@ function handleTipValidCents(cents: number) {
 ```
 
 5. Replace the tip `<div>` block (Label + Input + helper text) with:
+
 ```tsx
 <TipField
   itemsSubtotalCents={itemsSubtotalCents}
@@ -589,6 +600,7 @@ function handleTipValidCents(cents: number) {
 **Important:** Remove the old `scheduleValidatedSave('tip', value)` from tip onChange — `TipField` calls `onValidCents` which saves directly. Custom invalid input still sets field error via `onValueChange` validation path above.
 
 6. Update bill-switch `useEffect` to reset `appliedPreferenceRef` behavior by keying `TipField` on `bill._id`:
+
 ```tsx
 <TipField key={bill._id} ... />
 ```
@@ -620,12 +632,14 @@ git commit -m "feat: add tip preset chips on bill edit page"
 ### Task 4: Friend group pin storage + sort helper (TDD)
 
 **Files:**
+
 - Create: `src/lib/last-friend-group-storage.ts`
 - Create: `src/lib/last-friend-group-storage.test.ts`
 - Create: `src/lib/sort-friend-groups-with-pinned.ts`
 - Create: `src/lib/sort-friend-groups-with-pinned.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `LAST_FRIEND_GROUP_KEY` — `'last-used-friend-group-id'`
   - `readLastFriendGroupId(): string | null`
@@ -793,10 +807,12 @@ git commit -m "feat: add last-used friend group storage and sort helper"
 ### Task 5: Friend group pin UI + write triggers
 
 **Files:**
+
 - Modify: `src/components/bills/participant-list.tsx`
 - Modify: `src/components/bills/friend-group-add-preview-sheet.tsx`
 
 **Interfaces:**
+
 - Consumes: `readLastFriendGroupId`, `writeLastFriendGroupId`, `sortFriendGroupsWithPinned`
 
 - [ ] **Step 1: Reorder groups and highlight pinned chip in participant-list**
@@ -804,14 +820,19 @@ git commit -m "feat: add last-used friend group storage and sort helper"
 In `src/components/bills/participant-list.tsx`:
 
 1. Add imports:
+
 ```ts
 import { useMemo } from 'react' // already imported
-import { readLastFriendGroupId, writeLastFriendGroupId } from '#/lib/last-friend-group-storage.ts'
+import {
+  readLastFriendGroupId,
+  writeLastFriendGroupId,
+} from '#/lib/last-friend-group-storage.ts'
 import { sortFriendGroupsWithPinned } from '#/lib/sort-friend-groups-with-pinned.ts'
 import { cn } from '#/lib/utils.ts'
 ```
 
 2. After `const friendGroups = useQuery(...)` add:
+
 ```ts
 const { groups: orderedFriendGroups, pinnedId: pinnedGroupId } = useMemo(() => {
   if (!friendGroups) return { groups: [], pinnedId: null }
@@ -822,6 +843,7 @@ const { groups: orderedFriendGroups, pinnedId: pinnedGroupId } = useMemo(() => {
 3. Replace `friendGroups?.map` with `orderedFriendGroups.map`.
 
 4. Update chip wrapper className:
+
 ```tsx
 <div
   key={group._id}
@@ -833,6 +855,7 @@ const { groups: orderedFriendGroups, pinnedId: pinnedGroupId } = useMemo(() => {
 ```
 
 5. Add "Последна" label inside pinned chip button:
+
 ```tsx
 <Button ...>
   {group._id === pinnedGroupId ? (
@@ -849,6 +872,7 @@ const { groups: orderedFriendGroups, pinnedId: pinnedGroupId } = useMemo(() => {
 ```
 
 6. Write last-used on successful add-all:
+
 ```ts
 async function handleAddGroupAll(group: FriendGroupPreview) {
   try {
@@ -866,11 +890,13 @@ async function handleAddGroupAll(group: FriendGroupPreview) {
 In `src/components/bills/friend-group-add-preview-sheet.tsx`:
 
 1. Import:
+
 ```ts
 import { writeLastFriendGroupId } from '#/lib/last-friend-group-storage.ts'
 ```
 
 2. In `handleAdd`, after successful `addToBill`:
+
 ```ts
 writeLastFriendGroupId(group._id)
 ```
@@ -897,12 +923,14 @@ git commit -m "feat: pin last-used friend group in participant picker"
 ### Task 6: OCR activity bar
 
 **Files:**
+
 - Modify: `src/hooks/use-receipt-scan.ts`
 - Create: `src/components/bills/ocr-activity-bar.tsx`
 - Modify: `src/styles.css`
 - Modify: `src/routes/bills/$billId/index.tsx`
 
 **Interfaces:**
+
 - Produces:
   - `isOcrBusy: boolean` from `useReceiptScan`
   - `OcrActivityBar({ isUploading, isScanning }: { isUploading: boolean; isScanning: boolean })`
@@ -916,6 +944,7 @@ const isOcrBusy = isUploading || isScanning
 ```
 
 Add to return object:
+
 ```ts
 isOcrBusy,
 ```
@@ -998,11 +1027,13 @@ export function OcrActivityBar({
 In `src/routes/bills/$billId/index.tsx`:
 
 1. Import:
+
 ```ts
 import { OcrActivityBar } from '#/components/bills/ocr-activity-bar.tsx'
 ```
 
 2. Destructure `isOcrBusy` from `useReceiptScan`:
+
 ```ts
 const {
   ...
@@ -1014,16 +1045,19 @@ const {
 ```
 
 3. At top of `BillEditorContent` return JSX (inside fragment/page container):
+
 ```tsx
 <OcrActivityBar isUploading={isUploading} isScanning={isScanning} />
 ```
 
 4. Add conditional top padding to page container when busy:
+
 ```tsx
 <div className={cn('page-container flex flex-col gap-4', isOcrBusy && 'pt-1')}>
 ```
 
 5. Disable scan button when `isOcrBusy` (not just `isScanning`) — update existing disabled:
+
 ```tsx
 disabled={isOcrBusy}
 aria-busy={isOcrBusy}
@@ -1075,18 +1109,18 @@ git commit -m "docs: add smart defaults implementation plan"
 
 ## Spec coverage checklist
 
-| Spec requirement | Task |
-|------------------|------|
-| Tip 10/15/20% chips from items subtotal | Task 2, 3 |
-| Remember last tip preference | Task 1, 3 |
-| Custom EUR input + override | Task 3 |
-| % recalc on item change | Task 3 (`useEffect` on `selectedPercent`) |
-| Empty bill chips disabled + helper | Task 3 |
-| Pin last-used friend group first | Task 4, 5 |
-| Write on add-all + partial add | Task 5 |
-| No auto-add, no Convex change | Global constraints |
-| `isOcrBusy` derived flag | Task 6 |
-| Fixed top indeterminate bar | Task 6 |
-| Gallery + camera paths | Task 6 (`isUploading \|\| isScanning`) |
-| Bill edit page only | Task 6 mount point |
-| Form editable during OCR | Task 6 (only scan/upload disabled) |
+| Spec requirement                        | Task                                      |
+| --------------------------------------- | ----------------------------------------- |
+| Tip 10/15/20% chips from items subtotal | Task 2, 3                                 |
+| Remember last tip preference            | Task 1, 3                                 |
+| Custom EUR input + override             | Task 3                                    |
+| % recalc on item change                 | Task 3 (`useEffect` on `selectedPercent`) |
+| Empty bill chips disabled + helper      | Task 3                                    |
+| Pin last-used friend group first        | Task 4, 5                                 |
+| Write on add-all + partial add          | Task 5                                    |
+| No auto-add, no Convex change           | Global constraints                        |
+| `isOcrBusy` derived flag                | Task 6                                    |
+| Fixed top indeterminate bar             | Task 6                                    |
+| Gallery + camera paths                  | Task 6 (`isUploading \|\| isScanning`)    |
+| Bill edit page only                     | Task 6 mount point                        |
+| Form editable during OCR                | Task 6 (only scan/upload disabled)        |

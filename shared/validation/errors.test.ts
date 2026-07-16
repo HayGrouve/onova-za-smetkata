@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import {
-  firstZodIssueMessage,
-  formatZodFieldErrors,
-} from './errors'
+import { firstZodIssueMessage, formatZodFieldErrors } from './errors'
 
 describe('formatZodFieldErrors', () => {
   it('maps first issue per top-level field', () => {
@@ -37,10 +34,7 @@ describe('formatZodFieldErrors', () => {
 
 describe('firstZodIssueMessage', () => {
   it('returns the first issue message', () => {
-    const error = z
-      .string()
-      .min(1, 'Първа грешка')
-      .safeParse('')
+    const error = z.string().min(1, 'Първа грешка').safeParse('')
     expect(error.success).toBe(false)
     if (!error.success) {
       expect(firstZodIssueMessage(error.error, 'Резервен')).toBe('Първа грешка')

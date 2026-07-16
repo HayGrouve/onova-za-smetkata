@@ -51,7 +51,9 @@ async function normalizeItemAssignmentModes(
   }
 
   const hasUnits = existing.some((assignment) => assignment.units !== undefined)
-  const hasCentOnly = existing.some((assignment) => assignment.units === undefined)
+  const hasCentOnly = existing.some(
+    (assignment) => assignment.units === undefined,
+  )
   if (!hasUnits || !hasCentOnly) return
 
   for (const assignment of existing) {
@@ -132,7 +134,12 @@ export const toggle = mutation({
     })
 
     if (args.sessionToken) {
-      await assertRateLimit(ctx, `assign:toggle:${args.sessionToken}`, 60, 60_000)
+      await assertRateLimit(
+        ctx,
+        `assign:toggle:${args.sessionToken}`,
+        60,
+        60_000,
+      )
     }
 
     const participant = await ctx.db.get(args.participantId)
@@ -197,7 +204,12 @@ export const setUnits = mutation({
     })
 
     if (args.sessionToken) {
-      await assertRateLimit(ctx, `assign:setUnits:${args.sessionToken}`, 60, 60_000)
+      await assertRateLimit(
+        ctx,
+        `assign:setUnits:${args.sessionToken}`,
+        60,
+        60_000,
+      )
     }
 
     const participant = await ctx.db.get(args.participantId)

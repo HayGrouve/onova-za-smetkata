@@ -16,11 +16,11 @@ Saved **friend groups** are reusable name templates. Adding a group **copies** n
 
 ## UX decisions
 
-| Topic | Choice |
-|-------|--------|
-| Management | Bill inline + host settings (header menu) |
-| Add group to bill | Tap = add all (skip duplicates, toast summary); ⋯ menu = preview sheet with checkboxes |
-| Quick-create on bill | „+ Група“ dropdown: empty create + „Запази участниците“ when ≥2 on bill |
+| Topic                | Choice                                                                                 |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| Management           | Bill inline + host settings (header menu)                                              |
+| Add group to bill    | Tap = add all (skip duplicates, toast summary); ⋯ menu = preview sheet with checkboxes |
+| Quick-create on bill | „+ Група“ dropdown: empty create + „Запази участниците“ when ≥2 on bill                |
 
 ## Data model
 
@@ -69,12 +69,12 @@ Header menu entry (like payment settings). List with member count; tap to edit; 
 
 ## Edge cases
 
-| Case | Handling |
-|------|----------|
-| Empty group | Pill hidden |
-| All members on bill | Toast only |
-| Bill finalized | Hide group UI (read-only participants) |
-| Guest pages | No groups |
+| Case                | Handling                               |
+| ------------------- | -------------------------------------- |
+| Empty group         | Pill hidden                            |
+| All members on bill | Toast only                             |
+| Bill finalized      | Hide group UI (read-only participants) |
+| Guest pages         | No groups                              |
 
 ## Out of scope (v1)
 
@@ -85,15 +85,15 @@ Header menu entry (like payment settings). List with member count; tap to edit; 
 
 ## Files
 
-| File | Action |
-|------|--------|
-| `convex/schema.ts` | `friendGroups` table |
-| `convex/friendGroups.ts` | CRUD + addToBill |
-| `shared/friend-group-schema.ts` | Validation |
-| `src/components/bills/friend-groups-provider.tsx` | Context + sheets |
-| `src/components/bills/friend-groups-sheet.tsx` | Settings list |
-| `src/components/bills/friend-group-editor-sheet.tsx` | Create/edit |
-| `src/components/bills/friend-group-add-preview-sheet.tsx` | Partial add |
-| `src/components/bills/participant-list.tsx` | Groups section |
-| `src/components/layout/app-header-menu.tsx` | Menu entry |
-| `src/components/layout/app-shell.tsx` | Provider |
+| File                                                      | Action               |
+| --------------------------------------------------------- | -------------------- |
+| `convex/schema.ts`                                        | `friendGroups` table |
+| `convex/friendGroups.ts`                                  | CRUD + addToBill     |
+| `shared/friend-group-schema.ts`                           | Validation           |
+| `src/components/bills/friend-groups-provider.tsx`         | Context + sheets     |
+| `src/components/bills/friend-groups-sheet.tsx`            | Settings list        |
+| `src/components/bills/friend-group-editor-sheet.tsx`      | Create/edit          |
+| `src/components/bills/friend-group-add-preview-sheet.tsx` | Partial add          |
+| `src/components/bills/participant-list.tsx`               | Groups section       |
+| `src/components/layout/app-header-menu.tsx`               | Menu entry           |
+| `src/components/layout/app-shell.tsx`                     | Provider             |

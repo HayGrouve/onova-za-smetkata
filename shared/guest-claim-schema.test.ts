@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  buildClaimActorKey,
-  parseGuestClaimInput,
-} from './guest-claim-schema'
+import { buildClaimActorKey, parseGuestClaimInput } from './guest-claim-schema'
 import { DEVICE_ID_MAX } from './validation/constants'
 
 describe('parseGuestClaimInput', () => {
@@ -46,8 +43,8 @@ describe('buildClaimActorKey', () => {
   })
 
   it('falls back to token prefix when deviceId absent', () => {
-    expect(buildClaimActorKey('0123456789abcdef0123456789abcdef', undefined)).toBe(
-      'token:0123456789abcdef0123456789abcdef',
-    )
+    expect(
+      buildClaimActorKey('0123456789abcdef0123456789abcdef', undefined),
+    ).toBe('token:0123456789abcdef0123456789abcdef')
   })
 })

@@ -14,8 +14,7 @@ export const COMBINED_PAYMENT_MESSAGES = {
   cancelPending: 'Отмени',
   hostConfirmPrompt: 'Маркира {payer} и {covered} като платени?',
   hostBanner: '{payer} плати {total} за {payer} + {covered}',
-  coveredGuestBanner:
-    '{payer} ще плати и за вас ({amount})',
+  coveredGuestBanner: '{payer} ще плати и за вас ({amount})',
   coveredGuestHint: 'Не е нужно да плащате отделно засега.',
   confirm: 'Потвърди',
   reject: 'Отхвърли',

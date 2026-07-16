@@ -12,13 +12,13 @@ Give the app a professional, clean, distinctive look that does not follow defaul
 
 Decisions made during brainstorm (user-selected):
 
-| Decision | Choice |
-|----------|--------|
-| Color direction | **D — Slate + Copper** (graphite neutral base, copper accent) |
-| Editor structure | **B — Guided steps** (4 focused screens with progress bar) |
-| Typography | **A — Manrope (kept) + IBM Plex Mono for amounts** |
-| Guest flows | **A — Reskin only** (no structural change) |
-| Motion | Slow (~250ms), subtle, interactive areas only |
+| Decision         | Choice                                                        |
+| ---------------- | ------------------------------------------------------------- |
+| Color direction  | **D — Slate + Copper** (graphite neutral base, copper accent) |
+| Editor structure | **B — Guided steps** (4 focused screens with progress bar)    |
+| Typography       | **A — Manrope (kept) + IBM Plex Mono for amounts**            |
+| Guest flows      | **A — Reskin only** (no structural change)                    |
+| Motion           | Slow (~250ms), subtle, interactive areas only                 |
 
 ---
 
@@ -48,23 +48,23 @@ Removed along with them:
 
 Reference values in hex; implementation converts to oklch. All pairs must pass WCAG AA (4.5:1 body text, 3:1 large text/UI).
 
-| Token | Light | Dark |
-|-------|-------|------|
-| `--background` | `#faf9f7` | `#121214` |
-| `--card` / `--popover` | `#ffffff` | `#1c1c20` |
-| `--border` | `#e5e2da` | `#333338` |
+| Token                                                                                 | Light                 | Dark                    |
+| ------------------------------------------------------------------------------------- | --------------------- | ----------------------- |
+| `--background`                                                                        | `#faf9f7`             | `#121214`               |
+| `--card` / `--popover`                                                                | `#ffffff`             | `#1c1c20`               |
+| `--border`                                                                            | `#e5e2da`             | `#333338`               |
 | `--input` (R4 amendment: darker than `--border` so form fields meet WCAG 1.4.11 ≥3:1) | `oklch(0.64 0.01 84)` | `oklch(0.53 0.008 286)` |
-| `--foreground` | `#2b2b33` | `#e8e6e1` |
-| `--muted` | `#f1efea` | `#232327` |
-| `--muted-foreground` | `#6b6b74` | `#a3a19b` |
-| `--primary` | `#a4551e` | `#e08540` |
-| `--primary-foreground` | `#ffffff` | `#2a1505` |
-| `--accent` | `#f6e8dc` | `#45260f` |
-| `--accent-foreground` | `#a4551e` | `#eda05f` |
-| `--destructive` | `#c03a2e` | `#e0604f` |
-| `--success` (new) | `#2e7d4f` | `#5cba8a` |
-| `--success-foreground` (new) | `#ffffff` | `#0b2417` |
-| `--ring` | copper at 40% | copper at 40% |
+| `--foreground`                                                                        | `#2b2b33`             | `#e8e6e1`               |
+| `--muted`                                                                             | `#f1efea`             | `#232327`               |
+| `--muted-foreground`                                                                  | `#6b6b74`             | `#a3a19b`               |
+| `--primary`                                                                           | `#a4551e`             | `#e08540`               |
+| `--primary-foreground`                                                                | `#ffffff`             | `#2a1505`               |
+| `--accent`                                                                            | `#f6e8dc`             | `#45260f`               |
+| `--accent-foreground`                                                                 | `#a4551e`             | `#eda05f`               |
+| `--destructive`                                                                       | `#c03a2e`             | `#e0604f`               |
+| `--success` (new)                                                                     | `#2e7d4f`             | `#5cba8a`               |
+| `--success-foreground` (new)                                                          | `#ffffff`             | `#0b2417`               |
+| `--ring`                                                                              | copper at 40%         | copper at 40%           |
 
 Notes:
 
@@ -76,15 +76,15 @@ Notes:
 
 ### 1.3 Semantic usage rules
 
-| Use | Token |
-|-----|-------|
-| Primary CTA (one per screen max) | `primary` |
-| Secondary buttons | `card` bg + `border`, foreground text |
-| Links | `primary` |
-| Draft badge | `accent` bg + `accent-foreground` |
-| Final badge / paid state / finalize CTA | `success` |
-| Unassigned / needs attention | `accent` (copper), destructive only for true errors |
-| Validation errors | `destructive` (unchanged behavior) |
+| Use                                     | Token                                               |
+| --------------------------------------- | --------------------------------------------------- |
+| Primary CTA (one per screen max)        | `primary`                                           |
+| Secondary buttons                       | `card` bg + `border`, foreground text               |
+| Links                                   | `primary`                                           |
+| Draft badge                             | `accent` bg + `accent-foreground`                   |
+| Final badge / paid state / finalize CTA | `success`                                           |
+| Unassigned / needs attention            | `accent` (copper), destructive only for true errors |
+| Validation errors                       | `destructive` (unchanged behavior)                  |
 
 ---
 
@@ -133,7 +133,9 @@ Notes:
 
 ```css
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
@@ -148,12 +150,12 @@ Notes:
 
 The monolithic `/bills/$billId/` editor becomes **4 steps within the same route**. Step state lives in the URL search param (`?step=1..4` via TanStack Router `validateSearch`), so refresh, back button, and deep links work.
 
-| Step | Name | Content (existing components, refocused) |
-|------|------|------------------------------------------|
-| 1 | **Бележка** | Receipt photo upload/camera, scan CTA + review sheet, restaurant / tip / date / note fields |
-| 2 | **Участници** | Participant list, friend groups, recent names, invite card (QR + share) |
-| 3 | **Разпределение** | Item list + per-item assignment UI, "raздели поравно" bulk action |
-| 4 | **Преглед** | Current summary content inline as the final step: totals, breakdown, per-participant payments, finalize CTA |
+| Step | Name              | Content (existing components, refocused)                                                                    |
+| ---- | ----------------- | ----------------------------------------------------------------------------------------------------------- |
+| 1    | **Бележка**       | Receipt photo upload/camera, scan CTA + review sheet, restaurant / tip / date / note fields                 |
+| 2    | **Участници**     | Participant list, friend groups, recent names, invite card (QR + share)                                     |
+| 3    | **Разпределение** | Item list + per-item assignment UI, "raздели поравно" bulk action                                           |
+| 4    | **Преглед**       | Current summary content inline as the final step: totals, breakdown, per-participant payments, finalize CTA |
 
 Notes:
 
@@ -183,16 +185,16 @@ Step 4 shows a dismissible hint card when the host has no payment settings confi
 
 ## 5. Screen-by-screen (reskin only)
 
-| Screen | Changes |
-|--------|---------|
-| **Home** | Solid background; bill cards on `card` token with border; copper "Нова сметка" CTA; search input restyled; footer marketing block simplified (shorter, no gradient chips) |
-| **Login** | New tokens/typography; no structural change |
-| **Join** (guest) | New tokens; name chips use `accent` for taken states |
-| **Claim** (guest) | New tokens; tabs use copper underline; sticky pay footer solid surface; `.money` on amounts |
-| **Sheets/dialogs** | Solid `popover` surfaces (no blur/transparency); retimed animations |
-| **Offline banner** | Amber → copper accent |
-| **PWA install banner/footer** | New tokens; no structural change |
-| **404** | New tokens |
+| Screen                        | Changes                                                                                                                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Home**                      | Solid background; bill cards on `card` token with border; copper "Нова сметка" CTA; search input restyled; footer marketing block simplified (shorter, no gradient chips) |
+| **Login**                     | New tokens/typography; no structural change                                                                                                                               |
+| **Join** (guest)              | New tokens; name chips use `accent` for taken states                                                                                                                      |
+| **Claim** (guest)             | New tokens; tabs use copper underline; sticky pay footer solid surface; `.money` on amounts                                                                               |
+| **Sheets/dialogs**            | Solid `popover` surfaces (no blur/transparency); retimed animations                                                                                                       |
+| **Offline banner**            | Amber → copper accent                                                                                                                                                     |
+| **PWA install banner/footer** | New tokens; no structural change                                                                                                                                          |
+| **404**                       | New tokens                                                                                                                                                                |
 
 Toast position stays top-center (already changed).
 
@@ -209,12 +211,12 @@ Toast position stays top-center (already changed).
 
 ## 7. Rollout — 4 phases, each independently shippable
 
-| Phase | Scope | Risk |
-|-------|-------|------|
+| Phase                                 | Scope                                                                                                            | Risk                      |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------- |
 | **R1 — Tokens + typography + motion** | New token values, `.money` utility, motion tokens, body/background cleanup, font import change, theme-color meta | Low — pure CSS/token swap |
-| **R2 — Component polish** | Buttons, cards, badges, inputs, sheets, banners mapped to semantic tokens; amber/emerald hardcodes removed | Low-medium |
-| **R3 — Editor stepper** | Step search param, progress bar, sticky nav bar, summary extraction into shared component, payment settings hint | Medium — structural |
-| **R4 — Cleanup + QA** | Dead CSS removal, both-modes contrast audit, reduced-motion audit, manual QA of all flows | Low |
+| **R2 — Component polish**             | Buttons, cards, badges, inputs, sheets, banners mapped to semantic tokens; amber/emerald hardcodes removed       | Low-medium                |
+| **R3 — Editor stepper**               | Step search param, progress bar, sticky nav bar, summary extraction into shared component, payment settings hint | Medium — structural       |
+| **R4 — Cleanup + QA**                 | Dead CSS removal, both-modes contrast audit, reduced-motion audit, manual QA of all flows                        | Low                       |
 
 Each phase ends with `pnpm run preflight`. R3 requires manual QA of the full host flow (create → scan → participants → assign → finalize) and guest flow regression.
 

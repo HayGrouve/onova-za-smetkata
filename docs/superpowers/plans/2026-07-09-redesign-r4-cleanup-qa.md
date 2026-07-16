@@ -19,6 +19,7 @@
 ## Task 1: Delete dead CSS classes
 
 **Files:**
+
 - Modify: `src/styles.css`
 
 - [x] **Step 1: Verify each class is unused before deleting**
@@ -52,6 +53,7 @@ Expected: no matches. Delete any stragglers found.
 ## Task 2: File structure pass on `styles.css`
 
 **Files:**
+
 - Modify: `src/styles.css`
 
 - [x] **Step 1: Reorder to the target structure**
@@ -80,15 +82,15 @@ Expected: PASS
 
 Verify with a contrast checker (e.g., polypane.app/color-contrast or WebAIM):
 
-| Pair | Requirement |
-|------|-------------|
-| `foreground` on `background` | ≥ 4.5:1 |
-| `muted-foreground` on `background` | ≥ 4.5:1 |
-| `primary-foreground` on `primary` | ≥ 4.5:1 |
-| `accent-foreground` on `accent` | ≥ 4.5:1 |
-| `success-foreground` on `success` | ≥ 4.5:1 |
-| `destructive` on `background` (error text) | ≥ 4.5:1 |
-| `border` vs `background` | ≥ 3:1 (UI) |
+| Pair                                       | Requirement |
+| ------------------------------------------ | ----------- |
+| `foreground` on `background`               | ≥ 4.5:1     |
+| `muted-foreground` on `background`         | ≥ 4.5:1     |
+| `primary-foreground` on `primary`          | ≥ 4.5:1     |
+| `accent-foreground` on `accent`            | ≥ 4.5:1     |
+| `success-foreground` on `success`          | ≥ 4.5:1     |
+| `destructive` on `background` (error text) | ≥ 4.5:1     |
+| `border` vs `background`                   | ≥ 3:1 (UI)  |
 
 Fix any failing token by adjusting L in oklch (keep hue/chroma), re-run preflight.
 
@@ -111,12 +113,12 @@ Enable OS reduce-motion. Expected: no transforms/lifts on buttons, no step slide
 
 ## Self-review (spec coverage)
 
-| Spec requirement (§) | Task |
-|------------------|------|
-| §6 dead CSS removal | Task 1 |
+| Spec requirement (§)           | Task   |
+| ------------------------------ | ------ |
+| §6 dead CSS removal            | Task 1 |
 | §6 styles.css target structure | Task 2 |
-| §1.2 WCAG AA both modes | Task 3 |
-| §3 reduced-motion audit | Task 3 |
-| §7-R4 full QA | Task 3 |
+| §1.2 WCAG AA both modes        | Task 3 |
+| §3 reduced-motion audit        | Task 3 |
+| §7-R4 full QA                  | Task 3 |
 
 **Redesign complete after this phase.**

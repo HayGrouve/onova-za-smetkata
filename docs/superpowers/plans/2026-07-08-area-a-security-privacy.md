@@ -19,6 +19,7 @@
 ### Task 1: SEC-1 Receipt URL scoped to bill owner
 
 **Files:**
+
 - Modify: `convex/files.ts`
 - Modify: `src/routes/bills/$billId/index.tsx`
 - Modify: `src/components/bills/receipt-preview-card.tsx`
@@ -30,6 +31,7 @@
 ### Task 2: SEC-3 Dev auth allowlist
 
 **Files:**
+
 - Modify: `convex/lib/devMode.ts`
 - Create: `convex/lib/devMode.test.ts`
 - Modify: `docs/DEPLOY.md`, `e2e/README.md`
@@ -45,6 +47,7 @@
 ### Task 3: Schema + backfill
 
 **Files:**
+
 - Modify: `convex/schema.ts`
 - Modify: `convex/bills.ts` (create)
 - Modify: `convex/backfill.ts`
@@ -56,6 +59,7 @@
 ### Task 4: Guest access helper + API wiring
 
 **Files:**
+
 - Create: `convex/lib/guestAccess.ts`
 - Create: `convex/lib/guestBill.ts` (sanitize response)
 - Modify: `convex/bills.ts`, `convex/paymentSettings.ts`, `convex/guestSessions.ts`, `convex/assignments.ts`
@@ -68,6 +72,7 @@
 ### Task 5: Client join URLs + routes
 
 **Files:**
+
 - Modify: `src/lib/bill-join-url.ts`, `src/lib/bill-join-url.test.ts`
 - Modify: `src/lib/guest-participant-session.ts`
 - Modify: `src/routes/bills/$billId/join.tsx`, `claim.tsx`
@@ -81,6 +86,7 @@
 ### Task 6: SEC-2 Final bill impersonation
 
 **Files:**
+
 - Modify: `convex/guestSessions.ts` (claim handler)
 - Modify: `src/routes/bills/$billId/join.tsx`
 
@@ -90,6 +96,7 @@
 ### Task 7: E2E + unit tests
 
 **Files:**
+
 - Modify: `e2e/*.spec.ts`, `e2e/helpers/host-auth.ts`
 - Create: `convex/lib/guestAccess.test.ts` or client tests
 
@@ -103,6 +110,7 @@
 ### Task 8: SEC-5 Upload scoping
 
 **Files:**
+
 - Modify: `convex/files.ts`, `src/routes/bills/$billId/index.tsx`
 
 - [x] `generateUploadUrl({ billId })` + rate limit
@@ -110,6 +118,7 @@
 ### Task 9: SEC-6 Guest rate limits
 
 **Files:**
+
 - Modify: `convex/guestSessions.ts`, `convex/assignments.ts`, `convex/lib/requireGuestSession.ts`
 - Modify: `src/lib/guest-participant-session.ts` (deviceId)
 - Modify: `src/routes/bills/$billId/join.tsx`, `claim.tsx`
@@ -120,6 +129,7 @@
 ### Task 10: SEC-7 Documentation
 
 **Files:**
+
 - Modify: `docs/DEPLOY.md`
 - Modify: `docs/superpowers/specs/2026-07-08-application-audit.md`
 

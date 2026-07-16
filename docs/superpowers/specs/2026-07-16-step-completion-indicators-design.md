@@ -10,7 +10,7 @@
 
 ## Problem
 
-The top step bar only shows how far the host has *navigated* (`segment ≤ current step`). It does not show whether each step’s required data is filled, so progress through the bill is harder to scan at a glance.
+The top step bar only shows how far the host has _navigated_ (`segment ≤ current step`). It does not show whether each step’s required data is filled, so progress through the bill is harder to scan at a glance.
 
 ## Solution
 
@@ -23,25 +23,25 @@ Hosts can still jump to any step. No persisted flags; no check icons.
 
 ## UX decisions
 
-| Topic | Choice |
-|-------|--------|
-| Done criteria | Minimal basics (option A) |
-| Visual language | Color only (option C) — no checkmarks |
+| Topic                 | Choice                                                                    |
+| --------------------- | ------------------------------------------------------------------------- |
+| Done criteria         | Minimal basics (option A)                                                 |
+| Visual language       | Color only (option C) — no checkmarks                                     |
 | vs old “reached” fill | Hybrid (option C): current always primary; others done vs incomplete only |
-| Updates | Live from bill query / editor state |
-| Navigation | Unchanged — any step tappable |
-| Persistence | None — derived from data |
+| Updates               | Live from bill query / editor state                                       |
+| Navigation            | Unchanged — any step tappable                                             |
+| Persistence           | None — derived from data                                                  |
 
 ---
 
 ## Done rules
 
-| Step | Label | Done when |
-|------|-------|-----------|
-| 1 | Бележка | `restaurantName.trim()` non-empty |
-| 2 | Участници | `participants.length ≥ 1` |
-| 3 | Разпределение | ≥1 item **and** every item has at least one assignment |
-| 4 | Преглед | Finalize validation passes **and** every participant has payment status `paid` (host counts as paid when `hostParticipantId` is set) |
+| Step | Label         | Done when                                                                                                                            |
+| ---- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 1    | Бележка       | `restaurantName.trim()` non-empty                                                                                                    |
+| 2    | Участници     | `participants.length ≥ 1`                                                                                                            |
+| 3    | Разпределение | ≥1 item **and** every item has at least one assignment                                                                               |
+| 4    | Преглед       | Finalize validation passes **and** every participant has payment status `paid` (host counts as paid when `hostParticipantId` is set) |
 
 ### Step 3 vs step 4
 
@@ -51,23 +51,23 @@ Hosts can still jump to any step. No persisted flags; no check icons.
 
 ### Edge cases
 
-| Case | Behavior |
-|------|----------|
-| Empty new bill | All incomplete except possibly none; current step primary |
-| Host auto-participant present | Step 2 done immediately when that participant exists |
-| Zero-price items | Step 3: still need an assignment if the item exists; step 4 still requires ≥1 priced item per finalize |
-| Finalized bill (forced step 4) | Same colors; typically all done if finalize was allowed |
+| Case                                    | Behavior                                                                                                              |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Empty new bill                          | All incomplete except possibly none; current step primary                                                             |
+| Host auto-participant present           | Step 2 done immediately when that participant exists                                                                  |
+| Zero-price items                        | Step 3: still need an assignment if the item exists; step 4 still requires ≥1 priced item per finalize                |
+| Finalized bill (forced step 4)          | Same colors; typically all done if finalize was allowed                                                               |
 | Local draft restaurant name before save | Prefer the same value the editor shows (controlled field / bill doc after sync) so the bar matches what the host sees |
 
 ---
 
 ## Bar color matrix
 
-| Condition | Class |
-|-----------|--------|
-| `s === currentStep` | `bg-primary` |
-| `s !== currentStep` && done | `bg-success` |
-| `s !== currentStep` && !done | `bg-border` |
+| Condition                    | Class        |
+| ---------------------------- | ------------ |
+| `s === currentStep`          | `bg-primary` |
+| `s !== currentStep` && done  | `bg-success` |
+| `s !== currentStep` && !done | `bg-border`  |
 
 Caption under the bar stays: `Стъпка {n} · {label}`.
 

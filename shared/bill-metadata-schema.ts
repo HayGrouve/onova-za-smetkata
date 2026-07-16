@@ -111,8 +111,7 @@ export function validateBillMetadataField(
   value: string,
   options?: { dateMs?: number },
 ):
-  | { ok: true; patch: BillMetadataPatchInput }
-  | { ok: false; message: string } {
+  { ok: true; patch: BillMetadataPatchInput } | { ok: false; message: string } {
   switch (field) {
     case 'restaurantName': {
       const result = parseBillMetadataPatch({ restaurantName: value })

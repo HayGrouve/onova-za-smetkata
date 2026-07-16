@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useAuthActions, useConvexAuth  } from '@convex-dev/auth/react'
+import { useAuthActions, useConvexAuth } from '@convex-dev/auth/react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button.tsx'
@@ -114,13 +114,13 @@ function LoginPage() {
             <Input
               id="login-email"
               type="email"
-            inputMode="email"
-            autoComplete="email"
-            placeholder="Имейл адрес"
-            className="h-11"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
+              inputMode="email"
+              autoComplete="email"
+              placeholder="Имейл адрес"
+              className="h-11"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
           </div>
           <Button
             type="submit"

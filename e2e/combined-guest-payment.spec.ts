@@ -4,7 +4,10 @@ import {
   expectBillItemVisible,
   goToBillStep,
 } from './helpers/bill-editor'
-import { selectCombinedPayChip, initiateRevolutPayment } from './helpers/claim-drawer'
+import {
+  selectCombinedPayChip,
+  initiateRevolutPayment,
+} from './helpers/claim-drawer'
 import { expect, openHostContext, test } from './helpers/host-auth'
 
 test.setTimeout(180_000)
@@ -49,7 +52,8 @@ async function setupCombinedPaymentBill(
   const participantB = `Bob ${stamp}`
   const itemName = 'Пица'
 
-  const { context: hostContext, page: hostPage } = await openHostContext(browser)
+  const { context: hostContext, page: hostPage } =
+    await openHostContext(browser)
 
   await hostPage.getByRole('button', { name: 'Нова сметка' }).click()
   await goToBillStep(hostPage, 2)
@@ -101,9 +105,7 @@ async function startGuestCombinedPayment(
   const guestPage = await guestContext.newPage()
   await guestPage.goto(setup.joinUrl)
   await guestPage.getByRole('button', { name: setup.participantA }).click()
-  await expect(guestPage).toHaveURL(
-    new RegExp(`/bills/${setup.billId}/claim`),
-  )
+  await expect(guestPage).toHaveURL(new RegExp(`/bills/${setup.billId}/claim`))
   await expect(guestPage.getByText('Разбивка на дяла')).toBeVisible()
 
   await selectCombinedPayChip(guestPage, setup.participantB)
@@ -241,7 +243,8 @@ async function setupTripleCombinedPaymentBill(
   const participantC = `Carol ${stamp}`
   const itemName = 'Пица'
 
-  const { context: hostContext, page: hostPage } = await openHostContext(browser)
+  const { context: hostContext, page: hostPage } =
+    await openHostContext(browser)
 
   await hostPage.getByRole('button', { name: 'Нова сметка' }).click()
   await goToBillStep(hostPage, 2)
