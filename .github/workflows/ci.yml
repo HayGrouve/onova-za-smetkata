@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  # Cancel stale PR runs; never cancel an in-flight main production deploy.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   preflight:
     runs-on: ubuntu-latest
@@ -33,3 +38,90 @@ jobs:
 
       - name: Preflight
         run: pnpm run preflight
+
+  e2e:
+    runs-on: ubuntu-latest
+    # Avoid secrets in job-level `if` (invalidates the whole workflow).
+    # Skip the job body when the optional E2E secret is unset.
+    env:
+      VITE_CONVEX_URL: ${{ secrets.E2E_VITE_CONVEX_URL }}
+      CI: true
+    steps:
+      - name: Skip when E2E secret unset
+        if: ${{ env.VITE_CONVEX_URL == '' }}
+        run: echo "E2E_VITE_CONVEX_URL not set; skipping e2e."
+
+      - if: ${{ env.VITE_CONVEX_URL != '' }}
+        uses: actions/checkout@v4
+
+      - if: ${{ env.VITE_CONVEX_URL != '' }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - if: ${{ env.VITE_CONVEX_URL != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        if: ${{ env.VITE_CONVEX_URL != '' }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        if: ${{ env.VITE_CONVEX_URL != '' }}
+        run: pnpm run test:e2e:install
+
+      - name: E2E tests
+        if: ${{ env.VITE_CONVEX_URL != '' }}
+        run: pnpm run test:e2e
+
+  deploy-convex:
+    name: Deploy Convex (production)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [preflight]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy Convex production
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: npx convex deploy
+
+  deploy-vercel:
+    name: Deploy Vercel (production)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [deploy-convex]
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel production environment
+        run: vercel pull --yes --environment=production
+
+      - name: Build project artifacts
+        run: vercel build --prod
+
+      - name: Deploy production
+        run: vercel deploy --prebuilt --prod
