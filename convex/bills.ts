@@ -1,5 +1,6 @@
 import { mutation, query } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
+import { assertBillDraft } from './lib/assertBillDraft'
 import { requireAuth, requireBillOwner } from './lib/auth'
 import { assertBillCanFinalize } from './lib/validateBillForFinalize'
 import { loadBillRelations } from './lib/billListSummary'
@@ -189,6 +190,7 @@ export const update = mutation({
       args
 
     const bill = await requireBillOwner(ctx, billId)
+    assertBillDraft(bill)
 
     const rawPatch = {
       ...(restaurantName !== undefined ? { restaurantName } : {}),
@@ -271,7 +273,8 @@ export const finalize = mutation({
 export const rotateShareToken = mutation({
   args: { billId: v.id('bills') },
   handler: async (ctx, args) => {
-    await requireBillOwner(ctx, args.billId)
+    const bill = await requireBillOwner(ctx, args.billId)
+    assertBillDraft(bill)
     const shareToken = createShareToken()
     await ctx.db.patch(args.billId, {
       shareToken,

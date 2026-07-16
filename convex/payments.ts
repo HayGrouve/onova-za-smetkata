@@ -1,5 +1,6 @@
 import { mutation } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
+import { assertBillDraft } from './lib/assertBillDraft'
 import { requireBillOwner } from './lib/auth'
 import { calculateBillTotals } from './lib/billCalculations'
 import { validatePaymentAdd } from './lib/paymentAmountSchema'
@@ -40,6 +41,7 @@ export const add = mutation({
     if (!bill) {
       throw new ConvexError('Сметката не е намерена.')
     }
+    assertBillDraft(bill)
 
     if (
       bill.hostParticipantId &&
@@ -113,6 +115,7 @@ export const undoLast = mutation({
     if (!bill) {
       throw new ConvexError('Сметката не е намерена.')
     }
+    assertBillDraft(bill)
 
     if (
       bill.hostParticipantId &&
