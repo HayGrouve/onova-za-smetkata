@@ -2,7 +2,7 @@
 
 ## Prerequisites (one-time)
 
-- [ ] GitHub repo connected to Vercel
+- [ ] GitHub repo connected to Vercel (PR previews OK; **production** deploys are owned by GitHub Actions)
 - [ ] Convex **production** deployment exists
 - [ ] Vercel env: `VITE_CONVEX_URL` = prod Convex cloud URL
 - [ ] Convex prod env: `GEMINI_API_KEY` (for receipt OCR)
@@ -10,6 +10,8 @@
 - [ ] Google OAuth redirect URI includes prod Convex site callback
 - [ ] Resend domain verified; `AUTH_RESEND_FROM` set on prod Convex
 - [ ] Optional: `VITE_SENTRY_DSN` on Vercel for client error tracking
+- [ ] GitHub Actions secrets for production release (see below)
+- [ ] `vercel.json` in repo sets `git.deploymentEnabled.main: false` so a push to `main` does **not** auto-deploy production on Vercel
 
 ## Environment variables
 
@@ -28,9 +30,13 @@
 | `AUTH_RESEND_KEY`    | Convex Dashboard (prod)         | Yes (magic link email)                                          |
 | `AUTH_RESEND_FROM`   | Convex Dashboard (prod)         | No (defaults to Resend onboarding address)                      |
 | `DEV_MODE`           | Convex Dashboard (**dev only**) | No — auto sign-in as `Dev User`; **never enable in production** |
-| `CONVEX_DEPLOYMENT`  | Local `.env.local`              | Yes (for CLI)                                                   |
+| `CONVEX_DEPLOYMENT`  | Local `.env.local`              | Yes for local `npx convex` CLI                                  |
+| `CONVEX_DEPLOY_KEY`  | GitHub Actions secret           | Yes — production deploy key (`deployment:deploy`)               |
+| `VERCEL_TOKEN`       | GitHub Actions secret           | Yes — Vercel access token for CLI deploys                       |
+| `VERCEL_ORG_ID`      | GitHub Actions secret           | Yes                                                             |
+| `VERCEL_PROJECT_ID`  | GitHub Actions secret           | Yes                                                             |
 
-Never put `GEMINI_API_KEY`, JWT keys, OAuth secrets, or `DEV_MODE` in Vercel or the repo.
+Never put `GEMINI_API_KEY`, JWT keys, OAuth secrets, `DEV_MODE`, or deploy keys/tokens in the repo.
 
 ### Security notes
 
@@ -71,15 +77,19 @@ AUTH_RESEND_FROM=Онова за сметката <noreply@yourdomain.com>
 2. Framework: TanStack Start (auto-detected with Nitro plugin).
 3. Package manager: pnpm.
 4. Node.js: 22 (set in project settings if needed).
-5. Build command: `pnpm run build` (default).
-6. Environment variables (Production):
+5. Environment variables (Production) — used by `vercel pull` / `vercel build` in Actions:
    - `VITE_CONVEX_URL=https://coordinated-warbler-782.convex.cloud`
    - `VITE_APP_ORIGIN=https://onova-za-smetkata.com` (required for correct OG previews)
    - Optional: `VITE_SENTRY_DSN`
+6. Production Git auto-deploys for `main` are **off** (`vercel.json` → `git.deploymentEnabled.main: false`). PR preview deploys from Git stay enabled. Production releases are triggered only by the GitHub Actions workflow after Convex succeeds.
 
 ## Release steps
 
-1. **Preflight locally**
+Canonical production path: **merge (or push) to `main` → GitHub Actions `preflight` → Convex prod → Vercel prod.**
+
+1. **Open a PR and merge to `main`** (or push directly if that is your process).
+
+   Optional local gate before merge:
 
    ```bash
    pnpm install
@@ -88,15 +98,27 @@ AUTH_RESEND_FROM=Онова за сметката <noreply@yourdomain.com>
 
    Requires `VITE_CONVEX_URL` in environment (or `.env.local`).
 
-2. **Schema migration (if upgrading)**
+2. **Watch the CI workflow** (`.github/workflows/ci.yml`) on `main`:
 
-   After deploying schema with `itemAssignments.billId`, run once on each deployment:
+   1. `preflight` — format, lint, test + build
+   2. `Deploy Convex (production)` — `npx convex deploy` via `CONVEX_DEPLOY_KEY`
+   3. `Deploy Vercel (production)` — `vercel pull` → `vercel build --prod` → `vercel deploy --prebuilt --prod`
+
+   If Convex succeeds and Vercel fails, leave the backend ahead; fix the frontend job and re-run / re-push. Do **not** roll Convex back automatically.
+
+   Optional Playwright `e2e` does **not** gate production deploy.
+
+3. **Schema backfills (manual, when a change needs them)**
+
+   Actions does **not** run one-shot backfills. After the Convex deploy that introduces a schema/data migration, run the relevant command once per environment (usually with a local CLI pointed at that deployment):
+
+   After deploying schema with `itemAssignments.billId`:
 
    ```bash
    npx convex run backfill:assignmentBillIds
    ```
 
-   After deploying share-token schema, run once on each deployment:
+   After deploying share-token schema:
 
    ```bash
    npx convex run backfill:shareTokens
@@ -120,22 +142,20 @@ AUTH_RESEND_FROM=Онова за сметката <noreply@yourdomain.com>
    npx convex run backfill:dedupeAssignments
    ```
 
-3. **Deploy Convex backend**
+4. **Emergency / local-only Convex deploy**
+
+   Prefer the Actions path. Use a manual deploy only when CI cannot (dashboard outage workaround, break-glass):
 
    ```bash
-   npx convex deploy
+   pnpm run deploy
+   # or: npx convex deploy
    ```
 
-   Ensure `CONVEX_DEPLOYMENT` in `.env.local` targets **production**.
-
-4. **Deploy frontend**
-
-   Push to `main`. Vercel runs `pnpm run build` automatically.
-
-   Or use `pnpm run deploy` for Convex backend only (frontend deploys via Vercel Git integration).
+   Prefer a production `CONVEX_DEPLOY_KEY` in the environment, or ensure `CONVEX_DEPLOYMENT` in `.env.local` is understood: `npx convex deploy` still targets the project’s **production** deployment after confirmation. Do not leave production frontend releases to Vercel Git on `main`.
 
 5. **Smoke test** (production URL)
 
+   - [ ] GitHub Actions: all three production jobs green for the merge commit
    - [ ] Home loads; bills list appears
    - [ ] Sign in (Google + magic link)
    - [ ] Create bill → add participant → add item → assign
@@ -186,9 +206,13 @@ Do this **after** smoke tests pass on `https://<project>.vercel.app`.
 
 | Symptom                                              | Likely cause                            | Fix                                                     |
 | ---------------------------------------------------- | --------------------------------------- | ------------------------------------------------------- |
-| Blank page / config message                          | Missing `VITE_CONVEX_URL` on Vercel     | Set env var; redeploy                                   |
+| Frontend live, Convex API/schema errors              | Old failure mode: UI shipped without Convex | Use Actions order; do not re-enable Git prod deploys on `main` |
+| Actions: Convex deploy fails                         | Missing/wrong `CONVEX_DEPLOY_KEY`       | Mint production deploy key with `deployment:deploy`; update secret |
+| Actions: Vercel deploy fails after Convex green      | Vercel secrets/env; CLI build error     | Fix `VERCEL_*` / dashboard env; re-run failed job or re-push (backend may already be ahead) |
+| Push to `main` deploys Vercel with no Actions        | Git auto-deploy still on for `main`     | Ensure `vercel.json` `git.deploymentEnabled.main: false` is on the branch Vercel reads |
+| Blank page / config message                          | Missing `VITE_CONVEX_URL` on Vercel     | Set env var; redeploy via Actions                       |
 | Build fails on Vercel (`ERR_PNPM_OUTDATED_LOCKFILE`) | `pnpm-lock.yaml` out of sync            | Run `pnpm install` locally; commit lockfile             |
-| Build fails on Vercel (other)                        | Missing `VITE_CONVEX_URL`               | Set in Vercel build env                                 |
+| Build fails on Vercel (other)                        | Missing `VITE_CONVEX_URL`               | Set in Vercel Production env (pulled by CLI)            |
 | Apex domain `DEPLOYMENT_NOT_FOUND`                   | Domain not assigned to Vercel project   | Add domain in Vercel project settings                   |
 | Preflight fails on PWA icons                         | PNGs not generated                      | Run `pnpm run generate-icons` and commit                |
 | Google sign-in `redirect_uri_mismatch`               | Wrong callback in Google Console        | Add prod `*.convex.site/api/auth/callback/google`       |
@@ -211,13 +235,15 @@ Complete once before calling production “solid”:
 | `AUTH_RESEND_KEY`, JWT, Google OAuth | Convex prod | Dashboard → Settings → Environment |
 | `GEMINI_API_KEY` | Convex prod | Receipt OCR |
 | `DEV_MODE` | Convex prod | Must **not** be `true` |
-| Backfill | Convex prod | `npx convex run backfill:assignmentBillIds` (once) |
+| Backfill | Convex prod | Manual when needed (see release steps); not automated in Actions |
 | Domain + SSL | Vercel | Custom domain active |
 | Netlify decommissioned | Netlify | No stale DNS to old host |
+| GitHub Actions secrets | GitHub | `CONVEX_DEPLOY_KEY`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` |
+| `vercel.json` disables `main` Git prod deploy | Repo | Production only via Actions after Convex |
 | Smoke test | Production URL | See release steps above |
 | Link preview | WhatsApp/Telegram | Join URL shows OG image |
 | Optional Sentry | Vercel | `VITE_SENTRY_DSN` |
 
 ### E2E in CI (optional)
 
-To run Playwright on push/PR, add GitHub secret `E2E_VITE_CONVEX_URL` pointing at a **dev** Convex deployment with `DEV_MODE=true`. The CI job is skipped when the secret is unset.
+To run Playwright on push/PR, add GitHub secret `E2E_VITE_CONVEX_URL` pointing at a **dev** Convex deployment with `DEV_MODE=true`. The CI job is skipped when the secret is unset. Optional e2e does **not** block the Convex → Vercel production jobs.
