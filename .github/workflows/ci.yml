@@ -8,7 +8,8 @@ on:
 # On main, never cancel an in-flight production deploy. On PRs, cancel stale runs.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  # Cancel stale PR runs; never cancel an in-flight main production deploy.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   preflight:
