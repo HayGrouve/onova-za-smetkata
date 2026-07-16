@@ -22,12 +22,14 @@ export interface BillInviteCardProps {
   billId: Id<'bills'>
   shareToken?: string
   disabled?: boolean
+  readOnly?: boolean
 }
 
 export function BillInviteCard({
   billId,
   shareToken,
   disabled,
+  readOnly = false,
 }: BillInviteCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [joinUrl, setJoinUrl] = useState('')
@@ -122,15 +124,17 @@ export function BillInviteCard({
               <Share2Icon className={ICON.button} aria-hidden />
               Сподели линк
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-10 w-full text-muted-foreground"
-              onClick={() => setRotateOpen(true)}
-            >
-              <Link2OffIcon className={ICON.button} aria-hidden />
-              Обнови линка
-            </Button>
+            {!readOnly ? (
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-10 w-full text-muted-foreground"
+                onClick={() => setRotateOpen(true)}
+              >
+                <Link2OffIcon className={ICON.button} aria-hidden />
+                Обнови линка
+              </Button>
+            ) : null}
           </>
         )}
       </div>

@@ -530,6 +530,7 @@ function BillEditorContent({
                     billId={billId}
                     shareToken={bill.shareToken}
                     disabled={participants.length === 0}
+                    readOnly={bill.status === 'final'}
                   />
                 </div>
               </CardContent>
