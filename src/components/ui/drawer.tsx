@@ -46,11 +46,15 @@ function DrawerOverlay({
 function DrawerContent({
   className,
   children,
+  showOverlay = true,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Content>) {
+}: React.ComponentProps<typeof DrawerPrimitive.Content> & {
+  /** When false, skip the default modal scrim (e.g. non-modal peek drawers with a custom expanded-only overlay). */
+  showOverlay?: boolean
+}) {
   return (
     <DrawerPortal>
-      <DrawerOverlay />
+      {showOverlay ? <DrawerOverlay /> : null}
       <DrawerPrimitive.Content
         data-slot="drawer-content"
         className={cn(
