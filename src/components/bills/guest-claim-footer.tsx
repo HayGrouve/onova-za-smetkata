@@ -1,11 +1,12 @@
 import { SendIcon, PieChartIcon, CopyIcon } from 'lucide-react'
 import { useMutation, useQuery } from 'convex/react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import {
   CombinedPayChips,
   type ParticipantBalance,
 } from '#/components/bills/combined-pay-chips.tsx'
+import { ClaimShareDrawer } from '#/components/bills/claim-share-drawer.tsx'
 import { ParticipantBreakdownContent } from '#/components/bills/participant-breakdown-content.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
@@ -88,8 +89,6 @@ export function GuestClaimFooter({
   const hasRevolut = Boolean(revolutUsername)
   const hasIban = Boolean(iban)
   const hasPaymentMethod = hasRevolut || hasIban
-  const footerRef = useRef<HTMLDivElement>(null)
-  const [spacerHeight, setSpacerHeight] = useState(0)
   const [selectedCoveredIds, setSelectedCoveredIds] = useState<
     Id<'participants'>[]
   >([])
@@ -128,7 +127,6 @@ export function GuestClaimFooter({
     readOnly ||
     isSelectingCover ||
     (Boolean(pending) && transferInitiated)
-  const payDisabledForCovered = Boolean(pendingCover)
   const payDisabledForPayer =
     Boolean(pendingCover) || (Boolean(pending) && transferInitiated)
 
@@ -210,18 +208,6 @@ export function GuestClaimFooter({
       updateCovered,
     ],
   )
-
-  useEffect(() => {
-    const footer = footerRef.current
-    if (!footer) return
-
-    const updateSpacer = () => setSpacerHeight(footer.offsetHeight)
-    updateSpacer()
-
-    const observer = new ResizeObserver(updateSpacer)
-    observer.observe(footer)
-    return () => observer.disconnect()
-  }, [])
 
   async function resolvePayCents(): Promise<number | null> {
     if (remainingCents <= 0 && !isCombined && !pending) return null
@@ -362,21 +348,16 @@ export function GuestClaimFooter({
   )
 
   return (
-    <>
-      <div aria-hidden style={{ height: spacerHeight }} />
-      <div
-        ref={footerRef}
-        className="fixed inset-x-0 bottom-0 z-40 max-h-[min(75dvh,36rem)] overflow-y-auto border-t sticky-surface px-4 pt-4 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]"
-      >
-        <div className="mx-auto flex max-w-lg flex-col gap-3">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="flex items-center gap-2 text-base font-semibold">
-              <PieChartIcon className={ICON.section} aria-hidden />
-              Разбивка на дяла
-            </h3>
-            <Badge variant="outline">{statusLabels[totals.status]}</Badge>
-          </div>
-
+    <ClaimShareDrawer
+      title={
+        <>
+          <PieChartIcon className={ICON.section} aria-hidden />
+          Разбивка на дяла
+        </>
+      }
+      status={<Badge variant="outline">{statusLabels[totals.status]}</Badge>}
+      details={
+        <div className="flex flex-col gap-3">
           <ParticipantBreakdownContent
             billId={billId}
             participantId={participantId}
@@ -391,117 +372,116 @@ export function GuestClaimFooter({
             readOnly={readOnly}
             participantLabels={participantLabels}
             onRemoveItem={handleRemoveItem}
-            summaryFooter={
-              <>
-                <CombinedPayChips
-                  balances={participantBalances}
-                  payerParticipantId={participantId}
-                  selectedCoveredIds={selectedCoveredIds}
-                  onToggle={(id) => void handleToggleCovered(id)}
-                  disabled={chipsDisabled}
-                />
-                {pendingCover ? (
-                  <p className="text-xs text-amber-600 dark:text-amber-500">
-                    {COMBINED_PAYMENT_MESSAGES.coveredGuestHint}
-                  </p>
-                ) : null}
-                {isCombined ? (
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">
-                      Вие: {formatEur(payerRemaining)}
-                    </p>
-                    {selectedCoveredIds.map((id) => {
-                      const coveredBalance = participantBalances.find(
-                        (b) => b.participantId === id,
-                      )
-                      if (!coveredBalance) return null
-                      return (
-                        <p
-                          key={id}
-                          className="text-xs text-muted-foreground"
-                        >
-                          {coveredBalance.name}:{' '}
-                          {formatEur(coveredBalance.remainingCents)}
-                        </p>
-                      )
-                    })}
-                  </div>
-                ) : null}
-                {pending && transferInitiated ? (
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs text-amber-600 dark:text-amber-500">
-                      {COMBINED_PAYMENT_MESSAGES.statusPending}
-                    </p>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 shrink-0 px-2 text-xs"
-                      onClick={() => void handleCancelPending()}
-                    >
-                      {COMBINED_PAYMENT_MESSAGES.cancelPending}
-                    </Button>
-                  </div>
-                ) : null}
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs text-muted-foreground">
-                      {amountLabel}
-                    </p>
-                    <p
-                      key={amountCents}
-                      className="guest-total-pulse money text-lg font-semibold"
-                    >
-                      {formatEur(amountCents)}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 gap-2">
-                    {hasRevolut ? (
-                      <Button
-                        type="button"
-                        className="h-11"
-                        disabled={
-                          (remainingCents <= 0 && !isCombined && !pending) ||
-                          payDisabledForPayer
-                        }
-                        onClick={() => void handleRevolut()}
-                      >
-                        <SendIcon className={ICON.button} aria-hidden />
-                        Revolut
-                      </Button>
-                    ) : null}
-                    {hasIban ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-11"
-                        disabled={payDisabledForPayer}
-                        onClick={() => void handleCopyIban()}
-                      >
-                        <CopyIcon className={ICON.button} aria-hidden />
-                        IBAN
-                      </Button>
-                    ) : null}
-                  </div>
-                </div>
-                {!hasPaymentMethod ? (
-                  <p className="text-xs text-muted-foreground">
-                    Попитайте домакина за Revolut или банков превод.
-                  </p>
-                ) : remainingCents <= 0 && !isCombined && !pending && !pendingCover ? (
-                  <p className="text-xs text-muted-foreground">
-                    Няма оставащо за плащане.
-                  </p>
-                ) : hasIban && !hasRevolut ? (
-                  <p className="text-xs text-muted-foreground">
-                    Копирайте IBAN за банков превод.
-                  </p>
-                ) : null}
-              </>
-            }
+            summaryFooter={null}
           />
+          <CombinedPayChips
+            balances={participantBalances}
+            payerParticipantId={participantId}
+            selectedCoveredIds={selectedCoveredIds}
+            onToggle={(id) => void handleToggleCovered(id)}
+            disabled={chipsDisabled}
+          />
+          {pendingCover ? (
+            <p className="text-xs text-amber-600 dark:text-amber-500">
+              {COMBINED_PAYMENT_MESSAGES.coveredGuestHint}
+            </p>
+          ) : null}
+          {isCombined ? (
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">
+                Вие: {formatEur(payerRemaining)}
+              </p>
+              {selectedCoveredIds.map((id) => {
+                const coveredBalance = participantBalances.find(
+                  (b) => b.participantId === id,
+                )
+                if (!coveredBalance) return null
+                return (
+                  <p key={id} className="text-xs text-muted-foreground">
+                    {coveredBalance.name}:{' '}
+                    {formatEur(coveredBalance.remainingCents)}
+                  </p>
+                )
+              })}
+            </div>
+          ) : null}
         </div>
-      </div>
-    </>
+      }
+      summary={
+        <div className="flex flex-col gap-3">
+          {pending && transferInitiated ? (
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-amber-600 dark:text-amber-500">
+                {COMBINED_PAYMENT_MESSAGES.statusPending}
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 shrink-0 px-2 text-xs"
+                onClick={() => void handleCancelPending()}
+              >
+                {COMBINED_PAYMENT_MESSAGES.cancelPending}
+              </Button>
+            </div>
+          ) : null}
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs text-muted-foreground">{amountLabel}</p>
+              <p
+                key={amountCents}
+                className="guest-total-pulse money text-lg font-semibold"
+              >
+                {formatEur(amountCents)}
+              </p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              {hasRevolut ? (
+                <Button
+                  type="button"
+                  className="h-11"
+                  disabled={
+                    (remainingCents <= 0 && !isCombined && !pending) ||
+                    payDisabledForPayer
+                  }
+                  onClick={() => void handleRevolut()}
+                >
+                  <SendIcon className={ICON.button} aria-hidden />
+                  Revolut
+                </Button>
+              ) : null}
+              {hasIban ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11"
+                  disabled={payDisabledForPayer}
+                  onClick={() => void handleCopyIban()}
+                >
+                  <CopyIcon className={ICON.button} aria-hidden />
+                  IBAN
+                </Button>
+              ) : null}
+            </div>
+          </div>
+          {!hasPaymentMethod ? (
+            <p className="text-xs text-muted-foreground">
+              Попитайте домакина за Revolut или банков превод.
+            </p>
+          ) : remainingCents <= 0 &&
+            !isCombined &&
+            !pending &&
+            !pendingCover ? (
+            <p className="text-xs text-muted-foreground">
+              Няма оставащо за плащане.
+            </p>
+          ) : hasIban && !hasRevolut ? (
+            <p className="text-xs text-muted-foreground">
+              Копирайте IBAN за банков превод.
+            </p>
+          ) : null}
+        </div>
+      }
+    />
   )
 }
