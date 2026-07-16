@@ -20,6 +20,7 @@ import {
 import { validatePaymentAdd } from './lib/paymentAmountSchema'
 import { touchBill } from './lib/touchBill'
 import { assertShareToken } from './lib/guestAccess'
+import { assertBillDraft } from './lib/assertBillDraft'
 import { GUEST_FLOW_MESSAGES } from './lib/guestFlowMessages'
 import { requireGuestSession } from './lib/requireGuestSession'
 import { calculateBillTotals, type BillTotals } from './lib/billCalculations'
@@ -212,6 +213,12 @@ export const create = mutation({
       sessionToken: args.sessionToken,
     })
 
+    const bill = await ctx.db.get(args.billId)
+    if (!bill) {
+      throw new ConvexError(GUEST_FLOW_MESSAGES.billNotFound)
+    }
+    assertBillDraft(bill)
+
     await validateCoveredParticipantsOnBill(
       ctx,
       args.billId,
@@ -283,6 +290,12 @@ export const updateCovered = mutation({
     if (!session || session.billId !== args.billId) {
       throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
     }
+
+    const bill = await ctx.db.get(args.billId)
+    if (!bill) {
+      throw new ConvexError(GUEST_FLOW_MESSAGES.billNotFound)
+    }
+    assertBillDraft(bill)
 
     const request = await ctx.db.get(args.requestId)
     if (
@@ -369,6 +382,12 @@ export const createSolo = mutation({
       sessionToken: args.sessionToken,
     })
 
+    const bill = await ctx.db.get(args.billId)
+    if (!bill) {
+      throw new ConvexError(GUEST_FLOW_MESSAGES.billNotFound)
+    }
+    assertBillDraft(bill)
+
     const totals = await loadBillTotalsForCombinedPay(ctx, args.billId)
     const existingForSession = await ctx.db
       .query('combinedPaymentRequests')
@@ -421,6 +440,12 @@ export const initiateTransfer = mutation({
       throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
     }
 
+    const bill = await ctx.db.get(args.billId)
+    if (!bill) {
+      throw new ConvexError(GUEST_FLOW_MESSAGES.billNotFound)
+    }
+    assertBillDraft(bill)
+
     const request = await ctx.db.get(args.requestId)
     if (
       !request ||
@@ -456,6 +481,12 @@ export const cancel = mutation({
       throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
     }
 
+    const bill = await ctx.db.get(args.billId)
+    if (!bill) {
+      throw new ConvexError(GUEST_FLOW_MESSAGES.billNotFound)
+    }
+    assertBillDraft(bill)
+
     const request = await ctx.db.get(args.requestId)
     if (
       !request ||
@@ -481,7 +512,8 @@ export const reject = mutation({
     requestId: v.id('combinedPaymentRequests'),
   },
   handler: async (ctx, args) => {
-    await requireBillOwner(ctx, args.billId)
+    const bill = await requireBillOwner(ctx, args.billId)
+    assertBillDraft(bill)
     const request = await ctx.db.get(args.requestId)
     if (!request || request.billId !== args.billId) {
       throw new ConvexError(COMBINED_PAYMENT_MESSAGES.requestNotFound)
@@ -502,7 +534,8 @@ export const confirm = mutation({
     requestId: v.id('combinedPaymentRequests'),
   },
   handler: async (ctx, args) => {
-    await requireBillOwner(ctx, args.billId)
+    const bill = await requireBillOwner(ctx, args.billId)
+    assertBillDraft(bill)
 
     const request = await ctx.db.get(args.requestId)
     if (!request || request.billId !== args.billId) {
