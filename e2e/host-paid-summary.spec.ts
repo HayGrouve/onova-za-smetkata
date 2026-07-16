@@ -1,5 +1,5 @@
 import type { Browser, Page } from '@playwright/test'
-import { DEV_USER_NAME } from '../../convex/lib/devMode'
+import { DEV_USER_NAME } from '../convex/lib/devMode'
 import { expect, openHostContext, test } from './helpers/host-auth'
 
 async function getJoinUrl(hostPage: Page) {
@@ -89,8 +89,13 @@ test('host paid-by-rule summary flow', async ({ browser }) => {
 
   await hostPage.getByRole('button', { name: 'Моите артикули' }).click()
   await expect(hostPage.getByRole('heading', { name: 'Моите артикули' })).toBeVisible()
+  await expect(hostPage.getByRole('link', { name: 'Назад' })).toBeVisible()
   await claimHalfOfItem(hostPage, itemName)
   await expect(hostPage.getByText('Покрито като домакин')).toBeVisible()
+
+  await hostPage.getByRole('link', { name: 'Назад' }).click()
+  await expect(hostPage).toHaveURL(/\/bills\/[^/?]+\/?(?:\?.*)?$/)
+  await expect(hostPage.getByRole('button', { name: 'Моите артикули' })).toBeVisible()
 
   const billId = hostPage.url().match(/\/bills\/([^/?]+)/)?.[1]
   expect(billId).toBeTruthy()
@@ -116,7 +121,8 @@ test('host paid-by-rule summary flow', async ({ browser }) => {
   const guestRow = participantRow(hostPage, guestName)
   await expect(guestRow.getByText('неплатено')).toBeVisible()
   await expect(guestRow.getByRole('button', { name: 'Платено' })).toBeVisible()
-  await expect(guestRow.getByRole('button', { name: 'Revolut' })).toBeVisible()
+  // Host collects; Revolut pay-to-host belongs on the guest claim footer only.
+  await expect(guestRow.getByRole('button', { name: 'Revolut' })).toHaveCount(0)
 
   await hostContext.close()
 })
