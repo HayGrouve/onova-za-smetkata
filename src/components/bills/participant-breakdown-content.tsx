@@ -43,6 +43,7 @@ export interface ParticipantBreakdownContentProps {
   showStatusBadge?: boolean
   /** Claim footer: skip duplicate totals grid; use `summaryFooter` instead. */
   summaryVariant?: 'default' | 'claim-footer'
+  /** When `claim-footer` and `null`, render lines only (no separator/totals). */
   summaryFooter?: ReactNode
   /** Claim footer: show remove control on assigned item lines. */
   removableItemLines?: boolean
@@ -138,12 +139,32 @@ export function ParticipantBreakdownContent({
         ))
       )}
 
-      <Separator />
-
-      {summaryVariant === 'claim-footer' ? (
+      {summaryVariant === 'claim-footer' && summaryFooter == null ? null : (
         <>
-          {totals.paidCents > 0 ? (
-            <div className="grid grid-cols-2 gap-2 text-sm">
+          <Separator />
+
+          {summaryVariant === 'claim-footer' ? (
+            <>
+              {totals.paidCents > 0 ? (
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Дължи</p>
+                    <p className="money font-medium">
+                      {formatEur(totals.owedCents)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Платено</p>
+                    <p className="money font-medium">
+                      {formatEur(totals.paidCents)}
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+              {summaryFooter}
+            </>
+          ) : (
+            <div className="grid grid-cols-3 gap-2 text-sm">
               <div>
                 <p className="text-xs text-muted-foreground">Дължи</p>
                 <p className="money font-medium">
@@ -156,31 +177,15 @@ export function ParticipantBreakdownContent({
                   {formatEur(totals.paidCents)}
                 </p>
               </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Остатък</p>
+                <p className="money font-medium">
+                  {formatEur(remainingCents)}
+                </p>
+              </div>
             </div>
-          ) : null}
-          {summaryFooter}
+          )}
         </>
-      ) : (
-        <div className="grid grid-cols-3 gap-2 text-sm">
-          <div>
-            <p className="text-xs text-muted-foreground">Дължи</p>
-            <p className="money font-medium">
-              {formatEur(totals.owedCents)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Платено</p>
-            <p className="money font-medium">
-              {formatEur(totals.paidCents)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Остатък</p>
-            <p className="money font-medium">
-              {formatEur(remainingCents)}
-            </p>
-          </div>
-        </div>
       )}
 
       {showPayActions && remainingCents > 0 ? (

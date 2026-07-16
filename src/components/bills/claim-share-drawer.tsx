@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { Drawer, DrawerContent } from '#/components/ui/drawer.tsx'
 import {
+  CLAIM_SHARE_EXPANDED_FRACTION,
   buildClaimShareSnapPoints,
   isClaimShareExpanded,
 } from '#/lib/claim-share-drawer.ts'
@@ -60,7 +61,8 @@ export function ClaimShareDrawer({
       const style = getComputedStyle(content)
       const padTop = Number.parseFloat(style.paddingTop) || 0
       const padBottom = Number.parseFloat(style.paddingBottom) || 0
-      const height = header.offsetHeight + summaryEl.offsetHeight + padTop + padBottom
+      const height =
+        header.offsetHeight + summaryEl.offsetHeight + padTop + padBottom
       if (height > 0) setPeekHeightPx(height)
     }
 
@@ -120,18 +122,23 @@ export function ClaimShareDrawer({
         activeSnapPoint={activeSnapPoint}
         setActiveSnapPoint={commitSnapPoint}
       >
+        {/* Vaul offsets by windowHeight − snapHeight; shell is h-dvh, panel matches expanded fraction. */}
         <DrawerContent
           showOverlay={false}
-          className="z-50 max-h-[min(75dvh,36rem)] gap-0 border-t sticky-surface"
+          className="pointer-events-none z-50 mt-0 h-dvh gap-0 border-0 bg-transparent"
         >
           <div
             ref={contentRef}
             className={cn(
-              'mx-auto flex w-full max-w-lg min-h-0 flex-1 flex-col px-4 pt-2',
+              'pointer-events-auto mx-auto flex w-full max-w-lg min-h-0 flex-col border-t sticky-surface px-4 pt-2',
               'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]',
+              'rounded-t-xl',
             )}
+            style={{
+              height: `${CLAIM_SHARE_EXPANDED_FRACTION * 100}dvh`,
+            }}
           >
-            <div ref={headerRef} className="flex flex-col gap-3">
+            <div ref={headerRef} className="order-1 shrink-0 flex flex-col gap-3">
               <button
                 type="button"
                 className="mx-auto flex w-full flex-col items-center gap-2"
@@ -151,13 +158,19 @@ export function ClaimShareDrawer({
               data-testid="claim-share-details"
               hidden={!expanded}
               className={cn(
-                'min-h-0 flex-1 overflow-y-auto',
+                'order-2 min-h-0 flex-1 overflow-y-auto',
                 !expanded && 'hidden',
               )}
             >
               {details}
             </div>
-            <div ref={summaryRef} className="shrink-0 border-t pt-3">
+            <div
+              ref={summaryRef}
+              className={cn(
+                'shrink-0 border-t pt-3',
+                expanded ? 'order-3' : 'order-2',
+              )}
+            >
               {summary}
             </div>
           </div>
