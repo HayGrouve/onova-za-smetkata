@@ -37,6 +37,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "convex": "^1.32.0",
+    "convex-helpers": "^0.1.120",
     "heic2any": "^0.0.4",
     "jose": "^6.2.3",
     "lucide-react": "^0.577.0",
