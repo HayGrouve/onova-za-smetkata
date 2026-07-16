@@ -172,6 +172,32 @@ describe('validateBillForFinalize', () => {
       message: 'Има 2 неразпределени артикула.',
     })
   })
+
+  it('blocks finalize when a participant is not marked paid', () => {
+    const errors = validateBillForFinalize({
+      restaurantName: 'Механа',
+      participants: [{ id: 'p1', sortOrder: 0 }],
+      items: [{ id: 'i1', unitPriceCents: 1000, quantity: 1 }],
+      assignments: [{ itemId: 'i1', participantId: 'p1' }],
+      payments: [],
+    })
+    expect(errors).toContainEqual({
+      code: 'unpaid_participants',
+      message:
+        'Маркирайте всички участници като платили, преди да завършите сметката.',
+    })
+  })
+
+  it('allows finalize when every participant is paid', () => {
+    const errors = validateBillForFinalize({
+      restaurantName: 'Механа',
+      participants: [{ id: 'p1', sortOrder: 0 }],
+      items: [{ id: 'i1', unitPriceCents: 1000, quantity: 1 }],
+      assignments: [{ itemId: 'i1', participantId: 'p1' }],
+      payments: [{ participantId: 'p1', amountCents: 1000 }],
+    })
+    expect(errors.some((e) => e.code === 'unpaid_participants')).toBe(false)
+  })
 })
 
 describe('bill reconciliation', () => {

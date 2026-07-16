@@ -563,6 +563,7 @@ function BillEditorContent({
                   billId={billId}
                   participants={participants}
                   labels={labels}
+                  hostParticipantId={bill.hostParticipantId}
                   readOnly={bill.status === 'final'}
                   suggestedGroupName={bill.restaurantName}
                 />

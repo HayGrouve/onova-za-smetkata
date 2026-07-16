@@ -47,6 +47,15 @@ export function getParticipantRemoveCopy(name: string): ConfirmOptions {
   })
 }
 
+export function getClearAllGuestsCopy(count: number): ConfirmOptions {
+  const guestLabel = count === 1 ? '1 гост' : `${count} госта`
+  return withDefaults({
+    title: 'Изчистване на всички гости?',
+    description: `${guestLabel} и разпределенията им ще бъдат премахнати от сметката. Домакинът остава.`,
+    confirmLabel: 'Изчисти всички',
+  })
+}
+
 export function getFriendGroupDeleteCopy(name: string): ConfirmOptions {
   return withDefaults({
     title: 'Изтриване на групата?',

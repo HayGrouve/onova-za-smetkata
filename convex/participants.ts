@@ -9,8 +9,37 @@ import {
   nextParticipantSortOrder,
   shouldClearHostParticipantId,
 } from './lib/hostBillParticipant'
+import type { Doc, Id } from './_generated/dataModel'
+import type { MutationCtx } from './_generated/server'
 
 const RECENT_NAMES_BILL_SCAN_LIMIT = 24
+
+async function deleteParticipantWithRelations(
+  ctx: MutationCtx,
+  participantId: Id<'participants'>,
+  bill: Doc<'bills'>,
+) {
+  const assignments = await ctx.db
+    .query('itemAssignments')
+    .withIndex('by_participantId', (q) => q.eq('participantId', participantId))
+    .collect()
+  for (const a of assignments) await ctx.db.delete(a._id)
+
+  const payments = await ctx.db
+    .query('payments')
+    .withIndex('by_participantId', (q) => q.eq('participantId', participantId))
+    .collect()
+  for (const p of payments) {
+    await ctx.db.delete(p._id)
+  }
+
+  await deleteGuestSessionsForParticipant(ctx, participantId)
+  await ctx.db.delete(participantId)
+
+  if (shouldClearHostParticipantId(participantId, bill.hostParticipantId)) {
+    await ctx.db.patch(bill._id, { hostParticipantId: undefined })
+  }
+}
 
 export const listRecentNames = query({
   args: { limit: v.optional(v.number()) },
@@ -86,37 +115,34 @@ export const remove = mutation({
     const bill = await requireBillOwner(ctx, participant.billId)
     assertBillDraft(bill)
 
-    const assignments = await ctx.db
-      .query('itemAssignments')
-      .withIndex('by_participantId', (q) =>
-        q.eq('participantId', args.participantId),
-      )
-      .collect()
-    for (const a of assignments) await ctx.db.delete(a._id)
-
-    const payments = await ctx.db
-      .query('payments')
-      .withIndex('by_participantId', (q) =>
-        q.eq('participantId', args.participantId),
-      )
-      .collect()
-    for (const p of payments) {
-      await ctx.db.delete(p._id)
-    }
-
-    await deleteGuestSessionsForParticipant(ctx, args.participantId)
-
-    await ctx.db.delete(args.participantId)
-
-    if (
-      shouldClearHostParticipantId(
-        args.participantId,
-        bill.hostParticipantId,
-      )
-    ) {
-      await ctx.db.patch(participant.billId, { hostParticipantId: undefined })
-    }
-
+    await deleteParticipantWithRelations(ctx, args.participantId, bill)
     await touchBill(ctx, participant.billId)
+  },
+})
+
+export const removeAllGuests = mutation({
+  args: { billId: v.id('bills') },
+  handler: async (ctx, args) => {
+    const bill = await requireBillOwner(ctx, args.billId)
+    assertBillDraft(bill)
+
+    const participants = await ctx.db
+      .query('participants')
+      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
+      .collect()
+
+    const guests = participants.filter(
+      (participant) => participant._id !== bill.hostParticipantId,
+    )
+    if (guests.length === 0) {
+      throw new ConvexError('Няма гости за премахване.')
+    }
+
+    for (const guest of guests) {
+      await deleteParticipantWithRelations(ctx, guest._id, bill)
+    }
+
+    await touchBill(ctx, args.billId)
+    return { removedCount: guests.length }
   },
 })

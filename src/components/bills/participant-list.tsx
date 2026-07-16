@@ -22,8 +22,12 @@ import {
 } from '#/components/ui/dropdown-menu.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
-import { getParticipantRemoveCopy } from '#/lib/destructive-action-copy.ts'
+import {
+  getClearAllGuestsCopy,
+  getParticipantRemoveCopy,
+} from '#/lib/destructive-action-copy.ts'
 import { summarizeAddMembersToBill } from '#/lib/friend-group-schema.ts'
+import { isHostParticipant } from '../../../shared/host-bill-participant.ts'
 import {
   readLastFriendGroupId,
   writeLastFriendGroupId,
@@ -40,6 +44,7 @@ export interface ParticipantListProps {
   billId: Id<'bills'>
   participants: Doc<'participants'>[]
   labels: Record<string, string>
+  hostParticipantId?: Id<'participants'>
   readOnly?: boolean
   suggestedGroupName?: string
 }
@@ -48,6 +53,7 @@ export function ParticipantList({
   billId,
   participants,
   labels,
+  hostParticipantId,
   readOnly = false,
   suggestedGroupName = '',
 }: ParticipantListProps) {
@@ -61,6 +67,7 @@ export function ParticipantList({
   const addParticipant = useMutation(api.participants.add)
   const addGroupToBill = useMutation(api.friendGroups.addToBill)
   const removeParticipant = useMutation(api.participants.remove)
+  const removeAllGuests = useMutation(api.participants.removeAllGuests)
   const recentNames = useQuery(api.participants.listRecentNames, { limit: 12 })
   const friendGroups = useQuery(api.friendGroups.list, {})
   const { groups: orderedFriendGroups, pinnedId: pinnedGroupId } = useMemo(() => {
@@ -72,6 +79,10 @@ export function ParticipantList({
 
   const currentNames = new Set(
     participants.map((p) => p.name.trim().toLowerCase()),
+  )
+  const guestParticipants = participants.filter(
+    (participant) =>
+      !isHostParticipant(participant._id, hostParticipantId),
   )
   const quickAddNames =
     recentNames?.filter(
@@ -137,6 +148,23 @@ export function ParticipantList({
     }
   }
 
+  async function handleClearAllGuestsWithConfirm() {
+    const confirmed = await confirm(
+      getClearAllGuestsCopy(guestParticipants.length),
+    )
+    if (!confirmed) return
+    try {
+      const result = await removeAllGuests({ billId })
+      toast.success(
+        result.removedCount === 1
+          ? '1 гост е премахнат'
+          : `${result.removedCount} госта са премахнати`,
+      )
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
+    }
+  }
+
   async function handleAddGroupAll(group: FriendGroupPreview) {
     try {
       const result = await addGroupToBill({ billId, groupId: group._id })
@@ -165,9 +193,22 @@ export function ParticipantList({
   return (
     <div className="flex flex-col gap-4">
       <section aria-label="Участници на сметката" className="flex flex-col gap-2">
-        <p className="text-xs font-medium text-muted-foreground">
-          На сметката
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-medium text-muted-foreground">
+            На сметката
+          </p>
+          {showAddControls && guestParticipants.length > 0 ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 shrink-0 text-muted-foreground hover:text-destructive"
+              onClick={() => void handleClearAllGuestsWithConfirm()}
+            >
+              Изчисти всички
+            </Button>
+          ) : null}
+        </div>
         <div className="min-h-9 rounded-lg border border-border/60 bg-background/60 px-3 py-2.5">
           {participants.length === 0 ? (
             <p className="text-sm text-muted-foreground">

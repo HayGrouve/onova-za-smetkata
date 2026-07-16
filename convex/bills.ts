@@ -239,7 +239,7 @@ export const finalize = mutation({
   handler: async (ctx, args) => {
     const bill = await requireBillOwner(ctx, args.billId)
 
-    const { participants, items, assignments } = await loadBillRelations(
+    const { participants, items, assignments, payments } = await loadBillRelations(
       ctx,
       args.billId,
     )
@@ -260,6 +260,12 @@ export const finalize = mutation({
         participantId: a.participantId,
         units: a.units,
       })),
+      payments: payments.map((p) => ({
+        participantId: p.participantId,
+        amountCents: p.amountCents,
+      })),
+      tipCents: bill.tipCents ?? 0,
+      hostParticipantId: bill.hostParticipantId,
     })
 
     await ctx.db.patch(args.billId, {

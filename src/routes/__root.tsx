@@ -12,6 +12,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import ConvexProvider from '../integrations/convex/provider'
 import { AppShell } from '../components/layout/app-shell.tsx'
 import { ConfirmActionProvider } from '../components/confirm-action-provider.tsx'
+import { TooltipProvider } from '../components/ui/tooltip.tsx'
 import { ThemeProvider } from '../components/theme-provider.tsx'
 import { Toaster } from '../components/ui/sonner'
 import { Button } from '#/components/ui/button.tsx'
@@ -124,6 +125,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           disableTransitionOnChange
         >
           <ConfirmActionProvider>
+            <TooltipProvider>
             <ConvexProvider>
               <SentryInit />
               <ServiceWorkerRegister />
@@ -143,6 +145,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               />
             )}
             </ConvexProvider>
+            </TooltipProvider>
           </ConfirmActionProvider>
         </ThemeProvider>
         <Scripts />

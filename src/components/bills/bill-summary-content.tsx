@@ -40,6 +40,11 @@ import {
 } from '#/components/ui/dialog.tsx'
 import { Separator } from '#/components/ui/separator.tsx'
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '#/components/ui/tooltip.tsx'
+import {
   calculateBillTotals,
   validateBillForFinalize,
 } from '#/lib/bill-calculations.ts'
@@ -125,6 +130,10 @@ export function BillSummaryContent({
     return validateBillForFinalize({
       ...calcInputs,
       restaurantName: data.bill.restaurantName,
+      payments: data.payments.map((p) => ({
+        participantId: p.participantId,
+        amountCents: p.amountCents,
+      })),
     })
   }, [calcInputs, data])
 
@@ -189,6 +198,7 @@ export function BillSummaryContent({
     return a.sortOrder - b.sortOrder
   })
   const isDraft = bill.status === 'draft'
+  const canFinalize = errors.length === 0
   const unpaidCount = participants.filter(
     (participant) =>
       !isHostParticipant(participant._id, bill.hostParticipantId) &&
@@ -347,15 +357,37 @@ export function BillSummaryContent({
 
       <Separator />
 
-      {isDraft && errors.length === 0 && (
+      {isDraft && (
         <>
-          <Button
-            className="h-11 w-full bg-success text-success-foreground transition-colors hover:bg-success/90 focus-visible:ring-success/30"
-            onClick={() => setFinalizeOpen(true)}
-          >
-            <CheckCircleIcon className={ICON.button} aria-hidden />
-            Завърши сметка
-          </Button>
+          {unpaidCount > 0 && !canFinalize ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex w-full cursor-not-allowed">
+                  <Button
+                    type="button"
+                    disabled
+                    className="pointer-events-none h-11 w-full bg-success text-success-foreground opacity-50"
+                  >
+                    <CheckCircleIcon className={ICON.button} aria-hidden />
+                    Завърши сметка
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs text-center">
+                Всички гости трябва да платят, преди да завършите сметката.
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button
+              type="button"
+              className="h-11 w-full bg-success text-success-foreground transition-colors hover:bg-success/90 focus-visible:ring-success/30 disabled:opacity-50"
+              disabled={!canFinalize}
+              onClick={() => setFinalizeOpen(true)}
+            >
+              <CheckCircleIcon className={ICON.button} aria-hidden />
+              Завърши сметка
+            </Button>
+          )}
           <Dialog open={finalizeOpen} onOpenChange={setFinalizeOpen}>
             <DialogContent>
               <DialogHeader>
@@ -397,7 +429,7 @@ export function BillSummaryContent({
                 <Button
                   className="bg-success text-success-foreground hover:bg-success/90"
                   onClick={() => void handleFinalize()}
-                  disabled={isFinalizing}
+                  disabled={isFinalizing || unpaidCount > 0}
                 >
                   <CheckCircleIcon className={ICON.button} aria-hidden />
                   {isFinalizing ? 'Завършване...' : 'Завърши сметка'}

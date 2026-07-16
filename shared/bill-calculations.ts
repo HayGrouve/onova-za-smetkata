@@ -312,6 +312,7 @@ export interface ValidationError {
     | 'unassigned_items'
     | 'units_mismatch'
     | 'missing_restaurant'
+    | 'unpaid_participants'
   message: string
 }
 
@@ -320,6 +321,9 @@ export function validateBillForFinalize(input: {
   participants: ParticipantInput[]
   items: ItemInput[]
   assignments: AssignmentInput[]
+  payments?: PaymentInput[]
+  tipCents?: number
+  hostParticipantId?: string
 }): ValidationError[] {
   const errors: ValidationError[] = []
 
@@ -376,6 +380,27 @@ export function validateBillForFinalize(input: {
           'Разпределеният брой не съвпада с количеството на някой артикул.',
       })
       break
+    }
+  }
+
+  if (input.participants.length > 0) {
+    const totals = calculateBillTotals({
+      participants: input.participants,
+      items: input.items,
+      assignments: input.assignments,
+      payments: input.payments ?? [],
+      tipCents: input.tipCents,
+      hostParticipantId: input.hostParticipantId,
+    })
+    const hasUnpaidParticipant = input.participants.some(
+      (participant) => totals.byParticipant[participant.id]?.status !== 'paid',
+    )
+    if (hasUnpaidParticipant) {
+      errors.push({
+        code: 'unpaid_participants',
+        message:
+          'Маркирайте всички участници като платили, преди да завършите сметката.',
+      })
     }
   }
 

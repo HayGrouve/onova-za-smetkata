@@ -25,7 +25,10 @@ export function getBillStepCompletion(
   input: BillStepCompletionInput,
 ): BillStepCompletion {
   const step1 = input.restaurantName.trim().length > 0
-  const step2 = input.participants.length >= 1
+  const billParticipants = input.hostParticipantId
+    ? input.participants.filter((p) => p.id !== input.hostParticipantId)
+    : input.participants
+  const step2 = billParticipants.length >= 1
   const step3 =
     input.items.length >= 1 &&
     input.items.every((item) =>

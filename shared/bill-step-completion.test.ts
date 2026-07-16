@@ -44,6 +44,28 @@ describe('getBillStepCompletion', () => {
     ).toBe(true)
   })
 
+  it('does not mark step 2 done when only the host participant exists', () => {
+    const host = { id: 'host', sortOrder: 0 }
+    expect(
+      getBillStepCompletion({
+        restaurantName: '',
+        participants: [host],
+        items: [],
+        assignments: [],
+        hostParticipantId: 'host',
+      })[2],
+    ).toBe(false)
+    expect(
+      getBillStepCompletion({
+        restaurantName: '',
+        participants: [host, p1],
+        items: [],
+        assignments: [],
+        hostParticipantId: 'host',
+      })[2],
+    ).toBe(true)
+  })
+
   it('marks step 3 done when every item has an assignment and there is ≥1 item', () => {
     expect(
       getBillStepCompletion({

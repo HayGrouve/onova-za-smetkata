@@ -24,28 +24,44 @@ function participantRow(page: Page, participantName: string) {
 }
 
 test('finalized bill is read-only on guest claim page', async ({ browser }) => {
+  const stamp = Date.now()
+  const participantName = `Final ${stamp}`
+  const itemName = 'Кафе'
+  const restaurantName = `E2E ${stamp}`
+
   const { context: hostContext, page: hostPage } = await openHostContext(browser)
 
   await hostPage.getByRole('button', { name: 'Нова сметка' }).click()
-
-  const restaurantName = `E2E ${Date.now()}`
   await hostPage.getByLabel('Ресторант').fill(restaurantName)
 
-  const participantName = `Final ${Date.now()}`
+  await goToBillStep(hostPage, 2)
   await hostPage.getByPlaceholder('Име на участник').fill(participantName)
   await hostPage.getByRole('button', { name: 'Добави' }).click()
-
-  await hostPage.getByPlaceholder('Наименование на артикул').fill('Кафе')
-  await hostPage.getByPlaceholder('Цена (€)').first().fill('3.00')
-  await hostPage.getByRole('button', { name: 'Добави артикул' }).click()
-
-  const billId = hostPage.url().match(/\/bills\/([^/]+)/)?.[1]
-  expect(billId).toBeTruthy()
+  await expect(hostPage.getByText(participantName)).toBeVisible()
 
   const joinUrl = await getJoinUrl(hostPage)
+  const billId = hostPage.url().match(/\/bills\/([^/?]+)/)?.[1]
+  expect(billId).toBeTruthy()
 
-  await hostPage.getByRole('link', { name: 'Преглед' }).click()
-  await expect(hostPage).toHaveURL(new RegExp(`/bills/${billId}/summary`))
+  await goToBillStep(hostPage, 3)
+  await hostPage.getByRole('button', { name: 'Добави артикул' }).click()
+  await hostPage.getByPlaceholder('Наименование на артикул').fill(itemName)
+  await hostPage.getByPlaceholder('Цена (€)').first().fill('3.00')
+  await hostPage.getByRole('button', { name: 'Добави' }).click()
+  await expect(hostPage.getByText(itemName)).toBeVisible()
+
+  const guestContext = await browser.newContext()
+  const guestPage = await guestContext.newPage()
+  await guestPage.goto(joinUrl)
+  await guestPage.getByRole('button', { name: participantName }).click()
+  await expect(guestPage).toHaveURL(new RegExp(`/bills/${billId}/claim`))
+  await claimItem(guestPage, itemName)
+  await guestContext.close()
+
+  await goToBillStep(hostPage, 4)
+  const guestRow = participantRow(hostPage, participantName)
+  await guestRow.getByRole('button', { name: 'Платено' }).click()
+
   await hostPage.getByRole('button', { name: 'Завърши сметка' }).click()
   await hostPage
     .getByRole('dialog')
@@ -53,19 +69,19 @@ test('finalized bill is read-only on guest claim page', async ({ browser }) => {
     .click()
   await expect(hostPage.getByText(/Завършена/)).toBeVisible()
 
-  const guestContext = await browser.newContext()
-  const guestPage = await guestContext.newPage()
-  await guestPage.goto(joinUrl)
-  await guestPage.getByRole('button', { name: participantName }).click()
+  const guestReadonlyContext = await browser.newContext()
+  const guestReadonlyPage = await guestReadonlyContext.newPage()
+  await guestReadonlyPage.goto(joinUrl)
+  await guestReadonlyPage.getByRole('button', { name: participantName }).click()
 
-  await expect(guestPage).toHaveURL(new RegExp(`/bills/${billId}/claim`))
+  await expect(guestReadonlyPage).toHaveURL(new RegExp(`/bills/${billId}/claim`))
   await expect(
-    guestPage.getByText('Сметката е приключена — само преглед.'),
+    guestReadonlyPage.getByText('Сметката е приключена — само преглед.'),
   ).toBeVisible()
-  await expect(guestPage.getByRole('button', { name: /Кафе/ })).toBeDisabled()
+  await expect(guestReadonlyPage.getByRole('button', { name: /Кафе/ })).toBeDisabled()
 
   await hostContext.close()
-  await guestContext.close()
+  await guestReadonlyContext.close()
 })
 
 test('finalized bill hides payment undo for host and keeps delete', async ({

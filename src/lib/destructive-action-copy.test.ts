@@ -6,6 +6,7 @@ import {
   getFriendGroupMemberRemoveCopy,
   getItemDeleteCopy,
   getParticipantRemoveCopy,
+  getClearAllGuestsCopy,
   getPaymentUndoCopy,
   getSignOutCopy,
 } from './destructive-action-copy'
@@ -24,6 +25,13 @@ describe('destructive-action-copy', () => {
 
   it('interpolates participant name', () => {
     expect(getParticipantRemoveCopy('Иван').description).toContain('Иван')
+  })
+
+  it('clear all guests copy mentions guest count', () => {
+    const copy = getClearAllGuestsCopy(3)
+    expect(copy.title).toBe('Изчистване на всички гости?')
+    expect(copy.description).toContain('3 госта')
+    expect(copy.confirmLabel).toBe('Изчисти всички')
   })
 
   it('interpolates friend group name', () => {

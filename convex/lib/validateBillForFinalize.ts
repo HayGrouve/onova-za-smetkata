@@ -4,6 +4,7 @@ import {
   type AssignmentInput,
   type ItemInput,
   type ParticipantInput,
+  type PaymentInput,
   type ValidationError,
 } from './billCalculations'
 
@@ -19,6 +20,9 @@ export function assertBillCanFinalize(input: {
   participants: FinalizeParticipantInput[]
   items: FinalizeItemInput[]
   assignments: FinalizeAssignmentInput[]
+  payments?: PaymentInput[]
+  tipCents?: number
+  hostParticipantId?: string
 }): void {
   const errors = validateBillForFinalize(input)
   if (errors.length > 0) {
