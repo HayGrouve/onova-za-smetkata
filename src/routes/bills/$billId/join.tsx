@@ -16,7 +16,7 @@ import {
   setStoredGuestSession,
 } from '#/lib/guest-participant-session.ts'
 import { buildJoinShareHead } from '#/lib/site-meta.ts'
-import { joinableParticipants } from '../../../shared/joinable-participants.ts'
+import { joinableParticipants } from '../../../../shared/joinable-participants.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
 
