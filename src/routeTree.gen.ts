@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PrototypeSpodeliModalRouteImport } from './routes/prototype/spodeli-modal'
 import { Route as PrototypeHostPaidPresentationRouteImport } from './routes/prototype/host-paid-presentation'
 import { Route as BillsBillIdIndexRouteImport } from './routes/bills/$billId/index'
 import { Route as BillsBillIdSummaryRouteImport } from './routes/bills/$billId/summary'
@@ -31,6 +32,11 @@ const SplatRoute = SplatRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrototypeSpodeliModalRoute = PrototypeSpodeliModalRouteImport.update({
+  id: '/prototype/spodeli-modal',
+  path: '/prototype/spodeli-modal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrototypeHostPaidPresentationRoute =
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/$': typeof SplatRoute
   '/login': typeof LoginRoute
   '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
+  '/prototype/spodeli-modal': typeof PrototypeSpodeliModalRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
   '/bills/$billId/summary': typeof BillsBillIdSummaryRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/login': typeof LoginRoute
   '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
+  '/prototype/spodeli-modal': typeof PrototypeSpodeliModalRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
   '/bills/$billId/summary': typeof BillsBillIdSummaryRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/$': typeof SplatRoute
   '/login': typeof LoginRoute
   '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
+  '/prototype/spodeli-modal': typeof PrototypeSpodeliModalRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
   '/bills/$billId/summary': typeof BillsBillIdSummaryRoute
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/login'
     | '/prototype/host-paid-presentation'
+    | '/prototype/spodeli-modal'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
     | '/bills/$billId/summary'
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/login'
     | '/prototype/host-paid-presentation'
+    | '/prototype/spodeli-modal'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
     | '/bills/$billId/summary'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/login'
     | '/prototype/host-paid-presentation'
+    | '/prototype/spodeli-modal'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
     | '/bills/$billId/summary'
@@ -129,6 +141,7 @@ export interface RootRouteChildren {
   SplatRoute: typeof SplatRoute
   LoginRoute: typeof LoginRoute
   PrototypeHostPaidPresentationRoute: typeof PrototypeHostPaidPresentationRoute
+  PrototypeSpodeliModalRoute: typeof PrototypeSpodeliModalRoute
   BillsBillIdClaimRoute: typeof BillsBillIdClaimRoute
   BillsBillIdJoinRoute: typeof BillsBillIdJoinRoute
   BillsBillIdSummaryRoute: typeof BillsBillIdSummaryRoute
@@ -156,6 +169,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prototype/spodeli-modal': {
+      id: '/prototype/spodeli-modal'
+      path: '/prototype/spodeli-modal'
+      fullPath: '/prototype/spodeli-modal'
+      preLoaderRoute: typeof PrototypeSpodeliModalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/prototype/host-paid-presentation': {
@@ -201,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   SplatRoute: SplatRoute,
   LoginRoute: LoginRoute,
   PrototypeHostPaidPresentationRoute: PrototypeHostPaidPresentationRoute,
+  PrototypeSpodeliModalRoute: PrototypeSpodeliModalRoute,
   BillsBillIdClaimRoute: BillsBillIdClaimRoute,
   BillsBillIdJoinRoute: BillsBillIdJoinRoute,
   BillsBillIdSummaryRoute: BillsBillIdSummaryRoute,
