@@ -51,6 +51,11 @@ describe('tip-preferences-storage', () => {
     )
   })
 
+  it('persists zero percent preference', () => {
+    writeTipPreference({ mode: 'percent', percent: 0 })
+    expect(readTipPreference()).toEqual({ mode: 'percent', percent: 0 })
+  })
+
   it('persists custom preference', () => {
     writeTipPreference({ mode: 'custom', customCents: 350 })
     expect(readTipPreference()).toEqual({ mode: 'custom', customCents: 350 })

@@ -43,7 +43,7 @@ import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { calculateBillTotals } from '#/lib/bill-calculations.ts'
 import { getBillStepCompletion } from '#/lib/bill-step-completion.ts'
-import { countItemsWithEmptyUnits } from '../../../shared/unit-coverage.ts'
+import { countItemsWithEmptyUnits } from '../../../../shared/unit-coverage.ts'
 import {
   calculateItemsSubtotalCents,
   formatEurInputValue,

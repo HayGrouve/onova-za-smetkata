@@ -1,12 +1,12 @@
 import { lineTotalCents, type ItemInput } from './bill-calculations'
 
-export type TipPercent = 10 | 15 | 20
+export type TipPercent = 0 | 10 | 15 | 20
 
 export type TipPreference =
   | { mode: 'percent'; percent: TipPercent }
   | { mode: 'custom'; customCents: number }
 
-export const TIP_PRESETS: readonly TipPercent[] = [10, 15, 20]
+export const TIP_PRESETS: readonly TipPercent[] = [0, 10, 15, 20]
 
 export function tipCentsFromPercent(
   itemsSubtotalCents: number,

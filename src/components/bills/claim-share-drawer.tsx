@@ -156,9 +156,10 @@ export function ClaimShareDrawer({
           <div
             ref={contentRef}
             className={cn(
-              'pointer-events-auto mx-auto flex w-full max-w-lg min-h-0 flex-col sticky-surface px-4 pt-2',
+              'pointer-events-none mx-auto flex w-full max-w-lg min-h-0 flex-col sticky-surface px-4 pt-2',
               'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]',
               'rounded-t-xl',
+              !expanded && 'justify-end',
             )}
             style={{
               // Keep panel height in lockstep with Vaul expanded snap (px).
@@ -167,7 +168,7 @@ export function ClaimShareDrawer({
           >
             <div
               ref={headerRef}
-              className="order-1 shrink-0 flex flex-col gap-3"
+              className="pointer-events-auto order-1 shrink-0 flex flex-col gap-3"
             >
               <button
                 type="button"
@@ -188,10 +189,9 @@ export function ClaimShareDrawer({
             <div
               id={detailsId}
               data-testid="claim-share-details"
-              hidden={!expanded}
               className={cn(
                 'order-2 min-h-0 flex-1 overflow-y-auto',
-                !expanded && 'hidden',
+                expanded ? 'pointer-events-auto' : 'hidden',
               )}
             >
               {details}
@@ -199,7 +199,7 @@ export function ClaimShareDrawer({
             <div
               ref={summaryRef}
               className={cn(
-                'shrink-0 border-t pt-3',
+                'pointer-events-auto shrink-0 border-t pt-3',
                 expanded ? 'order-3' : 'order-2',
               )}
             >

@@ -15,6 +15,10 @@ describe('tipCentsFromPercent', () => {
   it('returns 0 for zero subtotal', () => {
     expect(tipCentsFromPercent(0, 20)).toBe(0)
   })
+
+  it('returns 0 for zero percent', () => {
+    expect(tipCentsFromPercent(5000, 0)).toBe(0)
+  })
 })
 
 describe('calculateItemsSubtotalCents', () => {

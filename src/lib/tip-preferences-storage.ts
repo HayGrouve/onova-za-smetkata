@@ -1,12 +1,12 @@
 export const TIP_PREFERENCE_KEY = 'tip-preference'
 
-export type TipPercent = 10 | 15 | 20
+export type TipPercent = 0 | 10 | 15 | 20
 
 export type TipPreference =
   | { mode: 'percent'; percent: TipPercent }
   | { mode: 'custom'; customCents: number }
 
-const TIP_PERCENTS = new Set<TipPercent>([10, 15, 20])
+const TIP_PERCENTS = new Set<TipPercent>([0, 10, 15, 20])
 
 function isTipPercent(value: unknown): value is TipPercent {
   return typeof value === 'number' && TIP_PERCENTS.has(value as TipPercent)

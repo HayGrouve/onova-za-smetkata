@@ -102,7 +102,7 @@ export function TipField({
   return (
     <div className="flex flex-col gap-1.5">
       <Label htmlFor="tip">Бакшиш</Label>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1">
         {chipAmounts.map(({ percent, cents }) => (
           <Button
             key={percent}
