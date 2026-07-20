@@ -114,3 +114,44 @@ export function getOtherClaimantLabels(
   }
   return [...others]
 }
+
+export function getAssigneeIdsOnUnit(
+  itemAssignments: GuestItemAssignment[],
+  unitIndex: number,
+): Id<'participants'>[] {
+  return itemAssignments
+    .filter((assignment) => assignment.unitIndex === unitIndex)
+    .map((assignment) => assignment.participantId)
+}
+
+export function isParticipantOnUnit(
+  itemAssignments: GuestItemAssignment[],
+  unitIndex: number,
+  participantId: Id<'participants'>,
+): boolean {
+  return itemAssignments.some(
+    (assignment) =>
+      assignment.unitIndex === unitIndex &&
+      assignment.participantId === participantId,
+  )
+}
+
+export function getOtherClaimantLabelsForUnit(
+  itemAssignments: GuestItemAssignment[],
+  unitIndex: number,
+  participantId: Id<'participants'>,
+  labels: Record<string, string>,
+): string[] {
+  return getOtherClaimantLabels(
+    itemAssignments.filter((assignment) => assignment.unitIndex === unitIndex),
+    participantId,
+    labels,
+  )
+}
+
+export function formatSpodeliUnitTitle(
+  itemName: string,
+  unitIndex: number,
+): string {
+  return `${itemName} · бройка ${unitIndex + 1}`
+}

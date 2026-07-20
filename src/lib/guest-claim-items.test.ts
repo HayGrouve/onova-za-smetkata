@@ -5,6 +5,10 @@ import {
   filterClaimedGuestClaimItems,
   getGuestClaimItemState,
   getOtherClaimantLabels,
+  getAssigneeIdsOnUnit,
+  getOtherClaimantLabelsForUnit,
+  formatSpodeliUnitTitle,
+  isParticipantOnUnit,
   sortGuestClaimItems,
 } from './guest-claim-items'
 import type { Id } from '../../convex/_generated/dataModel'
@@ -220,5 +224,54 @@ describe('getOtherClaimantLabels', () => {
         { [participantB]: 'Мария' },
       ),
     ).toEqual(['Мария'])
+  })
+})
+
+describe('per-unit assignment helpers', () => {
+  const assignments = [
+    {
+      itemId: 'item-1' as Id<'items'>,
+      participantId: participantA,
+      unitIndex: 1,
+    },
+    {
+      itemId: 'item-1' as Id<'items'>,
+      participantId: participantB,
+      unitIndex: 0,
+    },
+    {
+      itemId: 'item-1' as Id<'items'>,
+      participantId: participantB,
+      unitIndex: 1,
+    },
+  ]
+
+  it('lists assignees on a single unit', () => {
+    expect(getAssigneeIdsOnUnit(assignments, 1).sort()).toEqual(
+      [participantA, participantB].sort(),
+    )
+  })
+
+  it('detects membership on a unit', () => {
+    expect(isParticipantOnUnit(assignments, 1, participantA)).toBe(true)
+    expect(isParticipantOnUnit(assignments, 0, participantA)).toBe(false)
+  })
+
+  it('scopes other claimant labels to one unit', () => {
+    expect(
+      getOtherClaimantLabelsForUnit(assignments, 0, participantA, {
+        [participantB]: 'Мария',
+      }),
+    ).toEqual(['Мария'])
+    expect(
+      getOtherClaimantLabelsForUnit(assignments, 1, participantA, {
+        [participantB]: 'Мария',
+      }),
+    ).toEqual(['Мария'])
+  })
+
+  it('formats 1-based unit titles', () => {
+    expect(formatSpodeliUnitTitle('Вода', 0)).toBe('Вода · бройка 1')
+    expect(formatSpodeliUnitTitle('Вода', 2)).toBe('Вода · бройка 3')
   })
 })

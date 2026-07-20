@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useMutation } from 'convex/react'
 import { toast } from 'sonner'
 import { cn } from '#/lib/utils.ts'
@@ -13,6 +14,7 @@ import {
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
+import { SpodeliDialog } from '#/components/bills/spodeli-dialog.tsx'
 
 export interface GuestItemRowProps {
   item: Doc<'items'>
@@ -33,6 +35,7 @@ export function GuestItemRow({
   readOnly,
   onItemSelected,
 }: GuestItemRowProps) {
+  const [spodeliOpen, setSpodeliOpen] = useState(false)
   const toggleAssignment = useMutation(api.assignments.toggle)
 
   const { myUnits, coveredUnits, isSelectedByMe } = getGuestClaimItemState(
@@ -64,7 +67,9 @@ export function GuestItemRow({
     'guest-claim-card flex flex-col gap-1 rounded-lg border p-4 text-left',
     'border-border bg-card',
     !readOnly && item.quantity === 1 && 'tap-feedback',
-    readOnly && 'opacity-80',
+    readOnly && item.quantity === 1 && 'opacity-80',
+    item.quantity > 1 && 'tap-feedback',
+    item.quantity > 1 && readOnly && 'opacity-80',
     item.quantity === 1 &&
       isSelectedByMe &&
       'guest-claim-card--selected border-primary/50 bg-primary/10 dark:border-primary/40 dark:bg-primary/15',
@@ -135,11 +140,7 @@ export function GuestItemRow({
             {coveredUnits} от {item.quantity} заети
           </p>
         ) : null}
-        {!readOnly ? (
-          <p className="text-xs font-medium text-muted-foreground">
-            Сподели — скоро
-          </p>
-        ) : null}
+        <p className="text-xs font-medium text-primary">Сподели</p>
       </>
     )
   }
@@ -168,17 +169,36 @@ export function GuestItemRow({
   }
 
   return (
-    <div className={cn(cardClassName, 'gap-2')}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="font-medium">{item.name}</p>
-          <p className="text-sm text-muted-foreground">
-            {formatEur(item.unitPriceCents)} × {item.quantity}
-          </p>
+    <>
+      <button
+        type="button"
+        onClick={() => setSpodeliOpen(true)}
+        className={cn(cardClassName, 'gap-2 text-left')}
+        aria-label={`${item.name}, сподели бройки`}
+        data-testid={`guest-item-spodeli-${item._id}`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-medium">{item.name}</p>
+            <p className="text-sm text-muted-foreground">
+              {formatEur(item.unitPriceCents)} × {item.quantity}
+            </p>
+          </div>
+          <p className="money font-medium">{formatEur(lineTotalCents)}</p>
         </div>
-        <p className="money font-medium">{formatEur(lineTotalCents)}</p>
-      </div>
-      {renderMultiQtySummary()}
-    </div>
+        {renderMultiQtySummary()}
+      </button>
+      <SpodeliDialog
+        open={spodeliOpen}
+        onOpenChange={setSpodeliOpen}
+        item={item}
+        participantId={participantId}
+        sessionToken={sessionToken}
+        itemAssignments={itemAssignments}
+        participantLabels={participantLabels}
+        readOnly={readOnly}
+        onUnitToggled={onItemSelected}
+      />
+    </>
   )
 }
