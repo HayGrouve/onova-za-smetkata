@@ -4,11 +4,10 @@ import { mutation } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
 import { assertAssignmentEditable } from './lib/assertAssignmentEditable'
 import { assertCanMutateAssignment } from './lib/assertCanMutateAssignment'
-import { clampParticipantUnits } from './lib/clampParticipantUnits'
 import { requireBillOwner } from './lib/auth'
-import { splitUnits } from './lib/billCalculations'
 import { touchBill } from './lib/touchBill'
 import { assertRateLimit } from './lib/rateLimit'
+import { itemHasEmptyUnit } from '../shared/unit-coverage'
 
 async function getSortedParticipantIds(
   ctx: MutationCtx,
@@ -27,39 +26,16 @@ async function getSortedParticipantIds(
   )
 }
 
-async function normalizeItemAssignmentModes(
+async function deleteItemAssignments(
   ctx: MutationCtx,
-  item: { _id: Id<'items'>; billId: Id<'bills'>; quantity: number },
+  itemId: Id<'items'>,
 ) {
   const existing = await ctx.db
     .query('itemAssignments')
-    .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
+    .withIndex('by_itemId', (q) => q.eq('itemId', itemId))
     .collect()
-  if (existing.length === 0) return
-
-  if (item.quantity === 1) {
-    for (const assignment of existing) {
-      if (assignment.units !== undefined) {
-        await ctx.db.replace(assignment._id, {
-          billId: assignment.billId,
-          itemId: assignment.itemId,
-          participantId: assignment.participantId,
-        })
-      }
-    }
-    return
-  }
-
-  const hasUnits = existing.some((assignment) => assignment.units !== undefined)
-  const hasCentOnly = existing.some(
-    (assignment) => assignment.units === undefined,
-  )
-  if (!hasUnits || !hasCentOnly) return
-
   for (const assignment of existing) {
-    if (assignment.units === undefined) {
-      await ctx.db.patch(assignment._id, { units: 0 })
-    }
+    await ctx.db.delete(assignment._id)
   }
 }
 
@@ -68,14 +44,7 @@ async function syncEvenAssignments(
   item: { _id: Id<'items'>; billId: Id<'bills'>; quantity: number },
   participantIds: Id<'participants'>[],
 ) {
-  const existing = await ctx.db
-    .query('itemAssignments')
-    .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
-    .collect()
-  for (const assignment of existing) {
-    await ctx.db.delete(assignment._id)
-  }
-
+  await deleteItemAssignments(ctx, item._id)
   if (participantIds.length === 0) return
 
   const sortedIds = await getSortedParticipantIds(
@@ -84,31 +53,138 @@ async function syncEvenAssignments(
     participantIds,
   )
 
-  if (item.quantity === 1) {
+  for (let unitIndex = 0; unitIndex < item.quantity; unitIndex++) {
     for (const participantId of sortedIds) {
       await ctx.db.insert('itemAssignments', {
         billId: item.billId,
         itemId: item._id,
         participantId,
+        unitIndex,
       })
     }
-    return
-  }
-
-  const units = splitUnits(item.quantity, sortedIds.length)
-
-  for (let index = 0; index < sortedIds.length; index++) {
-    const participantId = sortedIds[index]
-    const unitCount = units[index] ?? 0
-    if (!participantId || unitCount <= 0) continue
-    await ctx.db.insert('itemAssignments', {
-      billId: item.billId,
-      itemId: item._id,
-      participantId,
-      units: unitCount,
-    })
   }
 }
+
+function assertUnitIndexInRange(
+  item: { quantity: number },
+  unitIndex: number,
+) {
+  if (!Number.isInteger(unitIndex) || unitIndex < 0 || unitIndex >= item.quantity) {
+    throw new ConvexError('Невалиден номер на бройка.')
+  }
+}
+
+async function findMembership(
+  ctx: MutationCtx,
+  itemId: Id<'items'>,
+  participantId: Id<'participants'>,
+  unitIndex: number,
+) {
+  return await ctx.db
+    .query('itemAssignments')
+    .withIndex('by_itemId_participantId_unitIndex', (q) =>
+      q
+        .eq('itemId', itemId)
+        .eq('participantId', participantId)
+        .eq('unitIndex', unitIndex),
+    )
+    .unique()
+}
+
+async function mutateUnitMembership(
+  ctx: MutationCtx,
+  args: {
+    itemId: Id<'items'>
+    participantId: Id<'participants'>
+    unitIndex: number
+    sessionToken?: string
+    join: boolean
+    rateLimitKey: string
+  },
+) {
+  const item = await ctx.db.get(args.itemId)
+  if (!item) {
+    throw new ConvexError('Артикулът не е намерен.')
+  }
+
+  const bill = await ctx.db.get(item.billId)
+  if (!bill) {
+    throw new ConvexError('Сметката не е намерена.')
+  }
+
+  await assertUnitIndexInRange(item, args.unitIndex)
+
+  await assertCanMutateAssignment(ctx, {
+    billId: item.billId,
+    participantId: args.participantId,
+    sessionToken: args.sessionToken,
+  })
+
+  if (args.sessionToken) {
+    await assertRateLimit(ctx, args.rateLimitKey, 60, 60_000)
+  }
+
+  const participant = await ctx.db.get(args.participantId)
+  assertAssignmentEditable({
+    billStatus: bill.status,
+    itemBillId: item.billId,
+    participantBillId: participant?.billId,
+  })
+
+  const existing = await findMembership(
+    ctx,
+    args.itemId,
+    args.participantId,
+    args.unitIndex,
+  )
+
+  if (args.join) {
+    if (!existing) {
+      await ctx.db.insert('itemAssignments', {
+        billId: item.billId,
+        itemId: args.itemId,
+        participantId: args.participantId,
+        unitIndex: args.unitIndex,
+      })
+    }
+  } else if (existing) {
+    await ctx.db.delete(existing._id)
+  }
+
+  await touchBill(ctx, item.billId)
+}
+
+export const joinUnit = mutation({
+  args: {
+    itemId: v.id('items'),
+    participantId: v.id('participants'),
+    unitIndex: v.number(),
+    sessionToken: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await mutateUnitMembership(ctx, {
+      ...args,
+      join: true,
+      rateLimitKey: `assign:joinUnit:${args.sessionToken ?? args.participantId}`,
+    })
+  },
+})
+
+export const leaveUnit = mutation({
+  args: {
+    itemId: v.id('items'),
+    participantId: v.id('participants'),
+    unitIndex: v.number(),
+    sessionToken: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await mutateUnitMembership(ctx, {
+      ...args,
+      join: false,
+      rateLimitKey: `assign:leaveUnit:${args.sessionToken ?? args.participantId}`,
+    })
+  },
+})
 
 export const toggle = mutation({
   args: {
@@ -120,6 +196,12 @@ export const toggle = mutation({
     const item = await ctx.db.get(args.itemId)
     if (!item) {
       throw new ConvexError('Артикулът не е намерен.')
+    }
+
+    if (item.quantity !== 1) {
+      throw new ConvexError(
+        'За артикули с количество над 1 използвайте Сподели.',
+      )
     }
 
     const bill = await ctx.db.get(item.billId)
@@ -169,97 +251,6 @@ export const toggle = mutation({
         ]
 
     await syncEvenAssignments(ctx, item, nextParticipantIds)
-    await touchBill(ctx, item.billId)
-  },
-})
-
-export const setUnits = mutation({
-  args: {
-    itemId: v.id('items'),
-    participantId: v.id('participants'),
-    units: v.number(),
-    sessionToken: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const item = await ctx.db.get(args.itemId)
-    if (!item) {
-      throw new ConvexError('Артикулът не е намерен.')
-    }
-
-    const bill = await ctx.db.get(item.billId)
-    if (!bill) {
-      throw new ConvexError('Сметката не е намерена.')
-    }
-
-    if (item.quantity === 1) {
-      throw new ConvexError(
-        'Единичните артикули се разпределят чрез избор на участници.',
-      )
-    }
-
-    await assertCanMutateAssignment(ctx, {
-      billId: item.billId,
-      participantId: args.participantId,
-      sessionToken: args.sessionToken,
-    })
-
-    if (args.sessionToken) {
-      await assertRateLimit(
-        ctx,
-        `assign:setUnits:${args.sessionToken}`,
-        60,
-        60_000,
-      )
-    }
-
-    const participant = await ctx.db.get(args.participantId)
-    assertAssignmentEditable({
-      billStatus: bill.status,
-      itemBillId: item.billId,
-      participantBillId: participant?.billId,
-    })
-
-    const existingAssignment = await ctx.db
-      .query('itemAssignments')
-      .withIndex('by_itemId_participantId', (q) =>
-        q.eq('itemId', args.itemId).eq('participantId', args.participantId),
-      )
-      .unique()
-
-    const existing = await ctx.db
-      .query('itemAssignments')
-      .withIndex('by_itemId', (q) => q.eq('itemId', args.itemId))
-      .collect()
-
-    const clampedUnits = clampParticipantUnits({
-      itemQuantity: item.quantity,
-      requestedUnits: args.units,
-      existingAssignments: existing.map((assignment) => ({
-        participantId: assignment.participantId,
-        units: assignment.units,
-      })),
-      participantId: args.participantId,
-    })
-
-    if (clampedUnits === 0) {
-      if (existingAssignment) await ctx.db.delete(existingAssignment._id)
-      await normalizeItemAssignmentModes(ctx, item)
-      await touchBill(ctx, item.billId)
-      return
-    }
-
-    if (existingAssignment) {
-      await ctx.db.patch(existingAssignment._id, { units: clampedUnits })
-    } else {
-      await ctx.db.insert('itemAssignments', {
-        billId: item.billId,
-        itemId: args.itemId,
-        participantId: args.participantId,
-        units: clampedUnits,
-      })
-    }
-
-    await normalizeItemAssignmentModes(ctx, item)
     await touchBill(ctx, item.billId)
   },
 })
@@ -323,7 +314,23 @@ export const assignAll = mutation({
         .query('itemAssignments')
         .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
         .collect()
-      if (args.mode === 'unassigned_only' && existing.length > 0) continue
+      if (
+        args.mode === 'unassigned_only' &&
+        !itemHasEmptyUnit(
+          {
+            id: item._id,
+            unitPriceCents: item.unitPriceCents,
+            quantity: item.quantity,
+          },
+          existing.map((assignment) => ({
+            itemId: assignment.itemId,
+            participantId: assignment.participantId,
+            unitIndex: assignment.unitIndex,
+          })),
+        )
+      ) {
+        continue
+      }
 
       await syncEvenAssignments(ctx, item, participantIds)
     }

@@ -25,7 +25,6 @@ import {
 import { copyToClipboard } from '#/lib/copy-to-clipboard.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { getCoveredParticipantIds } from '#/lib/combined-payment.ts'
-import { itemUsesUnitAssignments } from '#/lib/guest-claim-items.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { COMBINED_PAYMENT_MESSAGES } from '../../../shared/combined-payment-messages'
@@ -83,7 +82,7 @@ export function GuestClaimFooter({
   const initiateTransfer = useMutation(api.combinedPayments.initiateTransfer)
   const cancelCombined = useMutation(api.combinedPayments.cancel)
   const toggleAssignment = useMutation(api.assignments.toggle)
-  const setUnits = useMutation(api.assignments.setUnits)
+  const leaveUnit = useMutation(api.assignments.leaveUnit)
   const revolutUsername = settings?.revolutUsername?.trim()
   const iban = settings?.iban?.trim()
   const hasRevolut = Boolean(revolutUsername)
@@ -299,36 +298,24 @@ export function GuestClaimFooter({
       if (readOnly) return
       try {
         const item = breakdownInput.items.find((entry) => entry.id === itemId)
-        const assignment = breakdownInput.assignments.find(
+        const myRows = breakdownInput.assignments.filter(
           (entry) =>
             entry.itemId === itemId && entry.participantId === participantId,
         )
-        const myUnits = assignment?.units ?? 0
 
         if (item && item.quantity > 1) {
-          await setUnits({
-            itemId,
-            participantId,
-            units: myUnits - 1,
-            sessionToken,
-          })
+          for (const row of myRows) {
+            await leaveUnit({
+              itemId,
+              participantId,
+              unitIndex: row.unitIndex,
+              sessionToken,
+            })
+          }
           return
         }
 
-        if (
-          itemUsesUnitAssignments(
-            itemId,
-            breakdownInput.assignments.map((entry) => ({
-              itemId: entry.itemId as Id<'items'>,
-              participantId: entry.participantId as Id<'participants'>,
-              units: entry.units,
-            })),
-          )
-        ) {
-          await setUnits({ itemId, participantId, units: 0, sessionToken })
-        } else {
-          await toggleAssignment({ itemId, participantId, sessionToken })
-        }
+        await toggleAssignment({ itemId, participantId, sessionToken })
       } catch (error) {
         toast.error(getConvexErrorMessage(error))
       }
@@ -336,10 +323,10 @@ export function GuestClaimFooter({
     [
       breakdownInput.assignments,
       breakdownInput.items,
+      leaveUnit,
       participantId,
       readOnly,
       sessionToken,
-      setUnits,
       toggleAssignment,
     ],
   )

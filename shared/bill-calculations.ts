@@ -1,3 +1,8 @@
+import {
+  countItemsWithEmptyUnits,
+  itemHasEmptyUnit,
+} from './unit-coverage'
+
 export type PaymentStatus = 'unpaid' | 'partial' | 'paid'
 
 export interface ParticipantInput {
@@ -14,7 +19,7 @@ export interface ItemInput {
 export interface AssignmentInput {
   itemId: string
   participantId: string
-  units?: number
+  unitIndex: number
 }
 
 export interface PaymentInput {
@@ -71,6 +76,17 @@ export function splitLineTotal(
   }))
 }
 
+function sortParticipantIds(
+  participantIds: string[],
+  participants: ParticipantInput[],
+): string[] {
+  return [...participantIds].sort((a, b) => {
+    const orderA = participants.find((p) => p.id === a)?.sortOrder ?? 0
+    const orderB = participants.find((p) => p.id === b)?.sortOrder ?? 0
+    return orderA - orderB
+  })
+}
+
 function paymentStatus(owedCents: number, paidCents: number): PaymentStatus {
   if (paidCents <= 0) return 'unpaid'
   if (paidCents >= owedCents) return 'paid'
@@ -100,6 +116,28 @@ function applyAlwaysPaidHostCollection(
   }
 }
 
+function addUnitShareToOwed(
+  owedByParticipant: Record<string, number>,
+  item: ItemInput,
+  unitIndex: number,
+  itemAssignments: AssignmentInput[],
+  participants: ParticipantInput[],
+): void {
+  const onUnit = itemAssignments.filter(
+    (assignment) => assignment.unitIndex === unitIndex,
+  )
+  if (onUnit.length === 0) return
+
+  const sortedIds = sortParticipantIds(
+    onUnit.map((assignment) => assignment.participantId),
+    participants,
+  )
+  for (const portion of splitLineTotal(item.unitPriceCents, sortedIds)) {
+    owedByParticipant[portion.id] =
+      (owedByParticipant[portion.id] ?? 0) + portion.cents
+  }
+}
+
 export function calculateBillTotals(input: BillCalculationInput): BillTotals {
   const owedByParticipant: Record<string, number> = {}
   for (const p of input.participants) {
@@ -115,29 +153,15 @@ export function calculateBillTotals(input: BillCalculationInput): BillTotals {
     const itemAssignments = input.assignments.filter(
       (a) => a.itemId === item.id,
     )
-    const usesUnits = itemAssignments.some((a) => a.units !== undefined)
 
-    if (usesUnits) {
-      for (const assignment of itemAssignments) {
-        const units = assignment.units ?? 0
-        owedByParticipant[assignment.participantId] =
-          (owedByParticipant[assignment.participantId] ?? 0) +
-          units * item.unitPriceCents
-      }
-      continue
-    }
-
-    const assignedIds = itemAssignments.map((a) => a.participantId)
-
-    const sortedIds = [...assignedIds].sort((a, b) => {
-      const orderA = input.participants.find((p) => p.id === a)?.sortOrder ?? 0
-      const orderB = input.participants.find((p) => p.id === b)?.sortOrder ?? 0
-      return orderA - orderB
-    })
-
-    for (const portion of splitLineTotal(total, sortedIds)) {
-      owedByParticipant[portion.id] =
-        (owedByParticipant[portion.id] ?? 0) + portion.cents
+    for (let unitIndex = 0; unitIndex < item.quantity; unitIndex++) {
+      addUnitShareToOwed(
+        owedByParticipant,
+        item,
+        unitIndex,
+        itemAssignments,
+        input.participants,
+      )
     }
   }
 
@@ -233,50 +257,56 @@ export function calculateParticipantBreakdown(
     const itemAssignments = input.assignments.filter(
       (a) => a.itemId === item.id,
     )
-    const usesUnits = itemAssignments.some((a) => a.units !== undefined)
+    const myUnitIndexes = itemAssignments
+      .filter((assignment) => assignment.participantId === participantId)
+      .map((assignment) => assignment.unitIndex)
+    if (myUnitIndexes.length === 0) continue
 
-    if (usesUnits) {
-      const assignment = itemAssignments.find(
-        (a) => a.participantId === participantId,
+    let amountCents = 0
+    let sharedWithCount = 0
+    let sharedWithParticipantIds: string[] = []
+
+    for (const unitIndex of myUnitIndexes) {
+      const onUnit = itemAssignments.filter(
+        (assignment) => assignment.unitIndex === unitIndex,
       )
-      if (!assignment) continue
-      const units = assignment.units ?? 0
-      const amountCents = units * item.unitPriceCents
-      itemsSubtotalCents += amountCents
+      const sortedIds = sortParticipantIds(
+        onUnit.map((assignment) => assignment.participantId),
+        input.participants,
+      )
+      const portion = splitLineTotal(item.unitPriceCents, sortedIds).find(
+        (p) => p.id === participantId,
+      )
+      if (!portion) continue
+      amountCents += portion.cents
+
+      if (item.quantity === 1) {
+        sharedWithCount = sortedIds.length - 1
+        sharedWithParticipantIds = sortedIds.filter((id) => id !== participantId)
+      }
+    }
+
+    itemsSubtotalCents += amountCents
+
+    if (item.quantity === 1) {
       lines.push({
         kind: 'item',
         itemId: item.id,
         label: item.name,
         amountCents,
-        units,
-        totalUnits: item.quantity,
+        sharedWithCount,
+        sharedWithParticipantIds,
       })
       continue
     }
 
-    const assignedIds = itemAssignments.map((a) => a.participantId)
-    if (!assignedIds.includes(participantId)) continue
-
-    const sortedIds = [...assignedIds].sort((a, b) => {
-      const orderA = input.participants.find((p) => p.id === a)?.sortOrder ?? 0
-      const orderB = input.participants.find((p) => p.id === b)?.sortOrder ?? 0
-      return orderA - orderB
-    })
-
-    const total = lineTotalCents(item)
-    const portion = splitLineTotal(total, sortedIds).find(
-      (p) => p.id === participantId,
-    )
-    if (!portion) continue
-
-    itemsSubtotalCents += portion.cents
     lines.push({
       kind: 'item',
       itemId: item.id,
       label: item.name,
-      amountCents: portion.cents,
-      sharedWithCount: sortedIds.length - 1,
-      sharedWithParticipantIds: sortedIds.filter((id) => id !== participantId),
+      amountCents,
+      units: myUnitIndexes.length,
+      totalUnits: item.quantity,
     })
   }
 
@@ -309,8 +339,7 @@ export interface ValidationError {
   code:
     | 'no_participants'
     | 'no_items'
-    | 'unassigned_items'
-    | 'units_mismatch'
+    | 'empty_units'
     | 'missing_restaurant'
     | 'unpaid_participants'
   message: string
@@ -349,38 +378,18 @@ export function validateBillForFinalize(input: {
     })
   }
 
-  const unassigned = input.items.filter(
-    (item) => !input.assignments.some((a) => a.itemId === item.id),
+  const emptyUnitItemCount = countItemsWithEmptyUnits(
+    input.items,
+    input.assignments,
   )
-  if (unassigned.length > 0) {
+  if (emptyUnitItemCount > 0) {
     errors.push({
-      code: 'unassigned_items',
+      code: 'empty_units',
       message:
-        unassigned.length === 1
+        emptyUnitItemCount === 1
           ? 'Има 1 неразпределен артикул.'
-          : `Има ${unassigned.length} неразпределени артикула.`,
+          : `Има ${emptyUnitItemCount} неразпределени артикула.`,
     })
-  }
-
-  for (const item of pricedItems) {
-    const itemAssignments = input.assignments.filter(
-      (a) => a.itemId === item.id,
-    )
-    if (itemAssignments.length === 0) continue
-    const usesUnits = itemAssignments.some((a) => a.units !== undefined)
-    if (!usesUnits) continue
-    const assignedUnits = itemAssignments.reduce(
-      (sum, assignment) => sum + (assignment.units ?? 0),
-      0,
-    )
-    if (assignedUnits !== item.quantity) {
-      errors.push({
-        code: 'units_mismatch',
-        message:
-          'Разпределеният брой не съвпада с количеството на някой артикул.',
-      })
-      break
-    }
   }
 
   if (input.participants.length > 0) {
@@ -406,3 +415,5 @@ export function validateBillForFinalize(input: {
 
   return errors
 }
+
+export { itemHasEmptyUnit, countItemsWithEmptyUnits }

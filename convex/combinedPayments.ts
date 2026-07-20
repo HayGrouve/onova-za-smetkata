@@ -63,7 +63,7 @@ async function loadBillTotalsForCombinedPay(
     assignments: assignments.map((a) => ({
       itemId: a.itemId,
       participantId: a.participantId,
-      units: a.units,
+      unitIndex: a.unitIndex,
     })),
     payments: payments.map((p) => ({
       participantId: p.participantId,

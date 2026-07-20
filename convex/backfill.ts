@@ -32,7 +32,7 @@ export const dedupeAssignments = internalMutation({
     let removed = 0
 
     for (const assignment of assignments) {
-      const key = `${assignment.itemId}:${assignment.participantId}`
+      const key = `${assignment.itemId}:${assignment.participantId}:${assignment.unitIndex}`
       const existingId = seen.get(key)
       if (existingId) {
         await ctx.db.delete(assignment._id)
@@ -79,50 +79,14 @@ export const shareTokens = internalMutation({
   },
 })
 
-/** Run once after Area B: npx convex run backfill:normalizeAssignmentModes */
-export const normalizeAssignmentModes = internalMutation({
+/** One-time before per-unit membership deploy: npx convex run backfill:wipeItemAssignments */
+export const wipeItemAssignments = internalMutation({
   args: {},
   handler: async (ctx) => {
-    const items = await ctx.db.query('items').collect()
-    let patched = 0
-
-    for (const item of items) {
-      const assignments = await ctx.db
-        .query('itemAssignments')
-        .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
-        .collect()
-      if (assignments.length === 0) continue
-
-      if (item.quantity === 1) {
-        for (const assignment of assignments) {
-          if (assignment.units !== undefined) {
-            await ctx.db.replace(assignment._id, {
-              billId: assignment.billId,
-              itemId: assignment.itemId,
-              participantId: assignment.participantId,
-            })
-            patched++
-          }
-        }
-        continue
-      }
-
-      const hasUnits = assignments.some(
-        (assignment) => assignment.units !== undefined,
-      )
-      const hasCentOnly = assignments.some(
-        (assignment) => assignment.units === undefined,
-      )
-      if (!hasUnits || !hasCentOnly) continue
-
-      for (const assignment of assignments) {
-        if (assignment.units === undefined) {
-          await ctx.db.patch(assignment._id, { units: 0 })
-          patched++
-        }
-      }
+    const assignments = await ctx.db.query('itemAssignments').collect()
+    for (const assignment of assignments) {
+      await ctx.db.delete(assignment._id)
     }
-
-    return { patched }
+    return { removed: assignments.length }
   },
 })

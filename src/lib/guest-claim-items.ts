@@ -1,17 +1,19 @@
 import type { Doc, Id } from '../../convex/_generated/dataModel'
+import {
+  countCoveredUnits,
+  countUnitsJoinedByParticipant,
+} from '../../shared/unit-coverage'
 
 export interface GuestItemAssignment {
   itemId: Id<'items'>
   participantId: Id<'participants'>
-  units?: number
+  unitIndex: number
 }
 
 export interface GuestClaimItemState {
   myUnits: number
-  assignedUnitsTotal: number
-  remainingUnits: number
+  coveredUnits: number
   isSelectedByMe: boolean
-  isUnavailableToMe: boolean
 }
 
 export function getGuestClaimItemState(
@@ -19,49 +21,34 @@ export function getGuestClaimItemState(
   itemAssignments: GuestItemAssignment[],
   participantId: Id<'participants'>,
 ): GuestClaimItemState {
-  const myAssignment = itemAssignments.find(
-    (assignment) => assignment.participantId === participantId,
-  )
-
-  if (item.quantity === 1) {
-    const isSelectedByMe = myAssignment !== undefined
-    return {
-      myUnits: isSelectedByMe ? 1 : 0,
-      assignedUnitsTotal: itemAssignments.length,
-      remainingUnits: isSelectedByMe ? 0 : 1,
-      isSelectedByMe,
-      isUnavailableToMe: false,
-    }
+  const itemInput = {
+    id: item._id,
+    unitPriceCents: 0,
+    quantity: item.quantity,
   }
-
-  const myUnits = myAssignment?.units ?? 0
-  const assignedUnitsTotal = itemAssignments.reduce(
-    (sum, assignment) => sum + (assignment.units ?? 0),
-    0,
+  const coveredUnits = countCoveredUnits(
+    itemInput,
+    itemAssignments.map((assignment) => ({
+      itemId: assignment.itemId,
+      participantId: assignment.participantId,
+      unitIndex: assignment.unitIndex,
+    })),
   )
-  const remainingUnits = Math.max(
-    0,
-    item.quantity - assignedUnitsTotal + myUnits,
+  const myUnits = countUnitsJoinedByParticipant(
+    item._id,
+    participantId,
+    itemAssignments.map((assignment) => ({
+      itemId: assignment.itemId,
+      participantId: assignment.participantId,
+      unitIndex: assignment.unitIndex,
+    })),
   )
 
   return {
     myUnits,
-    assignedUnitsTotal,
-    remainingUnits,
+    coveredUnits,
     isSelectedByMe: myUnits > 0,
-    isUnavailableToMe: myUnits === 0 && remainingUnits === 0,
   }
-}
-
-export function isGuestClaimItemMaxedOutByMe(
-  item: Pick<Doc<'items'>, 'quantity'>,
-  state: GuestClaimItemState,
-): boolean {
-  return (
-    item.quantity > 1 &&
-    state.myUnits > 0 &&
-    state.myUnits >= state.remainingUnits
-  )
 }
 
 export function sortGuestClaimItems<T extends Pick<Doc<'items'>, 'sortOrder'>>(
@@ -95,7 +82,7 @@ export function filterUnclaimedGuestClaimItems<
       return !state.isSelectedByMe
     }
 
-    return !isGuestClaimItemMaxedOutByMe(item, state)
+    return state.myUnits < item.quantity
   })
 }
 
@@ -115,31 +102,15 @@ export function filterClaimedGuestClaimItems<
   })
 }
 
-export function itemUsesUnitAssignments(
-  itemId: Id<'items'>,
-  assignments: GuestItemAssignment[],
-): boolean {
-  return assignments
-    .filter((assignment) => assignment.itemId === itemId)
-    .some((assignment) => assignment.units !== undefined)
-}
-
 export function getOtherClaimantLabels(
   itemAssignments: GuestItemAssignment[],
   participantId: Id<'participants'>,
   labels: Record<string, string>,
 ): string[] {
-  const usesUnits = itemAssignments.some(
-    (assignment) => assignment.units !== undefined,
-  )
-  return itemAssignments
-    .filter((assignment) => {
-      if (assignment.participantId === participantId) return false
-      if (usesUnits) return (assignment.units ?? 0) > 0
-      return true
-    })
-    .map(
-      (assignment) =>
-        labels[assignment.participantId] ?? assignment.participantId,
-    )
+  const others = new Set<string>()
+  for (const assignment of itemAssignments) {
+    if (assignment.participantId === participantId) continue
+    others.add(labels[assignment.participantId] ?? assignment.participantId)
+  }
+  return [...others]
 }

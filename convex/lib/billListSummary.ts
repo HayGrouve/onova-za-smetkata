@@ -70,7 +70,7 @@ export function buildListSummaryFields(
     assignments: relations.assignments.map((assignment) => ({
       itemId: assignment.itemId,
       participantId: assignment.participantId,
-      units: assignment.units,
+      unitIndex: assignment.unitIndex,
     })),
     payments: relations.payments.map((payment) => ({
       participantId: payment.participantId,

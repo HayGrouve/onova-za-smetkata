@@ -2,7 +2,6 @@ import { mutation } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
 import { assertBillDraft } from './lib/assertBillDraft'
 import { requireBillOwner } from './lib/auth'
-import { sumAssignedUnits } from './lib/clampParticipantUnits'
 import { validateItemAddArgs, validateItemUpdatePatch } from './lib/itemSchema'
 import { touchBill } from './lib/touchBill'
 
@@ -84,15 +83,9 @@ export const update = mutation({
         .query('itemAssignments')
         .withIndex('by_itemId', (q) => q.eq('itemId', args.itemId))
         .collect()
-      const usesUnits = assignments.some(
-        (assignment) => assignment.units !== undefined,
-      )
-      if (usesUnits) {
-        const assignedUnits = sumAssignedUnits(assignments)
-        if (assignedUnits > validated.data.quantity) {
-          throw new ConvexError(
-            'Намалете разпределенията преди да намалите количеството.',
-          )
+      for (const assignment of assignments) {
+        if (assignment.unitIndex >= validated.data.quantity) {
+          await ctx.db.delete(assignment._id)
         }
       }
     }

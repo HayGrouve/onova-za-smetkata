@@ -29,7 +29,6 @@ import type * as lib_billListSearch from "../lib/billListSearch.js";
 import type * as lib_billListSummary from "../lib/billListSummary.js";
 import type * as lib_billMetadataSchema from "../lib/billMetadataSchema.js";
 import type * as lib_bill_ownership from "../lib/bill_ownership.js";
-import type * as lib_clampParticipantUnits from "../lib/clampParticipantUnits.js";
 import type * as lib_combinedPayment from "../lib/combinedPayment.js";
 import type * as lib_devMode from "../lib/devMode.js";
 import type * as lib_friendGroupSchema from "../lib/friendGroupSchema.js";
@@ -89,7 +88,6 @@ declare const fullApi: ApiFromModules<{
   "lib/billListSummary": typeof lib_billListSummary;
   "lib/billMetadataSchema": typeof lib_billMetadataSchema;
   "lib/bill_ownership": typeof lib_bill_ownership;
-  "lib/clampParticipantUnits": typeof lib_clampParticipantUnits;
   "lib/combinedPayment": typeof lib_combinedPayment;
   "lib/devMode": typeof lib_devMode;
   "lib/friendGroupSchema": typeof lib_friendGroupSchema;

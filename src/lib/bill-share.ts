@@ -8,7 +8,6 @@ import type {
 import {
   calculateParticipantBreakdown,
   lineTotalCents,
-  splitLineTotal,
 } from './bill-calculations.ts'
 import { formatEur } from './format-currency.ts'
 
@@ -82,17 +81,6 @@ export function formatBreakdownLineSuffix(
   return ''
 }
 
-function sortedParticipantIds(
-  participantIds: string[],
-  participants: BillBreakdownInput['participants'],
-): string[] {
-  return [...participantIds].sort((a, b) => {
-    const orderA = participants.find((p) => p.id === a)?.sortOrder ?? 0
-    const orderB = participants.find((p) => p.id === b)?.sortOrder ?? 0
-    return orderA - orderB
-  })
-}
-
 function labelForParticipant(
   participantId: string,
   labels: Record<string, string>,
@@ -110,40 +98,34 @@ function formatItemAssignees(
   )
   if (itemAssignments.length === 0) return 'неразпределено'
 
-  const usesUnits = itemAssignments.some((a) => a.units !== undefined)
-  if (usesUnits) {
-    const sorted = [...itemAssignments]
-      .filter((a) => (a.units ?? 0) > 0)
-      .sort(
-        (a, b) =>
-          (breakdown.participants.find((p) => p.id === a.participantId)
-            ?.sortOrder ?? 0) -
-          (breakdown.participants.find((p) => p.id === b.participantId)
-            ?.sortOrder ?? 0),
-      )
-
-    return sorted
-      .map((assignment) => {
-        const units = assignment.units ?? 0
-        const amountCents = units * item.unitPriceCents
-        const name = labelForParticipant(assignment.participantId, labels)
-        if (item.quantity > 1) {
-          return `${name} ${units} бр. (${formatShareAmount(amountCents)})`
-        }
-        return `${name} (${formatShareAmount(amountCents)})`
-      })
-      .join(' · ')
+  const byParticipant = new Map<string, number>()
+  for (const assignment of itemAssignments) {
+    byParticipant.set(
+      assignment.participantId,
+      (byParticipant.get(assignment.participantId) ?? 0) + 1,
+    )
   }
 
-  const assignedIds = itemAssignments.map((a) => a.participantId)
-  const sortedIds = sortedParticipantIds(assignedIds, breakdown.participants)
-  const portions = splitLineTotal(lineTotalCents(item), sortedIds)
+  const sorted = [...byParticipant.entries()].sort(
+    (a, b) =>
+      (breakdown.participants.find((p) => p.id === a[0])?.sortOrder ?? 0) -
+      (breakdown.participants.find((p) => p.id === b[0])?.sortOrder ?? 0),
+  )
 
-  return portions
-    .map(
-      (portion) =>
-        `${labelForParticipant(portion.id, labels)} (${formatShareAmount(portion.cents)})`,
-    )
+  return sorted
+    .map(([participantId, unitsJoined]) => {
+      const amountCents = calculateParticipantBreakdown(
+        breakdown,
+        participantId,
+      ).lines
+        .filter((line) => line.kind === 'item' && line.itemId === item.id)
+        .reduce((sum, line) => sum + line.amountCents, 0)
+      const name = labelForParticipant(participantId, labels)
+      if (item.quantity > 1) {
+        return `${name} ${unitsJoined} бр. (${formatShareAmount(amountCents)})`
+      }
+      return `${name} (${formatShareAmount(amountCents)})`
+    })
     .join(' · ')
 }
 

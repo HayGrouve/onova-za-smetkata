@@ -13,54 +13,60 @@ const participantA = 'p-a' as Id<'participants'>
 const participantB = 'p-b' as Id<'participants'>
 
 describe('getGuestClaimItemState', () => {
-  it('marks cent-split single-qty item as selected when participant is assigned', () => {
+  it('marks single-qty item as selected when participant joined unit 0', () => {
     const state = getGuestClaimItemState(
       { _id: 'item-1' as Id<'items'>, quantity: 1 },
       [
         {
           itemId: 'item-1' as Id<'items'>,
           participantId: participantA,
+          unitIndex: 0,
         },
       ],
       participantA,
     )
 
     expect(state.isSelectedByMe).toBe(true)
-    expect(state.isUnavailableToMe).toBe(false)
+    expect(state.myUnits).toBe(1)
   })
 
-  it('keeps single-qty items available when assigned to others (cent-split)', () => {
+  it('keeps single-qty items available when assigned to others', () => {
     const state = getGuestClaimItemState(
       { _id: 'item-1' as Id<'items'>, quantity: 1 },
       [
         {
           itemId: 'item-1' as Id<'items'>,
           participantId: participantB,
-          units: 1,
+          unitIndex: 0,
         },
       ],
       participantA,
     )
 
-    expect(state.isUnavailableToMe).toBe(false)
     expect(state.isSelectedByMe).toBe(false)
+    expect(state.myUnits).toBe(0)
   })
 
-  it('keeps partial multi-qty items available', () => {
+  it('counts covered units and personal membership on multi-qty items', () => {
     const state = getGuestClaimItemState(
       { _id: 'item-1' as Id<'items'>, quantity: 3 },
       [
         {
           itemId: 'item-1' as Id<'items'>,
           participantId: participantB,
-          units: 2,
+          unitIndex: 0,
+        },
+        {
+          itemId: 'item-1' as Id<'items'>,
+          participantId: participantA,
+          unitIndex: 1,
         },
       ],
       participantA,
     )
 
-    expect(state.isUnavailableToMe).toBe(false)
-    expect(state.remainingUnits).toBe(1)
+    expect(state.myUnits).toBe(1)
+    expect(state.coveredUnits).toBe(2)
   })
 })
 
@@ -102,6 +108,7 @@ describe('filterUnclaimedGuestClaimItems', () => {
       {
         itemId: 'claimed' as Id<'items'>,
         participantId: participantA,
+        unitIndex: 0,
       },
     ]
 
@@ -112,13 +119,18 @@ describe('filterUnclaimedGuestClaimItems', () => {
     ).toEqual(['open'])
   })
 
-  it('keeps multi-qty items in the list when more units can be claimed', () => {
+  it('keeps multi-qty items when the participant has not joined every unit', () => {
     const items = [{ _id: 'multi' as Id<'items'>, name: 'Бира', quantity: 4 }]
     const assignments = [
       {
         itemId: 'multi' as Id<'items'>,
         participantId: participantA,
-        units: 2,
+        unitIndex: 0,
+      },
+      {
+        itemId: 'multi' as Id<'items'>,
+        participantId: participantA,
+        unitIndex: 1,
       },
     ]
 
@@ -129,7 +141,7 @@ describe('filterUnclaimedGuestClaimItems', () => {
     ).toEqual(['multi'])
   })
 
-  it('removes multi-qty items from the list when the participant is maxed out', () => {
+  it('removes multi-qty items when the participant joined every unit', () => {
     const items = [
       { _id: 'multi' as Id<'items'>, name: 'Бира', quantity: 3 },
       { _id: 'open' as Id<'items'>, name: 'Салата', quantity: 3 },
@@ -138,7 +150,17 @@ describe('filterUnclaimedGuestClaimItems', () => {
       {
         itemId: 'multi' as Id<'items'>,
         participantId: participantA,
-        units: 3,
+        unitIndex: 0,
+      },
+      {
+        itemId: 'multi' as Id<'items'>,
+        participantId: participantA,
+        unitIndex: 1,
+      },
+      {
+        itemId: 'multi' as Id<'items'>,
+        participantId: participantA,
+        unitIndex: 2,
       },
     ]
 
@@ -160,6 +182,7 @@ describe('filterClaimedGuestClaimItems', () => {
       {
         itemId: 'claimed' as Id<'items'>,
         participantId: participantA,
+        unitIndex: 0,
       },
     ]
 
@@ -183,13 +206,14 @@ describe('filterGuestClaimItemsBySearch', () => {
 })
 
 describe('getOtherClaimantLabels', () => {
-  it('includes cent-split claimants on single-qty items', () => {
+  it('includes other participants on the same item', () => {
     expect(
       getOtherClaimantLabels(
         [
           {
             itemId: 'item-1' as Id<'items'>,
             participantId: participantB,
+            unitIndex: 0,
           },
         ],
         participantA,

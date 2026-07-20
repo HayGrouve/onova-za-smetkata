@@ -3,7 +3,7 @@ import { getBillStepCompletion } from './bill-step-completion'
 
 const p1 = { id: 'p1', sortOrder: 0 }
 const i1 = { id: 'i1', unitPriceCents: 1000, quantity: 1 }
-const a1 = { itemId: 'i1', participantId: 'p1' }
+const a1 = { itemId: 'i1', participantId: 'p1', unitIndex: 0 }
 
 describe('getBillStepCompletion', () => {
   it('marks step 1 done only when restaurant name is non-empty after trim', () => {
@@ -100,7 +100,7 @@ describe('getBillStepCompletion', () => {
         restaurantName: '',
         participants: [p1],
         items: [free],
-        assignments: [{ itemId: 'i2', participantId: 'p1' }],
+        assignments: [{ itemId: 'i2', participantId: 'p1', unitIndex: 0 }],
       })[3],
     ).toBe(true)
   })
@@ -114,6 +114,17 @@ describe('getBillStepCompletion', () => {
         assignments: [a1],
       })[3],
     ).toBe(true)
+  })
+
+  it('does not mark step 3 done when a multi-qty item has an empty unit', () => {
+    expect(
+      getBillStepCompletion({
+        restaurantName: '',
+        participants: [p1],
+        items: [{ id: 'i2', unitPriceCents: 100, quantity: 2 }],
+        assignments: [{ itemId: 'i2', participantId: 'p1', unitIndex: 0 }],
+      })[3],
+    ).toBe(false)
   })
 
   it('marks step 4 incomplete when finalize validation fails', () => {
@@ -162,8 +173,8 @@ describe('getBillStepCompletion', () => {
         participants: [host, guest],
         items: [item],
         assignments: [
-          { itemId: 'i1', participantId: 'host' },
-          { itemId: 'i1', participantId: 'guest' },
+          { itemId: 'i1', participantId: 'host', unitIndex: 0 },
+          { itemId: 'i1', participantId: 'guest', unitIndex: 0 },
         ],
         payments: [{ participantId: 'guest', amountCents: 500 }],
         hostParticipantId: 'host',

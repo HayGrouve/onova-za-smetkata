@@ -33,6 +33,7 @@ import {
   validateItemQuantityInput,
 } from '#/lib/item-schema.ts'
 import { cn } from '#/lib/utils.ts'
+import { itemHasEmptyUnit } from '../../../shared/unit-coverage'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
 
@@ -68,15 +69,32 @@ export function ItemList({
     quantity?: string
   }>({})
 
-  const assignedItemIds = useMemo(
-    () => new Set(assignments.map((a) => a.itemId)),
-    [assignments],
-  )
+  const itemHasGap = useMemo(() => {
+    return (item: Doc<'items'>) =>
+      itemHasEmptyUnit(
+        {
+          id: item._id,
+          unitPriceCents: item.unitPriceCents,
+          quantity: item.quantity,
+        },
+        assignments
+          .filter((assignment) => assignment.itemId === item._id)
+          .map((assignment) => ({
+            itemId: assignment.itemId,
+            participantId: assignment.participantId,
+            unitIndex: assignment.unitIndex,
+          })),
+      )
+  }, [assignments])
+
   const firstUnassignedItemId = useMemo(
-    () => items.find((item) => !assignedItemIds.has(item._id))?._id,
-    [items, assignedItemIds],
+    () => items.find((item) => itemHasGap(item))?._id,
+    [items, itemHasGap],
   )
-  const unassignedCount = items.length - assignedItemIds.size
+  const unassignedCount = useMemo(
+    () => items.filter((item) => itemHasGap(item)).length,
+    [items, itemHasGap],
+  )
 
   function handleScrollToUnassigned() {
     document
@@ -184,8 +202,7 @@ export function ItemList({
       )}
 
       {items.map((item) => {
-        const itemAssignments = assignments.filter((a) => a.itemId === item._id)
-        const isUnassigned = itemAssignments.length === 0
+        const isUnassigned = itemHasGap(item)
         return (
           <div
             key={item._id}
@@ -209,7 +226,7 @@ export function ItemList({
               itemQuantity={item.quantity}
               participants={participants}
               labels={labels}
-              itemAssignments={itemAssignments}
+              itemAssignments={assignments.filter((a) => a.itemId === item._id)}
             />
           </div>
         )

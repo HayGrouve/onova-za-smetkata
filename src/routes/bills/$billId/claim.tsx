@@ -153,7 +153,7 @@ function GuestClaimContent({
       assignments: data.assignments.map((a) => ({
         itemId: a.itemId,
         participantId: a.participantId,
-        units: a.units,
+        unitIndex: a.unitIndex,
       })),
       payments: data.myPayments.map((p) => ({
         participantId: p.participantId,
@@ -179,7 +179,7 @@ function GuestClaimContent({
       assignments: data.assignments.map((a) => ({
         itemId: a.itemId,
         participantId: a.participantId,
-        units: a.units,
+        unitIndex: a.unitIndex,
       })),
       tipCents: data.bill.tipCents ?? 0,
     }
@@ -448,7 +448,7 @@ function HostClaimContent({ billId }: { billId: Id<'bills'> }) {
       assignments: data.assignments.map((a) => ({
         itemId: a.itemId,
         participantId: a.participantId,
-        units: a.units,
+        unitIndex: a.unitIndex,
       })),
       payments: data.payments.map((p) => ({
         participantId: p.participantId,
@@ -475,7 +475,7 @@ function HostClaimContent({ billId }: { billId: Id<'bills'> }) {
       assignments: data.assignments.map((a) => ({
         itemId: a.itemId,
         participantId: a.participantId,
-        units: a.units,
+        unitIndex: a.unitIndex,
       })),
       tipCents: data.bill.tipCents ?? 0,
     }

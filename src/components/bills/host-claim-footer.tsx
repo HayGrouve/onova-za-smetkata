@@ -12,7 +12,6 @@ import type {
 } from '#/lib/bill-calculations.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
-import { itemUsesUnitAssignments } from '#/lib/guest-claim-items.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -36,42 +35,30 @@ export function HostClaimFooter({
   readOnly = false,
 }: HostClaimFooterProps) {
   const toggleAssignment = useMutation(api.assignments.toggle)
-  const setUnits = useMutation(api.assignments.setUnits)
+  const leaveUnit = useMutation(api.assignments.leaveUnit)
 
   const handleRemoveItem = useCallback(
     async (itemId: Id<'items'>) => {
       if (readOnly) return
       try {
         const item = breakdownInput.items.find((entry) => entry.id === itemId)
-        const assignment = breakdownInput.assignments.find(
+        const myRows = breakdownInput.assignments.filter(
           (entry) =>
             entry.itemId === itemId && entry.participantId === participantId,
         )
-        const myUnits = assignment?.units ?? 0
 
         if (item && item.quantity > 1) {
-          await setUnits({
-            itemId,
-            participantId,
-            units: myUnits - 1,
-          })
+          for (const row of myRows) {
+            await leaveUnit({
+              itemId,
+              participantId,
+              unitIndex: row.unitIndex,
+            })
+          }
           return
         }
 
-        if (
-          itemUsesUnitAssignments(
-            itemId,
-            breakdownInput.assignments.map((entry) => ({
-              itemId: entry.itemId as Id<'items'>,
-              participantId: entry.participantId as Id<'participants'>,
-              units: entry.units,
-            })),
-          )
-        ) {
-          await setUnits({ itemId, participantId, units: 0 })
-        } else {
-          await toggleAssignment({ itemId, participantId })
-        }
+        await toggleAssignment({ itemId, participantId })
       } catch (error) {
         toast.error(getConvexErrorMessage(error))
       }
@@ -79,9 +66,9 @@ export function HostClaimFooter({
     [
       breakdownInput.assignments,
       breakdownInput.items,
+      leaveUnit,
       participantId,
       readOnly,
-      setUnits,
       toggleAssignment,
     ],
   )

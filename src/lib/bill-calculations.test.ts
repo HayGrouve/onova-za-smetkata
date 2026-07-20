@@ -54,7 +54,7 @@ describe('splitUnits', () => {
 })
 
 describe('calculateBillTotals', () => {
-  it('uses per-person units when provided', () => {
+  it('uses per-unit membership rows for share totals', () => {
     const input: BillCalculationInput = {
       participants: [
         { id: 'p1', sortOrder: 0 },
@@ -63,9 +63,10 @@ describe('calculateBillTotals', () => {
       ],
       items: [{ id: 'i1', unitPriceCents: 229, quantity: 4 }],
       assignments: [
-        { itemId: 'i1', participantId: 'p1', units: 2 },
-        { itemId: 'i1', participantId: 'p2', units: 1 },
-        { itemId: 'i1', participantId: 'p3', units: 1 },
+        { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
+        { itemId: 'i1', participantId: 'p1', unitIndex: 1 },
+        { itemId: 'i1', participantId: 'p2', unitIndex: 2 },
+        { itemId: 'i1', participantId: 'p3', unitIndex: 3 },
       ],
       payments: [],
     }
@@ -86,8 +87,8 @@ describe('calculateBillTotals', () => {
         { id: 'i2', unitPriceCents: 2000, quantity: 1 },
       ],
       assignments: [
-        { itemId: 'i1', participantId: 'p1' },
-        { itemId: 'i2', participantId: 'p2' },
+        { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
+        { itemId: 'i2', participantId: 'p2', unitIndex: 0 },
       ],
       payments: [{ participantId: 'p1', amountCents: 1000 }],
     }
@@ -116,8 +117,8 @@ describe('calculateBillTotals', () => {
       ],
       items: [{ id: 'i1', unitPriceCents: 900, quantity: 1 }],
       assignments: [
-        { itemId: 'i1', participantId: 'p1' },
-        { itemId: 'i1', participantId: 'p2' },
+        { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
+        { itemId: 'i1', participantId: 'p2', unitIndex: 0 },
       ],
       payments: [],
       tipCents: 300,
@@ -136,7 +137,7 @@ describe('validateBillForFinalize', () => {
       restaurantName: '   ',
       participants: [{ id: 'p1', sortOrder: 0 }],
       items: [{ id: 'i1', unitPriceCents: 1000, quantity: 1 }],
-      assignments: [{ itemId: 'i1', participantId: 'p1' }],
+      assignments: [{ itemId: 'i1', participantId: 'p1', unitIndex: 0 }],
     })
     expect(errors).toContainEqual({
       code: 'missing_restaurant',
@@ -152,10 +153,10 @@ describe('validateBillForFinalize', () => {
         { id: 'i1', unitPriceCents: 1000, quantity: 1 },
         { id: 'i2', unitPriceCents: 0, quantity: 1 },
       ],
-      assignments: [{ itemId: 'i1', participantId: 'p1' }],
+      assignments: [{ itemId: 'i1', participantId: 'p1', unitIndex: 0 }],
     })
     expect(errors).toContainEqual({
-      code: 'unassigned_items',
+      code: 'empty_units',
       message: 'Има 1 неразпределен артикул.',
     })
   })
@@ -171,7 +172,7 @@ describe('validateBillForFinalize', () => {
       assignments: [],
     })
     expect(errors).toContainEqual({
-      code: 'unassigned_items',
+      code: 'empty_units',
       message: 'Има 2 неразпределени артикула.',
     })
   })
@@ -181,7 +182,7 @@ describe('validateBillForFinalize', () => {
       restaurantName: 'Механа',
       participants: [{ id: 'p1', sortOrder: 0 }],
       items: [{ id: 'i1', unitPriceCents: 1000, quantity: 1 }],
-      assignments: [{ itemId: 'i1', participantId: 'p1' }],
+      assignments: [{ itemId: 'i1', participantId: 'p1', unitIndex: 0 }],
       payments: [],
     })
     expect(errors).toContainEqual({
@@ -196,7 +197,7 @@ describe('validateBillForFinalize', () => {
       restaurantName: 'Механа',
       participants: [{ id: 'p1', sortOrder: 0 }],
       items: [{ id: 'i1', unitPriceCents: 1000, quantity: 1 }],
-      assignments: [{ itemId: 'i1', participantId: 'p1' }],
+      assignments: [{ itemId: 'i1', participantId: 'p1', unitIndex: 0 }],
       payments: [{ participantId: 'p1', amountCents: 1000 }],
     })
     expect(errors.some((e) => e.code === 'unpaid_participants')).toBe(false)
@@ -216,11 +217,12 @@ describe('bill reconciliation', () => {
         { id: 'i2', unitPriceCents: 229, quantity: 4 },
       ],
       assignments: [
-        { itemId: 'i1', participantId: 'p1' },
-        { itemId: 'i1', participantId: 'p2' },
-        { itemId: 'i2', participantId: 'p1', units: 2 },
-        { itemId: 'i2', participantId: 'p2', units: 1 },
-        { itemId: 'i2', participantId: 'p3', units: 1 },
+        { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
+        { itemId: 'i1', participantId: 'p2', unitIndex: 0 },
+        { itemId: 'i2', participantId: 'p1', unitIndex: 0 },
+        { itemId: 'i2', participantId: 'p1', unitIndex: 1 },
+        { itemId: 'i2', participantId: 'p2', unitIndex: 2 },
+        { itemId: 'i2', participantId: 'p3', unitIndex: 3 },
       ],
       payments: [{ participantId: 'p1', amountCents: 500 }],
       tipCents: 300,
@@ -236,9 +238,9 @@ describe('bill reconciliation', () => {
       ],
       items: [{ id: 'i1', unitPriceCents: 1000, quantity: 1 }],
       assignments: [
-        { itemId: 'i1', participantId: 'p1' },
-        { itemId: 'i1', participantId: 'p2' },
-        { itemId: 'i1', participantId: 'p3' },
+        { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
+        { itemId: 'i1', participantId: 'p2', unitIndex: 0 },
+        { itemId: 'i1', participantId: 'p3', unitIndex: 0 },
       ],
       payments: [],
     })
@@ -256,9 +258,9 @@ describe('bill reconciliation', () => {
       ],
       items: [{ id: 'i1', unitPriceCents: 1001, quantity: 1 }],
       assignments: [
-        { itemId: 'i1', participantId: 'p1' },
-        { itemId: 'i1', participantId: 'p2' },
-        { itemId: 'i1', participantId: 'p3' },
+        { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
+        { itemId: 'i1', participantId: 'p2', unitIndex: 0 },
+        { itemId: 'i1', participantId: 'p3', unitIndex: 0 },
       ],
       payments: [],
     })
@@ -278,8 +280,8 @@ describe('bill reconciliation', () => {
         { id: 'i2', unitPriceCents: 2000, quantity: 1 },
       ],
       assignments: [
-        { itemId: 'i1', participantId: 'p1' },
-        { itemId: 'i2', participantId: 'p2' },
+        { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
+        { itemId: 'i2', participantId: 'p2', unitIndex: 0 },
       ],
       payments: [{ participantId: 'p1', amountCents: 1000 }],
     })
@@ -297,8 +299,8 @@ describe('always-paid Host collection rule', () => {
       ],
       items: [{ id: 'i1', unitPriceCents: 1000, quantity: 1 }],
       assignments: [
-        { itemId: 'i1', participantId: 'host' },
-        { itemId: 'i1', participantId: 'guest' },
+        { itemId: 'i1', participantId: 'host', unitIndex: 0 },
+        { itemId: 'i1', participantId: 'guest', unitIndex: 0 },
       ],
       payments: [],
     })
@@ -328,8 +330,8 @@ describe('always-paid Host collection rule', () => {
       ],
       items: [{ id: 'i1', unitPriceCents: 900, quantity: 1 }],
       assignments: [
-        { itemId: 'i1', participantId: 'guest1' },
-        { itemId: 'i1', participantId: 'guest2' },
+        { itemId: 'i1', participantId: 'guest1', unitIndex: 0 },
+        { itemId: 'i1', participantId: 'guest2', unitIndex: 0 },
       ],
       payments: [],
       tipCents: 300,
@@ -350,7 +352,7 @@ describe('always-paid Host collection rule', () => {
         { id: 'guest', sortOrder: 1 },
       ],
       items: [{ id: 'i1', unitPriceCents: 1000, quantity: 1 }],
-      assignments: [{ itemId: 'i1', participantId: 'guest' }],
+      assignments: [{ itemId: 'i1', participantId: 'guest', unitIndex: 0 }],
       payments: [],
       tipCents: 0,
     })
@@ -365,8 +367,8 @@ describe('always-paid Host collection rule', () => {
       ],
       items: [{ id: 'i1', unitPriceCents: 1000, quantity: 1 }],
       assignments: [
-        { itemId: 'i1', participantId: 'host' },
-        { itemId: 'i1', participantId: 'guest' },
+        { itemId: 'i1', participantId: 'host', unitIndex: 0 },
+        { itemId: 'i1', participantId: 'guest', unitIndex: 0 },
       ],
       payments: [],
       tipCents: 0,
@@ -378,6 +380,24 @@ describe('always-paid Host collection rule', () => {
       status: 'paid',
     })
     expect(totalOutstandingCents(after)).toBe(500)
+  })
+  it('splits a single unit evenly among multiple participants on that unit', () => {
+    const totals = calculateBillTotals({
+      participants: [
+        { id: 'p1', sortOrder: 0 },
+        { id: 'p2', sortOrder: 1 },
+      ],
+      items: [{ id: 'i1', unitPriceCents: 101, quantity: 2 }],
+      assignments: [
+        { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
+        { itemId: 'i1', participantId: 'p2', unitIndex: 0 },
+        { itemId: 'i1', participantId: 'p2', unitIndex: 1 },
+      ],
+      payments: [],
+    })
+
+    expect(totals.byParticipant.p1.owedCents).toBe(51)
+    expect(totals.byParticipant.p2.owedCents).toBe(151)
   })
 })
 
@@ -393,11 +413,12 @@ describe('calculateParticipantBreakdown', () => {
       { id: 'i2', name: 'Кола', unitPriceCents: 229, quantity: 4 },
     ],
     assignments: [
-      { itemId: 'i1', participantId: 'p1' },
-      { itemId: 'i1', participantId: 'p2' },
-      { itemId: 'i2', participantId: 'p1', units: 2 },
-      { itemId: 'i2', participantId: 'p2', units: 1 },
-      { itemId: 'i2', participantId: 'p3', units: 1 },
+        { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
+        { itemId: 'i1', participantId: 'p2', unitIndex: 0 },
+        { itemId: 'i2', participantId: 'p1', unitIndex: 0 },
+        { itemId: 'i2', participantId: 'p1', unitIndex: 1 },
+        { itemId: 'i2', participantId: 'p2', unitIndex: 2 },
+        { itemId: 'i2', participantId: 'p3', unitIndex: 3 },
     ],
     tipCents: 300,
   }

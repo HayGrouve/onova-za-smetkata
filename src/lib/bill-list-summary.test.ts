@@ -40,8 +40,8 @@ describe('buildListSummaryFields', () => {
           } as never,
         ],
         assignments: [
-          { itemId: 'i1', participantId: 'p1' } as never,
-          { itemId: 'i1', participantId: 'p2' } as never,
+          { itemId: 'i1', participantId: 'p1', unitIndex: 0 } as never,
+          { itemId: 'i1', participantId: 'p2', unitIndex: 0 } as never,
         ],
         payments: [{ participantId: 'p2', amountCents: 500 } as never],
       },
@@ -72,8 +72,8 @@ describe('buildListSummaryFields', () => {
           } as never,
         ],
         assignments: [
-          { itemId: 'i1', participantId: 'p1' } as never,
-          { itemId: 'i1', participantId: 'p2' } as never,
+          { itemId: 'i1', participantId: 'p1', unitIndex: 0 } as never,
+          { itemId: 'i1', participantId: 'p2', unitIndex: 0 } as never,
         ],
         payments: [],
       },

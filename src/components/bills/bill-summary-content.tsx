@@ -107,7 +107,7 @@ export function BillSummaryContent({
       assignments: data.assignments.map((a) => ({
         itemId: a.itemId,
         participantId: a.participantId,
-        units: a.units,
+        unitIndex: a.unitIndex,
       })),
       tipCents: data.bill.tipCents ?? 0,
       hostParticipantId: data.bill.hostParticipantId,
@@ -158,7 +158,7 @@ export function BillSummaryContent({
       assignments: data.assignments.map((a) => ({
         itemId: a.itemId,
         participantId: a.participantId,
-        units: a.units,
+        unitIndex: a.unitIndex,
       })),
       tipCents: data.bill.tipCents ?? 0,
     }

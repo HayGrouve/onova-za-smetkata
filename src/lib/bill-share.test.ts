@@ -89,9 +89,9 @@ describe('formatBillShareText', () => {
       },
     ],
     assignments: [
-      { itemId: 'i1', participantId: 'p1' },
-      { itemId: 'i1', participantId: 'p2' },
-      { itemId: 'i2', participantId: 'p1' },
+      { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
+      { itemId: 'i1', participantId: 'p2', unitIndex: 0 },
+      { itemId: 'i2', participantId: 'p1', unitIndex: 0 },
     ],
     tipCents: 600,
   }
@@ -163,8 +163,10 @@ describe('formatBillShareText', () => {
           },
         ],
         assignments: [
-          { itemId: 'i1', participantId: 'p1', units: 3 },
-          { itemId: 'i1', participantId: 'p2', units: 1 },
+          { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
+          { itemId: 'i1', participantId: 'p1', unitIndex: 1 },
+          { itemId: 'i1', participantId: 'p1', unitIndex: 2 },
+          { itemId: 'i1', participantId: 'p2', unitIndex: 3 },
         ],
       },
       participants: [

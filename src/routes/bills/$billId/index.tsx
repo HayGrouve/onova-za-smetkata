@@ -43,6 +43,7 @@ import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { calculateBillTotals } from '#/lib/bill-calculations.ts'
 import { getBillStepCompletion } from '#/lib/bill-step-completion.ts'
+import { countItemsWithEmptyUnits } from '../../../shared/unit-coverage.ts'
 import {
   calculateItemsSubtotalCents,
   formatEurInputValue,
@@ -287,7 +288,7 @@ function BillEditorContent({
         assignments: assignments.map((a) => ({
           itemId: a.itemId,
           participantId: a.participantId,
-          units: a.units,
+          unitIndex: a.unitIndex,
         })),
         payments: payments.map((p) => ({
           participantId: p.participantId,
@@ -307,18 +308,18 @@ function BillEditorContent({
   )
 
   const unassignedItemsCount = useMemo(() => {
-    return items.filter((item) => {
-      const itemAssignments = assignments.filter((a) => a.itemId === item._id)
-      if (itemAssignments.length === 0) return true
-      // Legacy assignments without units mean the whole item is shared.
-      const usesUnits = itemAssignments.some((a) => a.units !== undefined)
-      if (!usesUnits) return false
-      const assignedUnits = itemAssignments.reduce(
-        (sum, a) => sum + (a.units ?? 0),
-        0,
-      )
-      return assignedUnits < item.quantity
-    }).length
+    return countItemsWithEmptyUnits(
+      items.map((item) => ({
+        id: item._id,
+        unitPriceCents: item.unitPriceCents,
+        quantity: item.quantity,
+      })),
+      assignments.map((a) => ({
+        itemId: a.itemId,
+        participantId: a.participantId,
+        unitIndex: a.unitIndex,
+      })),
+    )
   }, [items, assignments])
 
   const stepCompletion = useMemo(
@@ -337,7 +338,7 @@ function BillEditorContent({
         assignments: assignments.map((a) => ({
           itemId: a.itemId,
           participantId: a.participantId,
-          units: a.units,
+          unitIndex: a.unitIndex,
         })),
         payments: payments.map((p) => ({
           participantId: p.participantId,

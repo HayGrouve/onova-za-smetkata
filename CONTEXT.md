@@ -28,6 +28,14 @@ _Avoid_: using “guest” for the host’s participant seat
 A participant’s calculated food + tip amount on the bill (what they consumed / were allocated).
 _Avoid_: owed (when talking about the host’s collection status — the host has a share but is not outstanding)
 
+**Unit**:
+One countable piece of a line item (`quantity` stacks units). Each unit can be claimed independently with its own participant set and even split.
+_Avoid_: treating quantity > 1 as a single indivisible claim pool
+
+**Unit index**:
+Zero-based position of a unit on an item line (`0 … quantity−1`). Item membership rows reference `(itemId, participantId, unitIndex)`.
+_Avoid_: one-based indexing in storage; overloading “unit” to mean the whole line
+
 **Outstanding**:
 Money still to collect from guests toward their shares. The host never has outstanding.
 _Avoid_: unpaid balance for the host
