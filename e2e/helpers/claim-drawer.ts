@@ -1,11 +1,27 @@
 import { expect, type Page } from '@playwright/test'
 
+/** Collapse the claim share drawer back to peek (handle toggle, then scrim). */
+export async function collapseClaimShareDrawer(page: Page) {
+  const details = page.getByTestId('claim-share-details')
+  if (!(await details.isVisible())) return
+
+  const handle = page.getByRole('button', { name: /Разбивка на дяла/ })
+  if ((await handle.getAttribute('aria-expanded')) === 'true') {
+    await handle.click()
+  } else {
+    await page.getByRole('button', { name: 'Свий разбивката' }).click()
+  }
+  await expect(details).toBeHidden()
+}
+
 /** Expand the claim share drawer so combined-pay chips and breakdown are visible. */
 export async function expandClaimShareDrawer(page: Page) {
   const details = page.getByTestId('claim-share-details')
   if (await details.isVisible()) return
-  await page.getByRole('button', { name: /Разбивка на дяла/ }).click()
+  const handle = page.getByRole('button', { name: /Разбивка на дяла/ })
+  await handle.click()
   await expect(details).toBeVisible()
+  await expect(handle).toHaveAttribute('aria-expanded', 'true')
 }
 
 /** Toggle a combined-pay chip and wait for the server-backed combined request. */

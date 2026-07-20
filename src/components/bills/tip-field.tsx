@@ -38,7 +38,7 @@ export function TipField({
   )
   const appliedPreferenceRef = useRef(false)
 
-  const chipsDisabled = itemsSubtotalCents <= 0
+  const showTipPresets = itemsSubtotalCents > 0
 
   const chipAmounts = useMemo(
     () =>
@@ -102,21 +102,22 @@ export function TipField({
   return (
     <div className="flex flex-col gap-1.5">
       <Label htmlFor="tip">Бакшиш</Label>
-      <div className="flex flex-wrap gap-1">
-        {chipAmounts.map(({ percent, cents }) => (
-          <Button
-            key={percent}
-            type="button"
-            size="sm"
-            variant={selectedPercent === percent ? 'default' : 'outline'}
-            disabled={chipsDisabled}
-            className={cn('h-9 px-3')}
-            onClick={() => handlePercentSelect(percent)}
-          >
-            {percent}% · {formatEur(cents)}
-          </Button>
-        ))}
-      </div>
+      {showTipPresets ? (
+        <div className="grid grid-cols-2 gap-2">
+          {chipAmounts.map(({ percent, cents }) => (
+            <Button
+              key={percent}
+              type="button"
+              size="sm"
+              variant={selectedPercent === percent ? 'default' : 'outline'}
+              className={cn('h-9 w-full min-w-0 px-2 text-xs sm:text-sm')}
+              onClick={() => handlePercentSelect(percent)}
+            >
+              {percent}% · {formatEur(cents)}
+            </Button>
+          ))}
+        </div>
+      ) : null}
       <Input
         id="tip"
         inputMode="decimal"
@@ -128,7 +129,7 @@ export function TipField({
       />
       {error ? (
         <p className="text-xs text-destructive">{error}</p>
-      ) : chipsDisabled ? (
+      ) : !showTipPresets ? (
         <p className="text-xs text-muted-foreground">
           Добави артикули за да изчислиш бакшиш.
         </p>

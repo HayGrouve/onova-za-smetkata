@@ -10,6 +10,7 @@ import { Drawer, DrawerContent, DrawerTitle } from '#/components/ui/drawer.tsx'
 import {
   buildClaimShareSnapPoints,
   claimShareExpandedHeightPx,
+  claimShareSnapOffsetPx,
   isClaimShareExpanded,
 } from '#/lib/claim-share-drawer.ts'
 import { cn } from '#/lib/utils.ts'
@@ -118,6 +119,10 @@ export function ClaimShareDrawer({
   }, [snapPoints, snapProp])
 
   const expanded = isClaimShareExpanded(activeSnapPoint, snapPoints)
+  const snapHeightPx = expanded ? expandedHeightPx : peekHeightPx
+  const viewportHeightPx =
+    typeof window !== 'undefined' ? window.innerHeight : 800
+  const snapOffsetPx = claimShareSnapOffsetPx(viewportHeightPx, snapHeightPx)
 
   function commitSnapPoint(next: number | string | null) {
     setActiveSnapPoint(next)
@@ -144,6 +149,9 @@ export function ClaimShareDrawer({
         open
         modal={false}
         dismissible={false}
+        // Prevent Vaul from fighting pointer-events on body while this
+        // always-open peek drawer sits above the claim list.
+        noBodyStyles
         snapPoints={snapPoints}
         activeSnapPoint={activeSnapPoint}
         setActiveSnapPoint={commitSnapPoint}
@@ -151,6 +159,15 @@ export function ClaimShareDrawer({
         {/* Vaul offsets by windowHeight − snapHeight; shell is h-dvh, panel matches expanded px snap. */}
         <DrawerContent
           showOverlay={false}
+          // Own transform + --snap-point-height: Vaul delayed-snap CSS can leave
+          // computed translate stuck at the previous offset after React re-renders
+          // wipe Vaul's imperative transform — parking pe-auto header/summary over
+          // the claim search. pointer-events none still required on the h-dvh shell.
+          style={{
+            pointerEvents: 'none',
+            transform: `translate3d(0px, ${snapOffsetPx}px, 0px)`,
+            ['--snap-point-height' as string]: `${snapOffsetPx}px`,
+          }}
           className="pointer-events-none z-50 mt-0 h-dvh gap-0 border-0 bg-transparent"
         >
           <div
@@ -159,11 +176,11 @@ export function ClaimShareDrawer({
               'pointer-events-none mx-auto flex w-full max-w-lg min-h-0 flex-col sticky-surface px-4 pt-2',
               'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]',
               'rounded-t-xl',
-              !expanded && 'justify-end',
             )}
             style={{
               // Keep panel height in lockstep with Vaul expanded snap (px).
               height: expandedHeightPx,
+              pointerEvents: 'none',
             }}
           >
             <div

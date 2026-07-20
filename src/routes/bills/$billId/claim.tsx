@@ -340,7 +340,7 @@ function GuestClaimContent({
         ) : null}
 
         {(hasUnclaimedItems || itemTab === 'mine') && (
-          <div className="relative">
+          <div className="relative z-10">
             <Label htmlFor="claim-item-search" className="sr-only">
               Търсене по артикул
             </Label>
@@ -609,7 +609,7 @@ function HostClaimContent({ billId }: { billId: Id<'bills'> }) {
         ) : null}
 
         {(hasUnclaimedItems || itemTab === 'mine') && (
-          <div className="relative">
+          <div className="relative z-10">
             <Label htmlFor="host-claim-item-search" className="sr-only">
               Търсене по артикул
             </Label>
