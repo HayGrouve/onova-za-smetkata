@@ -21,6 +21,14 @@ export function buildClaimShareSnapPoints(
   return [peek, expanded]
 }
 
+/** Vaul bottom-drawer translateY: windowHeight − snapHeight. */
+export function claimShareSnapOffsetPx(
+  viewportHeightPx: number,
+  snapHeightPx: number,
+): number {
+  return viewportHeightPx - snapHeightPx
+}
+
 export function isClaimShareExpanded(
   activeSnapPoint: number | string | null,
   snapPoints: Array<number | string>,

@@ -4,6 +4,7 @@ import {
   CLAIM_SHARE_EXPANDED_MAX_REM,
   buildClaimShareSnapPoints,
   claimShareExpandedHeightPx,
+  claimShareSnapOffsetPx,
   isClaimShareExpanded,
 } from './claim-share-drawer'
 
@@ -40,5 +41,12 @@ describe('isClaimShareExpanded', () => {
 
   it('is false when active is null', () => {
     expect(isClaimShareExpanded(null, snaps)).toBe(false)
+  })
+})
+
+describe('claimShareSnapOffsetPx', () => {
+  it('matches Vaul bottom-drawer translateY (viewport − snap)', () => {
+    expect(claimShareSnapOffsetPx(727, 160)).toBe(567)
+    expect(claimShareSnapOffsetPx(727, 509)).toBe(218)
   })
 })

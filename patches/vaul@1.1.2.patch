@@ -1,0 +1,82 @@
+diff --git a/dist/index.js b/dist/index.js
+index 7f343be1fafe1cf302ee6afc7268c29490895e34..6e1a1e6de1850441b71921fa5f6878c2fa98e703 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1362,6 +1362,9 @@ function Root({ open: openProp, onOpenChange, children, onDrag: onDragProp, onRe
+     ]);
+     return /*#__PURE__*/ React__namespace.default.createElement(DialogPrimitive__namespace.Root, {
+         defaultOpen: defaultOpen,
++        // Forward modal so Radix uses non-modal content (no focus trap / aria-hidden).
++        // Upstream: https://github.com/emilkowalski/vaul/pull/580 (unreleased as of 1.1.2)
++        modal: modal,
+         onOpenChange: (open)=>{
+             if (!dismissible && !open) return;
+             if (open) {
+@@ -1503,7 +1506,12 @@ const Content = /*#__PURE__*/ React__namespace.default.forwardRef(function({ onP
+         },
+         onPointerDownOutside: (e)=>{
+             onPointerDownOutside == null ? void 0 : onPointerDownOutside(e);
+-            if (!modal || e.defaultPrevented) {
++            // When non-modal, allow outside pointer/focus (always-open peek drawers).
++            // Previously this always preventDefault'd when !modal, trapping focus.
++            if (!modal) {
++                return;
++            }
++            if (e.defaultPrevented) {
+                 e.preventDefault();
+                 return;
+             }
+@@ -1512,10 +1520,11 @@ const Content = /*#__PURE__*/ React__namespace.default.forwardRef(function({ onP
+             }
+         },
+         onFocusOutside: (e)=>{
++            // Non-modal: allow focus to leave the drawer (e.g. claim item search).
+             if (!modal) {
+-                e.preventDefault();
+                 return;
+             }
++            e.preventDefault();
+         },
+         onPointerMove: (event)=>{
+             lastKnownPointerEventRef.current = event;
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 0dbbce5526681925a81804ced237a045a53c0355..315af9146c8cd9167d024e4ba1a3a62764d650c0 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -1340,6 +1340,9 @@ function Root({ open: openProp, onOpenChange, children, onDrag: onDragProp, onRe
+     ]);
+     return /*#__PURE__*/ React__default.createElement(DialogPrimitive.Root, {
+         defaultOpen: defaultOpen,
++        // Forward modal so Radix uses non-modal content (no focus trap / aria-hidden).
++        // Upstream: https://github.com/emilkowalski/vaul/pull/580 (unreleased as of 1.1.2)
++        modal: modal,
+         onOpenChange: (open)=>{
+             if (!dismissible && !open) return;
+             if (open) {
+@@ -1481,7 +1484,12 @@ const Content = /*#__PURE__*/ React__default.forwardRef(function({ onPointerDown
+         },
+         onPointerDownOutside: (e)=>{
+             onPointerDownOutside == null ? void 0 : onPointerDownOutside(e);
+-            if (!modal || e.defaultPrevented) {
++            // When non-modal, allow outside pointer/focus (always-open peek drawers).
++            // Previously this always preventDefault'd when !modal, trapping focus.
++            if (!modal) {
++                return;
++            }
++            if (e.defaultPrevented) {
+                 e.preventDefault();
+                 return;
+             }
+@@ -1490,10 +1498,11 @@ const Content = /*#__PURE__*/ React__default.forwardRef(function({ onPointerDown
+             }
+         },
+         onFocusOutside: (e)=>{
++            // Non-modal: allow focus to leave the drawer (e.g. claim item search).
+             if (!modal) {
+-                e.preventDefault();
+                 return;
+             }
++            e.preventDefault();
+         },
+         onPointerMove: (event)=>{
+             lastKnownPointerEventRef.current = event;
