@@ -32,7 +32,9 @@ export function getBillStepCompletion(
   const step2 = billParticipants.length >= 1
   const step3 =
     input.items.length >= 1 &&
-    input.items.every((item) => itemHasFullUnitCoverage(item, input.assignments))
+    input.items.every((item) =>
+      itemHasFullUnitCoverage(item, input.assignments),
+    )
 
   const finalizeReady = validateBillForFinalize(input).length === 0
   const totals = calculateBillTotals({

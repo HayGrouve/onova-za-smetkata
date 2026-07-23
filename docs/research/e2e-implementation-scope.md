@@ -14,12 +14,12 @@ Do this before enabling the CI gate.
 
 ### 1a. Delete E2E spec files (4)
 
-| File | Reason |
-| --- | --- |
-| `e2e/happy-split.spec.ts` | Tier B; Vitest covers claim math and join URL |
-| `e2e/final-readonly.spec.ts` | Both scenarios removed; host half replaced by Vitest backfill |
-| `e2e/guest-item-sharing.spec.ts` | Tier B; `shared/guest-share-preview.test.ts` owns share math |
-| `e2e/host-paid-summary.spec.ts` | Tier B/C; host paid-by-rule rules covered in unit tests |
+| File                             | Reason                                                        |
+| -------------------------------- | ------------------------------------------------------------- |
+| `e2e/happy-split.spec.ts`        | Tier B; Vitest covers claim math and join URL                 |
+| `e2e/final-readonly.spec.ts`     | Both scenarios removed; host half replaced by Vitest backfill |
+| `e2e/guest-item-sharing.spec.ts` | Tier B; `shared/guest-share-preview.test.ts` owns share math  |
+| `e2e/host-paid-summary.spec.ts`  | Tier B/C; host paid-by-rule rules covered in unit tests       |
 
 ### 1b. Reshape retained spec (1 file)
 
@@ -60,12 +60,12 @@ Keep: `expandClaimShareDrawer`, `collapseClaimShareDrawer`, `selectCombinedPayCh
 
 ### 1d. Unchanged E2E files (4)
 
-| File | Role |
-| --- | --- |
-| `e2e/session-conflict.spec.ts` | Retained tier-A |
-| `e2e/claim-search-drawer.spec.ts` | Retained tier-A |
-| `e2e/helpers/host-auth.ts` | Host auto-sign-in for all retained specs |
-| `e2e/README.md` | Update (see Phase 1e) |
+| File                              | Role                                     |
+| --------------------------------- | ---------------------------------------- |
+| `e2e/session-conflict.spec.ts`    | Retained tier-A                          |
+| `e2e/claim-search-drawer.spec.ts` | Retained tier-A                          |
+| `e2e/helpers/host-auth.ts`        | Host auto-sign-in for all retained specs |
+| `e2e/README.md`                   | Update (see Phase 1e)                    |
 
 ### 1e. Vitest backfills (2 new tests)
 
@@ -109,13 +109,13 @@ This replaces the removed host half of `final-readonly.spec.ts` at the component
 
 ### 2a. `.github/workflows/ci.yml` `e2e` job
 
-| Change | Detail |
-| --- | --- |
-| Remove skip path | Delete the `Skip when E2E secret unset` step and all `if: env.VITE_CONVEX_URL != ''` guards on subsequent steps |
-| Fail if secret missing | First step: exit 1 when `secrets.E2E_VITE_CONVEX_URL` is empty with a clear message |
-| Keep job structure | checkout → pnpm → `test:e2e:install` → `test:e2e`; env `VITE_CONVEX_URL` + `CI: true` |
-| Parallel with preflight | Do **not** add `needs: [preflight]` unless flake debugging requires it — keep current parallelism |
-| Deploy unchanged | `deploy-convex` / `deploy-vercel` stay `needs: [preflight]` only |
+| Change                  | Detail                                                                                                          |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Remove skip path        | Delete the `Skip when E2E secret unset` step and all `if: env.VITE_CONVEX_URL != ''` guards on subsequent steps |
+| Fail if secret missing  | First step: exit 1 when `secrets.E2E_VITE_CONVEX_URL` is empty with a clear message                             |
+| Keep job structure      | checkout → pnpm → `test:e2e:install` → `test:e2e`; env `VITE_CONVEX_URL` + `CI: true`                           |
+| Parallel with preflight | Do **not** add `needs: [preflight]` unless flake debugging requires it — keep current parallelism               |
+| Deploy unchanged        | `deploy-convex` / `deploy-vercel` stay `needs: [preflight]` only                                                |
 
 ### 2b. GitHub repo settings (manual, outside repo diff)
 
@@ -129,10 +129,10 @@ This replaces the removed host half of `final-readonly.spec.ts` at the component
 
 ### 2d. Docs touch (Phase 2)
 
-| File | Change |
-| --- | --- |
+| File                                      | Change                                                                                                  |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `docs/DEPLOY.md` § “E2E in CI (optional)” | Rename/reword to **required** PR gate; document secret as mandatory; note deploy jobs still independent |
-| `README.md` | Update Playwright line: 3-spec critical-path gate, not optional smoke |
+| `README.md`                               | Update Playwright line: 3-spec critical-path gate, not optional smoke                                   |
 
 ---
 
@@ -140,13 +140,13 @@ This replaces the removed host half of `final-readonly.spec.ts` at the component
 
 Do **not** remove or weaken these during cleanup:
 
-| Artifact | Why |
-| --- | --- |
-| `convex/lib/devMode.ts`, `DEV_MODE` env, Password provider in `convex/auth.ts` | Local dev auth |
-| `src/components/auth/dev-auto-sign-in.tsx`, `src/hooks/use-require-host-auth.ts`, `src/lib/dev-mode.ts`, `src/lib/dev-user.ts` | Dev auto sign-in |
-| `convex/lib/devMode.test.ts` | Dev-mode guardrails |
-| `data-testid="join-url"` on invite card | Production hook |
-| `.guest-claim-card`, `.guest-total-pulse`, `data-testid="claim-share-details"` | Production UI |
+| Artifact                                                                                                                       | Why                 |
+| ------------------------------------------------------------------------------------------------------------------------------ | ------------------- |
+| `convex/lib/devMode.ts`, `DEV_MODE` env, Password provider in `convex/auth.ts`                                                 | Local dev auth      |
+| `src/components/auth/dev-auto-sign-in.tsx`, `src/hooks/use-require-host-auth.ts`, `src/lib/dev-mode.ts`, `src/lib/dev-user.ts` | Dev auto sign-in    |
+| `convex/lib/devMode.test.ts`                                                                                                   | Dev-mode guardrails |
+| `data-testid="join-url"` on invite card                                                                                        | Production hook     |
+| `.guest-claim-card`, `.guest-total-pulse`, `data-testid="claim-share-details"`                                                 | Production UI       |
 
 No test-only application hooks beyond existing dev-mode stack need removal — there are none exclusive to E2E.
 
@@ -154,12 +154,12 @@ No test-only application hooks beyond existing dev-mode stack need removal — t
 
 ## Retained Playwright toolchain
 
-| Artifact | Action |
-| --- | --- |
-| `playwright.config.ts` | Keep; tune timeouts/retries only if stabilization requires |
-| `@playwright/test` in `package.json` / lockfile | Keep |
-| Scripts `test:e2e`, `test:e2e:install` | Keep |
-| `vite.config.ts` `e2e/**` vitest exclude | Keep (harmless) |
+| Artifact                                        | Action                                                     |
+| ----------------------------------------------- | ---------------------------------------------------------- |
+| `playwright.config.ts`                          | Keep; tune timeouts/retries only if stabilization requires |
+| `@playwright/test` in `package.json` / lockfile | Keep                                                       |
+| Scripts `test:e2e`, `test:e2e:install`          | Keep                                                       |
+| `vite.config.ts` `e2e/**` vitest exclude        | Keep (harmless)                                            |
 
 Optional CI improvement (not blocking): upload Playwright trace on failure — not in current config.
 
@@ -167,12 +167,12 @@ Optional CI improvement (not blocking): upload Playwright trace on failure — n
 
 ## Explicitly out of implementation scope
 
-| Item | Reason |
-| --- | --- |
-| `docs/superpowers/**` historical E2E mentions | Archive context; no runtime effect |
-| Vaul drawer component backfill | Retained claim-search-drawer E2E covers it |
-| Changing production deploy to depend on E2E | Map decision: PR gate only |
-| Removing dev-mode auth stack | Shared with local dev (#47) |
+| Item                                          | Reason                                     |
+| --------------------------------------------- | ------------------------------------------ |
+| `docs/superpowers/**` historical E2E mentions | Archive context; no runtime effect         |
+| Vaul drawer component backfill                | Retained claim-search-drawer E2E covers it |
+| Changing production deploy to depend on E2E   | Map decision: PR gate only                 |
+| Removing dev-mode auth stack                  | Shared with local dev (#47)                |
 
 ---
 

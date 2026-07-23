@@ -73,10 +73,7 @@ function BillJoinContent({
 
   const takenParticipantIds = useMemo(
     () =>
-      buildTakenParticipantIds(
-        activeSessions,
-        storedSession?.participantId,
-      ),
+      buildTakenParticipantIds(activeSessions, storedSession?.participantId),
     [activeSessions, storedSession?.participantId],
   )
 

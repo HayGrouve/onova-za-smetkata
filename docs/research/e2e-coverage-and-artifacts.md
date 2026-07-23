@@ -6,13 +6,13 @@ Audit for [issue #47](https://github.com/HayGrouve/onova-za-smetkata/issues/47),
 
 The suite has **13 browser tests in 7 spec files**. Every scenario exercises a real multi-step host + guest journey against a live Convex dev deployment, but **most business rules are already covered** by Vitest at `shared/`, `src/lib/`, and `convex/lib/`. Cheaper tests own calculations, validation, draft/final guards, join filtering, and search filtering; E2E mostly re-proves that those rules survive routing, auth, realtime sync, and mobile UI wiring.
 
-Against the map’s value rule — *high-impact journey, reliable enough to run regularly, costly to replace at a cheaper layer* — the audit splits like this:
+Against the map’s value rule — _high-impact journey, reliable enough to run regularly, costly to replace at a cheaper layer_ — the audit splits like this:
 
-| Tier | Count | Meaning |
-| --- | --- | --- |
-| **A — strongest unique browser protection** | 3 scenarios | Multi-context UI/integration boundaries with little or no cheaper equivalent |
-| **B — partial overlap, some wiring value** | 7 scenarios | Domain logic tested elsewhere; browser adds wizard/navigation/realtime confidence |
-| **C — thin smoke, heavy duplication** | 3 scenarios | Critical path smoke where cheaper tests already own the assertions |
+| Tier                                        | Count       | Meaning                                                                           |
+| ------------------------------------------- | ----------- | --------------------------------------------------------------------------------- |
+| **A — strongest unique browser protection** | 3 scenarios | Multi-context UI/integration boundaries with little or no cheaper equivalent      |
+| **B — partial overlap, some wiring value**  | 7 scenarios | Domain logic tested elsewhere; browser adds wizard/navigation/realtime confidence |
+| **C — thin smoke, heavy duplication**       | 3 scenarios | Critical path smoke where cheaper tests already own the assertions                |
 
 Nothing in the suite is a dependable PR gate today ([issue #46](docs/research/e2e-reliability-and-cost.md): CI has never executed the tests). That reliability gap is separate from coverage overlap but weighs against retaining the full 13-test portfolio.
 
@@ -67,7 +67,7 @@ Nothing in the suite is a dependable PR gate today ([issue #46](docs/research/e2
 - Backend guard: `convex/lib/assertBillDraft.test.ts`, `src/lib/assert-assignment-editable.test.ts`
 - Guest message constant: `shared/guest-flow-messages.test.ts`
 
-**Overlap:** **High** for the *rule*; **medium** for guest UI disabled state and banner copy on the claim route.
+**Overlap:** **High** for the _rule_; **medium** for guest UI disabled state and banner copy on the claim route.
 
 **Unique browser boundary:** End-to-end finalize flow + guest re-entry after final status.
 
@@ -240,16 +240,16 @@ Nothing in the suite is a dependable PR gate today ([issue #46](docs/research/e2
 
 These exist **only** to support Playwright and should be removed together if the suite is removed:
 
-| Artifact | Location |
-| --- | --- |
-| Specs and helpers | `e2e/**/*.spec.ts`, `e2e/helpers/*.ts`, `e2e/README.md` |
-| Playwright config | `playwright.config.ts` |
-| Dev dependency | `@playwright/test` in `package.json` / `pnpm-lock.yaml` |
-| Scripts | `test:e2e`, `test:e2e:install` in `package.json` |
-| CI job | `.github/workflows/ci.yml` `e2e` job and `E2E_VITE_CONVEX_URL` secret docs |
-| Docs references | `README.md` Playwright section; `docs/DEPLOY.md` “E2E in CI (optional)” |
-| Build/test exclude | `vite.config.ts` `e2e/**` vitest exclude (harmless if folder gone) |
-| Historical specs/plans | `docs/superpowers/**` mentions (archive context, not runtime) |
+| Artifact               | Location                                                                   |
+| ---------------------- | -------------------------------------------------------------------------- |
+| Specs and helpers      | `e2e/**/*.spec.ts`, `e2e/helpers/*.ts`, `e2e/README.md`                    |
+| Playwright config      | `playwright.config.ts`                                                     |
+| Dev dependency         | `@playwright/test` in `package.json` / `pnpm-lock.yaml`                    |
+| Scripts                | `test:e2e`, `test:e2e:install` in `package.json`                           |
+| CI job                 | `.github/workflows/ci.yml` `e2e` job and `E2E_VITE_CONVEX_URL` secret docs |
+| Docs references        | `README.md` Playwright section; `docs/DEPLOY.md` “E2E in CI (optional)”    |
+| Build/test exclude     | `vite.config.ts` `e2e/**` vitest exclude (harmless if folder gone)         |
+| Historical specs/plans | `docs/superpowers/**` mentions (archive context, not runtime)              |
 
 ---
 
@@ -257,13 +257,13 @@ These exist **only** to support Playwright and should be removed together if the
 
 These support **local development**, not just browser tests:
 
-| Artifact | Why it stays |
-| --- | --- |
-| `convex/lib/devMode.ts`, `DEV_MODE` env, Password provider in `convex/auth.ts` | Local dev auth on allowlisted Convex deployments |
-| `src/components/auth/dev-auto-sign-in.tsx`, `src/hooks/use-require-host-auth.ts`, `src/lib/dev-mode.ts`, `src/lib/dev-user.ts` | Auto sign-in and auth bypass during `pnpm run dev` |
-| `convex/lib/devMode.test.ts` | Unit tests for dev-mode guardrails |
-| `data-testid="join-url"` on `bill-invite-card.tsx` | Accessible hook; useful beyond E2E |
-| Product CSS classes `.guest-claim-card`, `.guest-total-pulse` | Production UI styling/selectors, not test harness code |
+| Artifact                                                                                                                       | Why it stays                                           |
+| ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| `convex/lib/devMode.ts`, `DEV_MODE` env, Password provider in `convex/auth.ts`                                                 | Local dev auth on allowlisted Convex deployments       |
+| `src/components/auth/dev-auto-sign-in.tsx`, `src/hooks/use-require-host-auth.ts`, `src/lib/dev-mode.ts`, `src/lib/dev-user.ts` | Auto sign-in and auth bypass during `pnpm run dev`     |
+| `convex/lib/devMode.test.ts`                                                                                                   | Unit tests for dev-mode guardrails                     |
+| `data-testid="join-url"` on `bill-invite-card.tsx`                                                                             | Accessible hook; useful beyond E2E                     |
+| Product CSS classes `.guest-claim-card`, `.guest-total-pulse`                                                                  | Production UI styling/selectors, not test harness code |
 
 ---
 

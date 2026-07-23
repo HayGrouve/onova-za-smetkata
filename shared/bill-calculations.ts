@@ -1,7 +1,4 @@
-import {
-  countItemsWithEmptyUnits,
-  itemHasEmptyUnit,
-} from './unit-coverage'
+import { countItemsWithEmptyUnits, itemHasEmptyUnit } from './unit-coverage'
 
 export type PaymentStatus = 'unpaid' | 'partial' | 'paid'
 
@@ -282,7 +279,9 @@ export function calculateParticipantBreakdown(
 
       if (item.quantity === 1) {
         sharedWithCount = sortedIds.length - 1
-        sharedWithParticipantIds = sortedIds.filter((id) => id !== participantId)
+        sharedWithParticipantIds = sortedIds.filter(
+          (id) => id !== participantId,
+        )
       }
     }
 

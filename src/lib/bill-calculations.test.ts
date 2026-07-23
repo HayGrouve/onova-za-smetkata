@@ -413,12 +413,12 @@ describe('calculateParticipantBreakdown', () => {
       { id: 'i2', name: 'Кола', unitPriceCents: 229, quantity: 4 },
     ],
     assignments: [
-        { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
-        { itemId: 'i1', participantId: 'p2', unitIndex: 0 },
-        { itemId: 'i2', participantId: 'p1', unitIndex: 0 },
-        { itemId: 'i2', participantId: 'p1', unitIndex: 1 },
-        { itemId: 'i2', participantId: 'p2', unitIndex: 2 },
-        { itemId: 'i2', participantId: 'p3', unitIndex: 3 },
+      { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
+      { itemId: 'i1', participantId: 'p2', unitIndex: 0 },
+      { itemId: 'i2', participantId: 'p1', unitIndex: 0 },
+      { itemId: 'i2', participantId: 'p1', unitIndex: 1 },
+      { itemId: 'i2', participantId: 'p2', unitIndex: 2 },
+      { itemId: 'i2', participantId: 'p3', unitIndex: 3 },
     ],
     tipCents: 300,
   }

@@ -26,10 +26,7 @@ async function getSortedParticipantIds(
   )
 }
 
-async function deleteItemAssignments(
-  ctx: MutationCtx,
-  itemId: Id<'items'>,
-) {
+async function deleteItemAssignments(ctx: MutationCtx, itemId: Id<'items'>) {
   const existing = await ctx.db
     .query('itemAssignments')
     .withIndex('by_itemId', (q) => q.eq('itemId', itemId))
@@ -65,11 +62,12 @@ async function syncEvenAssignments(
   }
 }
 
-function assertUnitIndexInRange(
-  item: { quantity: number },
-  unitIndex: number,
-) {
-  if (!Number.isInteger(unitIndex) || unitIndex < 0 || unitIndex >= item.quantity) {
+function assertUnitIndexInRange(item: { quantity: number }, unitIndex: number) {
+  if (
+    !Number.isInteger(unitIndex) ||
+    unitIndex < 0 ||
+    unitIndex >= item.quantity
+  ) {
     throw new ConvexError('Невалиден номер на бройка.')
   }
 }

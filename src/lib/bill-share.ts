@@ -117,8 +117,8 @@ function formatItemAssignees(
       const amountCents = calculateParticipantBreakdown(
         breakdown,
         participantId,
-      ).lines
-        .filter((line) => line.kind === 'item' && line.itemId === item.id)
+      )
+        .lines.filter((line) => line.kind === 'item' && line.itemId === item.id)
         .reduce((sum, line) => sum + line.amountCents, 0)
       const name = labelForParticipant(participantId, labels)
       if (item.quantity > 1) {

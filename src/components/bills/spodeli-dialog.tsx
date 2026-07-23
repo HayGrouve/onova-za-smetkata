@@ -124,11 +124,7 @@ function SpodeliUnitCard({
   readOnly,
   onToggle,
 }: SpodeliUnitCardProps) {
-  const joined = isParticipantOnUnit(
-    itemAssignments,
-    unitIndex,
-    participantId,
-  )
+  const joined = isParticipantOnUnit(itemAssignments, unitIndex, participantId)
   const assigneeIds = getAssigneeIdsOnUnit(itemAssignments, unitIndex)
   const otherClaimants = getOtherClaimantLabelsForUnit(
     itemAssignments,
@@ -163,7 +159,9 @@ function SpodeliUnitCard({
       aria-label={`${formatSpodeliUnitTitle(item.name, unitIndex)}, ${joined ? 'ваше' : 'докоснете за отбелязване'}`}
     >
       <div className="flex items-start justify-between gap-3">
-        <p className="font-medium">{formatSpodeliUnitTitle(item.name, unitIndex)}</p>
+        <p className="font-medium">
+          {formatSpodeliUnitTitle(item.name, unitIndex)}
+        </p>
         <p className="money shrink-0 text-sm font-medium">
           {formatEur(item.unitPriceCents)}
         </p>
