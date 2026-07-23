@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PrototypeHostPaidPresentationRouteImport } from './routes/prototype/host-paid-presentation'
+import { Route as PrototypeFirstBillHostNameRouteImport } from './routes/prototype/first-bill-host-name'
 import { Route as BillsBillIdIndexRouteImport } from './routes/bills/$billId/index'
 import { Route as BillsBillIdSummaryRouteImport } from './routes/bills/$billId/summary'
 import { Route as BillsBillIdJoinRouteImport } from './routes/bills/$billId/join'
@@ -37,6 +38,12 @@ const PrototypeHostPaidPresentationRoute =
   PrototypeHostPaidPresentationRouteImport.update({
     id: '/prototype/host-paid-presentation',
     path: '/prototype/host-paid-presentation',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const PrototypeFirstBillHostNameRoute =
+  PrototypeFirstBillHostNameRouteImport.update({
+    id: '/prototype/first-bill-host-name',
+    path: '/prototype/first-bill-host-name',
     getParentRoute: () => rootRouteImport,
   } as any)
 const BillsBillIdIndexRoute = BillsBillIdIndexRouteImport.update({
@@ -64,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/login': typeof LoginRoute
+  '/prototype/first-bill-host-name': typeof PrototypeFirstBillHostNameRoute
   '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
@@ -74,6 +82,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/login': typeof LoginRoute
+  '/prototype/first-bill-host-name': typeof PrototypeFirstBillHostNameRoute
   '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
@@ -85,6 +94,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/login': typeof LoginRoute
+  '/prototype/first-bill-host-name': typeof PrototypeFirstBillHostNameRoute
   '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/login'
+    | '/prototype/first-bill-host-name'
     | '/prototype/host-paid-presentation'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/login'
+    | '/prototype/first-bill-host-name'
     | '/prototype/host-paid-presentation'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
@@ -117,6 +129,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/login'
+    | '/prototype/first-bill-host-name'
     | '/prototype/host-paid-presentation'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
@@ -128,6 +141,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
   LoginRoute: typeof LoginRoute
+  PrototypeFirstBillHostNameRoute: typeof PrototypeFirstBillHostNameRoute
   PrototypeHostPaidPresentationRoute: typeof PrototypeHostPaidPresentationRoute
   BillsBillIdClaimRoute: typeof BillsBillIdClaimRoute
   BillsBillIdJoinRoute: typeof BillsBillIdJoinRoute
@@ -165,6 +179,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrototypeHostPaidPresentationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/prototype/first-bill-host-name': {
+      id: '/prototype/first-bill-host-name'
+      path: '/prototype/first-bill-host-name'
+      fullPath: '/prototype/first-bill-host-name'
+      preLoaderRoute: typeof PrototypeFirstBillHostNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bills/$billId/': {
       id: '/bills/$billId/'
       path: '/bills/$billId'
@@ -200,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
   LoginRoute: LoginRoute,
+  PrototypeFirstBillHostNameRoute: PrototypeFirstBillHostNameRoute,
   PrototypeHostPaidPresentationRoute: PrototypeHostPaidPresentationRoute,
   BillsBillIdClaimRoute: BillsBillIdClaimRoute,
   BillsBillIdJoinRoute: BillsBillIdJoinRoute,
