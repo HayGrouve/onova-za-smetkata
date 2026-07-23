@@ -79,7 +79,7 @@ jobs:
   deploy-convex:
     name: Deploy Convex (production)
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: [preflight]
     steps:
       - uses: actions/checkout@v4
@@ -102,7 +102,7 @@ jobs:
   deploy-vercel:
     name: Deploy Vercel (production)
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: [deploy-convex]
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
