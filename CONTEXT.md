@@ -43,3 +43,7 @@ _Avoid_: unpaid balance for the host
 **Bill status**:
 Whether a bill is still being prepared (**draft**, product UI **Чернова** / chip **Чернови**) or locked after the host finishes it (**final**, product chip **Приключени**).
 _Avoid_: completed, closed, settled (settled is about collection, not bill status)
+
+**Prepared bill**:
+A first-onboarding milestone: the bill has a restaurant name, at least one Guest, at least one validly priced item, and every item Unit is assigned. A prepared bill may still have **draft** Bill status.
+_Avoid_: completed bill, final bill

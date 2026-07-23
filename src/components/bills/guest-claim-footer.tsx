@@ -23,6 +23,7 @@ import {
 import { copyToClipboard } from '#/lib/copy-to-clipboard.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { getCoveredParticipantIds } from '#/lib/combined-payment.ts'
+import { launchRevolut } from '#/lib/revolut-launch.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { COMBINED_PAYMENT_MESSAGES } from '../../../shared/combined-payment-messages'
@@ -203,7 +204,7 @@ export function GuestClaimFooter({
     ],
   )
 
-  async function resolvePayCents(): Promise<number | null> {
+  function resolvePayCents(): number | null {
     if (remainingCents <= 0 && !isCombined && !pending) return null
     if (pending) return pending.totalCents
     if (isCombined) return payerRemaining + selectedCoveredRemainingTotal
@@ -228,17 +229,13 @@ export function GuestClaimFooter({
     }
   }
 
-  async function handleRevolut() {
+  function handleRevolut() {
     if (!revolutUsername || (remainingCents <= 0 && !isCombined && !pending)) {
       return
     }
-    const payCents = await resolvePayCents()
+    const payCents = resolvePayCents()
     if (payCents === null) return
 
-    const recorded = await recordTransferInitiated()
-    if (!recorded) return
-
-    void copyToClipboard(formatCopyAmount(payCents))
     const payingForOthers = Boolean(pendingCoveredIds.length > 0 || isCombined)
     const participantNames = payingForOthers
       ? [
@@ -251,13 +248,27 @@ export function GuestClaimFooter({
         ].filter((name): name is string => Boolean(name?.trim()))
       : [label]
     const note = buildRevolutPaymentNote(restaurantName, participantNames)
-    window.open(buildRevolutUrl(revolutUsername, payCents, note))
-    toast.success('Отворен Revolut')
+    const url = buildRevolutUrl(revolutUsername, payCents, note)
+
+    void launchRevolut({
+      url,
+      openWindow: (targetUrl) => window.open(targetUrl),
+      copyAmount: () => {
+        void copyToClipboard(formatCopyAmount(payCents))
+      },
+      recordTransfer: recordTransferInitiated,
+    }).then((result) => {
+      if (result === 'blocked') {
+        toast.error('Revolut не можа да се отвори')
+      } else if (result === 'opened') {
+        toast.success('Отворен Revolut')
+      }
+    })
   }
 
   async function handleCopyIban() {
     if (!iban) return
-    const payCents = await resolvePayCents()
+    const payCents = resolvePayCents()
     if (payCents === null && (isCombined || pending)) return
 
     if (payCents !== null) {
