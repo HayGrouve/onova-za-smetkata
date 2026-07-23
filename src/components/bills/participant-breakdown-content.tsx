@@ -92,23 +92,23 @@ export function ParticipantBreakdownContent({
               : undefined
 
           return (
-          <div
-            key={`${line.kind}-${line.kind === 'item' ? line.itemId : line.label}-${index}`}
-            className="flex items-start justify-between gap-3 text-sm"
-          >
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <p className="text-muted-foreground">
-                {formatBreakdownLineLabel(line, participantCount)}
-              </p>
-              {unitsText ? (
-                <p className="text-xs text-muted-foreground">{unitsText}</p>
-              ) : null}
-              {sharedText ? (
-                <p className="text-xs text-muted-foreground">{sharedText}</p>
-              ) : null}
+            <div
+              key={`${line.kind}-${line.kind === 'item' ? line.itemId : line.label}-${index}`}
+              className="flex items-start justify-between gap-3 text-sm"
+            >
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <p className="text-muted-foreground">
+                  {formatBreakdownLineLabel(line, participantCount)}
+                </p>
+                {unitsText ? (
+                  <p className="text-xs text-muted-foreground">{unitsText}</p>
+                ) : null}
+                {sharedText ? (
+                  <p className="text-xs text-muted-foreground">{sharedText}</p>
+                ) : null}
+              </div>
+              <p className="money shrink-0">{formatEur(line.amountCents)}</p>
             </div>
-            <p className="money shrink-0">{formatEur(line.amountCents)}</p>
-          </div>
           )
         })
       )}

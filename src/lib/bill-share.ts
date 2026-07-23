@@ -65,7 +65,8 @@ export function formatBreakdownLineUnitsText(
   line: ParticipantBreakdownLine,
 ): string | undefined {
   if (line.kind !== 'item') return undefined
-  if (line.units === undefined || line.totalUnits === undefined) return undefined
+  if (line.units === undefined || line.totalUnits === undefined)
+    return undefined
   if (line.totalUnits <= 1) return undefined
   return `${line.units} от ${line.totalUnits}`
 }
