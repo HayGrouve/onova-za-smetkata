@@ -8,6 +8,8 @@ import {
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 
 import ConvexProvider from '../integrations/convex/provider'
 import { AppShell } from '../components/layout/app-shell.tsx'
@@ -129,6 +131,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               <ConvexProvider>
                 <SentryInit />
                 <ServiceWorkerRegister />
+                <Analytics />
+                <SpeedInsights />
                 {children}
                 <Toaster />
                 {import.meta.env.DEV && (
