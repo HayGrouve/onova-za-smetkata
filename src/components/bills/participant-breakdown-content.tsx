@@ -15,8 +15,7 @@ import { Badge } from '#/components/ui/badge.tsx'
 import { Separator } from '#/components/ui/separator.tsx'
 import { ParticipantPayActions } from '#/components/bills/participant-pay-actions.tsx'
 import { PaymentActions } from '#/components/bills/payment-actions.tsx'
-import type { Id } from '../../../convex/_generated/dataModel'
-import type { Doc } from '../../../convex/_generated/dataModel'
+import type { Id, Doc } from '../../../convex/_generated/dataModel'
 
 const statusLabels: Record<PaymentStatus, string> = {
   unpaid: 'неплатено',

@@ -395,7 +395,7 @@ function GuestClaimContent({
           label={label}
           breakdownInput={breakdownInput}
           totals={participantTotals}
-          participantBalances={data.participantBalances ?? []}
+          participantBalances={data.participantBalances}
           participantLabels={labels}
           pendingCover={pendingCover ?? undefined}
           restaurantName={data.bill.restaurantName}

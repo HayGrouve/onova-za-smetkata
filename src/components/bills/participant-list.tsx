@@ -3,10 +3,8 @@ import { MoreHorizontalIcon, UserPlusIcon, XIcon } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { toast } from 'sonner'
-import {
-  FriendGroupAddPreviewSheet,
-  type FriendGroupPreview,
-} from '#/components/bills/friend-group-add-preview-sheet.tsx'
+import { FriendGroupAddPreviewSheet } from '#/components/bills/friend-group-add-preview-sheet.tsx'
+import type { FriendGroupPreview } from '#/components/bills/friend-group-add-preview-sheet.tsx'
 import { useFriendGroups } from '#/components/bills/friend-groups-provider.tsx'
 import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { Button } from '#/components/ui/button.tsx'

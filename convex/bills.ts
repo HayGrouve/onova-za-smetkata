@@ -148,10 +148,7 @@ export const getForGuest = query({
     const participantBalances = participants.map((p) => ({
       participantId: p._id,
       name: p.name,
-      remainingCents: Math.max(
-        0,
-        totals.byParticipant[p._id]?.balanceCents ?? 0,
-      ),
+      remainingCents: Math.max(0, totals.byParticipant[p._id].balanceCents),
     }))
 
     return {

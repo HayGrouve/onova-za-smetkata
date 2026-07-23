@@ -15,8 +15,8 @@ import {
   MOCK_HOST_LINES,
   MOCK_HOST_NAME,
   MOCK_PARTICIPANTS,
-  type PrototypeParticipant,
 } from './mock-data.ts'
+import type { PrototypeParticipant } from './mock-data.ts'
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
@@ -75,7 +75,7 @@ function guestBadge(p: PrototypeParticipant) {
 
 /** A — Minimal parity: same shapes as guest paid row / share footer, no pay UI. */
 export function VariantA() {
-  const host = MOCK_PARTICIPANTS[0]!
+  const host = MOCK_PARTICIPANTS[0]
   const state = JSON.stringify(
     {
       variant: 'A',
@@ -193,7 +193,7 @@ export function VariantA() {
 
 /** B — Host-labeled compact: „домакин“ chip; share-only row; calm one-line footer. */
 export function VariantB() {
-  const host = MOCK_PARTICIPANTS[0]!
+  const host = MOCK_PARTICIPANTS[0]
   const guests = MOCK_PARTICIPANTS.filter((p) => p.role === 'guest')
   const state = JSON.stringify(
     {
@@ -280,7 +280,7 @@ export function VariantB() {
 
 /** C — Separated host strip: footer status bar; host above guests in own block. */
 export function VariantC() {
-  const host = MOCK_PARTICIPANTS[0]!
+  const host = MOCK_PARTICIPANTS[0]
   const guests = MOCK_PARTICIPANTS.filter((p) => p.role === 'guest')
   const unpaidGuests = guests.filter((p) => p.outstandingCents > 0).length
   const state = JSON.stringify(

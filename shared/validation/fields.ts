@@ -12,6 +12,7 @@ import {
   RESTAURANT_NAME_MAX,
 } from './constants'
 
+// eslint-disable-next-line no-control-regex -- reject control characters in user-facing names
 const CONTROL_CHAR_PATTERN = /[\x00-\x1f]/
 
 export const personNameSchema = z

@@ -5,8 +5,8 @@ import {
   useMemo,
   useRef,
   useState,
-  type ReactNode,
 } from 'react'
+import type { ReactNode } from 'react'
 import {
   AlertDialog,
   AlertDialogAction,

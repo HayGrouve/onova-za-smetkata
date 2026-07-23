@@ -1,7 +1,6 @@
-import { ConvexError } from 'convex/values'
+import { ConvexError, v } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import type { MutationCtx, QueryCtx } from './_generated/server'
-import { v } from 'convex/values'
 import type { Doc, Id } from './_generated/dataModel'
 import { requireBillOwner } from './lib/auth'
 import {
@@ -23,7 +22,8 @@ import { assertShareToken } from './lib/guestAccess'
 import { assertBillDraft } from './lib/assertBillDraft'
 import { GUEST_FLOW_MESSAGES } from './lib/guestFlowMessages'
 import { requireGuestSession } from './lib/requireGuestSession'
-import { calculateBillTotals, type BillTotals } from './lib/billCalculations'
+import { calculateBillTotals } from './lib/billCalculations'
+import type { BillTotals } from './lib/billCalculations'
 
 async function loadBillTotalsForCombinedPay(
   ctx: QueryCtx | MutationCtx,
@@ -605,8 +605,7 @@ export const confirm = mutation({
         ]
 
     for (const entry of entries) {
-      const owedCents =
-        totals.byParticipant[entry.participantId]?.owedCents ?? 0
+      const owedCents = totals.byParticipant[entry.participantId].owedCents
       const paidCents = payments
         .filter((payment) => payment.participantId === entry.participantId)
         .reduce((sum, payment) => sum + payment.amountCents, 0)

@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import type { z } from 'zod'
 
 export function formatZodFieldErrors<T extends string>(
   error: z.ZodError,

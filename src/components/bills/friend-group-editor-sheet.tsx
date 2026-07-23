@@ -117,9 +117,9 @@ export function FriendGroupEditorSheet({
   }
 
   async function removeMemberWithConfirm(index: number) {
-    const name = memberNames[index]
-    if (!name) return
-    const confirmed = await confirm(getFriendGroupMemberRemoveCopy(name))
+    const memberName = memberNames[index]
+    if (!memberName) return
+    const confirmed = await confirm(getFriendGroupMemberRemoveCopy(memberName))
     if (!confirmed) return
     removeMember(index)
   }
@@ -167,8 +167,8 @@ export function FriendGroupEditorSheet({
   }
 
   async function handleDeleteWithConfirm() {
-    const name = existing?.name ?? 'групата'
-    const confirmed = await confirm(getFriendGroupDeleteCopy(name))
+    const groupName = existing?.name ?? 'групата'
+    const confirmed = await confirm(getFriendGroupDeleteCopy(groupName))
     if (!confirmed) return
     await handleDelete()
   }

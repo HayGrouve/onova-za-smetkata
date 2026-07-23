@@ -57,7 +57,7 @@ describe('buildListSummaryFields', () => {
       {
         status: 'final',
         tipCents: 0,
-        hostParticipantId: 'p1' as never,
+        hostParticipantId: 'p1',
       },
       {
         participants: [

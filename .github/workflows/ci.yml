@@ -14,8 +14,6 @@ concurrency:
 jobs:
   preflight:
     runs-on: ubuntu-latest
-    env:
-      VITE_CONVEX_URL: https://coordinated-warbler-782.convex.cloud
     steps:
       - uses: actions/checkout@v4
 
@@ -29,16 +27,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Format check
-        run: pnpm run check
-
-      - name: Lint
-        # Pre-existing lint debt; keep visible but do not block production deploy.
-        continue-on-error: true
-        run: pnpm run lint
-
-      - name: Preflight
-        run: pnpm run preflight
+      - name: CI preflight
+        run: pnpm run ci:preflight
 
   e2e:
     runs-on: ubuntu-latest

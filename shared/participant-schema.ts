@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import type { z } from 'zod'
 import { BILL_PARTICIPANTS_MAX } from './validation/constants'
 import { personNameSchema } from './validation/fields'
 

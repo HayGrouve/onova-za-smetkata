@@ -1,4 +1,5 @@
-import { expect, type Page } from '@playwright/test'
+import { expect } from '@playwright/test'
+import type { Page } from '@playwright/test'
 
 /** Bill id from the current URL (ignores ?search and #hash). */
 export function billIdFromUrl(url: string): string | undefined {

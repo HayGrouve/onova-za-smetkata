@@ -1,10 +1,12 @@
 import {
   calculateBillTotals,
   validateBillForFinalize,
-  type AssignmentInput,
-  type ItemInput,
-  type ParticipantInput,
-  type PaymentInput,
+} from './bill-calculations'
+import type {
+  AssignmentInput,
+  ItemInput,
+  ParticipantInput,
+  PaymentInput,
 } from './bill-calculations'
 import { itemHasFullUnitCoverage } from './unit-coverage'
 
@@ -48,7 +50,7 @@ export function getBillStepCompletion(
   const allPaid =
     input.participants.length > 0 &&
     input.participants.every(
-      (p) => totals.byParticipant[p.id]?.status === 'paid',
+      (p) => totals.byParticipant[p.id].status === 'paid',
     )
   const step4 = finalizeReady && allPaid
 

@@ -272,15 +272,16 @@ export function ReceiptScanReviewSheet({
           )}
 
           {rows.map((row, index) => {
-            const errors = rowErrors[index]
+            const hasRowErrors = index in rowErrors
+            const errors = hasRowErrors ? rowErrors[index] : undefined
             return (
               <div
                 key={index}
                 className={cn(
                   'flex items-start gap-2 rounded-lg border p-3',
-                  row.checked && errors && 'border-destructive',
+                  row.checked && hasRowErrors && 'border-destructive',
                   row.confidence === 'low' &&
-                    !(row.checked && errors) &&
+                    !(row.checked && hasRowErrors) &&
                     'border-accent-foreground/50 bg-accent/50',
                 )}
               >

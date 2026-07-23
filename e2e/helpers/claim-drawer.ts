@@ -1,4 +1,5 @@
-import { expect, type Page } from '@playwright/test'
+import { expect } from '@playwright/test'
+import type { Page } from '@playwright/test'
 
 /** Collapse the claim share drawer back to peek (handle toggle, then scrim). */
 export async function collapseClaimShareDrawer(page: Page) {

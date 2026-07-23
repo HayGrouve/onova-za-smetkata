@@ -1,7 +1,8 @@
 import { billIdFromUrl } from './helpers/bill-editor'
 import { expect, openHostContext, test } from './helpers/host-auth'
+import type { Page } from '@playwright/test'
 
-async function getJoinUrl(hostPage: import('@playwright/test').Page) {
+async function getJoinUrl(hostPage: Page) {
   const joinUrl = await hostPage.getByTestId('join-url').textContent()
   expect(joinUrl).toBeTruthy()
   return joinUrl!

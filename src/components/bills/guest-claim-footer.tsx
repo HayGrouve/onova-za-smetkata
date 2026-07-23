@@ -2,10 +2,8 @@ import { SendIcon, CopyIcon } from 'lucide-react'
 import { useMutation, useQuery } from 'convex/react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import {
-  CombinedPayChips,
-  type ParticipantBalance,
-} from '#/components/bills/combined-pay-chips.tsx'
+import { CombinedPayChips } from '#/components/bills/combined-pay-chips.tsx'
+import type { ParticipantBalance } from '#/components/bills/combined-pay-chips.tsx'
 import { ClaimShareDrawer } from '#/components/bills/claim-share-drawer.tsx'
 import { ParticipantBreakdownContent } from '#/components/bills/participant-breakdown-content.tsx'
 import { Badge } from '#/components/ui/badge.tsx'

@@ -42,7 +42,7 @@ function formatCombinedCopy(
   }
 
   if (coveredNames.length === 1) {
-    const coveredName = coveredNames[0]!
+    const coveredName = coveredNames[0]
     return {
       banner: COMBINED_PAYMENT_MESSAGES.hostBanner
         .replaceAll('{payer}', payerName)
@@ -115,18 +115,9 @@ export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
   return (
     <div className="flex flex-col gap-2">
       {pending.map((request) => {
-        const payerName =
-          labels[request.payerParticipantId] ??
-          bill?.participants.find((p) => p._id === request.payerParticipantId)
-            ?.name ??
-          'Участник'
+        const payerName = labels[request.payerParticipantId]
         const coveredIds = getCoveredParticipantIds(request)
-        const coveredNames = coveredIds.map(
-          (id) =>
-            labels[id] ??
-            bill?.participants.find((p) => p._id === id)?.name ??
-            'Участник',
-        )
+        const coveredNames = coveredIds.map((id) => labels[id])
         const copy = formatCombinedCopy(
           payerName,
           coveredNames,

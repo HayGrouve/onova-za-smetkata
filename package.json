@@ -14,6 +14,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "preflight": "pnpm run test && node scripts/check-pwa-icons.mjs && pnpm run build",
+    "ci:preflight": "node scripts/ci-preflight.mjs",
     "check-icons": "node scripts/check-pwa-icons.mjs",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium",
@@ -22,7 +23,8 @@
     "format": "prettier --write . && eslint --fix",
     "check": "prettier --check .",
     "generate-icons": "node scripts/generate-pwa-icons.mjs",
-    "generate-og-image": "node scripts/generate-og-image.mjs"
+    "generate-og-image": "node scripts/generate-og-image.mjs",
+    "prepare": "simple-git-hooks"
   },
   "dependencies": {
     "@auth/core": "^0.41.1",
@@ -74,14 +76,19 @@
     "nitro": "3.0.260610-beta",
     "prettier": "^3.8.1",
     "sharp": "^0.35.3",
+    "simple-git-hooks": "^2.13.1",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",
     "vitest": "^4.1.5"
   },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm run ci:preflight"
+  },
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",
-      "lightningcss"
+      "lightningcss",
+      "simple-git-hooks"
     ],
     "patchedDependencies": {
       "vaul@1.1.2": "patches/vaul@1.1.2.patch"

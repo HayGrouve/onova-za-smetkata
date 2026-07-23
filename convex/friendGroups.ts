@@ -99,7 +99,7 @@ export const create = mutation({
     })
     if (!parsed.success) {
       const firstIssue = parsed.error.issues[0]
-      throw new ConvexError(firstIssue?.message ?? 'Невалидна група')
+      throw new ConvexError(firstIssue.message)
     }
 
     const existing = await ctx.db
@@ -138,7 +138,7 @@ export const update = mutation({
     })
     if (!parsed.success) {
       const firstIssue = parsed.error.issues[0]
-      throw new ConvexError(firstIssue?.message ?? 'Невалидна група')
+      throw new ConvexError(firstIssue.message)
     }
 
     await ctx.db.patch(group._id, {

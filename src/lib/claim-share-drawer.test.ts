@@ -32,11 +32,11 @@ describe('isClaimShareExpanded', () => {
   const snaps = buildClaimShareSnapPoints(120, 560)
 
   it('is false on peek snap', () => {
-    expect(isClaimShareExpanded(snaps[0]!, snaps)).toBe(false)
+    expect(isClaimShareExpanded(snaps[0], snaps)).toBe(false)
   })
 
   it('is true on expanded snap', () => {
-    expect(isClaimShareExpanded(snaps[1]!, snaps)).toBe(true)
+    expect(isClaimShareExpanded(snaps[1], snaps)).toBe(true)
   })
 
   it('is false when active is null', () => {

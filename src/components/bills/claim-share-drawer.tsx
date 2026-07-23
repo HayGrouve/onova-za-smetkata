@@ -1,11 +1,5 @@
-import {
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Drawer, DrawerContent, DrawerTitle } from '#/components/ui/drawer.tsx'
 import {
   buildClaimShareSnapPoints,
@@ -65,10 +59,7 @@ export function ClaimShareDrawer({
     number | string | null
   >(
     () =>
-      buildClaimShareSnapPoints(
-        initialPeekHeightPx,
-        readExpandedHeightPx(),
-      )[0]!,
+      buildClaimShareSnapPoints(initialPeekHeightPx, readExpandedHeightPx())[0],
   )
 
   useEffect(() => {
@@ -104,17 +95,15 @@ export function ClaimShareDrawer({
 
   useEffect(() => {
     if (snapProp === 'expanded') {
-      setActiveSnapPoint(snapPoints[1]!)
+      setActiveSnapPoint(snapPoints[1])
       return
     }
     if (snapProp === 'peek') {
-      setActiveSnapPoint(snapPoints[0]!)
+      setActiveSnapPoint(snapPoints[0])
       return
     }
     setActiveSnapPoint((current) =>
-      isClaimShareExpanded(current, snapPoints)
-        ? snapPoints[1]!
-        : snapPoints[0]!,
+      isClaimShareExpanded(current, snapPoints) ? snapPoints[1] : snapPoints[0],
     )
   }, [snapPoints, snapProp])
 
@@ -131,7 +120,7 @@ export function ClaimShareDrawer({
   }
 
   function toggleSnap() {
-    commitSnapPoint(expanded ? snapPoints[0]! : snapPoints[1]!)
+    commitSnapPoint(expanded ? snapPoints[0] : snapPoints[1])
   }
 
   return (
@@ -142,7 +131,7 @@ export function ClaimShareDrawer({
           type="button"
           aria-label="Свий разбивката"
           className="fixed inset-0 z-40 bg-black/40"
-          onClick={() => commitSnapPoint(snapPoints[0]!)}
+          onClick={() => commitSnapPoint(snapPoints[0])}
         />
       ) : null}
       <Drawer

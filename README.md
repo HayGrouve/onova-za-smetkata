@@ -18,10 +18,15 @@ Local dev auth requires `DEV_MODE=true` on your **Convex dev deployment** (via D
 ```bash
 pnpm run test          # unit tests (Vitest)
 pnpm run test:e2e      # Playwright — see e2e/README.md (needs convex dev + DEV_MODE)
-pnpm run preflight     # test + PWA icons + production build
+pnpm run ci:preflight  # same gate as CI: check + lint + test + icons + build
+pnpm run preflight     # test + PWA icons + production build (without check/lint)
 pnpm run check         # Prettier
 pnpm run lint          # ESLint
 ```
+
+### Git hooks
+
+`pnpm install` installs a **pre-commit** hook (via [simple-git-hooks](https://github.com/toplenboren/simple-git-hooks)) that runs `pnpm run ci:preflight`. Use `git commit --no-verify` only for intentional WIP commits you plan to fix before push.
 
 ## Deploy
 

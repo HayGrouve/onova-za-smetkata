@@ -33,7 +33,6 @@ export function PrototypeSwitcher({
 
   function go(delta: number) {
     const next = variants[(index + delta + variants.length) % variants.length]
-    if (!next) return
     void navigate({
       to: '.',
       search: (prev) => ({ ...prev, variant: next.key }),
@@ -63,8 +62,6 @@ export function PrototypeSwitcher({
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-    // Prototype switcher: re-bind when current variant index changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional for throwaway prototype
   }, [index, variants])
 
   return (

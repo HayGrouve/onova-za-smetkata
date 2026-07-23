@@ -129,7 +129,8 @@ export function participantRemainingCents(
   totals: BillTotals,
   participantId: string,
 ): number {
-  return Math.max(0, totals.byParticipant[participantId]?.balanceCents ?? 0)
+  if (!(participantId in totals.byParticipant)) return 0
+  return Math.max(0, totals.byParticipant[participantId].balanceCents)
 }
 
 function validateCoveredParticipantIds(
@@ -296,7 +297,7 @@ export function getCoveredAmountsFromRequest(
   }
   const ids = getCoveredParticipantIds(request)
   if (ids.length === 1 && request.coveredAmountCents != null) {
-    return { [ids[0]!]: request.coveredAmountCents }
+    return { [ids[0]]: request.coveredAmountCents }
   }
   return {}
 }

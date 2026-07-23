@@ -13,7 +13,7 @@ function countPaymentProgress(
     : participants
   const totalCount = progressParticipants.length
   const paidCount = progressParticipants.filter(
-    (p) => byParticipant[p.id]?.status === 'paid',
+    (p) => byParticipant[p.id].status === 'paid',
   ).length
   return { paidCount, totalCount }
 }

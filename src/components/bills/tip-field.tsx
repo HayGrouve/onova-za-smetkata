@@ -7,8 +7,8 @@ import { parseTipInputToCents } from '#/lib/bill-metadata-schema.ts'
 import {
   readTipPreference,
   writeTipPreference,
-  type TipPercent,
 } from '#/lib/tip-preferences-storage.ts'
+import type { TipPercent } from '#/lib/tip-preferences-storage.ts'
 import {
   formatEurInputValue,
   TIP_PRESETS,
@@ -66,8 +66,6 @@ export function TipField({
     setSelectedPercent(null)
     onValueChange(formatEurInputValue(pref.customCents))
     onValidCents(pref.customCents)
-    // Apply stored preference once items exist.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional single run
   }, [itemsSubtotalCents])
 
   useEffect(() => {
@@ -75,8 +73,6 @@ export function TipField({
     const cents = tipCentsFromPercent(itemsSubtotalCents, selectedPercent)
     onValueChange(formatEurInputValue(cents))
     onValidCents(cents)
-    // Recalculate when subtotal or active percent changes only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable parent handlers not required
   }, [itemsSubtotalCents, selectedPercent])
 
   function handlePercentSelect(percent: TipPercent) {

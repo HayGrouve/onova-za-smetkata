@@ -97,7 +97,6 @@ function applyAlwaysPaidHostCollection(
   if (!hostParticipantId) return totals
 
   const host = totals.byParticipant[hostParticipantId]
-  if (!host) return totals
 
   return {
     ...totals,
@@ -397,7 +396,7 @@ export function validateBillForFinalize(input: {
       hostParticipantId: input.hostParticipantId,
     })
     const hasUnpaidParticipant = input.participants.some(
-      (participant) => totals.byParticipant[participant.id]?.status !== 'paid',
+      (participant) => totals.byParticipant[participant.id].status !== 'paid',
     )
     if (hasUnpaidParticipant) {
       errors.push({

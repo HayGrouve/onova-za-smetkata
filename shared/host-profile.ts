@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import type { z } from 'zod'
 import { personNameSchema } from './validation/fields'
 
 export const HOST_PARTICIPANT_FALLBACK_NAME = 'домакин'

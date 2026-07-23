@@ -8,17 +8,16 @@ import {
   goToBillStep,
 } from './helpers/bill-editor'
 import { expect, openHostContext, test } from './helpers/host-auth'
+import type { Locator, Page } from '@playwright/test'
 
-async function getJoinUrl(hostPage: import('@playwright/test').Page) {
+async function getJoinUrl(hostPage: Page) {
   const joinUrl = await hostPage.getByTestId('join-url').textContent()
   expect(joinUrl).toBeTruthy()
   return joinUrl!
 }
 
 /** True when the topmost hit at the search field center is the input itself. */
-async function searchCenterIsHittable(
-  search: import('@playwright/test').Locator,
-) {
+async function searchCenterIsHittable(search: Locator) {
   return search.evaluate((el) => {
     const rect = el.getBoundingClientRect()
     const top = document.elementFromPoint(

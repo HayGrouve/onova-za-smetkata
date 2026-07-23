@@ -73,7 +73,7 @@ export const add = mutation({
       hostParticipantId: bill.hostParticipantId,
     })
 
-    const owedCents = totals.byParticipant[args.participantId]?.owedCents ?? 0
+    const owedCents = totals.byParticipant[args.participantId].owedCents
     const paidCents = payments
       .filter((payment) => payment.participantId === args.participantId)
       .reduce((sum, payment) => sum + payment.amountCents, 0)
@@ -131,11 +131,13 @@ export const undoLast = mutation({
       )
       .collect()
 
-    const lastPayment = payments.sort((a, b) => b.paidAt - a.paidAt)[0]
-
-    if (!lastPayment) {
+    if (payments.length === 0) {
       throw new ConvexError('Няма плащания за отмяна.')
     }
+
+    const lastPayment = payments.reduce((latest, payment) =>
+      payment.paidAt > latest.paidAt ? payment : latest,
+    )
 
     await ctx.db.delete(lastPayment._id)
     await touchBill(ctx, args.billId)

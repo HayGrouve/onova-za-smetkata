@@ -1,4 +1,5 @@
-import { lineTotalCents, type ItemInput } from './bill-calculations'
+import { lineTotalCents } from './bill-calculations'
+import type { ItemInput } from './bill-calculations'
 
 export type TipPercent = 0 | 10 | 15 | 20
 

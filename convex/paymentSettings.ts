@@ -53,9 +53,7 @@ export const save = mutation({
     })
     if (!parsed.success) {
       const firstIssue = parsed.error.issues[0]
-      throw new ConvexError(
-        firstIssue?.message ?? 'Невалидни настройки за плащане',
-      )
+      throw new ConvexError(firstIssue.message)
     }
 
     const data = {

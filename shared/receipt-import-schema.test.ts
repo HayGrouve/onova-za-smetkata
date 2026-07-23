@@ -82,7 +82,7 @@ describe('validateReceiptImportSelection', () => {
     ])
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.rowErrors[0]?.name).toBeTruthy()
+      expect(result.rowErrors[0].name).toBeTruthy()
       expect(result.rowErrors[1]).toBeUndefined()
       expect(result.checkedCount).toBe(2)
     }

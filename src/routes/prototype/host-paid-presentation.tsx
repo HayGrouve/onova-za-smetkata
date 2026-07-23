@@ -18,7 +18,7 @@ export const Route = createFileRoute('/prototype/host-paid-presentation')({
 function HostPaidPresentationPrototypePage() {
   const { variant } = Route.useSearch()
   const active =
-    HOST_PAID_VARIANTS.find((v) => v.key === variant) ?? HOST_PAID_VARIANTS[0]!
+    HOST_PAID_VARIANTS.find((v) => v.key === variant) ?? HOST_PAID_VARIANTS[0]
   const Component = active.Component
 
   return (
