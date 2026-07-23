@@ -22,7 +22,20 @@ export async function assignFirstItemToParticipants(
   page: Page,
   participantNames: string[],
 ) {
-  for (const name of participantNames) {
-    await page.getByRole('button', { name, exact: true }).click()
+  const firstChip = page.getByRole('button', {
+    name: participantNames[0],
+    exact: true,
+  })
+  if ((await firstChip.count()) > 0 && (await firstChip.isVisible())) {
+    for (const name of participantNames) {
+      await page.getByRole('button', { name, exact: true }).click()
+    }
+    return
   }
+
+  // Multi-qty items use per-item even split instead of participant chips.
+  await page
+    .getByRole('button', { name: 'Раздели поравно', exact: true })
+    .first()
+    .click()
 }
