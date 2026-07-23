@@ -15,6 +15,7 @@ import {
   getStoredGuestSession,
   setStoredGuestSession,
 } from '#/lib/guest-participant-session.ts'
+import { buildTakenParticipantIds } from '#/lib/join-taken-seats.ts'
 import { buildJoinShareHead } from '#/lib/site-meta.ts'
 import { joinableParticipants } from '../../../../shared/joinable-participants.ts'
 import { api } from '../../../../convex/_generated/api'
@@ -70,15 +71,14 @@ function BillJoinContent({
     [billId, activeSessions],
   )
 
-  const takenParticipantIds = useMemo(() => {
-    if (!activeSessions) return new Set<string>()
-    const ownId = storedSession?.participantId
-    return new Set(
-      activeSessions
-        .filter((session) => session.participantId !== ownId)
-        .map((session) => session.participantId),
-    )
-  }, [activeSessions, storedSession?.participantId])
+  const takenParticipantIds = useMemo(
+    () =>
+      buildTakenParticipantIds(
+        activeSessions,
+        storedSession?.participantId,
+      ),
+    [activeSessions, storedSession?.participantId],
+  )
 
   useEffect(() => {
     if (data === undefined || activeSessions === undefined) return

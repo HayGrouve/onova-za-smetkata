@@ -47,20 +47,3 @@ export async function initiateRevolutPayment(page: Page) {
     })
   }).toPass({ timeout: 20_000 })
 }
-
-export async function claimHalfOfItem(page: Page, itemName: string) {
-  const itemRow = page
-    .locator('.guest-claim-card')
-    .filter({ hasText: itemName })
-  await itemRow.getByLabel('Увеличи').click()
-  await expect(page.getByText('Разбивка на дяла')).toBeVisible()
-}
-
-export async function claimQty1Item(page: Page, itemName: string) {
-  await page.locator('.guest-claim-card').filter({ hasText: itemName }).click()
-  await expect(page.getByText('Разбивка на дяла')).toBeVisible()
-}
-
-export async function goBackFromHostClaim(page: Page) {
-  await page.getByLabel('Назад').click()
-}

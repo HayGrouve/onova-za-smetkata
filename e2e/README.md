@@ -1,6 +1,8 @@
 # E2E tests
 
-Playwright covers the host + guest split flow. Tests need a **working dev auth** setup on Convex.
+Playwright covers **3 critical-path** browser flows (session conflict, claim-search drawer, combined-pay banner timing). Tests need a **working dev auth** setup on Convex.
+
+Phase 2 will flip CI from optional skip to a **required PR gate** once these specs are stable locally.
 
 ## Prerequisites
 
@@ -37,6 +39,14 @@ Playwright covers the host + guest split flow. Tests need a **working dev auth**
    pnpm run test:e2e
    ```
    Playwright starts `pnpm run dev` unless port 3000 is already in use.
+
+## Specs
+
+| File | Journey |
+| --- | --- |
+| `session-conflict.spec.ts` | Two browsers claim the same guest seat |
+| `claim-search-drawer.spec.ts` | Vaul drawer + item search on guest claim |
+| `combined-guest-payment.spec.ts` | Host payment banner appears only after Revolut opens |
 
 ## Common failures
 
