@@ -378,6 +378,7 @@ function GuestClaimContent({
                 itemAssignments={assignmentsByItemId.get(item._id) ?? []}
                 participantLabels={labels}
                 readOnly={readOnly}
+                hidePrices={itemTab === 'mine'}
                 onItemSelected={() => setSearch('')}
               />
             ))
@@ -646,6 +647,7 @@ function HostClaimContent({ billId }: { billId: Id<'bills'> }) {
                 itemAssignments={assignmentsByItemId.get(item._id) ?? []}
                 participantLabels={labels}
                 readOnly={readOnly}
+                hidePrices={itemTab === 'mine'}
                 onItemSelected={() => setSearch('')}
               />
             ))

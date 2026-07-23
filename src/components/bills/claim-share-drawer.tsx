@@ -185,17 +185,17 @@ export function ClaimShareDrawer({
           >
             <div
               ref={headerRef}
-              className="pointer-events-auto order-1 shrink-0 flex flex-col gap-3"
+              className="pointer-events-auto order-1 shrink-0 flex flex-col border-b pb-3"
             >
               <button
                 type="button"
-                className="mx-auto flex w-full flex-col items-center gap-2"
+                className="mx-auto flex w-full flex-col items-center gap-3 py-1"
                 aria-expanded={expanded}
                 aria-controls={detailsId}
                 onClick={toggleSnap}
               >
-                <span className="bg-muted mx-auto mt-1 h-1.5 w-10 shrink-0 rounded-full" />
-                <span className="flex w-full items-center justify-between gap-3 text-left">
+                <span className="bg-muted mx-auto h-1.5 w-10 shrink-0 rounded-full" />
+                <span className="flex w-full items-center justify-between gap-3 py-0.5 text-left">
                   <DrawerTitle className="text-base font-semibold">
                     {title}
                   </DrawerTitle>
@@ -208,7 +208,7 @@ export function ClaimShareDrawer({
               data-testid="claim-share-details"
               className={cn(
                 'order-2 min-h-0 flex-1 overflow-y-auto',
-                expanded ? 'pointer-events-auto' : 'hidden',
+                expanded ? 'pointer-events-auto pt-3' : 'hidden',
               )}
             >
               {details}
@@ -216,8 +216,8 @@ export function ClaimShareDrawer({
             <div
               ref={summaryRef}
               className={cn(
-                'pointer-events-auto shrink-0 border-t pt-3',
-                expanded ? 'order-3' : 'order-2',
+                'pointer-events-auto shrink-0 pt-3',
+                expanded ? 'order-3 border-t' : 'order-2',
               )}
             >
               {summary}

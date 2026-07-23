@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from 'convex/react'
+import { CircleXIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '#/lib/utils.ts'
 import { formatEur } from '#/lib/format-currency.ts'
@@ -23,6 +24,8 @@ export interface GuestItemRowProps {
   itemAssignments: Doc<'itemAssignments'>[]
   participantLabels: Record<string, string>
   readOnly: boolean
+  /** Hide line/unit prices — e.g. on the „Мои“ tab where the footer drawer shows totals. */
+  hidePrices?: boolean
   onItemSelected?: () => void
 }
 
@@ -33,10 +36,12 @@ export function GuestItemRow({
   itemAssignments,
   participantLabels,
   readOnly,
+  hidePrices = false,
   onItemSelected,
 }: GuestItemRowProps) {
   const [spodeliOpen, setSpodeliOpen] = useState(false)
   const toggleAssignment = useMutation(api.assignments.toggle)
+  const leaveUnit = useMutation(api.assignments.leaveUnit)
 
   const { myUnits, coveredUnits, isSelectedByMe } = getGuestClaimItemState(
     item,
@@ -52,6 +57,53 @@ export function GuestItemRow({
   const assigneeIdsOnUnit0 = itemAssignments
     .filter((assignment) => assignment.unitIndex === 0)
     .map((assignment) => assignment.participantId)
+
+  async function handleRemoveAllMyUnits() {
+    if (readOnly) return
+    const myRows = itemAssignments.filter(
+      (assignment) =>
+        assignment.itemId === item._id &&
+        assignment.participantId === participantId,
+    )
+    try {
+      for (const row of myRows) {
+        await leaveUnit({
+          itemId: item._id,
+          participantId,
+          unitIndex: row.unitIndex,
+          sessionToken,
+        })
+      }
+      onItemSelected?.()
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
+    }
+  }
+
+  function handleMultiQtyCardClick() {
+    if (hidePrices && isSelectedByMe) {
+      void handleRemoveAllMyUnits()
+      return
+    }
+    setSpodeliOpen(true)
+  }
+
+  function renderHeaderTrailing() {
+    if (hidePrices && isSelectedByMe) {
+      return (
+        <CircleXIcon
+          className="size-4 shrink-0 text-muted-foreground"
+          aria-hidden
+        />
+      )
+    }
+    if (!hidePrices) {
+      return <p className="money font-medium">{formatEur(lineTotalCents)}</p>
+    }
+    return null
+  }
+
+  const mineTabRemoveLabel = ', докоснете за премахване'
 
   async function handleToggle() {
     if (readOnly) return
@@ -90,9 +142,11 @@ export function GuestItemRow({
       return (
         <>
           <p className="text-xs font-medium text-primary">✓ Ваше</p>
-          <p className="text-xs text-muted-foreground">
-            Вашият дял: {formatEur(shareCents)}
-          </p>
+          {!hidePrices ? (
+            <p className="text-xs text-muted-foreground">
+              Вашият дял: {formatEur(shareCents)}
+            </p>
+          ) : null}
         </>
       )
     }
@@ -104,9 +158,11 @@ export function GuestItemRow({
             Споделено с {otherClaimants.join(', ')} (
             {formatShareParticipantCount(otherClaimants.length)})
           </p>
-          <p className="text-xs text-muted-foreground">
-            Вашият дял: {formatEur(shareCents)}
-          </p>
+          {!hidePrices ? (
+            <p className="text-xs text-muted-foreground">
+              Вашият дял: {formatEur(shareCents)}
+            </p>
+          ) : null}
           {!readOnly && (
             <p className="text-xs font-medium text-muted-foreground">
               Присъедини се
@@ -140,7 +196,9 @@ export function GuestItemRow({
             {coveredUnits} от {item.quantity} заети
           </p>
         ) : null}
-        <p className="text-xs font-medium text-primary">Сподели</p>
+        {hidePrices && isSelectedByMe ? null : (
+          <p className="text-xs font-medium text-primary">Сподели</p>
+        )}
       </>
     )
   }
@@ -152,16 +210,22 @@ export function GuestItemRow({
         disabled={readOnly}
         onClick={() => void handleToggle()}
         className={cn(cardClassName, 'text-left')}
-        aria-label={`${item.name}, докоснете за отбелязване`}
+        aria-label={
+          hidePrices && isSelectedByMe
+            ? `${item.name}${mineTabRemoveLabel}`
+            : `${item.name}, докоснете за отбелязване`
+        }
       >
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-medium">{item.name}</p>
-            <p className="text-sm text-muted-foreground">
-              {formatEur(item.unitPriceCents)} × {item.quantity}
-            </p>
+            {!hidePrices ? (
+              <p className="text-sm text-muted-foreground">
+                {formatEur(item.unitPriceCents)} × {item.quantity}
+              </p>
+            ) : null}
           </div>
-          <p className="money font-medium">{formatEur(lineTotalCents)}</p>
+          {renderHeaderTrailing()}
         </div>
         {renderQty1ShareHint()}
       </button>
@@ -172,19 +236,26 @@ export function GuestItemRow({
     <>
       <button
         type="button"
-        onClick={() => setSpodeliOpen(true)}
+        disabled={readOnly}
+        onClick={handleMultiQtyCardClick}
         className={cn(cardClassName, 'gap-2 text-left')}
-        aria-label={`${item.name}, сподели бройки`}
+        aria-label={
+          hidePrices && isSelectedByMe
+            ? `${item.name}${mineTabRemoveLabel}`
+            : `${item.name}, сподели бройки`
+        }
         data-testid={`guest-item-spodeli-${item._id}`}
       >
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-medium">{item.name}</p>
-            <p className="text-sm text-muted-foreground">
-              {formatEur(item.unitPriceCents)} × {item.quantity}
-            </p>
+            {!hidePrices ? (
+              <p className="text-sm text-muted-foreground">
+                {formatEur(item.unitPriceCents)} × {item.quantity}
+              </p>
+            ) : null}
           </div>
-          <p className="money font-medium">{formatEur(lineTotalCents)}</p>
+          {renderHeaderTrailing()}
         </div>
         {renderMultiQtySummary()}
       </button>

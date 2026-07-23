@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { formatEur } from './format-currency'
 import {
   formatBillShareText,
+  formatBreakdownLineSharedText,
   formatBreakdownLineSuffix,
+  formatBreakdownLineUnitsText,
   formatCopyAmount,
 } from './bill-share'
 
@@ -65,6 +67,71 @@ describe('formatBreakdownLineSuffix', () => {
         totalUnits: 3,
       }),
     ).toBe(' · 3 от 3')
+
+    expect(
+      formatBreakdownLineSuffix(
+        {
+          kind: 'item',
+          label: 'Бира',
+          amountCents: 600,
+          units: 2,
+          totalUnits: 4,
+          sharedWithCount: 1,
+          sharedWithParticipantIds: ['p2'],
+        },
+        { p2: 'Мария' },
+      ),
+    ).toBe(' · 2 от 4 · споделено с Мария')
+  })
+})
+
+describe('formatBreakdownLineUnitsText', () => {
+  it('returns unit count text or undefined', () => {
+    expect(
+      formatBreakdownLineUnitsText({
+        kind: 'item',
+        label: 'Бира',
+        amountCents: 400,
+        units: 2,
+        totalUnits: 4,
+      }),
+    ).toBe('2 от 4')
+
+    expect(
+      formatBreakdownLineUnitsText({
+        kind: 'item',
+        label: 'Пица',
+        amountCents: 600,
+        sharedWithCount: 1,
+      }),
+    ).toBeUndefined()
+  })
+})
+
+describe('formatBreakdownLineSharedText', () => {
+  it('returns shared-with text for UI or undefined', () => {
+    expect(
+      formatBreakdownLineSharedText(
+        {
+          kind: 'item',
+          label: 'Салата',
+          amountCents: 600,
+          sharedWithCount: 1,
+          sharedWithParticipantIds: ['p2'],
+        },
+        { p2: 'Мария' },
+      ),
+    ).toBe('Споделено с Мария')
+
+    expect(
+      formatBreakdownLineSharedText({
+        kind: 'item',
+        label: 'Бира',
+        amountCents: 400,
+        units: 2,
+        totalUnits: 4,
+      }),
+    ).toBeUndefined()
   })
 })
 

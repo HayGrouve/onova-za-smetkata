@@ -462,4 +462,33 @@ describe('calculateParticipantBreakdown', () => {
       ).toBe(breakdown.owedCents)
     }
   })
+
+  it('includes shared-with metadata on multi-qty items when a unit is co-claimed', () => {
+    const input: BillBreakdownInput = {
+      participants: [
+        { id: 'p1', sortOrder: 0 },
+        { id: 'p2', sortOrder: 1 },
+      ],
+      items: [{ id: 'i1', name: 'Бира', unitPriceCents: 400, quantity: 3 }],
+      assignments: [
+        { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
+        { itemId: 'i1', participantId: 'p1', unitIndex: 1 },
+        { itemId: 'i1', participantId: 'p1', unitIndex: 2 },
+        { itemId: 'i1', participantId: 'p2', unitIndex: 2 },
+      ],
+    }
+
+    const p1 = calculateParticipantBreakdown(input, 'p1')
+    expect(p1.lines).toEqual([
+      expect.objectContaining({
+        kind: 'item',
+        label: 'Бира',
+        amountCents: 1000,
+        units: 3,
+        totalUnits: 3,
+        sharedWithCount: 1,
+        sharedWithParticipantIds: ['p2'],
+      }),
+    ])
+  })
 })

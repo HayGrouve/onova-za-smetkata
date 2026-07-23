@@ -656,7 +656,7 @@ function BillEditorContent({
         </div>
       </div>
 
-      {step < 4 && !reviewSheetOpen && (
+      {!reviewSheetOpen && (
         <StepNavBar
           step={step}
           onStepChange={goToStep}

@@ -260,8 +260,7 @@ export function calculateParticipantBreakdown(
     if (myUnitIndexes.length === 0) continue
 
     let amountCents = 0
-    let sharedWithCount = 0
-    let sharedWithParticipantIds: string[] = []
+    const sharedParticipantIdSet = new Set<string>()
 
     for (const unitIndex of myUnitIndexes) {
       const onUnit = itemAssignments.filter(
@@ -277,35 +276,32 @@ export function calculateParticipantBreakdown(
       if (!portion) continue
       amountCents += portion.cents
 
-      if (item.quantity === 1) {
-        sharedWithCount = sortedIds.length - 1
-        sharedWithParticipantIds = sortedIds.filter(
-          (id) => id !== participantId,
-        )
+      if (sortedIds.length > 1) {
+        for (const id of sortedIds) {
+          if (id !== participantId) sharedParticipantIdSet.add(id)
+        }
       }
     }
 
     itemsSubtotalCents += amountCents
 
-    if (item.quantity === 1) {
-      lines.push({
-        kind: 'item',
-        itemId: item.id,
-        label: item.name,
-        amountCents,
-        sharedWithCount,
-        sharedWithParticipantIds,
-      })
-      continue
-    }
+    const sharedWithParticipantIds = sortParticipantIds(
+      [...sharedParticipantIdSet],
+      input.participants,
+    )
+    const sharedWithCount = sharedWithParticipantIds.length
 
     lines.push({
       kind: 'item',
       itemId: item.id,
       label: item.name,
       amountCents,
-      units: myUnitIndexes.length,
-      totalUnits: item.quantity,
+      ...(sharedWithCount > 0
+        ? { sharedWithCount, sharedWithParticipantIds }
+        : {}),
+      ...(item.quantity > 1
+        ? { units: myUnitIndexes.length, totalUnits: item.quantity }
+        : {}),
     })
   }
 

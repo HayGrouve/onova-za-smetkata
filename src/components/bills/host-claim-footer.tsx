@@ -1,18 +1,11 @@
-import { PieChartIcon } from 'lucide-react'
-import { useCallback } from 'react'
-import { useMutation } from 'convex/react'
-import { toast } from 'sonner'
 import { ClaimShareDrawer } from '#/components/bills/claim-share-drawer.tsx'
 import { ParticipantBreakdownContent } from '#/components/bills/participant-breakdown-content.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
-import { ICON } from '#/lib/app-icons.ts'
 import type {
   BillBreakdownInput,
   ParticipantTotals,
 } from '#/lib/bill-calculations.ts'
 import { formatEur } from '#/lib/format-currency.ts'
-import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
-import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
 export interface HostClaimFooterProps {
@@ -32,55 +25,10 @@ export function HostClaimFooter({
   breakdownInput,
   totals,
   participantLabels,
-  readOnly = false,
 }: HostClaimFooterProps) {
-  const toggleAssignment = useMutation(api.assignments.toggle)
-  const leaveUnit = useMutation(api.assignments.leaveUnit)
-
-  const handleRemoveItem = useCallback(
-    async (itemId: Id<'items'>) => {
-      if (readOnly) return
-      try {
-        const item = breakdownInput.items.find((entry) => entry.id === itemId)
-        const myRows = breakdownInput.assignments.filter(
-          (entry) =>
-            entry.itemId === itemId && entry.participantId === participantId,
-        )
-
-        if (item && item.quantity > 1) {
-          for (const row of myRows) {
-            await leaveUnit({
-              itemId,
-              participantId,
-              unitIndex: row.unitIndex,
-            })
-          }
-          return
-        }
-
-        await toggleAssignment({ itemId, participantId })
-      } catch (error) {
-        toast.error(getConvexErrorMessage(error))
-      }
-    },
-    [
-      breakdownInput.assignments,
-      breakdownInput.items,
-      leaveUnit,
-      participantId,
-      readOnly,
-      toggleAssignment,
-    ],
-  )
-
   return (
     <ClaimShareDrawer
-      title={
-        <>
-          <PieChartIcon className={ICON.section} aria-hidden />
-          Разбивка на дяла
-        </>
-      }
+      title="Разбивка на дяла"
       status={<Badge variant="outline">платено</Badge>}
       details={
         <ParticipantBreakdownContent
@@ -93,24 +41,15 @@ export function HostClaimFooter({
           showPayActions={false}
           showStatusBadge={false}
           summaryVariant="claim-footer"
-          removableItemLines
-          readOnly={readOnly}
           participantLabels={participantLabels}
-          onRemoveItem={handleRemoveItem}
           summaryFooter={null}
         />
       }
       summary={
         <>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <p className="text-xs text-muted-foreground">Дял</p>
-              <p className="money font-medium">{formatEur(totals.owedCents)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Остатък</p>
-              <p className="money font-medium">{formatEur(0)}</p>
-            </div>
+          <div className="text-right text-sm">
+            <p className="text-xs text-muted-foreground">Дял</p>
+            <p className="money font-medium">{formatEur(totals.owedCents)}</p>
           </div>
           <p className="text-center text-xs text-muted-foreground">
             Покрито като домакин

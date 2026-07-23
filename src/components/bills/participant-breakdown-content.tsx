@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import type {
   BillBreakdownInput,
   ParticipantTotals,
@@ -8,14 +7,12 @@ import type {
 import { calculateParticipantBreakdown } from '#/lib/bill-calculations.ts'
 import {
   formatBreakdownLineLabel,
-  formatBreakdownLineSuffix,
+  formatBreakdownLineSharedText,
+  formatBreakdownLineUnitsText,
 } from '#/lib/bill-share.ts'
 import { formatEur } from '#/lib/format-currency.ts'
-import { getClaimUnassignCopy } from '#/lib/destructive-action-copy.ts'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Separator } from '#/components/ui/separator.tsx'
-import { CircleXIcon } from 'lucide-react'
-import { cn } from '#/lib/utils.ts'
 import { ParticipantPayActions } from '#/components/bills/participant-pay-actions.tsx'
 import { PaymentActions } from '#/components/bills/payment-actions.tsx'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -47,10 +44,6 @@ export interface ParticipantBreakdownContentProps {
   summaryVariant?: 'default' | 'claim-footer'
   /** When `claim-footer` and `null`, render lines only (no separator/totals). */
   summaryFooter?: ReactNode
-  /** Claim footer: show remove control on assigned item lines. */
-  removableItemLines?: boolean
-  readOnly?: boolean
-  onRemoveItem?: (itemId: Id<'items'>) => void | Promise<void>
   /** Participant id → display label for shared-item suffixes. */
   participantLabels?: Record<string, string>
 }
@@ -69,24 +62,11 @@ export function ParticipantBreakdownContent({
   showStatusBadge = true,
   summaryVariant = 'default',
   summaryFooter,
-  removableItemLines = false,
-  readOnly = false,
-  onRemoveItem,
   participantLabels,
 }: ParticipantBreakdownContentProps) {
-  const { confirm } = useConfirmAction()
   const breakdown = calculateParticipantBreakdown(breakdownInput, participantId)
   const remainingCents = Math.max(0, totals.balanceCents)
   const participantCount = breakdownInput.participants.length
-
-  async function handleRemoveItemWithConfirm(
-    itemId: Id<'items'>,
-    label: string,
-  ) {
-    const confirmed = await confirm(getClaimUnassignCopy(label))
-    if (!confirmed) return
-    await onRemoveItem?.(itemId)
-  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -101,43 +81,36 @@ export function ParticipantBreakdownContent({
           Няма разпределени артикули.
         </p>
       ) : (
-        breakdown.lines.map((line, index) => (
+        breakdown.lines.map((line, index) => {
+          const unitsText =
+            line.kind === 'item'
+              ? formatBreakdownLineUnitsText(line)
+              : undefined
+          const sharedText =
+            line.kind === 'item'
+              ? formatBreakdownLineSharedText(line, participantLabels)
+              : undefined
+
+          return (
           <div
             key={`${line.kind}-${line.kind === 'item' ? line.itemId : line.label}-${index}`}
             className="flex items-start justify-between gap-3 text-sm"
           >
-            <div className="flex min-w-0 items-start gap-2">
-              {removableItemLines &&
-              line.kind === 'item' &&
-              !readOnly &&
-              onRemoveItem ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    void handleRemoveItemWithConfirm(
-                      line.itemId as Id<'items'>,
-                      line.label,
-                    )
-                  }
-                  className={cn(
-                    'tap-feedback -ml-1 shrink-0 rounded-md p-1 text-primary/75',
-                    'hover:text-primary dark:text-primary/85',
-                  )}
-                  aria-label={`Премахни ${line.label}`}
-                >
-                  <CircleXIcon className="size-4" aria-hidden />
-                </button>
-              ) : null}
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <p className="text-muted-foreground">
                 {formatBreakdownLineLabel(line, participantCount)}
-                {line.kind === 'item'
-                  ? formatBreakdownLineSuffix(line, participantLabels)
-                  : ''}
               </p>
+              {unitsText ? (
+                <p className="text-xs text-muted-foreground">{unitsText}</p>
+              ) : null}
+              {sharedText ? (
+                <p className="text-xs text-muted-foreground">{sharedText}</p>
+              ) : null}
             </div>
             <p className="money shrink-0">{formatEur(line.amountCents)}</p>
           </div>
-        ))
+          )
+        })
       )}
 
       {summaryVariant === 'claim-footer' && summaryFooter == null ? null : (

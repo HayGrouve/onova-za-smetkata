@@ -61,24 +61,63 @@ export function formatBreakdownLineLabel(
   return line.label
 }
 
+export function formatBreakdownLineUnitsText(
+  line: ParticipantBreakdownLine,
+): string | undefined {
+  if (line.kind !== 'item') return undefined
+  if (line.units === undefined || line.totalUnits === undefined) return undefined
+  if (line.totalUnits <= 1) return undefined
+  return `${line.units} от ${line.totalUnits}`
+}
+
+export function formatBreakdownLineSharedText(
+  line: ParticipantBreakdownLine,
+  labels?: Record<string, string>,
+): string | undefined {
+  if (line.kind !== 'item') return undefined
+  if (line.sharedWithCount === undefined || line.sharedWithCount <= 0) {
+    return undefined
+  }
+
+  const ids = line.sharedWithParticipantIds ?? []
+  if (labels && ids.length > 0) {
+    const names = ids.map((id) => labels[id] ?? 'Участник')
+    return `Споделено с ${names.join(', ')}`
+  }
+  return `Споделено с ${line.sharedWithCount}`
+}
+
+function formatBreakdownLineSharedSuffix(
+  line: ParticipantBreakdownLine,
+  labels?: Record<string, string>,
+): string | undefined {
+  if (line.kind !== 'item') return undefined
+  if (line.sharedWithCount === undefined || line.sharedWithCount <= 0) {
+    return undefined
+  }
+
+  const ids = line.sharedWithParticipantIds ?? []
+  if (labels && ids.length > 0) {
+    const names = ids.map((id) => labels[id] ?? 'Участник')
+    return `споделено с ${names.join(', ')}`
+  }
+  return `споделено с ${line.sharedWithCount}`
+}
+
 export function formatBreakdownLineSuffix(
   line: ParticipantBreakdownLine,
   labels?: Record<string, string>,
 ): string {
   if (line.kind !== 'item') return ''
-  if (line.units !== undefined && line.totalUnits !== undefined) {
-    if (line.totalUnits <= 1) return ''
-    return ` · ${line.units} от ${line.totalUnits}`
-  }
-  if (line.sharedWithCount !== undefined && line.sharedWithCount > 0) {
-    const ids = line.sharedWithParticipantIds ?? []
-    if (labels && ids.length > 0) {
-      const names = ids.map((id) => labels[id] ?? 'Участник')
-      return ` · споделено с ${names.join(', ')}`
-    }
-    return ` · споделено с ${line.sharedWithCount}`
-  }
-  return ''
+
+  const parts: string[] = []
+  const unitsText = formatBreakdownLineUnitsText(line)
+  if (unitsText) parts.push(unitsText)
+
+  const sharedSuffix = formatBreakdownLineSharedSuffix(line, labels)
+  if (sharedSuffix) parts.push(sharedSuffix)
+
+  return parts.length > 0 ? ` · ${parts.join(' · ')}` : ''
 }
 
 function labelForParticipant(

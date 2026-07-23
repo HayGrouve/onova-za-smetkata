@@ -51,12 +51,14 @@ export function StepNavBar({
                 Назад
               </Button>
             )}
-            <Button
-              className="h-11"
-              onClick={() => onStepChange((step + 1) as BillStep)}
-            >
-              Напред
-            </Button>
+            {step < 4 && (
+              <Button
+                className="h-11"
+                onClick={() => onStepChange((step + 1) as BillStep)}
+              >
+                Напред
+              </Button>
+            )}
           </div>
         </div>
       </div>

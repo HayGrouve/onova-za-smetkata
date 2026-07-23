@@ -1,4 +1,4 @@
-import { SendIcon, PieChartIcon, CopyIcon } from 'lucide-react'
+import { SendIcon, CopyIcon } from 'lucide-react'
 import { useMutation, useQuery } from 'convex/react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -81,8 +81,6 @@ export function GuestClaimFooter({
   const createSolo = useMutation(api.combinedPayments.createSolo)
   const initiateTransfer = useMutation(api.combinedPayments.initiateTransfer)
   const cancelCombined = useMutation(api.combinedPayments.cancel)
-  const toggleAssignment = useMutation(api.assignments.toggle)
-  const leaveUnit = useMutation(api.assignments.leaveUnit)
   const revolutUsername = settings?.revolutUsername?.trim()
   const iban = settings?.iban?.trim()
   const hasRevolut = Boolean(revolutUsername)
@@ -293,52 +291,9 @@ export function GuestClaimFooter({
     }
   }
 
-  const handleRemoveItem = useCallback(
-    async (itemId: Id<'items'>) => {
-      if (readOnly) return
-      try {
-        const item = breakdownInput.items.find((entry) => entry.id === itemId)
-        const myRows = breakdownInput.assignments.filter(
-          (entry) =>
-            entry.itemId === itemId && entry.participantId === participantId,
-        )
-
-        if (item && item.quantity > 1) {
-          for (const row of myRows) {
-            await leaveUnit({
-              itemId,
-              participantId,
-              unitIndex: row.unitIndex,
-              sessionToken,
-            })
-          }
-          return
-        }
-
-        await toggleAssignment({ itemId, participantId, sessionToken })
-      } catch (error) {
-        toast.error(getConvexErrorMessage(error))
-      }
-    },
-    [
-      breakdownInput.assignments,
-      breakdownInput.items,
-      leaveUnit,
-      participantId,
-      readOnly,
-      sessionToken,
-      toggleAssignment,
-    ],
-  )
-
   return (
     <ClaimShareDrawer
-      title={
-        <>
-          <PieChartIcon className={ICON.section} aria-hidden />
-          Разбивка на дяла
-        </>
-      }
+      title="Разбивка на дяла"
       status={<Badge variant="outline">{statusLabels[totals.status]}</Badge>}
       details={
         <div className="flex flex-col gap-3">
@@ -352,10 +307,7 @@ export function GuestClaimFooter({
             showPayActions={false}
             showStatusBadge={false}
             summaryVariant="claim-footer"
-            removableItemLines
-            readOnly={readOnly}
             participantLabels={participantLabels}
-            onRemoveItem={handleRemoveItem}
             summaryFooter={null}
           />
           <CombinedPayChips
