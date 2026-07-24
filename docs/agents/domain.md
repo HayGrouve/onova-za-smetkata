@@ -2,6 +2,12 @@
 
 How the engineering skills should consume this repo's domain documentation when exploring the codebase.
 
+## This repo
+
+- **Product domain**: bill splitting for restaurants — glossary in root `CONTEXT.md`.
+- **Engineering conventions**: `docs/agents/guidelines.md` (architecture map, testing, env, pitfalls).
+- **ADRs**: `docs/adr/` (created lazily via `/domain-modeling` when decisions are made).
+
 ## Before exploring, read these
 
 - **`CONTEXT.md`** at the repo root, or

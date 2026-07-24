@@ -2,6 +2,16 @@
 
 Shared language for how people and money show up on a bill.
 
+Bulgarian mobile web PWA: a **Host** creates a bill from a restaurant receipt, adds **Participants**, assigns **Units** of each item, and collects **Outstanding** amounts from **Guests** who join via share link.
+
+## Flows
+
+**Host journey** — sign in → create/open bill → add participants and items (manual or receipt OCR) → assign units → share join link → track guest payments → finalize bill (locks editing).
+
+**Guest journey** — open share link → pick participant seat on join page → claim units on claim page → pay share (e.g. Revolut) → host sees payment status.
+
+The host also has a participant seat on the bill but is never **Outstanding**.
+
 ## Language
 
 **Host**:
@@ -47,3 +57,9 @@ _Avoid_: completed, closed, settled (settled is about collection, not bill statu
 **Prepared bill**:
 A first-onboarding milestone: the bill has a restaurant name, at least one Guest, at least one validly priced item, and every item Unit is assigned. A prepared bill may still have **draft** Bill status.
 _Avoid_: completed bill, final bill
+
+## Related docs
+
+- `docs/agents/guidelines.md` — architecture, testing, and implementation conventions for agents
+- `README.md` — local development and scripts
+- `docs/DEPLOY.md` — production deploy, env vars, security
