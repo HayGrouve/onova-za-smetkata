@@ -2,7 +2,7 @@
 
 Playwright covers **3 critical-path** browser flows (session conflict, claim-search drawer, combined-pay banner timing). Tests need a **working dev auth** setup on Convex.
 
-Run these locally before merge when you touch guest/host browser flows. In CI, the `e2e` job runs only when the repo secret `E2E_VITE_CONVEX_URL` is set; otherwise it is skipped. A **required PR gate** is deferred — see `docs/research/e2e-implementation-scope.md` Phase 2 when that changes.
+Run these locally before merge when you touch guest/host browser flows. In CI, the `e2e` job runs only when the repo secret `E2E_VITE_CONVEX_URL` is set; otherwise it is skipped. A **required PR gate** is deferred until E2E runs in CI for every PR.
 
 ## Prerequisites
 

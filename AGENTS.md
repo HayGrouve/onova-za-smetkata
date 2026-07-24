@@ -2,11 +2,11 @@
 
 ### Issue tracker
 
-Issues live in GitHub Issues for `HayGrouve/onova-za-smetkata` (via `gh`). See `docs/agents/issue-tracker.md`.
+GitHub Issues via `gh`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
-Five canonical roles, label string equals role name. See `docs/agents/triage-labels.md`.
+Default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 

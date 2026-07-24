@@ -20,6 +20,7 @@ export default [
       'prettier.config.js',
       'convex/_generated/**',
       '.vercel/**',
+      '.worktrees/**',
       'public/sw.js',
     ],
   },

@@ -32,8 +32,6 @@ pnpm run lint          # ESLint
 
 See [docs/DEPLOY.md](docs/DEPLOY.md) for the full release checklist, security notes, and smoke tests.
 
-Production launch spec: [docs/superpowers/specs/2026-07-08-production-launch-design.md](docs/superpowers/specs/2026-07-08-production-launch-design.md)
-
 Quick release:
 
 ```bash
