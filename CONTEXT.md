@@ -46,6 +46,10 @@ _Avoid_: treating quantity > 1 as a single indivisible claim pool
 Zero-based position of a unit on an item line (`0 … quantity−1`). Item membership rows reference `(itemId, participantId, unitIndex)`.
 _Avoid_: one-based indexing in storage; overloading “unit” to mean the whole line
 
+**Unit share allocation**:
+How a single unit's price (in cents) is split among the participants assigned to that unit. Assignees are ordered by participant `sortOrder`; cent remainders go to earlier seats in that order. Claim previews and final totals must use the same rule.
+_Avoid_: lexicographic sort on participant IDs; splitting the whole line total when the model is per-unit
+
 **Outstanding**:
 Money still to collect from guests toward their shares. The host never has outstanding.
 _Avoid_: unpaid balance for the host

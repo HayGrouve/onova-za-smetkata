@@ -1,22 +1,20 @@
-import { splitLineTotal } from './bill-calculations'
+import type { ParticipantInput } from './bill-calculations'
+import { unitShareCentsForParticipant } from './unit-share-allocation'
 
 export function previewShareCents(
-  lineTotalCents: number,
+  unitPriceCents: number,
   assigneeIds: string[],
   participantId: string,
   joining: boolean,
+  participants: ParticipantInput[],
 ): number {
-  const uniqueAssignees = [...new Set(assigneeIds)]
-  const idsForSplit =
-    joining && !uniqueAssignees.includes(participantId)
-      ? [...uniqueAssignees, participantId]
-      : uniqueAssignees.length > 0
-        ? uniqueAssignees
-        : [participantId]
-
-  const sortedIds = [...new Set(idsForSplit)].sort()
-  const portions = splitLineTotal(lineTotalCents, sortedIds)
-  return portions.find((p) => p.id === participantId)?.cents ?? lineTotalCents
+  return unitShareCentsForParticipant({
+    unitPriceCents,
+    assigneeIds,
+    participants,
+    participantId,
+    joining,
+  })
 }
 
 export function formatShareParticipantCount(count: number): string {

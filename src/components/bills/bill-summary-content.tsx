@@ -52,6 +52,7 @@ import type {
   BillBreakdownInput,
   PaymentStatus,
 } from '#/lib/bill-calculations.ts'
+import { toBillCalculationSnapshot } from '#/lib/bill-calculation-snapshot.ts'
 import { getBillDeleteCopy } from '#/lib/destructive-action-copy.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { ICON } from '#/lib/app-icons.ts'
@@ -92,50 +93,34 @@ export function BillSummaryContent({
   const paymentSettingsStatus = usePaymentSettingsStatus()
   const { openPaymentSettings } = usePaymentSettingsSheet()
 
-  const calcInputs = useMemo(() => {
+  const billSnapshot = useMemo(() => {
     if (!data) return null
-    return {
-      participants: data.participants.map((p) => ({
-        id: p._id,
-        sortOrder: p.sortOrder,
-      })),
-      items: data.items.map((i) => ({
-        id: i._id,
-        unitPriceCents: i.unitPriceCents,
-        quantity: i.quantity,
-      })),
-      assignments: data.assignments.map((a) => ({
-        itemId: a.itemId,
-        participantId: a.participantId,
-        unitIndex: a.unitIndex,
-      })),
-      tipCents: data.bill.tipCents ?? 0,
-      hostParticipantId: data.bill.hostParticipantId,
-    }
+    return toBillCalculationSnapshot(
+      {
+        participants: data.participants,
+        items: data.items,
+        assignments: data.assignments,
+        payments: data.payments,
+      },
+      {
+        tipCents: data.bill.tipCents ?? 0,
+        hostParticipantId: data.bill.hostParticipantId,
+      },
+    )
   }, [data])
 
   const totals = useMemo(() => {
-    if (!data || !calcInputs) return null
-    return calculateBillTotals({
-      ...calcInputs,
-      payments: data.payments.map((p) => ({
-        participantId: p.participantId,
-        amountCents: p.amountCents,
-      })),
-    })
-  }, [data, calcInputs])
+    if (!billSnapshot) return null
+    return calculateBillTotals(billSnapshot.calculationInput)
+  }, [billSnapshot])
 
   const errors = useMemo(() => {
-    if (!calcInputs || !data) return []
+    if (!billSnapshot || !data) return []
     return validateBillForFinalize({
-      ...calcInputs,
+      ...billSnapshot.calculationInput,
       restaurantName: data.bill.restaurantName,
-      payments: data.payments.map((p) => ({
-        participantId: p.participantId,
-        amountCents: p.amountCents,
-      })),
     })
-  }, [calcInputs, data])
+  }, [billSnapshot, data])
 
   const labels = useMemo(
     () => (data ? buildParticipantLabels(data.participants) : {}),
@@ -143,26 +128,8 @@ export function BillSummaryContent({
   )
 
   const breakdownInput = useMemo((): BillBreakdownInput | null => {
-    if (!data) return null
-    return {
-      participants: data.participants.map((p) => ({
-        id: p._id,
-        sortOrder: p.sortOrder,
-      })),
-      items: data.items.map((i) => ({
-        id: i._id,
-        name: i.name,
-        unitPriceCents: i.unitPriceCents,
-        quantity: i.quantity,
-      })),
-      assignments: data.assignments.map((a) => ({
-        itemId: a.itemId,
-        participantId: a.participantId,
-        unitIndex: a.unitIndex,
-      })),
-      tipCents: data.bill.tipCents ?? 0,
-    }
-  }, [data])
+    return billSnapshot?.breakdownInput ?? null
+  }, [billSnapshot])
 
   if (data === undefined) {
     return (

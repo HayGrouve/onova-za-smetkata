@@ -1,6 +1,7 @@
 import type { Id } from '../_generated/dataModel'
 import type { QueryCtx } from '../_generated/server'
 import { calculateBillTotals, totalOutstandingCents } from './billCalculations'
+import { toBillCalculationSnapshot } from './billCalculationSnapshot'
 
 export async function loadBillRelations(ctx: QueryCtx, billId: Id<'bills'>) {
   const participants = await ctx.db
@@ -57,28 +58,11 @@ export function buildListSummaryFields(
     }
   }
 
-  const totals = calculateBillTotals({
-    participants: relations.participants.map((participant) => ({
-      id: participant._id,
-      sortOrder: participant.sortOrder,
-    })),
-    items: relations.items.map((item) => ({
-      id: item._id,
-      unitPriceCents: item.unitPriceCents,
-      quantity: item.quantity,
-    })),
-    assignments: relations.assignments.map((assignment) => ({
-      itemId: assignment.itemId,
-      participantId: assignment.participantId,
-      unitIndex: assignment.unitIndex,
-    })),
-    payments: relations.payments.map((payment) => ({
-      participantId: payment.participantId,
-      amountCents: payment.amountCents,
-    })),
+  const { calculationInput } = toBillCalculationSnapshot(relations, {
     tipCents: bill.tipCents ?? 0,
     hostParticipantId: bill.hostParticipantId,
   })
+  const totals = calculateBillTotals(calculationInput)
 
   return {
     listBillTotalCents: totals.billTotalCents,

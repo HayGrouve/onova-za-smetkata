@@ -25,6 +25,7 @@ import {
 } from './lib/billMetadataSchema'
 import { createShareToken } from './lib/shareToken'
 import { calculateBillTotals } from './lib/billCalculations'
+import { toBillCalculationSnapshot } from './lib/billCalculationSnapshot'
 import { planHostParticipantOnBillCreate } from './lib/hostBillParticipant'
 import { touchBill } from './lib/touchBill'
 
@@ -123,28 +124,14 @@ export const getForGuest = query({
       }
     }
 
-    const totals = calculateBillTotals({
-      participants: participants.map((p) => ({
-        id: p._id,
-        sortOrder: p.sortOrder,
-      })),
-      items: items.map((i) => ({
-        id: i._id,
-        unitPriceCents: i.unitPriceCents,
-        quantity: i.quantity,
-      })),
-      assignments: assignments.map((a) => ({
-        itemId: a.itemId,
-        participantId: a.participantId,
-        unitIndex: a.unitIndex,
-      })),
-      payments: payments.map((p) => ({
-        participantId: p.participantId,
-        amountCents: p.amountCents,
-      })),
-      tipCents: bill.tipCents ?? 0,
-      hostParticipantId: bill.hostParticipantId,
-    })
+    const { calculationInput } = toBillCalculationSnapshot(
+      { participants, items, assignments, payments },
+      {
+        tipCents: bill.tipCents ?? 0,
+        hostParticipantId: bill.hostParticipantId,
+      },
+    )
+    const totals = calculateBillTotals(calculationInput)
     const participantBalances = participants.map((p) => ({
       participantId: p._id,
       name: p.name,
@@ -267,28 +254,17 @@ export const finalize = mutation({
     const { participants, items, assignments, payments } =
       await loadBillRelations(ctx, args.billId)
 
+    const { calculationInput } = toBillCalculationSnapshot(
+      { participants, items, assignments, payments },
+      {
+        tipCents: bill.tipCents ?? 0,
+        hostParticipantId: bill.hostParticipantId,
+      },
+    )
+
     assertBillCanFinalize({
       restaurantName: bill.restaurantName,
-      participants: participants.map((p) => ({
-        id: p._id,
-        sortOrder: p.sortOrder,
-      })),
-      items: items.map((i) => ({
-        id: i._id,
-        unitPriceCents: i.unitPriceCents,
-        quantity: i.quantity,
-      })),
-      assignments: assignments.map((a) => ({
-        itemId: a.itemId,
-        participantId: a.participantId,
-        unitIndex: a.unitIndex,
-      })),
-      payments: payments.map((p) => ({
-        participantId: p.participantId,
-        amountCents: p.amountCents,
-      })),
-      tipCents: bill.tipCents ?? 0,
-      hostParticipantId: bill.hostParticipantId,
+      ...calculationInput,
     })
 
     await ctx.db.patch(args.billId, {

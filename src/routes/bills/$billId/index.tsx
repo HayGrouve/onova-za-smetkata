@@ -42,6 +42,7 @@ import {
 import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { calculateBillTotals } from '#/lib/bill-calculations.ts'
+import { toBillCalculationSnapshot } from '#/lib/bill-calculation-snapshot.ts'
 import { getBillStepCompletion } from '#/lib/bill-step-completion.ts'
 import { countItemsWithEmptyUnits } from '../../../../shared/unit-coverage.ts'
 import {
@@ -273,89 +274,42 @@ function BillEditorContent({
     return parsed.ok ? parsed.cents : 0
   }, [tip])
 
-  const totals = useMemo(
-    () =>
-      calculateBillTotals({
-        participants: participants.map((p) => ({
-          id: p._id,
-          sortOrder: p.sortOrder,
-        })),
-        items: items.map((i) => ({
-          id: i._id,
-          unitPriceCents: i.unitPriceCents,
-          quantity: i.quantity,
-        })),
-        assignments: assignments.map((a) => ({
-          itemId: a.itemId,
-          participantId: a.participantId,
-          unitIndex: a.unitIndex,
-        })),
-        payments: payments.map((p) => ({
-          participantId: p.participantId,
-          amountCents: p.amountCents,
-        })),
+  const billSnapshot = useMemo(() => {
+    return toBillCalculationSnapshot(
+      { participants, items, assignments, payments },
+      {
         tipCents: tipCentsForTotals,
         hostParticipantId: bill.hostParticipantId,
-      }),
-    [
-      participants,
-      items,
-      assignments,
-      payments,
-      tipCentsForTotals,
-      bill.hostParticipantId,
-    ],
+      },
+    )
+  }, [
+    participants,
+    items,
+    assignments,
+    payments,
+    tipCentsForTotals,
+    bill.hostParticipantId,
+  ])
+
+  const totals = useMemo(
+    () => calculateBillTotals(billSnapshot.calculationInput),
+    [billSnapshot],
   )
 
   const unassignedItemsCount = useMemo(() => {
     return countItemsWithEmptyUnits(
-      items.map((item) => ({
-        id: item._id,
-        unitPriceCents: item.unitPriceCents,
-        quantity: item.quantity,
-      })),
-      assignments.map((a) => ({
-        itemId: a.itemId,
-        participantId: a.participantId,
-        unitIndex: a.unitIndex,
-      })),
+      billSnapshot.calculationInput.items,
+      billSnapshot.calculationInput.assignments,
     )
-  }, [items, assignments])
+  }, [billSnapshot])
 
   const stepCompletion = useMemo(
     () =>
       getBillStepCompletion({
         restaurantName,
-        participants: participants.map((p) => ({
-          id: p._id,
-          sortOrder: p.sortOrder,
-        })),
-        items: items.map((i) => ({
-          id: i._id,
-          unitPriceCents: i.unitPriceCents,
-          quantity: i.quantity,
-        })),
-        assignments: assignments.map((a) => ({
-          itemId: a.itemId,
-          participantId: a.participantId,
-          unitIndex: a.unitIndex,
-        })),
-        payments: payments.map((p) => ({
-          participantId: p.participantId,
-          amountCents: p.amountCents,
-        })),
-        tipCents: tipCentsForTotals,
-        hostParticipantId: bill.hostParticipantId,
+        ...billSnapshot.calculationInput,
       }),
-    [
-      restaurantName,
-      participants,
-      items,
-      assignments,
-      payments,
-      tipCentsForTotals,
-      bill.hostParticipantId,
-    ],
+    [restaurantName, billSnapshot],
   )
 
   return (

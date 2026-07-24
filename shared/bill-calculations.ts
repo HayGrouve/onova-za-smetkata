@@ -1,4 +1,10 @@
 import { countItemsWithEmptyUnits, itemHasEmptyUnit } from './unit-coverage'
+import {
+  splitLineTotal,
+  splitUnitShareAmongAssignees,
+} from './unit-share-allocation'
+
+export { splitLineTotal } from './unit-share-allocation'
 
 export type PaymentStatus = 'unpaid' | 'partial' | 'paid'
 
@@ -60,19 +66,6 @@ export function splitUnits(quantity: number, count: number): number[] {
   )
 }
 
-export function splitLineTotal(
-  totalCents: number,
-  participantIds: string[],
-): Array<{ id: string; cents: number }> {
-  if (participantIds.length === 0) return []
-  const base = Math.floor(totalCents / participantIds.length)
-  const remainder = totalCents % participantIds.length
-  return participantIds.map((id, index) => ({
-    id,
-    cents: base + (index < remainder ? 1 : 0),
-  }))
-}
-
 function sortParticipantIds(
   participantIds: string[],
   participants: ParticipantInput[],
@@ -124,11 +117,12 @@ function addUnitShareToOwed(
   )
   if (onUnit.length === 0) return
 
-  const sortedIds = sortParticipantIds(
-    onUnit.map((assignment) => assignment.participantId),
+  const assigneeIds = onUnit.map((assignment) => assignment.participantId)
+  for (const portion of splitUnitShareAmongAssignees(
+    item.unitPriceCents,
+    assigneeIds,
     participants,
-  )
-  for (const portion of splitLineTotal(item.unitPriceCents, sortedIds)) {
+  )) {
     owedByParticipant[portion.id] =
       (owedByParticipant[portion.id] ?? 0) + portion.cents
   }
@@ -265,18 +259,18 @@ export function calculateParticipantBreakdown(
       const onUnit = itemAssignments.filter(
         (assignment) => assignment.unitIndex === unitIndex,
       )
-      const sortedIds = sortParticipantIds(
-        onUnit.map((assignment) => assignment.participantId),
+      const assigneeIds = onUnit.map((assignment) => assignment.participantId)
+      const portions = splitUnitShareAmongAssignees(
+        item.unitPriceCents,
+        assigneeIds,
         input.participants,
       )
-      const portion = splitLineTotal(item.unitPriceCents, sortedIds).find(
-        (p) => p.id === participantId,
-      )
+      const portion = portions.find((p) => p.id === participantId)
       if (!portion) continue
       amountCents += portion.cents
 
-      if (sortedIds.length > 1) {
-        for (const id of sortedIds) {
+      if (portions.length > 1) {
+        for (const { id } of portions) {
           if (id !== participantId) sharedParticipantIdSet.add(id)
         }
       }

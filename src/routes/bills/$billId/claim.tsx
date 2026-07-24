@@ -15,6 +15,7 @@ import { useGuestSessionHeartbeat } from '#/hooks/use-guest-session-heartbeat.ts
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
 import { calculateBillTotals } from '#/lib/bill-calculations.ts'
 import type { BillBreakdownInput } from '#/lib/bill-calculations.ts'
+import { toBillCalculationSnapshot } from '#/lib/bill-calculation-snapshot.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import {
   clearStoredGuestParticipant,
@@ -138,52 +139,30 @@ function GuestClaimContent({
 
   const storedParticipantId = storedSession?.participantId ?? null
 
+  const billSnapshot = useMemo(() => {
+    if (!data) return null
+    return toBillCalculationSnapshot(
+      {
+        participants: data.participants,
+        items: data.items,
+        assignments: data.assignments,
+        payments: data.myPayments,
+      },
+      {
+        tipCents: data.bill.tipCents ?? 0,
+        hostParticipantId: data.hostParticipantId,
+      },
+    )
+  }, [data])
+
   const totals = useMemo(() => {
-    if (!data || !storedParticipantId) return null
-    return calculateBillTotals({
-      participants: data.participants.map((p) => ({
-        id: p._id,
-        sortOrder: p.sortOrder,
-      })),
-      items: data.items.map((i) => ({
-        id: i._id,
-        unitPriceCents: i.unitPriceCents,
-        quantity: i.quantity,
-      })),
-      assignments: data.assignments.map((a) => ({
-        itemId: a.itemId,
-        participantId: a.participantId,
-        unitIndex: a.unitIndex,
-      })),
-      payments: data.myPayments.map((p) => ({
-        participantId: p.participantId,
-        amountCents: p.amountCents,
-      })),
-      tipCents: data.bill.tipCents ?? 0,
-    })
-  }, [data, storedParticipantId])
+    if (!billSnapshot || !storedParticipantId) return null
+    return calculateBillTotals(billSnapshot.calculationInput)
+  }, [billSnapshot, storedParticipantId])
 
   const breakdownInput = useMemo((): BillBreakdownInput | null => {
-    if (!data) return null
-    return {
-      participants: data.participants.map((p) => ({
-        id: p._id,
-        sortOrder: p.sortOrder,
-      })),
-      items: data.items.map((i) => ({
-        id: i._id,
-        name: i.name,
-        unitPriceCents: i.unitPriceCents,
-        quantity: i.quantity,
-      })),
-      assignments: data.assignments.map((a) => ({
-        itemId: a.itemId,
-        participantId: a.participantId,
-        unitIndex: a.unitIndex,
-      })),
-      tipCents: data.bill.tipCents ?? 0,
-    }
-  }, [data])
+    return billSnapshot?.breakdownInput ?? null
+  }, [billSnapshot])
 
   const visibleItems = useMemo(() => {
     if (!data || !storedParticipantId) return []
@@ -374,6 +353,7 @@ function GuestClaimContent({
                 key={item._id}
                 item={item}
                 participantId={storedParticipantId as Id<'participants'>}
+                participants={billSnapshot?.calculationInput.participants ?? []}
                 sessionToken={storedSession.sessionToken}
                 itemAssignments={assignmentsByItemId.get(item._id) ?? []}
                 participantLabels={labels}
@@ -434,53 +414,30 @@ function HostClaimContent({ billId }: { billId: Id<'bills'> }) {
 
   const hostParticipantId = data?.bill.hostParticipantId ?? null
 
-  const totals = useMemo(() => {
+  const billSnapshot = useMemo(() => {
     if (!data || !hostParticipantId) return null
-    return calculateBillTotals({
-      participants: data.participants.map((p) => ({
-        id: p._id,
-        sortOrder: p.sortOrder,
-      })),
-      items: data.items.map((i) => ({
-        id: i._id,
-        unitPriceCents: i.unitPriceCents,
-        quantity: i.quantity,
-      })),
-      assignments: data.assignments.map((a) => ({
-        itemId: a.itemId,
-        participantId: a.participantId,
-        unitIndex: a.unitIndex,
-      })),
-      payments: data.payments.map((p) => ({
-        participantId: p.participantId,
-        amountCents: p.amountCents,
-      })),
-      tipCents: data.bill.tipCents ?? 0,
-      hostParticipantId,
-    })
+    return toBillCalculationSnapshot(
+      {
+        participants: data.participants,
+        items: data.items,
+        assignments: data.assignments,
+        payments: data.payments,
+      },
+      {
+        tipCents: data.bill.tipCents ?? 0,
+        hostParticipantId,
+      },
+    )
   }, [data, hostParticipantId])
 
+  const totals = useMemo(() => {
+    if (!billSnapshot) return null
+    return calculateBillTotals(billSnapshot.calculationInput)
+  }, [billSnapshot])
+
   const breakdownInput = useMemo((): BillBreakdownInput | null => {
-    if (!data) return null
-    return {
-      participants: data.participants.map((p) => ({
-        id: p._id,
-        sortOrder: p.sortOrder,
-      })),
-      items: data.items.map((i) => ({
-        id: i._id,
-        name: i.name,
-        unitPriceCents: i.unitPriceCents,
-        quantity: i.quantity,
-      })),
-      assignments: data.assignments.map((a) => ({
-        itemId: a.itemId,
-        participantId: a.participantId,
-        unitIndex: a.unitIndex,
-      })),
-      tipCents: data.bill.tipCents ?? 0,
-    }
-  }, [data])
+    return billSnapshot?.breakdownInput ?? null
+  }, [billSnapshot])
 
   const visibleItems = useMemo(() => {
     if (!data || !hostParticipantId) return []
@@ -644,6 +601,7 @@ function HostClaimContent({ billId }: { billId: Id<'bills'> }) {
                 key={item._id}
                 item={item}
                 participantId={hostParticipantId}
+                participants={billSnapshot?.calculationInput.participants ?? []}
                 itemAssignments={assignmentsByItemId.get(item._id) ?? []}
                 participantLabels={labels}
                 readOnly={readOnly}

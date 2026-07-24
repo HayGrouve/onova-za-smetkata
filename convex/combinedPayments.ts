@@ -24,54 +24,25 @@ import { GUEST_FLOW_MESSAGES } from './lib/guestFlowMessages'
 import { requireGuestSession } from './lib/requireGuestSession'
 import { calculateBillTotals } from './lib/billCalculations'
 import type { BillTotals } from './lib/billCalculations'
+import { toBillCalculationSnapshot } from './lib/billCalculationSnapshot'
+import { loadBillRelations } from './lib/billListSummary'
 
 async function loadBillTotalsForCombinedPay(
   ctx: QueryCtx | MutationCtx,
   billId: Id<'bills'>,
 ): Promise<BillTotals> {
-  const items = await ctx.db
-    .query('items')
-    .withIndex('by_billId', (q) => q.eq('billId', billId))
-    .collect()
-  const participants = await ctx.db
-    .query('participants')
-    .withIndex('by_billId', (q) => q.eq('billId', billId))
-    .collect()
-  const assignments = await ctx.db
-    .query('itemAssignments')
-    .withIndex('by_billId', (q) => q.eq('billId', billId))
-    .collect()
-  const payments = await ctx.db
-    .query('payments')
-    .withIndex('by_billId', (q) => q.eq('billId', billId))
-    .collect()
   const bill = await ctx.db.get(billId)
   if (!bill) {
     throw new ConvexError('Сметката не е намерена.')
   }
 
-  return calculateBillTotals({
-    participants: participants.map((p) => ({
-      id: p._id,
-      sortOrder: p.sortOrder,
-    })),
-    items: items.map((i) => ({
-      id: i._id,
-      unitPriceCents: i.unitPriceCents,
-      quantity: i.quantity,
-    })),
-    assignments: assignments.map((a) => ({
-      itemId: a.itemId,
-      participantId: a.participantId,
-      unitIndex: a.unitIndex,
-    })),
-    payments: payments.map((p) => ({
-      participantId: p.participantId,
-      amountCents: p.amountCents,
-    })),
+  const relations = await loadBillRelations(ctx, billId)
+  const { calculationInput } = toBillCalculationSnapshot(relations, {
     tipCents: bill.tipCents ?? 0,
     hostParticipantId: bill.hostParticipantId,
   })
+
+  return calculateBillTotals(calculationInput)
 }
 
 function buildCoveredPendingIds(

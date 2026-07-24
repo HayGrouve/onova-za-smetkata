@@ -15,11 +15,14 @@ import {
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
+import type { ParticipantInput } from '../../../shared/bill-calculations'
+
 import { SpodeliDialog } from '#/components/bills/spodeli-dialog.tsx'
 
 export interface GuestItemRowProps {
   item: Doc<'items'>
   participantId: Id<'participants'>
+  participants: ParticipantInput[]
   sessionToken?: string
   itemAssignments: Doc<'itemAssignments'>[]
   participantLabels: Record<string, string>
@@ -32,6 +35,7 @@ export interface GuestItemRowProps {
 export function GuestItemRow({
   item,
   participantId,
+  participants,
   sessionToken,
   itemAssignments,
   participantLabels,
@@ -132,10 +136,11 @@ export function GuestItemRow({
 
   function renderQty1ShareHint() {
     const shareCents = previewShareCents(
-      lineTotalCents,
+      item.unitPriceCents,
       assigneeIdsOnUnit0,
       participantId,
       !isSelectedByMe,
+      participants,
     )
 
     if (isSelectedByMe) {
@@ -264,6 +269,7 @@ export function GuestItemRow({
         onOpenChange={setSpodeliOpen}
         item={item}
         participantId={participantId}
+        participants={participants}
         sessionToken={sessionToken}
         itemAssignments={itemAssignments}
         participantLabels={participantLabels}

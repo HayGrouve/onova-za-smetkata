@@ -3,6 +3,8 @@ import { ConvexError, v } from 'convex/values'
 import { assertBillDraft } from './lib/assertBillDraft'
 import { requireBillOwner } from './lib/auth'
 import { calculateBillTotals } from './lib/billCalculations'
+import { toBillCalculationSnapshot } from './lib/billCalculationSnapshot'
+import { loadBillRelations } from './lib/billListSummary'
 import { validatePaymentAdd } from './lib/paymentAmountSchema'
 import { touchBill } from './lib/touchBill'
 
@@ -21,22 +23,8 @@ export const add = mutation({
       throw new ConvexError('Участникът не принадлежи на тази сметка.')
     }
 
-    const items = await ctx.db
-      .query('items')
-      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
-      .collect()
-    const participants = await ctx.db
-      .query('participants')
-      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
-      .collect()
-    const assignments = await ctx.db
-      .query('itemAssignments')
-      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
-      .collect()
-    const payments = await ctx.db
-      .query('payments')
-      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
-      .collect()
+    const relations = await loadBillRelations(ctx, args.billId)
+    const { payments } = relations
     const bill = await ctx.db.get(args.billId)
     if (!bill) {
       throw new ConvexError('Сметката не е намерена.')
@@ -50,28 +38,11 @@ export const add = mutation({
       throw new ConvexError('Домакинът не се маркира като платил.')
     }
 
-    const totals = calculateBillTotals({
-      participants: participants.map((p) => ({
-        id: p._id,
-        sortOrder: p.sortOrder,
-      })),
-      items: items.map((i) => ({
-        id: i._id,
-        unitPriceCents: i.unitPriceCents,
-        quantity: i.quantity,
-      })),
-      assignments: assignments.map((a) => ({
-        itemId: a.itemId,
-        participantId: a.participantId,
-        unitIndex: a.unitIndex,
-      })),
-      payments: payments.map((p) => ({
-        participantId: p.participantId,
-        amountCents: p.amountCents,
-      })),
+    const { calculationInput } = toBillCalculationSnapshot(relations, {
       tipCents: bill.tipCents ?? 0,
       hostParticipantId: bill.hostParticipantId,
     })
+    const totals = calculateBillTotals(calculationInput)
 
     const owedCents = totals.byParticipant[args.participantId].owedCents
     const paidCents = payments

@@ -15,6 +15,7 @@ import {
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
+import type { ParticipantInput } from '../../../shared/bill-calculations'
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ export interface SpodeliDialogProps {
   onOpenChange: (open: boolean) => void
   item: Doc<'items'>
   participantId: Id<'participants'>
+  participants: ParticipantInput[]
   sessionToken?: string
   itemAssignments: Doc<'itemAssignments'>[]
   participantLabels: Record<string, string>
@@ -39,6 +41,7 @@ export function SpodeliDialog({
   onOpenChange,
   item,
   participantId,
+  participants,
   sessionToken,
   itemAssignments,
   participantLabels,
@@ -94,6 +97,7 @@ export function SpodeliDialog({
               unitIndex={unitIndex}
               itemAssignments={itemAssignments}
               participantId={participantId}
+              participants={participants}
               participantLabels={participantLabels}
               readOnly={readOnly}
               onToggle={() => void handleUnitToggle(unitIndex)}
@@ -110,6 +114,7 @@ interface SpodeliUnitCardProps {
   unitIndex: number
   itemAssignments: Doc<'itemAssignments'>[]
   participantId: Id<'participants'>
+  participants: ParticipantInput[]
   participantLabels: Record<string, string>
   readOnly: boolean
   onToggle: () => void
@@ -120,6 +125,7 @@ function SpodeliUnitCard({
   unitIndex,
   itemAssignments,
   participantId,
+  participants,
   participantLabels,
   readOnly,
   onToggle,
@@ -138,6 +144,7 @@ function SpodeliUnitCard({
     assigneeIds,
     participantId,
     !joined,
+    participants,
   )
 
   const cardClassName = cn(
