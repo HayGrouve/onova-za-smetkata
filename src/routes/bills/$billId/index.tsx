@@ -64,6 +64,10 @@ import { BillHeaderTitleSync } from '#/components/layout/bill-header-title.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
 import { ContentRouteChoice } from '#/components/host-onboarding/content-route-choice.tsx'
 import { useHostOnboarding } from '#/components/host-onboarding/host-onboarding-provider.tsx'
+import { GuidanceTarget } from '#/lib/guidance-focus-prototype/guidance-target.tsx'
+import { useGuidanceFocus } from '#/lib/guidance-focus-prototype/use-guidance-focus.ts'
+import { readDismissedHintIds } from '#/lib/host-onboarding-session.ts'
+import { deriveHostOnboardingGuidance } from '../../../../shared/host-onboarding.ts'
 import { HOST_ONBOARDING_STEP_BAR } from '../../../../shared/host-onboarding-messages.ts'
 import { isHostParticipant } from '../../../../shared/host-bill-participant.ts'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
@@ -157,11 +161,17 @@ function BillEditorContent({
   const { step } = Route.useSearch()
   const navigate = Route.useNavigate()
 
-  function goToStep(next: BillStep) {
-    void navigate({ search: { step: next }, resetScroll: true })
+  function goToStep(next: BillStep, options?: { resetScroll?: boolean }) {
+    void navigate({
+      search: { step: next },
+      resetScroll: options?.resetScroll ?? true,
+    })
   }
 
   const receiptUrl = useQuery(api.files.getReceiptUrl, { billId })
+
+  const onboardingActive = guidanceOnForBill(billId)
+  const contentRoute = getContentRoute(billId)
 
   const {
     galleryInputRef,
@@ -182,7 +192,11 @@ function BillEditorContent({
     setReviewSheetOpen,
     activeScanId,
     importMode,
-  } = useReceiptScan({ billId, items, assignments })
+  } = useReceiptScan({
+    billId,
+    items,
+    assignments,
+  })
 
   const [restaurantName, setRestaurantName] = useState(bill.restaurantName)
   const [date, setDate] = useState(() => toDateInputValue(bill.date))
@@ -349,8 +363,6 @@ function BillEditorContent({
     restaurantName.trim() !== '',
   )
 
-  const onboardingActive = guidanceOnForBill(billId)
-  const contentRoute = getContentRoute(billId)
   const showContentRouteChoice =
     onboardingActive && contentRoute === undefined && items.length === 0
 
@@ -373,6 +385,7 @@ function BillEditorContent({
         unitIndex: assignment.unitIndex,
       })),
       receiptUploaded: Boolean(bill.receiptStorageId),
+      receiptScanning: isScanning,
       scanReviewOpen: reviewSheetOpen,
     }),
     [
@@ -385,6 +398,7 @@ function BillEditorContent({
       items,
       assignments,
       bill.receiptStorageId,
+      isScanning,
       reviewSheetOpen,
     ],
   )
@@ -393,6 +407,44 @@ function BillEditorContent({
     () => makeGuidanceSlot(guidanceInput),
     [makeGuidanceSlot, guidanceInput],
   )
+
+  const guidanceStepsBundle = useMemo(() => {
+    const dismissedHintIds = readDismissedHintIds(billId)
+    const steps = deriveHostOnboardingGuidance({
+      bill: {
+        restaurantName,
+        restaurantFromOcr,
+        hostParticipantName,
+        guestCount,
+        items: guidanceInput.items,
+        assignments: guidanceInput.assignments,
+        contentRoute,
+        receiptUploaded: guidanceInput.receiptUploaded,
+        receiptScanning: guidanceInput.receiptScanning,
+        scanReviewOpen: guidanceInput.scanReviewOpen,
+      },
+      dismissedHintIds,
+    })
+    return { steps, dismissedHintIds }
+  }, [
+    billId,
+    restaurantName,
+    restaurantFromOcr,
+    hostParticipantName,
+    guestCount,
+    guidanceInput,
+    contentRoute,
+  ])
+
+  const guidanceFocus = useGuidanceFocus({
+    enabled: onboardingActive,
+    steps: guidanceStepsBundle.steps,
+    dismissedHintIds: guidanceStepsBundle.dismissedHintIds,
+    currentEditorStep: step,
+    stepCompletion,
+    onNavigateToStep: (nextStep, { resetScroll }) =>
+      goToStep(nextStep, { resetScroll }),
+  })
 
   const stepBarSignal = useMemo(
     () => getStepBarSignal(guidanceInput),
@@ -425,6 +477,7 @@ function BillEditorContent({
     items.length,
     guestCount,
     restaurantName,
+    isScanning,
     reviewSheetOpen,
     refreshBillSession,
   ])
@@ -473,15 +526,12 @@ function BillEditorContent({
             <>
               {showContentRouteChoice ? (
                 <ContentRouteChoice
+                  billId={billId}
                   onChoose={(route) => {
                     chooseContentRoute(billId, route)
-                    if (route === 'manual') {
-                      goToStep(3)
-                    }
                   }}
                 />
               ) : null}
-              {guidanceSlot('content')}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -491,39 +541,47 @@ function BillEditorContent({
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
                   {!bill.receiptStorageId ? (
-                    <button
-                      type="button"
-                      onClick={() => galleryInputRef.current?.click()}
-                      disabled={isOcrBusy}
+                    <GuidanceTarget
+                      stepId="scan-upload"
+                      register={guidanceFocus.registerTarget}
+                      shouldPop={guidanceFocus.poppingStepId === 'scan-upload'}
+                      reducedHighlight={
+                        guidanceFocus.reducedHighlightStepId === 'scan-upload'
+                      }
+                      onPopAnimationEnd={guidanceFocus.onPopAnimationEnd}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => galleryInputRef.current?.click()}
+                        disabled={isOcrBusy}
+                        className={cn(
+                          'tap-feedback flex w-full flex-col items-center gap-3 rounded-lg border border-dashed p-4 text-left',
+                          'cursor-pointer transition-colors hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-50',
+                        )}
+                      >
+                        <p className="self-start text-sm text-muted-foreground">
+                          Качете снимка на бележката, за да разпознаете
+                          артикулите автоматично.
+                        </p>
+                      </button>
+                    </GuidanceTarget>
+                  ) : (
+                    <div
                       className={cn(
-                        'tap-feedback flex w-full flex-col items-center gap-3 rounded-lg border border-dashed p-4 text-left',
-                        'cursor-pointer transition-colors hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-50',
+                        'overflow-hidden rounded-lg border border-dashed',
+                        isScanning && 'receipt-scan-image-active',
                       )}
                     >
-                      <div className="flex items-center gap-2 self-start text-sm font-medium">
-                        <ReceiptIcon className={ICON.section} aria-hidden />
-                        Снимка на касова бележка
-                      </div>
-                      <p className="self-start text-sm text-muted-foreground">
-                        Качете снимка на бележката, за да разпознаете артикулите
-                        автоматично.
-                      </p>
-                    </button>
-                  ) : (
-                    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-4">
-                      <div className="flex items-center gap-2 self-start text-sm font-medium">
-                        <ReceiptIcon className={ICON.section} aria-hidden />
-                        Снимка на касова бележка
-                      </div>
-                      {receiptUrl && (
+                      {receiptUrl ? (
                         <img
                           src={receiptUrl}
                           alt="Касова бележка"
-                          className={cn(
-                            'max-h-64 w-full rounded-md border object-contain',
-                            isScanning && 'receipt-scan-image-active',
-                          )}
+                          className="block w-full object-contain"
                         />
+                      ) : (
+                        <p className="p-4 text-sm text-muted-foreground">
+                          Зареждане на снимката...
+                        </p>
                       )}
                     </div>
                   )}
@@ -563,107 +621,132 @@ function BillEditorContent({
                     </button>
                   </div>
                   {bill.receiptStorageId && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-11"
-                      disabled={isOcrBusy}
-                      aria-busy={isOcrBusy}
-                      onClick={handleScanButtonClick}
+                    <GuidanceTarget
+                      stepId="scan-run-ocr"
+                      register={guidanceFocus.registerTarget}
+                      shouldPop={guidanceFocus.poppingStepId === 'scan-run-ocr'}
+                      reducedHighlight={
+                        guidanceFocus.reducedHighlightStepId === 'scan-run-ocr'
+                      }
+                      onPopAnimationEnd={guidanceFocus.onPopAnimationEnd}
                     >
-                      {isScanning ? (
-                        <Loader2Icon
-                          className={cn(
-                            ICON.button,
-                            'animate-spin motion-reduce:animate-none',
-                          )}
-                          aria-hidden
-                        />
-                      ) : (
-                        <ScanLineIcon className={ICON.button} aria-hidden />
-                      )}
-                      {isScanning ? 'Разпознаване…' : 'Разпознай артикули'}
-                    </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-11 w-full"
+                        disabled={isOcrBusy}
+                        aria-busy={isOcrBusy}
+                        onClick={handleScanButtonClick}
+                      >
+                        {isScanning ? (
+                          <Loader2Icon
+                            className={cn(
+                              ICON.button,
+                              'animate-spin motion-reduce:animate-none',
+                            )}
+                            aria-hidden
+                          />
+                        ) : (
+                          <ScanLineIcon className={ICON.button} aria-hidden />
+                        )}
+                        {isScanning ? 'Разпознаване…' : 'Разпознай артикули'}
+                      </Button>
+                    </GuidanceTarget>
                   )}
                 </CardContent>
               </Card>
 
+              {!showContentRouteChoice ? guidanceSlot('content') : null}
+
               {guidanceSlot('bill-details')}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ReceiptIcon className={ICON.section} aria-hidden />
-                    Данни за сметката
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3">
-                  <TipField
-                    key={bill._id}
-                    itemsSubtotalCents={itemsSubtotalCents}
-                    value={tip}
-                    onValueChange={(value) => {
-                      setTip(value)
-                      if (fieldErrors.tip) clearFieldError('tip')
-                      const validated = validateBillMetadataField('tip', value)
-                      if (!validated.ok) {
-                        setFieldErrors((prev) => ({
-                          ...prev,
-                          tip: validated.message,
-                        }))
-                        return
-                      }
-                      clearFieldError('tip')
-                    }}
-                    onValidCents={handleTipValidCents}
-                    error={fieldErrors.tip}
-                    onClearError={() => clearFieldError('tip')}
-                  />
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="restaurantName">Ресторант</Label>
-                    <Input
-                      id="restaurantName"
-                      value={restaurantName}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        setRestaurantName(value)
-                        if (fieldErrors.restaurantName)
-                          clearFieldError('restaurantName')
-                        scheduleValidatedSave('restaurantName', value)
+              <GuidanceTarget
+                stepId="restaurant"
+                register={guidanceFocus.registerTarget}
+                shouldPop={guidanceFocus.poppingStepId === 'restaurant'}
+                reducedHighlight={
+                  guidanceFocus.reducedHighlightStepId === 'restaurant'
+                }
+                onPopAnimationEnd={guidanceFocus.onPopAnimationEnd}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <ReceiptIcon className={ICON.section} aria-hidden />
+                      Данни за сметката
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-3">
+                    <TipField
+                      key={bill._id}
+                      itemsSubtotalCents={itemsSubtotalCents}
+                      value={tip}
+                      onValueChange={(value) => {
+                        setTip(value)
+                        if (fieldErrors.tip) clearFieldError('tip')
+                        const validated = validateBillMetadataField(
+                          'tip',
+                          value,
+                        )
+                        if (!validated.ok) {
+                          setFieldErrors((prev) => ({
+                            ...prev,
+                            tip: validated.message,
+                          }))
+                          return
+                        }
+                        clearFieldError('tip')
                       }}
-                      placeholder="Напр. Механа Крайречна"
-                      className="h-11"
-                      aria-invalid={Boolean(fieldErrors.restaurantName)}
+                      onValidCents={handleTipValidCents}
+                      error={fieldErrors.tip}
+                      onClearError={() => clearFieldError('tip')}
                     />
-                    {fieldErrors.restaurantName ? (
-                      <p className="text-xs text-destructive">
-                        {fieldErrors.restaurantName}
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="restaurantName">Ресторант</Label>
+                      <Input
+                        id="restaurantName"
+                        value={restaurantName}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setRestaurantName(value)
+                          if (fieldErrors.restaurantName)
+                            clearFieldError('restaurantName')
+                          scheduleValidatedSave('restaurantName', value)
+                        }}
+                        placeholder="Напр. Механа Крайречна"
+                        className="h-11"
+                        aria-invalid={Boolean(fieldErrors.restaurantName)}
+                      />
+                      {fieldErrors.restaurantName ? (
+                        <p className="text-xs text-destructive">
+                          {fieldErrors.restaurantName}
+                        </p>
+                      ) : null}
+                      <p className="text-xs text-muted-foreground">
+                        Попълва се автоматично при разпознаване на бележката,
+                        ако името е видимо на снимката.
                       </p>
-                    ) : null}
-                    <p className="text-xs text-muted-foreground">
-                      Попълва се автоматично при разпознаване на бележката, ако
-                      името е видимо на снимката.
-                    </p>
-                  </div>
-                  <BillAdvancedSettings
-                    note={note}
-                    date={date}
-                    noteError={fieldErrors.note}
-                    dateError={fieldErrors.date}
-                    onNoteChange={(value) => {
-                      setNote(value)
-                      if (fieldErrors.note) clearFieldError('note')
-                      scheduleValidatedSave('note', value)
-                    }}
-                    onDateChange={(value) => {
-                      setDate(value)
-                      if (fieldErrors.date) clearFieldError('date')
-                      scheduleValidatedSave('date', value, {
-                        dateMs: fromDateInputValue(value),
-                      })
-                    }}
-                  />
-                </CardContent>
-              </Card>
+                    </div>
+                    <BillAdvancedSettings
+                      note={note}
+                      date={date}
+                      noteError={fieldErrors.note}
+                      dateError={fieldErrors.date}
+                      onNoteChange={(value) => {
+                        setNote(value)
+                        if (fieldErrors.note) clearFieldError('note')
+                        scheduleValidatedSave('note', value)
+                      }}
+                      onDateChange={(value) => {
+                        setDate(value)
+                        if (fieldErrors.date) clearFieldError('date')
+                        scheduleValidatedSave('date', value, {
+                          dateMs: fromDateInputValue(value),
+                        })
+                      }}
+                    />
+                  </CardContent>
+                </Card>
+              </GuidanceTarget>
             </>
           )}
 
@@ -684,6 +767,19 @@ function BillEditorContent({
                   hostParticipantId={bill.hostParticipantId}
                   readOnly={bill.status === 'final'}
                   suggestedGroupName={bill.restaurantName}
+                  participantsGuidance={
+                    onboardingActive
+                      ? {
+                          register: guidanceFocus.registerTarget,
+                          shouldPop:
+                            guidanceFocus.poppingStepId === 'participants',
+                          reducedHighlight:
+                            guidanceFocus.reducedHighlightStepId ===
+                            'participants',
+                          onPopAnimationEnd: guidanceFocus.onPopAnimationEnd,
+                        }
+                      : undefined
+                  }
                 />
                 <div className="mt-4">
                   <BillInviteCard
