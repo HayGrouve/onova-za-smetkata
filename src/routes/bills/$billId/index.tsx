@@ -62,6 +62,10 @@ import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
 import { useReceiptScan } from '#/hooks/use-receipt-scan.ts'
 import { BillHeaderTitleSync } from '#/components/layout/bill-header-title.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
+import { ContentRouteChoice } from '#/components/host-onboarding/content-route-choice.tsx'
+import { useHostOnboarding } from '#/components/host-onboarding/host-onboarding-provider.tsx'
+import { HOST_ONBOARDING_STEP_BAR } from '../../../../shared/host-onboarding-messages.ts'
+import { isHostParticipant } from '../../../../shared/host-bill-participant.ts'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
@@ -137,6 +141,18 @@ function BillEditorContent({
 }) {
   const { bill, participants, items, assignments, payments } = data
   const updateBill = useMutation(api.bills.update)
+  const recordPreparedIfNeeded = useMutation(
+    api.hostOnboarding.recordPreparedIfNeeded,
+  )
+  const {
+    guidanceOnForBill,
+    makeGuidanceSlot,
+    getStepBarSignal,
+    interceptGuestShare,
+    chooseContentRoute,
+    getContentRoute,
+    refreshBillSession,
+  } = useHostOnboarding()
 
   const { step } = Route.useSearch()
   const navigate = Route.useNavigate()
@@ -312,6 +328,129 @@ function BillEditorContent({
     [restaurantName, billSnapshot],
   )
 
+  const guestCount = useMemo(
+    () =>
+      participants.filter(
+        (participant) =>
+          !isHostParticipant(participant._id, bill.hostParticipantId),
+      ).length,
+    [participants, bill.hostParticipantId],
+  )
+
+  const hostParticipantName = useMemo(() => {
+    const host = participants.find((participant) =>
+      isHostParticipant(participant._id, bill.hostParticipantId),
+    )
+    return host?.name ?? 'домакин'
+  }, [participants, bill.hostParticipantId])
+
+  const restaurantFromOcr = Boolean(
+    completedScan?.extractedRestaurantName?.trim() &&
+    restaurantName.trim() !== '',
+  )
+
+  const onboardingActive = guidanceOnForBill(billId)
+  const contentRoute = getContentRoute(billId)
+  const showContentRouteChoice =
+    onboardingActive && contentRoute === undefined && items.length === 0
+
+  const guidanceInput = useMemo(
+    () => ({
+      billId,
+      step,
+      restaurantName,
+      restaurantFromOcr,
+      hostParticipantName,
+      guestCount,
+      items: items.map((item) => ({
+        id: item._id,
+        unitPriceCents: item.unitPriceCents,
+        quantity: item.quantity,
+      })),
+      assignments: assignments.map((assignment) => ({
+        itemId: assignment.itemId,
+        participantId: assignment.participantId,
+        unitIndex: assignment.unitIndex,
+      })),
+      receiptUploaded: Boolean(bill.receiptStorageId),
+      scanReviewOpen: reviewSheetOpen,
+    }),
+    [
+      billId,
+      step,
+      restaurantName,
+      restaurantFromOcr,
+      hostParticipantName,
+      guestCount,
+      items,
+      assignments,
+      bill.receiptStorageId,
+      reviewSheetOpen,
+    ],
+  )
+
+  const guidanceSlot = useMemo(
+    () => makeGuidanceSlot(guidanceInput),
+    [makeGuidanceSlot, guidanceInput],
+  )
+
+  const stepBarSignal = useMemo(
+    () => getStepBarSignal(guidanceInput),
+    [getStepBarSignal, guidanceInput],
+  )
+
+  useEffect(() => {
+    if (!onboardingActive) return
+    void recordPreparedIfNeeded({
+      billId,
+      restaurantName,
+      guestCount,
+      items: guidanceInput.items,
+      assignments: guidanceInput.assignments,
+    })
+  }, [
+    onboardingActive,
+    billId,
+    restaurantName,
+    guestCount,
+    guidanceInput.items,
+    guidanceInput.assignments,
+    recordPreparedIfNeeded,
+  ])
+
+  useEffect(() => {
+    refreshBillSession()
+  }, [
+    step,
+    items.length,
+    guestCount,
+    restaurantName,
+    reviewSheetOpen,
+    refreshBillSession,
+  ])
+
+  const stepBarGuidanceNode =
+    stepBarSignal?.kind === 'on' ? (
+      <p className="text-xs text-primary">
+        {HOST_ONBOARDING_STEP_BAR.guidanceOn}
+      </p>
+    ) : stepBarSignal?.kind === 'pointer' ? (
+      <div className="flex items-center justify-between gap-2 text-xs text-primary">
+        <span>
+          {HOST_ONBOARDING_STEP_BAR.nextStepPrefix} {stepBarSignal.label}
+        </span>
+        <Button
+          type="button"
+          size="xs"
+          variant="ghost"
+          className="h-7 shrink-0 text-primary"
+          onClick={() => goToStep(stepBarSignal.step)}
+        >
+          {stepBarSignal.actionLabel}
+        </Button>
+      </div>
+    ) : null
+
   return (
     <>
       <OcrActivityBar isUploading={isUploading} isScanning={isScanning} />
@@ -320,6 +459,7 @@ function BillEditorContent({
         step={step}
         completed={stepCompletion}
         onStepSelect={goToStep}
+        guidanceSignal={stepBarGuidanceNode}
       />
       <div
         key={step}
@@ -331,6 +471,17 @@ function BillEditorContent({
         <div className="flex flex-col gap-4">
           {step === 1 && (
             <>
+              {showContentRouteChoice ? (
+                <ContentRouteChoice
+                  onChoose={(route) => {
+                    chooseContentRoute(billId, route)
+                    if (route === 'manual') {
+                      goToStep(3)
+                    }
+                  }}
+                />
+              ) : null}
+              {guidanceSlot('content')}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -437,6 +588,7 @@ function BillEditorContent({
                 </CardContent>
               </Card>
 
+              {guidanceSlot('bill-details')}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -524,6 +676,7 @@ function BillEditorContent({
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                {guidanceSlot('participants')}
                 <ParticipantList
                   billId={billId}
                   participants={participants}
@@ -538,6 +691,11 @@ function BillEditorContent({
                     shareToken={bill.shareToken}
                     disabled={participants.length === 0}
                     readOnly={bill.status === 'final'}
+                    onShareLink={
+                      onboardingActive
+                        ? (joinUrl) => interceptGuestShare(billId, joinUrl)
+                        : undefined
+                    }
                   />
                 </div>
               </CardContent>
@@ -589,6 +747,7 @@ function BillEditorContent({
                   </div>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
+                  {guidanceSlot('allocation')}
                   <p className="text-xs text-muted-foreground">
                     Добавете данък като отделен артикул. Бакшишът се въвежда на
                     стъпка 1.
@@ -606,7 +765,23 @@ function BillEditorContent({
             </>
           )}
 
-          {step === 4 && <BillSummaryContent billId={billId} embedded />}
+          {step === 4 && (
+            <>
+              {guidanceSlot('share')}
+              {onboardingActive ? (
+                <BillInviteCard
+                  billId={billId}
+                  shareToken={bill.shareToken}
+                  disabled={participants.length === 0}
+                  readOnly={bill.status === 'final'}
+                  onShareLink={(joinUrl) =>
+                    interceptGuestShare(billId, joinUrl)
+                  }
+                />
+              ) : null}
+              <BillSummaryContent billId={billId} embedded />
+            </>
+          )}
         </div>
       </div>
 

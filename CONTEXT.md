@@ -62,6 +62,10 @@ _Avoid_: completed, closed, settled (settled is about collection, not bill statu
 A first-onboarding milestone: the bill has a restaurant name, at least one Guest, at least one validly priced item, and every item Unit is assigned. A prepared bill may still have **draft** Bill status.
 _Avoid_: completed bill, final bill
 
+**Напътствия**:
+The contextual guidance a first-time Host receives while making their first bill (product UI `Спри напътствията`, `Помощ и напътствия`). Plural for the mode as a whole; singular (`напътствието`) for a single instruction.
+_Avoid_: съвети, помощник, тур, обучение (it is neither a standalone wizard nor a tour)
+
 ## Related docs
 
 - `docs/agents/guidelines.md` — architecture, testing, and implementation conventions for agents

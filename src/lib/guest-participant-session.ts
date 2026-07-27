@@ -113,6 +113,27 @@ export function clearStoredGuestParticipant(billId: string): void {
 }
 
 export function getConvexErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message) return error.message
+  if (error && typeof error === 'object' && 'data' in error) {
+    const data = Reflect.get(error, 'data')
+    if (typeof data === 'string' && data.trim()) return data
+  }
+
+  if (error instanceof Error && error.message) {
+    return extractConvexUserMessage(error.message)
+  }
+
+  return 'Неуспешна операция'
+}
+
+/** Strip Convex client wrapper noise; keep the server-thrown message. */
+function extractConvexUserMessage(message: string): string {
+  const uncaught = message.match(/Uncaught ConvexError: ([^\n]+)/)
+  if (uncaught?.[1]) return uncaught[1].trim()
+
+  const convexError = message.match(/ConvexError: ([^\n]+)/)
+  if (convexError?.[1]) return convexError[1].trim()
+
+  if (!message.startsWith('[CONVEX')) return message
+
   return 'Неуспешна операция'
 }

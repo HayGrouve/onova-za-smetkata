@@ -1,4 +1,5 @@
 import { CheckIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
 import type { BillStepCompletion } from '#/lib/bill-step-completion.ts'
 import { cn } from '#/lib/utils.ts'
 
@@ -15,12 +16,14 @@ export interface BillStepsBarProps {
   step: BillStep
   completed: BillStepCompletion
   onStepSelect: (step: BillStep) => void
+  guidanceSignal?: ReactNode
 }
 
 export function BillStepsBar({
   step,
   completed,
   onStepSelect,
+  guidanceSignal,
 }: BillStepsBarProps) {
   return (
     <div className="sticky-surface sticky top-14 z-30 border-b">
@@ -69,6 +72,7 @@ export function BillStepsBar({
         <p className="text-xs font-medium text-muted-foreground">
           Стъпка {step} · {BILL_STEP_LABELS[step - 1]}
         </p>
+        {guidanceSignal}
       </div>
     </div>
   )

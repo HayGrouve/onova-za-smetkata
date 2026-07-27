@@ -95,3 +95,13 @@ export function getSignOutCopy(): ConfirmOptions {
     confirmLabel: 'Изход',
   })
 }
+
+export function getStopGuidanceCopy(): ConfirmOptions {
+  return withDefaults({
+    title: 'Спиране на напътствията?',
+    description:
+      'Това действие е необратимо. Напътствията и напомнянето за начин на плащане ще спрат на всички ваши устройства. Ще останат достъпни от „Помощ и напътствия".',
+    confirmLabel: 'Спри напътствията',
+    variant: 'default',
+  })
+}

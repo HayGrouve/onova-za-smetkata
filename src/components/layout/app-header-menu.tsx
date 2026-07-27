@@ -1,5 +1,6 @@
 import { useAuthActions } from '@convex-dev/auth/react'
 import {
+  BookOpenIcon,
   CogIcon,
   LogOutIcon,
   MonitorIcon,
@@ -15,6 +16,8 @@ import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-pro
 import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { useFriendGroupsSheet } from '#/components/bills/friend-groups-provider.tsx'
 import { useProfileSheet } from '#/components/profile/profile-provider.tsx'
+import { useHostOnboarding } from '#/components/host-onboarding/host-onboarding-provider.tsx'
+import { HOST_ONBOARDING_HOME } from '../../../shared/host-onboarding-messages.ts'
 import { Button } from '#/components/ui/button.tsx'
 import {
   DropdownMenu,
@@ -45,6 +48,7 @@ export function AppHeaderMenu({
   const { openPaymentSettings } = usePaymentSettingsSheet()
   const { openFriendGroups } = useFriendGroupsSheet()
   const { openProfile } = useProfileSheet()
+  const { startReplay } = useHostOnboarding()
   const { confirm } = useConfirmAction()
   const [mounted, setMounted] = useState(false)
 
@@ -120,6 +124,10 @@ export function AppHeaderMenu({
             <DropdownMenuItem onSelect={() => openFriendGroups()}>
               <UsersIcon className={ICON.button} aria-hidden />
               Моите групи
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => startReplay()}>
+              <BookOpenIcon className={ICON.button} aria-hidden />
+              {HOST_ONBOARDING_HOME.helpAndGuidance}
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"

@@ -1,7 +1,7 @@
 import { Component, useEffect, useState } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useMutation, usePaginatedQuery } from 'convex/react'
+import { useMutation, usePaginatedQuery, useQuery } from 'convex/react'
 import { toast } from 'sonner'
 import { Loader2Icon, PlusIcon, SearchIcon } from 'lucide-react'
 import { BillCard } from '#/components/bills/bill-card.tsx'
@@ -28,6 +28,9 @@ import {
 import type { HomeBillStatusFilter } from '#/lib/home-bill-list.ts'
 import { buildHomeHead } from '#/lib/site-meta.ts'
 import { cn } from '#/lib/utils.ts'
+import { useHostOnboarding } from '#/components/host-onboarding/host-onboarding-provider.tsx'
+import { isClientDevMode } from '#/lib/dev-mode.ts'
+import { HOST_ONBOARDING_HOME } from '../../shared/host-onboarding-messages.ts'
 import { api } from '../../convex/_generated/api'
 
 export const Route = createFileRoute('/')({
@@ -93,6 +96,16 @@ function Home() {
   const [isCreating, setIsCreating] = useState(false)
   const paymentSettingsStatus = usePaymentSettingsStatus()
   const { openPaymentSettings } = usePaymentSettingsSheet()
+  const {
+    resumeGuidedBillId,
+    needsAnotherGuidedBill,
+    stopGuidance,
+    triggerFirstRunForDevTesting,
+  } = useHostOnboarding()
+  const startAnotherGuidedBill = useMutation(
+    api.hostOnboarding.startAnotherGuidedBill,
+  )
+  const onboarding = useQuery(api.hostOnboarding.getForViewer, {})
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -146,7 +159,34 @@ function Home() {
     })
   }
 
+  async function handleResumeGuidedBill() {
+    if (!resumeGuidedBillId) return
+    await navigate({
+      to: '/bills/$billId',
+      params: { billId: resumeGuidedBillId },
+      search: { step: 1 },
+    })
+  }
+
+  async function handleStartAnotherGuidedBill() {
+    setIsCreating(true)
+    try {
+      const billId = await startAnotherGuidedBill({})
+      await navigate({
+        to: '/bills/$billId',
+        params: { billId },
+        search: { step: 1 },
+      })
+    } catch {
+      toast.error('Неуспешно създаване на сметка')
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   const showFirstPageSkeletons = status === 'LoadingFirstPage'
+  const showResumeGuidedBill =
+    onboarding?.lifecycle === 'active' && resumeGuidedBillId !== undefined
 
   return (
     <div className="page-container">
@@ -155,6 +195,35 @@ function Home() {
         <div className="mb-2">
           <PaymentSettingsOpenButton onClick={openPaymentSettings} />
         </div>
+      ) : null}
+
+      {showResumeGuidedBill ? (
+        <Button
+          className="mb-2 h-11 w-full"
+          onClick={() => void handleResumeGuidedBill()}
+        >
+          {HOST_ONBOARDING_HOME.resumeGuidedBill}
+        </Button>
+      ) : null}
+
+      {needsAnotherGuidedBill ? (
+        <Button
+          className="mb-2 h-11 w-full"
+          disabled={isCreating}
+          onClick={() => void handleStartAnotherGuidedBill()}
+        >
+          {HOST_ONBOARDING_HOME.startNewGuidedBill}
+        </Button>
+      ) : null}
+
+      {onboarding?.lifecycle === 'active' ? (
+        <Button
+          variant="ghost"
+          className="mb-2 h-10 w-full text-muted-foreground"
+          onClick={() => void stopGuidance()}
+        >
+          {HOST_ONBOARDING_HOME.stopGuidance}
+        </Button>
       ) : null}
 
       <Button
@@ -255,6 +324,26 @@ function Home() {
           )}
         </div>
       </HomeBillListErrorBoundary>
+
+      {isClientDevMode() ? (
+        <div className="mt-8 rounded-lg border border-dashed border-amber-500/50 bg-amber-500/5 p-3">
+          <p className="mb-2 text-xs font-medium text-amber-800 dark:text-amber-200">
+            DEV — тест на first-run onboarding
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-10 w-full"
+            onClick={() => void triggerFirstRunForDevTesting()}
+          >
+            Стартирай onboarding
+          </Button>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Нулира persisted state и отваря welcome sheet. За пълен поток
+            изтрийте всички сметки преди „Създай първата сметка“.
+          </p>
+        </div>
+      ) : null}
     </div>
   )
 }

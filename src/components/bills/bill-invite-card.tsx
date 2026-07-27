@@ -23,6 +23,8 @@ export interface BillInviteCardProps {
   shareToken?: string
   disabled?: boolean
   readOnly?: boolean
+  /** When set, handles guest-link sharing (e.g. onboarding payment checkpoint). */
+  onShareLink?: (joinUrl: string) => Promise<boolean>
 }
 
 export function BillInviteCard({
@@ -30,6 +32,7 @@ export function BillInviteCard({
   shareToken,
   disabled,
   readOnly = false,
+  onShareLink,
 }: BillInviteCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [joinUrl, setJoinUrl] = useState('')
@@ -58,6 +61,10 @@ export function BillInviteCard({
 
   async function handleShareLink() {
     if (!joinUrl) return
+    if (onShareLink) {
+      await onShareLink(joinUrl)
+      return
+    }
     const result = await shareLink({
       url: joinUrl,
       title: 'Онова за сметката',

@@ -160,4 +160,22 @@ export default defineSchema({
     errorMessage: v.optional(v.string()),
     createdAt: v.number(),
   }).index('by_billId', ['billId']),
+
+  hostOnboarding: defineTable({
+    userId: v.id('users'),
+    version: v.number(),
+    lifecycle: v.union(
+      v.literal('notStarted'),
+      v.literal('active'),
+      v.literal('skipped'),
+      v.literal('completed'),
+    ),
+    guidedBillId: v.optional(v.id('bills')),
+    preparedAt: v.optional(v.number()),
+    sharedAt: v.optional(v.number()),
+    skippedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    paymentCheckpointDismissed: v.boolean(),
+    updatedAt: v.number(),
+  }).index('by_userId', ['userId']),
 })
