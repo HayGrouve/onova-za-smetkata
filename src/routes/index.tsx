@@ -29,7 +29,6 @@ import type { HomeBillStatusFilter } from '#/lib/home-bill-list.ts'
 import { buildHomeHead } from '#/lib/site-meta.ts'
 import { cn } from '#/lib/utils.ts'
 import { useHostOnboarding } from '#/components/host-onboarding/host-onboarding-provider.tsx'
-import { isClientDevMode } from '#/lib/dev-mode.ts'
 import { HOST_ONBOARDING_HOME } from '../../shared/host-onboarding-messages.ts'
 import { api } from '../../convex/_generated/api'
 
@@ -96,12 +95,8 @@ function Home() {
   const [isCreating, setIsCreating] = useState(false)
   const paymentSettingsStatus = usePaymentSettingsStatus()
   const { openPaymentSettings } = usePaymentSettingsSheet()
-  const {
-    resumeGuidedBillId,
-    needsAnotherGuidedBill,
-    stopGuidance,
-    triggerFirstRunForDevTesting,
-  } = useHostOnboarding()
+  const { resumeGuidedBillId, needsAnotherGuidedBill, stopGuidance } =
+    useHostOnboarding()
   const startAnotherGuidedBill = useMutation(
     api.hostOnboarding.startAnotherGuidedBill,
   )
@@ -327,26 +322,6 @@ function Home() {
           )}
         </div>
       </HomeBillListErrorBoundary>
-
-      {isClientDevMode() ? (
-        <div className="mt-8 rounded-lg border border-dashed border-amber-500/50 bg-amber-500/5 p-3">
-          <p className="mb-2 text-xs font-medium text-amber-800 dark:text-amber-200">
-            DEV — тест на first-run onboarding
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            className="h-10 w-full"
-            onClick={() => void triggerFirstRunForDevTesting()}
-          >
-            Стартирай onboarding
-          </Button>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Нулира persisted state и отваря welcome sheet. Ако имате сметки,
-            използвайте „Създай сметка с напътствия“ в прозореца.
-          </p>
-        </div>
-      ) : null}
     </div>
   )
 }
