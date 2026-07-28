@@ -26,6 +26,8 @@ import {
   sumItemsCents,
 } from '#/lib/receipt-scan-utils.ts'
 import { cn } from '#/lib/utils.ts'
+import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
+import type { GuidanceTargetRegister } from '#/lib/guidance-focus/use-guidance-focus.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -35,6 +37,13 @@ export interface ReceiptScanReviewSheetProps {
   billId: Id<'bills'>
   importMode: 'add' | 'replace'
   scanId: Id<'receiptScans'>
+  onImportSuccess?: () => void
+  scanReviewGuidance?: {
+    register: GuidanceTargetRegister
+    shouldPop: boolean
+    reducedHighlight: boolean
+    onPopAnimationEnd: (stepId: string) => void
+  }
 }
 
 interface ReviewRow {
@@ -55,6 +64,8 @@ export function ReceiptScanReviewSheet({
   billId,
   importMode,
   scanId,
+  onImportSuccess,
+  scanReviewGuidance,
 }: ReceiptScanReviewSheetProps) {
   const scan = useQuery(api.receiptScan.getLatestScan, { billId })
   const importScannedItems = useMutation(api.receiptScan.importScannedItems)
@@ -181,6 +192,7 @@ export function ReceiptScanReviewSheet({
       })
       await dismissScan({ scanId })
       toast.success(`${importSelection.data.length} артикула добавени`)
+      onImportSuccess?.()
       onOpenChange(false)
     } catch (error) {
       toast.error(
@@ -387,19 +399,45 @@ export function ReceiptScanReviewSheet({
               >
                 Отказ
               </Button>
-              <Button
-                type="button"
-                className="h-11 flex-1"
-                onClick={() => void handleImport()}
-                disabled={
-                  isSubmitting ||
-                  checkedCount === 0 ||
-                  hasInvalidCheckedRows ||
-                  (updateRestaurantName && restaurantValidation.ok === false)
-                }
-              >
-                Импортирай избраните ({checkedCount})
-              </Button>
+              {scanReviewGuidance ? (
+                <GuidanceTarget
+                  stepId="scan-review"
+                  register={scanReviewGuidance.register}
+                  shouldPop={scanReviewGuidance.shouldPop}
+                  reducedHighlight={scanReviewGuidance.reducedHighlight}
+                  onPopAnimationEnd={scanReviewGuidance.onPopAnimationEnd}
+                  className="flex-1"
+                >
+                  <Button
+                    type="button"
+                    className="h-11 w-full"
+                    onClick={() => void handleImport()}
+                    disabled={
+                      isSubmitting ||
+                      checkedCount === 0 ||
+                      hasInvalidCheckedRows ||
+                      (updateRestaurantName &&
+                        restaurantValidation.ok === false)
+                    }
+                  >
+                    Импортирай избраните ({checkedCount})
+                  </Button>
+                </GuidanceTarget>
+              ) : (
+                <Button
+                  type="button"
+                  className="h-11 flex-1"
+                  onClick={() => void handleImport()}
+                  disabled={
+                    isSubmitting ||
+                    checkedCount === 0 ||
+                    hasInvalidCheckedRows ||
+                    (updateRestaurantName && restaurantValidation.ok === false)
+                  }
+                >
+                  Импортирай избраните ({checkedCount})
+                </Button>
+              )}
             </div>
           </SheetFooter>
         )}

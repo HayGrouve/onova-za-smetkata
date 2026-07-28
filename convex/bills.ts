@@ -28,6 +28,7 @@ import { calculateBillTotals } from './lib/billCalculations'
 import { toBillCalculationSnapshot } from './lib/billCalculationSnapshot'
 import { planHostParticipantOnBillCreate } from './lib/hostBillParticipant'
 import { touchBill } from './lib/touchBill'
+import { clearGuidedBillReference } from './lib/hostOnboardingBillHooks'
 
 export const list = query({
   args: {},
@@ -315,6 +316,8 @@ export const remove = mutation({
     for (const p of participants) await ctx.db.delete(p._id)
     for (const pay of payments) await ctx.db.delete(pay._id)
     await ctx.db.delete(args.billId)
+
+    await clearGuidedBillReference(ctx, bill.ownerId, args.billId)
 
     if (receiptStorageId) {
       await deleteReceiptStorageFile(ctx, receiptStorageId)

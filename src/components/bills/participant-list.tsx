@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from 'convex/react'
 import { MoreHorizontalIcon, UserPlusIcon, XIcon } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
-import type { FormEvent } from 'react'
+import type { FormEvent, FocusEvent } from 'react'
 import { toast } from 'sonner'
 import { FriendGroupAddPreviewSheet } from '#/components/bills/friend-group-add-preview-sheet.tsx'
 import type { FriendGroupPreview } from '#/components/bills/friend-group-add-preview-sheet.tsx'
@@ -27,6 +27,8 @@ import {
   writeLastFriendGroupId,
 } from '#/lib/last-friend-group-storage.ts'
 import { sortFriendGroupsWithPinned } from '#/lib/sort-friend-groups-with-pinned.ts'
+import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
+import type { GuidanceTargetRegister } from '#/lib/guidance-focus/use-guidance-focus.ts'
 import { cn } from '#/lib/utils.ts'
 import { validateParticipantAdd } from '#/lib/participant-schema.ts'
 import { Input } from '#/components/ui/input.tsx'
@@ -41,6 +43,13 @@ export interface ParticipantListProps {
   hostParticipantId?: Id<'participants'>
   readOnly?: boolean
   suggestedGroupName?: string
+  participantsGuidance?: {
+    register: GuidanceTargetRegister
+    shouldPop: boolean
+    reducedHighlight: boolean
+    onPopAnimationEnd: (stepId: string) => void
+    onAddGuestFocusChange?: (focused: boolean) => void
+  }
 }
 
 export function ParticipantList({
@@ -50,6 +59,7 @@ export function ParticipantList({
   hostParticipantId,
   readOnly = false,
   suggestedGroupName = '',
+  participantsGuidance,
 }: ParticipantListProps) {
   const [name, setName] = useState('')
   const [nameError, setNameError] = useState<string | undefined>()
@@ -116,6 +126,18 @@ export function ParticipantList({
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     void handleAdd()
+  }
+
+  function handleAddGuestFocusIn() {
+    participantsGuidance?.onAddGuestFocusChange?.(true)
+  }
+
+  function handleAddGuestFocusOut(event: FocusEvent<HTMLDivElement>) {
+    const next = event.relatedTarget
+    if (next instanceof Node && event.currentTarget.contains(next)) {
+      return
+    }
+    participantsGuidance?.onAddGuestFocusChange?.(false)
   }
 
   async function handleRemoveWithConfirm(participant: Doc<'participants'>) {
@@ -326,56 +348,174 @@ export function ParticipantList({
               </div>
             </div>
 
-            {quickAddNames.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                <p className="text-xs text-muted-foreground">Скорошни</p>
-                <div className="flex flex-wrap gap-2">
-                  {quickAddNames.map((recentName) => (
-                    <Button
-                      key={recentName}
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 rounded-full border-dashed"
-                      onClick={() => void handleAdd(recentName)}
+            {participantsGuidance?.onAddGuestFocusChange ? (
+              <div
+                className="flex flex-col gap-4"
+                onFocusCapture={handleAddGuestFocusIn}
+                onBlurCapture={handleAddGuestFocusOut}
+              >
+                {quickAddNames.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs text-muted-foreground">Скорошни</p>
+                    <div className="flex flex-wrap gap-2">
+                      {quickAddNames.map((recentName) => (
+                        <Button
+                          key={recentName}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 rounded-full border-dashed"
+                          onClick={() => void handleAdd(recentName)}
+                        >
+                          + {recentName}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs text-muted-foreground">Ръчно</p>
+                  <GuidanceTarget
+                    stepId="participants"
+                    register={participantsGuidance.register}
+                    shouldPop={participantsGuidance.shouldPop}
+                    reducedHighlight={participantsGuidance.reducedHighlight}
+                    onPopAnimationEnd={participantsGuidance.onPopAnimationEnd}
+                  >
+                    <form
+                      className="flex flex-col gap-1.5"
+                      onSubmit={handleSubmit}
                     >
-                      + {recentName}
-                    </Button>
-                  ))}
+                      <div className="flex gap-2">
+                        <Input
+                          ref={nameInputRef}
+                          value={name}
+                          onChange={(e) => {
+                            setName(e.target.value)
+                            if (nameError) setNameError(undefined)
+                          }}
+                          placeholder="Име на участник"
+                          className="h-11 flex-1"
+                          autoComplete="off"
+                          aria-invalid={Boolean(nameError)}
+                        />
+                        <Button
+                          type="submit"
+                          className="h-11"
+                          disabled={!name.trim()}
+                        >
+                          <UserPlusIcon className={ICON.button} aria-hidden />
+                          Добави
+                        </Button>
+                      </div>
+                      {nameError ? (
+                        <p className="text-xs text-destructive">{nameError}</p>
+                      ) : null}
+                    </form>
+                  </GuidanceTarget>
                 </div>
               </div>
-            ) : null}
-
-            <div className="flex flex-col gap-2">
-              <p className="text-xs text-muted-foreground">Ръчно</p>
-              <form className="flex flex-col gap-1.5" onSubmit={handleSubmit}>
-                <div className="flex gap-2">
-                  <Input
-                    ref={nameInputRef}
-                    value={name}
-                    onChange={(e) => {
-                      setName(e.target.value)
-                      if (nameError) setNameError(undefined)
-                    }}
-                    placeholder="Име на участник"
-                    className="h-11 flex-1"
-                    autoComplete="off"
-                    aria-invalid={Boolean(nameError)}
-                  />
-                  <Button
-                    type="submit"
-                    className="h-11"
-                    disabled={!name.trim()}
-                  >
-                    <UserPlusIcon className={ICON.button} aria-hidden />
-                    Добави
-                  </Button>
-                </div>
-                {nameError ? (
-                  <p className="text-xs text-destructive">{nameError}</p>
+            ) : (
+              <>
+                {quickAddNames.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs text-muted-foreground">Скорошни</p>
+                    <div className="flex flex-wrap gap-2">
+                      {quickAddNames.map((recentName) => (
+                        <Button
+                          key={recentName}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 rounded-full border-dashed"
+                          onClick={() => void handleAdd(recentName)}
+                        >
+                          + {recentName}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
                 ) : null}
-              </form>
-            </div>
+
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs text-muted-foreground">Ръчно</p>
+                  {participantsGuidance ? (
+                    <GuidanceTarget
+                      stepId="participants"
+                      register={participantsGuidance.register}
+                      shouldPop={participantsGuidance.shouldPop}
+                      reducedHighlight={participantsGuidance.reducedHighlight}
+                      onPopAnimationEnd={participantsGuidance.onPopAnimationEnd}
+                    >
+                      <form
+                        className="flex flex-col gap-1.5"
+                        onSubmit={handleSubmit}
+                      >
+                        <div className="flex gap-2">
+                          <Input
+                            ref={nameInputRef}
+                            value={name}
+                            onChange={(e) => {
+                              setName(e.target.value)
+                              if (nameError) setNameError(undefined)
+                            }}
+                            placeholder="Име на участник"
+                            className="h-11 flex-1"
+                            autoComplete="off"
+                            aria-invalid={Boolean(nameError)}
+                          />
+                          <Button
+                            type="submit"
+                            className="h-11"
+                            disabled={!name.trim()}
+                          >
+                            <UserPlusIcon className={ICON.button} aria-hidden />
+                            Добави
+                          </Button>
+                        </div>
+                        {nameError ? (
+                          <p className="text-xs text-destructive">
+                            {nameError}
+                          </p>
+                        ) : null}
+                      </form>
+                    </GuidanceTarget>
+                  ) : (
+                    <form
+                      className="flex flex-col gap-1.5"
+                      onSubmit={handleSubmit}
+                    >
+                      <div className="flex gap-2">
+                        <Input
+                          ref={nameInputRef}
+                          value={name}
+                          onChange={(e) => {
+                            setName(e.target.value)
+                            if (nameError) setNameError(undefined)
+                          }}
+                          placeholder="Име на участник"
+                          className="h-11 flex-1"
+                          autoComplete="off"
+                          aria-invalid={Boolean(nameError)}
+                        />
+                        <Button
+                          type="submit"
+                          className="h-11"
+                          disabled={!name.trim()}
+                        >
+                          <UserPlusIcon className={ICON.button} aria-hidden />
+                          Добави
+                        </Button>
+                      </div>
+                      {nameError ? (
+                        <p className="text-xs text-destructive">{nameError}</p>
+                      ) : null}
+                    </form>
+                  )}
+                </div>
+              </>
+            )}
           </section>
         </>
       ) : null}

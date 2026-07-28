@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PrototypeHostPaidPresentationRouteImport } from './routes/prototype/host-paid-presentation'
+import { Route as PrototypeGuidanceFocusRouteImport } from './routes/prototype/guidance-focus'
 import { Route as BillsBillIdIndexRouteImport } from './routes/bills/$billId/index'
 import { Route as BillsBillIdSummaryRouteImport } from './routes/bills/$billId/summary'
 import { Route as BillsBillIdJoinRouteImport } from './routes/bills/$billId/join'
@@ -39,6 +40,11 @@ const PrototypeHostPaidPresentationRoute =
     path: '/prototype/host-paid-presentation',
     getParentRoute: () => rootRouteImport,
   } as any)
+const PrototypeGuidanceFocusRoute = PrototypeGuidanceFocusRouteImport.update({
+  id: '/prototype/guidance-focus',
+  path: '/prototype/guidance-focus',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BillsBillIdIndexRoute = BillsBillIdIndexRouteImport.update({
   id: '/bills/$billId/',
   path: '/bills/$billId/',
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/login': typeof LoginRoute
+  '/prototype/guidance-focus': typeof PrototypeGuidanceFocusRoute
   '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/login': typeof LoginRoute
+  '/prototype/guidance-focus': typeof PrototypeGuidanceFocusRoute
   '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/login': typeof LoginRoute
+  '/prototype/guidance-focus': typeof PrototypeGuidanceFocusRoute
   '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/login'
+    | '/prototype/guidance-focus'
     | '/prototype/host-paid-presentation'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/login'
+    | '/prototype/guidance-focus'
     | '/prototype/host-paid-presentation'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/login'
+    | '/prototype/guidance-focus'
     | '/prototype/host-paid-presentation'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
@@ -128,6 +140,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
   LoginRoute: typeof LoginRoute
+  PrototypeGuidanceFocusRoute: typeof PrototypeGuidanceFocusRoute
   PrototypeHostPaidPresentationRoute: typeof PrototypeHostPaidPresentationRoute
   BillsBillIdClaimRoute: typeof BillsBillIdClaimRoute
   BillsBillIdJoinRoute: typeof BillsBillIdJoinRoute
@@ -165,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrototypeHostPaidPresentationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/prototype/guidance-focus': {
+      id: '/prototype/guidance-focus'
+      path: '/prototype/guidance-focus'
+      fullPath: '/prototype/guidance-focus'
+      preLoaderRoute: typeof PrototypeGuidanceFocusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bills/$billId/': {
       id: '/bills/$billId/'
       path: '/bills/$billId'
@@ -200,6 +220,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
   LoginRoute: LoginRoute,
+  PrototypeGuidanceFocusRoute: PrototypeGuidanceFocusRoute,
   PrototypeHostPaidPresentationRoute: PrototypeHostPaidPresentationRoute,
   BillsBillIdClaimRoute: BillsBillIdClaimRoute,
   BillsBillIdJoinRoute: BillsBillIdJoinRoute,
