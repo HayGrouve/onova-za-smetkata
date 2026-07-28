@@ -6,6 +6,7 @@ import {
   useState,
 } from 'react'
 import type { ReactNode } from 'react'
+import { useConvexAuth } from '@convex-dev/auth/react'
 import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
 import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
@@ -14,6 +15,7 @@ import { BILL_STEP_LABELS } from '#/components/bills/bill-steps-bar.tsx'
 import type { BillStep } from '#/components/bills/bill-steps-bar.tsx'
 import { WelcomeSheet } from '#/components/host-onboarding/welcome-sheet.tsx'
 import { PaymentCheckpointSheet } from '#/components/host-onboarding/payment-checkpoint-sheet.tsx'
+import { Button } from '#/components/ui/button.tsx'
 import { getStopGuidanceCopy } from '#/lib/destructive-action-copy.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import {
@@ -70,6 +72,7 @@ export interface BillGuidanceInput {
     unitIndex: number
   }[]
   receiptUploaded: boolean
+  receiptScanning: boolean
   scanReviewOpen: boolean
 }
 
@@ -104,9 +107,16 @@ const HostOnboardingContext = createContext<HostOnboardingContextValue | null>(
 )
 
 export function HostOnboardingProvider({ children }: { children: ReactNode }) {
-  const onboarding = useQuery(api.hostOnboarding.getForViewer, {})
-  const viewer = useQuery(api.users.viewer, {})
+  const { isAuthenticated } = useConvexAuth()
+  const onboarding = useQuery(
+    api.hostOnboarding.getForViewer,
+    isAuthenticated ? {} : 'skip',
+  )
+  const viewer = useQuery(api.users.viewer, isAuthenticated ? {} : 'skip')
   const createFirstBill = useMutation(api.hostOnboarding.createFirstBill)
+  const startGuidedBillWithExistingBills = useMutation(
+    api.hostOnboarding.startGuidedBillWithExistingBills,
+  )
   const skipOnboarding = useMutation(api.hostOnboarding.skip)
   const dismissCheckpoint = useMutation(
     api.hostOnboarding.dismissPaymentCheckpoint,
@@ -169,6 +179,7 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
           assignments: input.assignments,
           contentRoute: readContentRoute(input.billId),
           receiptUploaded: input.receiptUploaded,
+          receiptScanning: input.receiptScanning,
           scanReviewOpen: input.scanReviewOpen,
           sharedAt: onboarding?.sharedAt,
         },
@@ -268,7 +279,7 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
     refreshBillSession()
     if (onboarding && onboarding.billCount > 0) {
       toast.message(
-        'Onboarding е нулиран. Изтрийте всички сметки, за да завършите пълния first-run поток.',
+        'Onboarding е нулиран. Можете да започнете сметка с напътствия без да изтривате съществуващите.',
       )
     } else {
       toast.message('First-run onboarding е готов за тест.')
@@ -375,6 +386,13 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
     return await createFirstBill({ hostDisplayName: name })
   }
 
+  async function handleStartGuidedWithExistingBills() {
+    const billId = await startGuidedBillWithExistingBills({})
+    setWelcomeForcedOpen(false)
+    deferWelcomeThisSession()
+    return billId
+  }
+
   async function handleShareWithoutPayment() {
     if (!pendingShare) return
     await dismissCheckpoint({})
@@ -408,6 +426,7 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
         username={viewer?.username}
         billCount={onboarding?.billCount ?? 0}
         onConfirmName={handleCreateFirstBill}
+        onStartGuidedWithExistingBills={handleStartGuidedWithExistingBills}
       />
       <PaymentCheckpointSheet
         open={checkpointOpen}
@@ -439,28 +458,34 @@ function GuidanceCardView({
   onStopGuidance: () => void
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-l-4 border-primary/40 border-l-primary bg-primary/5 p-4">
-      <div className="min-w-0 flex-1">
-        <p className="font-medium">{step.title}</p>
-        {step.body ? (
-          <p className="mt-1 text-sm text-muted-foreground">{step.body}</p>
-        ) : null}
+    <div className="flex flex-col gap-3 rounded-xl border border-l-4 border-primary/40 border-l-primary bg-primary/5 p-4">
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="font-medium">{step.title}</p>
+          {step.body ? (
+            <p className="mt-1 text-sm text-muted-foreground">{step.body}</p>
+          ) : null}
+        </div>
         <button
           type="button"
-          className="mt-1 text-xs text-muted-foreground underline-offset-2 hover:underline"
+          className="shrink-0 rounded-md px-2 py-1 text-muted-foreground hover:bg-muted"
+          aria-label={HOST_ONBOARDING_STEP_BAR.dismissHint}
+          onClick={onDismissHint}
+        >
+          ×
+        </button>
+      </div>
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          size="xs"
+          className="text-muted-foreground"
           onClick={onStopGuidance}
         >
           {HOST_ONBOARDING_HOME.stopGuidance}
-        </button>
+        </Button>
       </div>
-      <button
-        type="button"
-        className="shrink-0 rounded-md px-2 py-1 text-muted-foreground hover:bg-muted"
-        aria-label={HOST_ONBOARDING_STEP_BAR.dismissHint}
-        onClick={onDismissHint}
-      >
-        ×
-      </button>
     </div>
   )
 }

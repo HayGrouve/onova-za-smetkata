@@ -105,7 +105,10 @@ function Home() {
   const startAnotherGuidedBill = useMutation(
     api.hostOnboarding.startAnotherGuidedBill,
   )
-  const onboarding = useQuery(api.hostOnboarding.getForViewer, {})
+  const onboarding = useQuery(
+    api.hostOnboarding.getForViewer,
+    isAuthenticated ? {} : 'skip',
+  )
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -339,8 +342,8 @@ function Home() {
             Стартирай onboarding
           </Button>
           <p className="mt-2 text-xs text-muted-foreground">
-            Нулира persisted state и отваря welcome sheet. За пълен поток
-            изтрийте всички сметки преди „Създай първата сметка“.
+            Нулира persisted state и отваря welcome sheet. Ако имате сметки,
+            използвайте „Създай сметка с напътствия“ в прозореца.
           </p>
         </div>
       ) : null}

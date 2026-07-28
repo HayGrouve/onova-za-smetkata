@@ -39,9 +39,9 @@ test('claim item search stays usable after share drawer expand and collapse', as
   const participantName = `Guest ${Date.now()}`
   await hostPage.getByPlaceholder('Име на участник').fill(participantName)
   await hostPage.getByRole('button', { name: 'Добави', exact: true }).click()
+  await goToBillStep(hostPage, 3)
   const joinUrl = await getJoinUrl(hostPage)
 
-  await goToBillStep(hostPage, 3)
   for (const [name, price] of [
     ['Салата', '5.00'],
     ['Бира', '3.00'],

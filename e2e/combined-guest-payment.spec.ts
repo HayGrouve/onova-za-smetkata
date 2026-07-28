@@ -58,9 +58,8 @@ async function setupCombinedPaymentBill(
     await expect(hostPage.getByText(name)).toBeVisible()
   }
 
-  const joinUrl = await getJoinUrl(hostPage)
-
   await goToBillStep(hostPage, 3)
+  const joinUrl = await getJoinUrl(hostPage)
 
   await hostPage.getByRole('button', { name: 'Добави артикул' }).click()
   await hostPage.getByPlaceholder('Наименование на артикул').fill(itemName)

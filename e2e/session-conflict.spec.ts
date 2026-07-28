@@ -24,10 +24,11 @@ test('second guest sees taken participant name', async ({ browser }) => {
   await hostPage.getByRole('button', { name: 'Добави', exact: true }).click()
   await expect(hostPage.getByText(participantName)).toBeVisible()
 
+  await hostPage.getByLabel('Стъпка 3: Разпределение').click()
+  const joinUrl = await getJoinUrl(hostPage)
+
   const billId = billIdFromUrl(hostPage.url())
   expect(billId).toBeTruthy()
-
-  const joinUrl = await getJoinUrl(hostPage)
 
   const guestA = await browser.newContext()
   const pageA = await guestA.newPage()

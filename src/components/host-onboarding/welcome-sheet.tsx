@@ -30,6 +30,7 @@ export interface WelcomeSheetProps {
   username?: string | null
   billCount?: number
   onConfirmName: (name: string) => Promise<Id<'bills'>>
+  onStartGuidedWithExistingBills: () => Promise<Id<'bills'>>
 }
 
 export function WelcomeSheet({
@@ -42,6 +43,7 @@ export function WelcomeSheet({
   username,
   billCount = 0,
   onConfirmName,
+  onStartGuidedWithExistingBills,
 }: WelcomeSheetProps) {
   const navigate = useNavigate()
   const suggestedName = resolveHostParticipantName({ username, authName })
@@ -50,9 +52,25 @@ export function WelcomeSheet({
   const [submitting, setSubmitting] = useState(false)
   const hasExistingBills = billCount > 0
 
+  async function handleStartGuidedWithExistingBills() {
+    setSubmitting(true)
+    setError(undefined)
+    try {
+      const billId = await onStartGuidedWithExistingBills()
+      await navigate({
+        to: '/bills/$billId',
+        params: { billId },
+        search: { step: 1 },
+      })
+    } catch (startError) {
+      setError(getConvexErrorMessage(startError))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   async function handleConfirm() {
     if (hasExistingBills) {
-      setError(HOST_ONBOARDING_WELCOME.existingBillsBlocked)
       return
     }
     const parsed = parseUsername(name)
@@ -84,7 +102,42 @@ export function WelcomeSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="rounded-t-2xl">
-        {stage === 'intro' ? (
+        {hasExistingBills ? (
+          <>
+            <SheetHeader>
+              <SheetTitle>
+                {HOST_ONBOARDING_WELCOME.existingBillsTitle}
+              </SheetTitle>
+              <SheetDescription>
+                {HOST_ONBOARDING_WELCOME.existingBillsBlocked}
+              </SheetDescription>
+            </SheetHeader>
+            {error ? (
+              <p className="px-4 text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            ) : null}
+            <SheetFooter className="mt-6 flex-col gap-2 sm:flex-col">
+              <Button
+                className="h-11 w-full"
+                disabled={submitting}
+                onClick={() => void handleStartGuidedWithExistingBills()}
+              >
+                {submitting
+                  ? 'Създаване...'
+                  : HOST_ONBOARDING_WELCOME.startGuidedWithExistingBills}
+              </Button>
+              <Button
+                variant="outline"
+                className="h-11 w-full"
+                disabled={submitting}
+                onClick={onDismiss}
+              >
+                {HOST_ONBOARDING_WELCOME.closeWelcome}
+              </Button>
+            </SheetFooter>
+          </>
+        ) : stage === 'intro' ? (
           <>
             <SheetHeader>
               <SheetTitle>{HOST_ONBOARDING_WELCOME.introTitle}</SheetTitle>
@@ -113,7 +166,7 @@ export function WelcomeSheet({
                 {HOST_ONBOARDING_WELCOME.nameBody}
               </SheetDescription>
             </SheetHeader>
-            <div className="mt-4 flex flex-col gap-2">
+            <div className="mt-4 flex flex-col gap-2 px-4">
               <Label htmlFor="welcome-host-name">
                 {HOST_ONBOARDING_WELCOME.nameFieldLabel}
               </Label>
@@ -130,11 +183,6 @@ export function WelcomeSheet({
               <p className="text-xs text-muted-foreground">
                 {HOST_ONBOARDING_WELCOME.nameHelper}
               </p>
-              {hasExistingBills ? (
-                <p className="text-sm text-muted-foreground" role="status">
-                  {HOST_ONBOARDING_WELCOME.existingBillsBlocked}
-                </p>
-              ) : null}
               {error ? (
                 <p className="text-sm text-destructive" role="alert">
                   {error}
@@ -144,7 +192,7 @@ export function WelcomeSheet({
             <SheetFooter className="mt-6">
               <Button
                 className="h-11 w-full"
-                disabled={submitting || hasExistingBills}
+                disabled={submitting}
                 onClick={() => void handleConfirm()}
               >
                 {submitting
