@@ -13,7 +13,7 @@ export interface GuidanceTargetProps {
   children: ReactNode
 }
 
-/** PROTOTYPE — registers a scroll+pop target for an active guidance step. */
+/** Registers a scroll+pop target for an active guidance step. */
 export function GuidanceTarget({
   stepId,
   register,

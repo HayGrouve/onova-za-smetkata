@@ -64,9 +64,9 @@ import { BillHeaderTitleSync } from '#/components/layout/bill-header-title.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
 import { ContentRouteChoice } from '#/components/host-onboarding/content-route-choice.tsx'
 import { useHostOnboarding } from '#/components/host-onboarding/host-onboarding-provider.tsx'
-import { GuidanceTarget } from '#/lib/guidance-focus-prototype/guidance-target.tsx'
-import { useGuidanceFocus } from '#/lib/guidance-focus-prototype/use-guidance-focus.ts'
-import { GUIDANCE_FOCUS_TIMING } from '#/lib/guidance-focus-prototype/plan-guidance-focus.ts'
+import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
+import { useGuidanceFocus } from '#/lib/guidance-focus/use-guidance-focus.ts'
+import { GUIDANCE_FOCUS_TIMING } from '../../../../shared/plan-guidance-focus.ts'
 import { readDismissedHintIds } from '#/lib/host-onboarding-session.ts'
 import { deriveHostOnboardingGuidance } from '../../../../shared/host-onboarding.ts'
 import { HOST_ONBOARDING_STEP_BAR } from '../../../../shared/host-onboarding-messages.ts'
@@ -538,7 +538,11 @@ function BillEditorContent({
         {HOST_ONBOARDING_STEP_BAR.guidanceOn}
       </p>
     ) : stepBarSignal?.kind === 'pointer' ? (
-      <div className="flex items-center justify-between gap-2 text-xs text-primary">
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="flex items-center justify-between gap-2 text-xs text-primary"
+      >
         <span>
           {HOST_ONBOARDING_STEP_BAR.nextStepPrefix} {stepBarSignal.label}
         </span>
@@ -575,12 +579,21 @@ function BillEditorContent({
           {step === 1 && (
             <>
               {showContentRouteChoice ? (
-                <ContentRouteChoice
-                  billId={billId}
-                  onChoose={(route) => {
-                    chooseContentRoute(billId, route)
-                  }}
-                />
+                <GuidanceTarget
+                  stepId="content-route"
+                  register={guidanceFocus.registerTarget}
+                  shouldPop={guidanceFocus.poppingStepId === 'content-route'}
+                  reducedHighlight={
+                    guidanceFocus.reducedHighlightStepId === 'content-route'
+                  }
+                  onPopAnimationEnd={guidanceFocus.onPopAnimationEnd}
+                >
+                  <ContentRouteChoice
+                    onChoose={(route) => {
+                      chooseContentRoute(billId, route)
+                    }}
+                  />
+                </GuidanceTarget>
               ) : null}
               <Card>
                 <CardHeader>
@@ -904,6 +917,19 @@ function BillEditorContent({
                     assignments={assignments}
                     labels={labels}
                     readOnly={bill.status === 'final'}
+                    allocationGuidance={
+                      onboardingActive
+                        ? {
+                            register: guidanceFocus.registerTarget,
+                            shouldPop:
+                              guidanceFocus.poppingStepId === 'allocation',
+                            reducedHighlight:
+                              guidanceFocus.reducedHighlightStepId ===
+                              'allocation',
+                            onPopAnimationEnd: guidanceFocus.onPopAnimationEnd,
+                          }
+                        : undefined
+                    }
                   />
                 </CardContent>
               </Card>
@@ -922,6 +948,13 @@ function BillEditorContent({
                   onShareLink={(joinUrl) =>
                     interceptGuestShare(billId, joinUrl)
                   }
+                  shareGuidance={{
+                    register: guidanceFocus.registerTarget,
+                    shouldPop: guidanceFocus.poppingStepId === 'share',
+                    reducedHighlight:
+                      guidanceFocus.reducedHighlightStepId === 'share',
+                    onPopAnimationEnd: guidanceFocus.onPopAnimationEnd,
+                  }}
                 />
               ) : null}
               <BillSummaryContent billId={billId} embedded />
@@ -1007,6 +1040,17 @@ function BillEditorContent({
           billId={billId}
           importMode={importMode}
           scanId={activeScanId}
+          scanReviewGuidance={
+            onboardingActive
+              ? {
+                  register: guidanceFocus.registerTarget,
+                  shouldPop: guidanceFocus.poppingStepId === 'scan-review',
+                  reducedHighlight:
+                    guidanceFocus.reducedHighlightStepId === 'scan-review',
+                  onPopAnimationEnd: guidanceFocus.onPopAnimationEnd,
+                }
+              : undefined
+          }
         />
       )}
     </>

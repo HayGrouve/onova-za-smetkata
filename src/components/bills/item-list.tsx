@@ -33,6 +33,13 @@ import {
   validateItemQuantityInput,
 } from '#/lib/item-schema.ts'
 import { cn } from '#/lib/utils.ts'
+import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
+import type { GuidanceTargetRegister } from '#/lib/guidance-focus/use-guidance-focus.ts'
+import {
+  firstUnassignedItemId as resolveFirstUnassignedItemId,
+  firstUnpricedItemId,
+  resolveAllocationFocusKind,
+} from '../../../shared/plan-allocation-focus.ts'
 import { itemHasEmptyUnit } from '../../../shared/unit-coverage'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
@@ -44,6 +51,12 @@ export interface ItemListProps {
   assignments: Doc<'itemAssignments'>[]
   labels: Record<string, string>
   readOnly?: boolean
+  allocationGuidance?: {
+    register: GuidanceTargetRegister
+    shouldPop: boolean
+    reducedHighlight: boolean
+    onPopAnimationEnd: (stepId: string) => void
+  }
 }
 
 export function ItemList({
@@ -53,6 +66,7 @@ export function ItemList({
   assignments,
   labels,
   readOnly = false,
+  allocationGuidance,
 }: ItemListProps) {
   const addItem = useMutation(api.items.add)
   const removeItem = useMutation(api.items.remove)
@@ -87,14 +101,41 @@ export function ItemList({
       )
   }, [assignments])
 
+  const assignmentInputs = useMemo(
+    () =>
+      assignments.map((assignment) => ({
+        itemId: assignment.itemId,
+        participantId: assignment.participantId,
+        unitIndex: assignment.unitIndex,
+      })),
+    [assignments],
+  )
+
+  const itemInputs = useMemo(
+    () =>
+      items.map((item) => ({
+        id: item._id,
+        unitPriceCents: item.unitPriceCents,
+        quantity: item.quantity,
+      })),
+    [items],
+  )
+
   const firstUnassignedItemId = useMemo(
-    () => items.find((item) => itemHasGap(item))?._id,
-    [items, itemHasGap],
+    () => resolveFirstUnassignedItemId(itemInputs, assignmentInputs),
+    [itemInputs, assignmentInputs],
   )
   const unassignedCount = useMemo(
     () => items.filter((item) => itemHasGap(item)).length,
     [items, itemHasGap],
   )
+
+  const allocationFocusKind = allocationGuidance
+    ? resolveAllocationFocusKind(itemInputs, assignmentInputs)
+    : null
+  const focusUnpricedItemId = allocationGuidance
+    ? firstUnpricedItemId(itemInputs)
+    : undefined
 
   function handleScrollToUnassigned() {
     document
@@ -220,40 +261,107 @@ export function ItemList({
               item={item}
               readOnly={readOnly}
               onDelete={() => void handleDeleteWithConfirm(item)}
+              priceGuidance={
+                allocationGuidance &&
+                allocationFocusKind === 'fix-price' &&
+                item._id === focusUnpricedItemId
+                  ? {
+                      register: allocationGuidance.register,
+                      shouldPop: allocationGuidance.shouldPop,
+                      reducedHighlight: allocationGuidance.reducedHighlight,
+                      onPopAnimationEnd: allocationGuidance.onPopAnimationEnd,
+                    }
+                  : undefined
+              }
             />
-            <AssignmentRow
-              itemId={item._id}
-              itemQuantity={item.quantity}
-              participants={participants}
-              labels={labels}
-              itemAssignments={assignments.filter((a) => a.itemId === item._id)}
-            />
+            {allocationGuidance &&
+            allocationFocusKind === 'assign' &&
+            item._id === firstUnassignedItemId ? (
+              <GuidanceTarget
+                stepId="allocation"
+                register={allocationGuidance.register}
+                shouldPop={allocationGuidance.shouldPop}
+                reducedHighlight={allocationGuidance.reducedHighlight}
+                onPopAnimationEnd={allocationGuidance.onPopAnimationEnd}
+              >
+                <AssignmentRow
+                  itemId={item._id}
+                  itemQuantity={item.quantity}
+                  participants={participants}
+                  labels={labels}
+                  itemAssignments={assignments.filter(
+                    (a) => a.itemId === item._id,
+                  )}
+                />
+              </GuidanceTarget>
+            ) : (
+              <AssignmentRow
+                itemId={item._id}
+                itemQuantity={item.quantity}
+                participants={participants}
+                labels={labels}
+                itemAssignments={assignments.filter(
+                  (a) => a.itemId === item._id,
+                )}
+              />
+            )}
           </div>
         )
       })}
 
       {!readOnly ? (
         <Collapsible open={addOpen} onOpenChange={setAddOpen}>
-          <CollapsibleTrigger
-            className={cn(
-              'tap-feedback flex h-11 w-full items-center justify-between gap-2 rounded-md border px-3 text-sm font-medium',
-              'text-muted-foreground hover:bg-muted/50',
-            )}
-            aria-expanded={addOpen}
-          >
-            <span className="flex items-center gap-2">
-              <PlusIcon className={ICON.button} aria-hidden />
-              Добави артикул
-            </span>
-            <ChevronDownIcon
+          {allocationGuidance && allocationFocusKind === 'add-item' ? (
+            <GuidanceTarget
+              stepId="allocation"
+              register={allocationGuidance.register}
+              shouldPop={allocationGuidance.shouldPop}
+              reducedHighlight={allocationGuidance.reducedHighlight}
+              onPopAnimationEnd={allocationGuidance.onPopAnimationEnd}
+            >
+              <CollapsibleTrigger
+                className={cn(
+                  'tap-feedback flex h-11 w-full items-center justify-between gap-2 rounded-md border px-3 text-sm font-medium',
+                  'text-muted-foreground hover:bg-muted/50',
+                )}
+                aria-expanded={addOpen}
+              >
+                <span className="flex items-center gap-2">
+                  <PlusIcon className={ICON.button} aria-hidden />
+                  Добави артикул
+                </span>
+                <ChevronDownIcon
+                  className={cn(
+                    ICON.button,
+                    'shrink-0 transition-transform duration-200',
+                    addOpen && 'rotate-180',
+                  )}
+                  aria-hidden
+                />
+              </CollapsibleTrigger>
+            </GuidanceTarget>
+          ) : (
+            <CollapsibleTrigger
               className={cn(
-                ICON.button,
-                'shrink-0 transition-transform duration-200',
-                addOpen && 'rotate-180',
+                'tap-feedback flex h-11 w-full items-center justify-between gap-2 rounded-md border px-3 text-sm font-medium',
+                'text-muted-foreground hover:bg-muted/50',
               )}
-              aria-hidden
-            />
-          </CollapsibleTrigger>
+              aria-expanded={addOpen}
+            >
+              <span className="flex items-center gap-2">
+                <PlusIcon className={ICON.button} aria-hidden />
+                Добави артикул
+              </span>
+              <ChevronDownIcon
+                className={cn(
+                  ICON.button,
+                  'shrink-0 transition-transform duration-200',
+                  addOpen && 'rotate-180',
+                )}
+                aria-hidden
+              />
+            </CollapsibleTrigger>
+          )}
           <CollapsibleContent
             id="add-item-form"
             className="flex flex-col gap-3 pt-3 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
@@ -345,10 +453,17 @@ function ItemRow({
   item,
   readOnly = false,
   onDelete,
+  priceGuidance,
 }: {
   item: Doc<'items'>
   readOnly?: boolean
   onDelete: () => void
+  priceGuidance?: {
+    register: GuidanceTargetRegister
+    shouldPop: boolean
+    reducedHighlight: boolean
+    onPopAnimationEnd: (stepId: string) => void
+  }
 }) {
   const updateItem = useMutation(api.items.update)
   const [name, setName] = useState(item.name)
@@ -428,23 +543,50 @@ function ItemRow({
           ) : null}
         </div>
         <div className="flex items-start gap-2">
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <Input
-              value={price}
-              disabled={readOnly}
-              onChange={(e) => {
-                setPrice(e.target.value)
-                scheduleItemFieldSave('price', e.target.value)
-              }}
-              inputMode="decimal"
-              placeholder="Цена (€)"
-              className="h-11 flex-1"
-              aria-invalid={Boolean(fieldErrors.price)}
-            />
-            {fieldErrors.price ? (
-              <p className="text-xs text-destructive">{fieldErrors.price}</p>
-            ) : null}
-          </div>
+          {priceGuidance ? (
+            <GuidanceTarget
+              stepId="allocation"
+              register={priceGuidance.register}
+              shouldPop={priceGuidance.shouldPop}
+              reducedHighlight={priceGuidance.reducedHighlight}
+              onPopAnimationEnd={priceGuidance.onPopAnimationEnd}
+              className="flex min-w-0 flex-1 flex-col gap-1"
+            >
+              <Input
+                value={price}
+                disabled={readOnly}
+                onChange={(e) => {
+                  setPrice(e.target.value)
+                  scheduleItemFieldSave('price', e.target.value)
+                }}
+                inputMode="decimal"
+                placeholder="Цена (€)"
+                className="h-11 flex-1"
+                aria-invalid={Boolean(fieldErrors.price)}
+              />
+              {fieldErrors.price ? (
+                <p className="text-xs text-destructive">{fieldErrors.price}</p>
+              ) : null}
+            </GuidanceTarget>
+          ) : (
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <Input
+                value={price}
+                disabled={readOnly}
+                onChange={(e) => {
+                  setPrice(e.target.value)
+                  scheduleItemFieldSave('price', e.target.value)
+                }}
+                inputMode="decimal"
+                placeholder="Цена (€)"
+                className="h-11 flex-1"
+                aria-invalid={Boolean(fieldErrors.price)}
+              />
+              {fieldErrors.price ? (
+                <p className="text-xs text-destructive">{fieldErrors.price}</p>
+              ) : null}
+            </div>
+          )}
           <span className="mt-3 text-muted-foreground">×</span>
           <div className="flex flex-col gap-1">
             <Input

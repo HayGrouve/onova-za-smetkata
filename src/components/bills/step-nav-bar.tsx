@@ -3,7 +3,7 @@ import type { BillStep } from '#/components/bills/bill-steps-bar.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { formatEur } from '#/lib/format-currency.ts'
-import { prefersReducedMotion } from '#/lib/guidance-focus-prototype/scroll-pop-target.ts'
+import { prefersReducedMotion } from '#/lib/guidance-focus/scroll-pop-target.ts'
 import { cn } from '#/lib/utils.ts'
 
 export interface StepNavBarProps {

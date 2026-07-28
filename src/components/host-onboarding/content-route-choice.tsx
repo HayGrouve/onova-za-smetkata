@@ -1,46 +1,16 @@
 import { CameraIcon, KeyboardIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
-import {
-  hasSeenContentRouteChoice,
-  markContentRouteChoiceSeen,
-} from '#/lib/host-onboarding-session.ts'
-import { cn } from '#/lib/utils.ts'
 import { HOST_ONBOARDING_CONTENT_ROUTE } from '../../../shared/host-onboarding-messages.ts'
 import type { HostOnboardingContentRoute } from '../../../shared/host-onboarding.ts'
-import type { Id } from '../../../convex/_generated/dataModel'
 
 export interface ContentRouteChoiceProps {
-  billId: Id<'bills'>
   onChoose: (route: HostOnboardingContentRoute) => void
 }
 
-export function ContentRouteChoice({
-  billId,
-  onChoose,
-}: ContentRouteChoiceProps) {
-  const [shouldPop, setShouldPop] = useState(false)
-
-  useEffect(() => {
-    if (hasSeenContentRouteChoice(billId)) return
-    const timer = window.setTimeout(() => setShouldPop(true), 550)
-    return () => window.clearTimeout(timer)
-  }, [billId])
-
-  function handlePopEnd(event: React.AnimationEvent<HTMLDivElement>) {
-    if (event.animationName !== 'content-route-choice-pop') return
-    markContentRouteChoiceSeen(billId)
-  }
-
+export function ContentRouteChoice({ onChoose }: ContentRouteChoiceProps) {
   return (
-    <div
-      className={cn(
-        'flex origin-center flex-col gap-3 rounded-xl border border-dashed p-4',
-        shouldPop && 'content-route-choice-pop',
-      )}
-      onAnimationEnd={shouldPop ? handlePopEnd : undefined}
-    >
+    <div className="flex flex-col gap-3 rounded-xl border border-dashed p-4">
       <div>
         <p className="font-medium text-primary">
           {HOST_ONBOARDING_CONTENT_ROUTE.title}

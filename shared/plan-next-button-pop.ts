@@ -1,4 +1,4 @@
-import type { BillStepNumber } from '../../../shared/bill-step-completion.ts'
+import type { BillStepNumber } from './bill-step-completion.ts'
 
 export interface NextButtonPopTracker {
   initialized: boolean
@@ -38,7 +38,7 @@ export interface PlanNextButtonPopResult {
   clearPop: boolean
 }
 
-/** Decide whether to pop the step nav “Напред” button after a step completes. */
+/** Decide whether to pop the step nav „Напред“ button after a step completes. */
 export function planNextButtonPop(
   input: PlanNextButtonPopInput,
 ): PlanNextButtonPopResult {

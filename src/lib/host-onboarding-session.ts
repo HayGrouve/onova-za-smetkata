@@ -4,8 +4,6 @@ const WELCOME_DEFERRED_KEY = 'host-onboarding:welcome-deferred'
 const REPLAY_KEY = 'host-onboarding:replay'
 const DISMISSED_HINTS_PREFIX = 'host-onboarding:dismissed:'
 const CONTENT_ROUTE_PREFIX = 'host-onboarding:route:'
-const CONTENT_ROUTE_CHOICE_SEEN_PREFIX =
-  'host-onboarding:content-route-choice-pop-v2:'
 const HANDOFF_DISMISSED_PREFIX = 'host-onboarding:handoff:'
 
 function readSessionFlag(key: string): boolean {
@@ -36,6 +34,21 @@ export function isReplayActiveThisSession(): boolean {
 
 export function startReplayThisSession() {
   writeSessionFlag(REPLAY_KEY, true)
+}
+
+/** Clears session-local hint dismissals so replay runs the full scroll+pop chain (#71). */
+export function clearAllDismissedHintsThisSession() {
+  if (typeof sessionStorage === 'undefined') return
+  const keysToRemove: string[] = []
+  for (let index = 0; index < sessionStorage.length; index += 1) {
+    const key = sessionStorage.key(index)
+    if (key?.startsWith(DISMISSED_HINTS_PREFIX)) {
+      keysToRemove.push(key)
+    }
+  }
+  for (const key of keysToRemove) {
+    sessionStorage.removeItem(key)
+  }
 }
 
 export function stopReplayThisSession() {
@@ -91,14 +104,6 @@ export function saveContentRoute(
   sessionStorage.setItem(contentRouteKey(billId), route)
 }
 
-export function hasSeenContentRouteChoice(billId: string): boolean {
-  return readSessionFlag(`${CONTENT_ROUTE_CHOICE_SEEN_PREFIX}${billId}`)
-}
-
-export function markContentRouteChoiceSeen(billId: string) {
-  writeSessionFlag(`${CONTENT_ROUTE_CHOICE_SEEN_PREFIX}${billId}`, true)
-}
-
 export function isHandoffDismissedThisSession(billId: string): boolean {
   return readSessionFlag(`${HANDOFF_DISMISSED_PREFIX}${billId}`)
 }
@@ -119,7 +124,6 @@ export function clearHostOnboardingSession() {
       key === REPLAY_KEY ||
       key.startsWith(DISMISSED_HINTS_PREFIX) ||
       key.startsWith(CONTENT_ROUTE_PREFIX) ||
-      key.startsWith(CONTENT_ROUTE_CHOICE_SEEN_PREFIX) ||
       key.startsWith(HANDOFF_DISMISSED_PREFIX)
     ) {
       keysToRemove.push(key)

@@ -1,5 +1,5 @@
-import type { GuidanceStep } from '../../../shared/host-onboarding.ts'
-import { currentGuidanceStep } from '../../../shared/host-onboarding.ts'
+import type { GuidanceStep } from './host-onboarding.ts'
+import { currentGuidanceStep } from './host-onboarding.ts'
 
 /** Steps that show guidance copy only — no scroll+pop target (#68). */
 export const GUIDANCE_STEPS_WITHOUT_SCROLL_POP = new Set(['scan-processing'])

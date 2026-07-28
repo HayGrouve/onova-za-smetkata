@@ -15,6 +15,8 @@ import { ICON } from '#/lib/app-icons.ts'
 import { buildBillJoinUrl, resolveAppOrigin } from '#/lib/bill-join-url.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { shareLink } from '#/lib/share-link.ts'
+import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
+import type { GuidanceTargetRegister } from '#/lib/guidance-focus/use-guidance-focus.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -25,6 +27,12 @@ export interface BillInviteCardProps {
   readOnly?: boolean
   /** When set, handles guest-link sharing (e.g. onboarding payment checkpoint). */
   onShareLink?: (joinUrl: string) => Promise<boolean>
+  shareGuidance?: {
+    register: GuidanceTargetRegister
+    shouldPop: boolean
+    reducedHighlight: boolean
+    onPopAnimationEnd: (stepId: string) => void
+  }
 }
 
 export function BillInviteCard({
@@ -33,6 +41,7 @@ export function BillInviteCard({
   disabled,
   readOnly = false,
   onShareLink,
+  shareGuidance,
 }: BillInviteCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [joinUrl, setJoinUrl] = useState('')
@@ -121,16 +130,38 @@ export function BillInviteCard({
               Приятелите сканират QR кода, избират името си и отбелязват какво
               са консумирали. Използвайте само с хора на масата.
             </p>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11 w-full"
-              disabled={!joinUrl}
-              onClick={() => void handleShareLink()}
-            >
-              <Share2Icon className={ICON.button} aria-hidden />
-              Сподели линк
-            </Button>
+            {shareGuidance ? (
+              <GuidanceTarget
+                stepId="share"
+                register={shareGuidance.register}
+                shouldPop={shareGuidance.shouldPop}
+                reducedHighlight={shareGuidance.reducedHighlight}
+                onPopAnimationEnd={shareGuidance.onPopAnimationEnd}
+                className="w-full"
+              >
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 w-full"
+                  disabled={!joinUrl}
+                  onClick={() => void handleShareLink()}
+                >
+                  <Share2Icon className={ICON.button} aria-hidden />
+                  Сподели линк
+                </Button>
+              </GuidanceTarget>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 w-full"
+                disabled={!joinUrl}
+                onClick={() => void handleShareLink()}
+              >
+                <Share2Icon className={ICON.button} aria-hidden />
+                Сподели линк
+              </Button>
+            )}
             {!readOnly ? (
               <Button
                 type="button"

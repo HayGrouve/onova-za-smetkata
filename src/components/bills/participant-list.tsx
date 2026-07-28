@@ -27,8 +27,8 @@ import {
   writeLastFriendGroupId,
 } from '#/lib/last-friend-group-storage.ts'
 import { sortFriendGroupsWithPinned } from '#/lib/sort-friend-groups-with-pinned.ts'
-import { GuidanceTarget } from '#/lib/guidance-focus-prototype/guidance-target.tsx'
-import type { GuidanceTargetRegister } from '#/lib/guidance-focus-prototype/use-guidance-focus.ts'
+import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
+import type { GuidanceTargetRegister } from '#/lib/guidance-focus/use-guidance-focus.ts'
 import { cn } from '#/lib/utils.ts'
 import { validateParticipantAdd } from '#/lib/participant-schema.ts'
 import { Input } from '#/components/ui/input.tsx'

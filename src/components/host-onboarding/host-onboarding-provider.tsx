@@ -29,6 +29,7 @@ import {
   readContentRoute,
   readDismissedHintIds,
   saveContentRoute,
+  clearAllDismissedHintsThisSession,
   startReplayThisSession,
 } from '#/lib/host-onboarding-session.ts'
 import { shareLink } from '#/lib/share-link.ts'
@@ -251,6 +252,7 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
   }, [confirm, refreshBillSession, skipOnboarding])
 
   const startReplay = useCallback(() => {
+    clearAllDismissedHintsThisSession()
     startReplayThisSession()
     setReplayActive(true)
     toast.message(HOST_ONBOARDING_HOME.replayToast)

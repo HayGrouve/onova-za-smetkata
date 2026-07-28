@@ -5,13 +5,13 @@ import { isEditorStepGuidanceComplete } from '../../../shared/host-onboarding.ts
 import {
   createNextButtonPopTracker,
   planNextButtonPop,
-} from './plan-next-button-pop.ts'
-import type { NextButtonPopTracker } from './plan-next-button-pop.ts'
+} from '../../../shared/plan-next-button-pop.ts'
+import type { NextButtonPopTracker } from '../../../shared/plan-next-button-pop.ts'
 import {
   resolveActiveGuidanceStep,
   scrollBlockForStep,
   shouldScrollPopForStep,
-} from './plan-guidance-focus.ts'
+} from '../../../shared/plan-guidance-focus.ts'
 import {
   prefersReducedMotion,
   runScrollPopSequence,
@@ -57,7 +57,10 @@ export function useGuidanceFocus(
   const [nextButtonPopToken, setNextButtonPopToken] = useState(0)
   const lastScrolledStepIdRef = useRef<string | null>(null)
   const prevActiveStepIdRef = useRef<string | undefined>(undefined)
+  const prevEditorStepRef = useRef(options.currentEditorStep)
+  const prevDismissedCountRef = useRef(options.dismissedHintIds.length)
   const queuedStepIdRef = useRef<string | null>(null)
+  const scrollCleanupRef = useRef<(() => void) | null>(null)
   const editorStepGuidanceComplete = useMemo(
     () =>
       isEditorStepGuidanceComplete(
@@ -86,6 +89,13 @@ export function useGuidanceFocus(
   )
 
   activeStepIdRef.current = activeStep?.id
+
+  const cancelActiveFocus = useCallback(() => {
+    scrollCleanupRef.current?.()
+    scrollCleanupRef.current = null
+    setPoppingStepId(null)
+    setReducedHighlightStepId(null)
+  }, [])
 
   const registerTarget: GuidanceTargetRegister = useCallback(
     (stepId, element) => {
@@ -118,6 +128,7 @@ export function useGuidanceFocus(
     if (!element) return
 
     queuedStepIdRef.current = null
+    scrollCleanupRef.current?.()
 
     const cleanup = runScrollPopSequence({
       element,
@@ -135,8 +146,29 @@ export function useGuidanceFocus(
       },
     })
 
+    scrollCleanupRef.current = cleanup
     return cleanup
   }, [])
+
+  useLayoutEffect(() => {
+    if (prevEditorStepRef.current !== options.currentEditorStep) {
+      lastScrolledStepIdRef.current = null
+      prevEditorStepRef.current = options.currentEditorStep
+    }
+  }, [options.currentEditorStep])
+
+  useLayoutEffect(() => {
+    if (options.dismissedHintIds.length < prevDismissedCountRef.current) {
+      lastScrolledStepIdRef.current = null
+    }
+    prevDismissedCountRef.current = options.dismissedHintIds.length
+  }, [options.dismissedHintIds.length])
+
+  useLayoutEffect(() => {
+    if (!options.enabled) {
+      cancelActiveFocus()
+    }
+  }, [options.enabled, cancelActiveFocus])
 
   useLayoutEffect(() => {
     const result = planNextButtonPop({
@@ -186,7 +218,12 @@ export function useGuidanceFocus(
     }
 
     const cleanup = focusStep(activeStep)
-    return cleanup
+    return () => {
+      cleanup?.()
+      if (scrollCleanupRef.current === cleanup) {
+        scrollCleanupRef.current = null
+      }
+    }
   }, [
     activeStep,
     options.enabled,
