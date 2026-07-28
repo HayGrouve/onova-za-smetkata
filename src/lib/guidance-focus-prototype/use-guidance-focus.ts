@@ -1,9 +1,13 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { BillStep } from '#/components/bills/bill-steps-bar.tsx'
-import type { BillStepCompletion } from '../../../shared/bill-step-completion.ts'
 import type { GuidanceStep } from '../../../shared/host-onboarding.ts'
+import { isEditorStepGuidanceComplete } from '../../../shared/host-onboarding.ts'
 import {
-  planGuidanceAutoNavigation,
+  createNextButtonPopTracker,
+  planNextButtonPop,
+} from './plan-next-button-pop.ts'
+import type { NextButtonPopTracker } from './plan-next-button-pop.ts'
+import {
   resolveActiveGuidanceStep,
   scrollBlockForStep,
   shouldScrollPopForStep,
@@ -23,8 +27,10 @@ export interface UseGuidanceFocusOptions {
   steps: GuidanceStep[]
   dismissedHintIds: string[]
   currentEditorStep: BillStep
-  stepCompletion: BillStepCompletion
-  onNavigateToStep: (step: BillStep, options: { resetScroll: boolean }) => void
+  /** When true, defer next-button pop (e.g. add-guest input still focused). */
+  blockAutoNavigation?: boolean
+  /** When false, queue the pop until the step nav bar is visible (e.g. review sheet). */
+  canShowNextButtonPop?: boolean
 }
 
 export interface UseGuidanceFocusResult {
@@ -33,6 +39,11 @@ export interface UseGuidanceFocusResult {
   reducedHighlightStepId: string | null
   activeStepId: string | undefined
   onPopAnimationEnd: (stepId: string) => void
+  /** Re-run scroll+pop for a step (e.g. after receipt upload mounts OCR button). */
+  queueStepFocus: (stepId: string) => void
+  /** Increments when the step nav “Напред” button should pop. */
+  nextButtonPopToken: number
+  onNextButtonPopEnd: () => void
 }
 
 export function useGuidanceFocus(
@@ -43,8 +54,28 @@ export function useGuidanceFocus(
   const [reducedHighlightStepId, setReducedHighlightStepId] = useState<
     string | null
   >(null)
-  const pendingAfterNavStepIdRef = useRef<string | null>(null)
+  const [nextButtonPopToken, setNextButtonPopToken] = useState(0)
   const lastScrolledStepIdRef = useRef<string | null>(null)
+  const prevActiveStepIdRef = useRef<string | undefined>(undefined)
+  const queuedStepIdRef = useRef<string | null>(null)
+  const editorStepGuidanceComplete = useMemo(
+    () =>
+      isEditorStepGuidanceComplete(
+        options.steps,
+        options.currentEditorStep,
+        options.dismissedHintIds,
+      ),
+    [options.steps, options.currentEditorStep, options.dismissedHintIds],
+  )
+  const nextButtonPopTrackerRef = useRef<NextButtonPopTracker>(
+    createNextButtonPopTracker(
+      options.currentEditorStep,
+      editorStepGuidanceComplete,
+    ),
+  )
+  const [focusRequestVersion, setFocusRequestVersion] = useState(0)
+  const [targetsVersion, setTargetsVersion] = useState(0)
+  const activeStepIdRef = useRef<string | undefined>(undefined)
 
   const activeStep = useMemo(
     () =>
@@ -54,16 +85,31 @@ export function useGuidanceFocus(
     [options.enabled, options.steps, options.dismissedHintIds],
   )
 
+  activeStepIdRef.current = activeStep?.id
+
   const registerTarget: GuidanceTargetRegister = useCallback(
     (stepId, element) => {
       if (element) {
         targetsRef.current.set(stepId, element)
+        if (
+          queuedStepIdRef.current === stepId ||
+          stepId === activeStepIdRef.current
+        ) {
+          lastScrolledStepIdRef.current = null
+        }
       } else {
         targetsRef.current.delete(stepId)
       }
+      setTargetsVersion((version) => version + 1)
     },
     [],
   )
+
+  const queueStepFocus = useCallback((stepId: string) => {
+    queuedStepIdRef.current = stepId
+    lastScrolledStepIdRef.current = null
+    setFocusRequestVersion((version) => version + 1)
+  }, [])
 
   const focusStep = useCallback((step: GuidanceStep) => {
     if (!shouldScrollPopForStep(step.id)) return
@@ -71,12 +117,15 @@ export function useGuidanceFocus(
     const element = targetsRef.current.get(step.id)
     if (!element) return
 
-    lastScrolledStepIdRef.current = step.id
+    queuedStepIdRef.current = null
 
     const cleanup = runScrollPopSequence({
       element,
       block: scrollBlockForStep(step.id),
       shouldPop: true,
+      onScrollStart: () => {
+        lastScrolledStepIdRef.current = step.id
+      },
       onPopStart: () => {
         if (prefersReducedMotion()) {
           setReducedHighlightStepId(step.id)
@@ -90,25 +139,37 @@ export function useGuidanceFocus(
   }, [])
 
   useLayoutEffect(() => {
-    if (!options.enabled || !activeStep) return
-
-    if (!shouldScrollPopForStep(activeStep.id)) {
-      pendingAfterNavStepIdRef.current = null
-      return
-    }
-
-    const navPlan = planGuidanceAutoNavigation({
-      activeStep,
-      currentEditorStep: options.currentEditorStep,
-      stepCompletion: options.stepCompletion,
+    const result = planNextButtonPop({
+      tracker: nextButtonPopTrackerRef.current,
+      enabled: options.enabled,
+      editorStep: options.currentEditorStep,
+      stepComplete: editorStepGuidanceComplete,
+      blocked: options.blockAutoNavigation ?? false,
+      canShow: options.canShowNextButtonPop ?? true,
     })
 
-    if (navPlan.shouldNavigate && navPlan.targetStep !== undefined) {
-      pendingAfterNavStepIdRef.current = activeStep.id
+    nextButtonPopTrackerRef.current = result.tracker
+
+    if (result.triggerPop) {
+      setNextButtonPopToken((token) => token + 1)
+    }
+  }, [
+    options.enabled,
+    options.currentEditorStep,
+    editorStepGuidanceComplete,
+    options.blockAutoNavigation,
+    options.canShowNextButtonPop,
+  ])
+
+  useLayoutEffect(() => {
+    if (!options.enabled || !activeStep) return
+
+    if (prevActiveStepIdRef.current !== activeStep.id) {
       lastScrolledStepIdRef.current = null
-      options.onNavigateToStep(navPlan.targetStep as BillStep, {
-        resetScroll: navPlan.resetScroll,
-      })
+      prevActiveStepIdRef.current = activeStep.id
+    }
+
+    if (!shouldScrollPopForStep(activeStep.id)) {
       return
     }
 
@@ -116,13 +177,11 @@ export function useGuidanceFocus(
       return
     }
 
-    const pendingId = pendingAfterNavStepIdRef.current
-    if (pendingId !== null && pendingId !== activeStep.id) {
-      return
-    }
-    pendingAfterNavStepIdRef.current = null
+    const queuedStepId = queuedStepIdRef.current
+    const shouldForceFocus =
+      queuedStepId !== null && queuedStepId === activeStep.id
 
-    if (lastScrolledStepIdRef.current === activeStep.id) {
+    if (!shouldForceFocus && lastScrolledStepIdRef.current === activeStep.id) {
       return
     }
 
@@ -132,13 +191,17 @@ export function useGuidanceFocus(
     activeStep,
     options.enabled,
     options.currentEditorStep,
-    options.stepCompletion,
-    options.onNavigateToStep,
     focusStep,
+    targetsVersion,
+    focusRequestVersion,
   ])
 
   const onPopAnimationEnd = useCallback((stepId: string) => {
     setPoppingStepId((current) => (current === stepId ? null : current))
+  }, [])
+
+  const onNextButtonPopEnd = useCallback(() => {
+    // Token is monotonic; nothing to reset. Hook for future side effects.
   }, [])
 
   return {
@@ -147,5 +210,8 @@ export function useGuidanceFocus(
     reducedHighlightStepId,
     activeStepId: activeStep?.id,
     onPopAnimationEnd,
+    queueStepFocus,
+    nextButtonPopToken,
+    onNextButtonPopEnd,
   }
 }

@@ -1,6 +1,7 @@
 import type { AssignmentInput, ItemInput } from './bill-calculations'
 import { resolveHostParticipantName } from './host-profile'
 import { itemHasFullUnitCoverage } from './unit-coverage'
+import { HOST_ONBOARDING_SCAN } from './host-onboarding-messages'
 
 export const HOST_ONBOARDING_VERSION = 1
 
@@ -32,6 +33,7 @@ export interface HostOnboardingBillContext {
   assignments: AssignmentInput[]
   contentRoute?: HostOnboardingContentRoute
   receiptUploaded: boolean
+  receiptScanning: boolean
   scanReviewOpen: boolean
   sharedAt?: number
 }
@@ -121,8 +123,28 @@ export function deriveHostOnboardingGuidance(
           id: 'scan-review',
           anchor: 'content',
           step: 1,
-          title: 'Изберете какво е на масата',
-          body: 'Оставете само редовете от вашата маса, а тези с „?" сверете с бележката.',
+          title: HOST_ONBOARDING_SCAN.reviewTitle,
+          body: HOST_ONBOARDING_SCAN.reviewBody,
+          done: false,
+        }
+      }
+      if (bill.receiptScanning) {
+        return {
+          id: 'scan-processing',
+          anchor: 'content',
+          step: 1,
+          title: HOST_ONBOARDING_SCAN.processingTitle,
+          body: HOST_ONBOARDING_SCAN.processingBody,
+          done: false,
+        }
+      }
+      if (bill.receiptUploaded) {
+        return {
+          id: 'scan-run-ocr',
+          anchor: 'content',
+          step: 1,
+          title: HOST_ONBOARDING_SCAN.runOcrTitle,
+          body: HOST_ONBOARDING_SCAN.runOcrBody,
           done: false,
         }
       }
@@ -130,8 +152,8 @@ export function deriveHostOnboardingGuidance(
         id: 'scan-upload',
         anchor: 'content',
         step: 1,
-        title: 'Снимайте цялата бележка',
-        body: 'Хванете всички редове в кадър — така цените се разчитат по-точно.',
+        title: HOST_ONBOARDING_SCAN.uploadTitle,
+        body: HOST_ONBOARDING_SCAN.uploadBody,
         done: bill.receiptUploaded,
       }
     }
@@ -229,6 +251,19 @@ export function guidanceForEditorStep(
       !step.done &&
       step.step === editorStep &&
       !dismissedHintIds.includes(step.id),
+  )
+}
+
+/** True when every onboarding hint for an editor step is done or dismissed. */
+export function isEditorStepGuidanceComplete(
+  steps: GuidanceStep[],
+  editorStep: GuidanceStepNumber,
+  dismissedHintIds: string[],
+): boolean {
+  const relevant = steps.filter((step) => step.step === editorStep)
+  if (relevant.length === 0) return false
+  return relevant.every(
+    (step) => step.done || dismissedHintIds.includes(step.id),
   )
 }
 

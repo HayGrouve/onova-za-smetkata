@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useEffect, useRef } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import { cn } from '#/lib/utils.ts'
 import type { GuidanceTargetRegister } from './use-guidance-focus.ts'
 
@@ -25,7 +25,7 @@ export function GuidanceTarget({
 }: GuidanceTargetProps) {
   const ref = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     register(stepId, ref.current)
     return () => register(stepId, null)
   }, [register, stepId])

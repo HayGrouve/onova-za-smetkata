@@ -1,7 +1,10 @@
+import { useEffect, useState } from 'react'
 import type { BillStep } from '#/components/bills/bill-steps-bar.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { formatEur } from '#/lib/format-currency.ts'
+import { prefersReducedMotion } from '#/lib/guidance-focus-prototype/scroll-pop-target.ts'
+import { cn } from '#/lib/utils.ts'
 
 export interface StepNavBarProps {
   step: BillStep
@@ -9,6 +12,9 @@ export interface StepNavBarProps {
   totalCents: number
   unassignedCount: number
   onTotalClick: () => void
+  /** Increment to replay the next-button pop animation. */
+  nextButtonPopToken?: number
+  onNextButtonPopEnd?: () => void
 }
 
 export function StepNavBar({
@@ -17,7 +23,29 @@ export function StepNavBar({
   totalCents,
   unassignedCount,
   onTotalClick,
+  nextButtonPopToken = 0,
+  onNextButtonPopEnd,
 }: StepNavBarProps) {
+  const [showNextPop, setShowNextPop] = useState(false)
+
+  useEffect(() => {
+    if (nextButtonPopToken <= 0) {
+      setShowNextPop(false)
+      return
+    }
+
+    setShowNextPop(false)
+    const timer = window.setTimeout(() => setShowNextPop(true), 50)
+    return () => window.clearTimeout(timer)
+  }, [nextButtonPopToken])
+
+  function handleNextPopEnd(event: React.AnimationEvent<HTMLDivElement>) {
+    if (event.animationName !== 'content-route-choice-pop') return
+    onNextButtonPopEnd?.()
+  }
+
+  const reducedMotion = prefersReducedMotion()
+
   return (
     <>
       {/* In-flow spacer — the fixed bar does not reserve layout space. */}
@@ -52,12 +80,25 @@ export function StepNavBar({
               </Button>
             )}
             {step < 4 && (
-              <Button
-                className="h-11"
-                onClick={() => onStepChange((step + 1) as BillStep)}
+              <div
+                className={cn(
+                  'inline-flex origin-center rounded-md',
+                  showNextPop && !reducedMotion && 'content-route-choice-pop',
+                  showNextPop &&
+                    reducedMotion &&
+                    'outline-2 outline-offset-2 outline-primary',
+                )}
+                onAnimationEnd={
+                  showNextPop && !reducedMotion ? handleNextPopEnd : undefined
+                }
               >
-                Напред
-              </Button>
+                <Button
+                  className="h-11"
+                  onClick={() => onStepChange((step + 1) as BillStep)}
+                >
+                  Напред
+                </Button>
+              </div>
             )}
           </div>
         </div>

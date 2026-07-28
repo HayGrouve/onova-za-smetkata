@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   deriveHostOnboardingGuidance,
   guidanceForEditorStep,
+  isEditorStepGuidanceComplete,
   isEligibleForAutomaticOnboarding,
   isPreparedBill,
   planUsernameOnWelcomeConfirm,
@@ -21,6 +22,7 @@ const baseBill = {
     unitIndex: number
   }[],
   receiptUploaded: false,
+  receiptScanning: false,
   scanReviewOpen: false,
 }
 
@@ -93,6 +95,37 @@ describe('deriveHostOnboardingGuidance', () => {
       id: 'scan-review',
     })
   })
+
+  it('prompts to run OCR after receipt upload', () => {
+    const steps = deriveHostOnboardingGuidance({
+      bill: {
+        ...baseBill,
+        contentRoute: 'scan',
+        receiptUploaded: true,
+      },
+      dismissedHintIds: [],
+    })
+    expect(guidanceForEditorStep(steps, 1, [])).toMatchObject({
+      id: 'scan-run-ocr',
+      title: 'Стартирайте разпознаването',
+    })
+  })
+
+  it('shows processing guidance while OCR runs', () => {
+    const steps = deriveHostOnboardingGuidance({
+      bill: {
+        ...baseBill,
+        contentRoute: 'scan',
+        receiptUploaded: true,
+        receiptScanning: true,
+      },
+      dismissedHintIds: [],
+    })
+    expect(guidanceForEditorStep(steps, 1, [])).toMatchObject({
+      id: 'scan-processing',
+      title: 'Разпознаване на бележката…',
+    })
+  })
 })
 
 describe('isPreparedBill', () => {
@@ -148,5 +181,32 @@ describe('stepBarGuidanceLabel', () => {
       step: 2,
       label: 'Участници',
     })
+  })
+})
+
+describe('isEditorStepGuidanceComplete', () => {
+  it('is false for step 1 until content route and restaurant are done', () => {
+    const dismissed: string[] = []
+    const beforeRoute = deriveHostOnboardingGuidance({
+      bill: baseBill,
+      dismissedHintIds: dismissed,
+    })
+    expect(isEditorStepGuidanceComplete(beforeRoute, 1, dismissed)).toBe(false)
+
+    const manual = deriveHostOnboardingGuidance({
+      bill: { ...baseBill, contentRoute: 'manual' },
+      dismissedHintIds: dismissed,
+    })
+    expect(isEditorStepGuidanceComplete(manual, 1, dismissed)).toBe(false)
+
+    const ready = deriveHostOnboardingGuidance({
+      bill: {
+        ...baseBill,
+        contentRoute: 'manual',
+        restaurantName: 'Механа',
+      },
+      dismissedHintIds: dismissed,
+    })
+    expect(isEditorStepGuidanceComplete(ready, 1, dismissed)).toBe(true)
   })
 })

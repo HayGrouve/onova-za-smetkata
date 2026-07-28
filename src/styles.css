@@ -299,6 +299,22 @@ a {
       animation: guest-count-pop 240ms cubic-bezier(0.16, 1, 0.3, 1);
     }
 
+    @keyframes content-route-choice-pop {
+      0% {
+        transform: scale(1);
+      }
+      45% {
+        transform: scale(1.08);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .content-route-choice-pop {
+      animation: content-route-choice-pop 420ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
     @keyframes guest-total-pulse {
       0% {
         transform: scale(1);

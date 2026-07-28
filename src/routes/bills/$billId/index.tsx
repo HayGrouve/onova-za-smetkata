@@ -10,7 +10,7 @@ import {
   ShoppingBagIcon,
   UsersIcon,
 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { BillAdvancedSettings } from '#/components/bills/bill-advanced-settings.tsx'
 import { OcrActivityBar } from '#/components/bills/ocr-activity-bar.tsx'
@@ -66,6 +66,7 @@ import { ContentRouteChoice } from '#/components/host-onboarding/content-route-c
 import { useHostOnboarding } from '#/components/host-onboarding/host-onboarding-provider.tsx'
 import { GuidanceTarget } from '#/lib/guidance-focus-prototype/guidance-target.tsx'
 import { useGuidanceFocus } from '#/lib/guidance-focus-prototype/use-guidance-focus.ts'
+import { GUIDANCE_FOCUS_TIMING } from '#/lib/guidance-focus-prototype/plan-guidance-focus.ts'
 import { readDismissedHintIds } from '#/lib/host-onboarding-session.ts'
 import { deriveHostOnboardingGuidance } from '../../../../shared/host-onboarding.ts'
 import { HOST_ONBOARDING_STEP_BAR } from '../../../../shared/host-onboarding-messages.ts'
@@ -172,6 +173,10 @@ function BillEditorContent({
 
   const onboardingActive = guidanceOnForBill(billId)
   const contentRoute = getContentRoute(billId)
+  const queueStepFocusRef = useRef<(stepId: string) => void>(() => {})
+  const [receiptUploadedForGuidance, setReceiptUploadedForGuidance] = useState(
+    () => Boolean(bill.receiptStorageId),
+  )
 
   const {
     galleryInputRef,
@@ -196,6 +201,10 @@ function BillEditorContent({
     billId,
     items,
     assignments,
+    onReceiptUploaded: () => {
+      setReceiptUploadedForGuidance(true)
+      queueStepFocusRef.current('scan-run-ocr')
+    },
   })
 
   const [restaurantName, setRestaurantName] = useState(bill.restaurantName)
@@ -209,8 +218,15 @@ function BillEditorContent({
     date?: string
   }>({})
   const [breakdownOpen, setBreakdownOpen] = useState(false)
+  const [addGuestFocused, setAddGuestFocused] = useState(false)
   const initializedBillId = useRef(bill._id)
   const appliedRestaurantFromScanRef = useRef<Id<'receiptScans'> | null>(null)
+
+  useEffect(() => {
+    if (bill.receiptStorageId) {
+      setReceiptUploadedForGuidance(true)
+    }
+  }, [bill.receiptStorageId])
 
   useEffect(() => {
     if (initializedBillId.current !== bill._id) {
@@ -363,6 +379,9 @@ function BillEditorContent({
     restaurantName.trim() !== '',
   )
 
+  const receiptUploaded =
+    Boolean(bill.receiptStorageId) || receiptUploadedForGuidance
+
   const showContentRouteChoice =
     onboardingActive && contentRoute === undefined && items.length === 0
 
@@ -384,7 +403,7 @@ function BillEditorContent({
         participantId: assignment.participantId,
         unitIndex: assignment.unitIndex,
       })),
-      receiptUploaded: Boolean(bill.receiptStorageId),
+      receiptUploaded,
       receiptScanning: isScanning,
       scanReviewOpen: reviewSheetOpen,
     }),
@@ -397,7 +416,7 @@ function BillEditorContent({
       guestCount,
       items,
       assignments,
-      bill.receiptStorageId,
+      receiptUploaded,
       isScanning,
       reviewSheetOpen,
     ],
@@ -436,15 +455,46 @@ function BillEditorContent({
     contentRoute,
   ])
 
+  const prevReviewSheetOpenRef = useRef(reviewSheetOpen)
+  const [reviewSheetSettling, setReviewSheetSettling] = useState(
+    () => reviewSheetOpen,
+  )
+
+  useLayoutEffect(() => {
+    if (reviewSheetOpen) {
+      prevReviewSheetOpenRef.current = true
+      setReviewSheetSettling(true)
+      return
+    }
+
+    if (prevReviewSheetOpenRef.current) {
+      prevReviewSheetOpenRef.current = false
+      setReviewSheetSettling(true)
+      const timer = window.setTimeout(
+        () => setReviewSheetSettling(false),
+        GUIDANCE_FOCUS_TIMING.SHEET_CLOSE_SETTLE_MS,
+      )
+      return () => window.clearTimeout(timer)
+    }
+
+    setReviewSheetSettling(false)
+  }, [reviewSheetOpen])
+
   const guidanceFocus = useGuidanceFocus({
     enabled: onboardingActive,
     steps: guidanceStepsBundle.steps,
     dismissedHintIds: guidanceStepsBundle.dismissedHintIds,
     currentEditorStep: step,
-    stepCompletion,
-    onNavigateToStep: (nextStep, { resetScroll }) =>
-      goToStep(nextStep, { resetScroll }),
+    blockAutoNavigation: addGuestFocused,
+    canShowNextButtonPop: !reviewSheetOpen && !reviewSheetSettling,
   })
+  queueStepFocusRef.current = guidanceFocus.queueStepFocus
+
+  useEffect(() => {
+    if (step !== 2) {
+      setAddGuestFocused(false)
+    }
+  }, [step])
 
   const stepBarSignal = useMemo(
     () => getStepBarSignal(guidanceInput),
@@ -540,7 +590,7 @@ function BillEditorContent({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
-                  {!bill.receiptStorageId ? (
+                  {!receiptUploaded ? (
                     <GuidanceTarget
                       stepId="scan-upload"
                       register={guidanceFocus.registerTarget}
@@ -620,7 +670,7 @@ function BillEditorContent({
                       {isUploading ? 'Качване...' : 'Снимай'}
                     </button>
                   </div>
-                  {bill.receiptStorageId && (
+                  {receiptUploaded ? (
                     <GuidanceTarget
                       stepId="scan-run-ocr"
                       register={guidanceFocus.registerTarget}
@@ -652,7 +702,7 @@ function BillEditorContent({
                         {isScanning ? 'Разпознаване…' : 'Разпознай артикули'}
                       </Button>
                     </GuidanceTarget>
-                  )}
+                  ) : null}
                 </CardContent>
               </Card>
 
@@ -777,23 +827,11 @@ function BillEditorContent({
                             guidanceFocus.reducedHighlightStepId ===
                             'participants',
                           onPopAnimationEnd: guidanceFocus.onPopAnimationEnd,
+                          onAddGuestFocusChange: setAddGuestFocused,
                         }
                       : undefined
                   }
                 />
-                <div className="mt-4">
-                  <BillInviteCard
-                    billId={billId}
-                    shareToken={bill.shareToken}
-                    disabled={participants.length === 0}
-                    readOnly={bill.status === 'final'}
-                    onShareLink={
-                      onboardingActive
-                        ? (joinUrl) => interceptGuestShare(billId, joinUrl)
-                        : undefined
-                    }
-                  />
-                </div>
               </CardContent>
             </Card>
           )}
@@ -844,6 +882,17 @@ function BillEditorContent({
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
                   {guidanceSlot('allocation')}
+                  <BillInviteCard
+                    billId={billId}
+                    shareToken={bill.shareToken}
+                    disabled={participants.length === 0}
+                    readOnly={bill.status === 'final'}
+                    onShareLink={
+                      onboardingActive
+                        ? (joinUrl) => interceptGuestShare(billId, joinUrl)
+                        : undefined
+                    }
+                  />
                   <p className="text-xs text-muted-foreground">
                     Добавете данък като отделен артикул. Бакшишът се въвежда на
                     стъпка 1.
@@ -888,6 +937,8 @@ function BillEditorContent({
           totalCents={totals.billTotalCents}
           unassignedCount={unassignedItemsCount}
           onTotalClick={() => setBreakdownOpen(true)}
+          nextButtonPopToken={guidanceFocus.nextButtonPopToken}
+          onNextButtonPopEnd={guidanceFocus.onNextButtonPopEnd}
         />
       )}
 

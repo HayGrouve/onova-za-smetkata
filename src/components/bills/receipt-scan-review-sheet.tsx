@@ -35,6 +35,7 @@ export interface ReceiptScanReviewSheetProps {
   billId: Id<'bills'>
   importMode: 'add' | 'replace'
   scanId: Id<'receiptScans'>
+  onImportSuccess?: () => void
 }
 
 interface ReviewRow {
@@ -55,6 +56,7 @@ export function ReceiptScanReviewSheet({
   billId,
   importMode,
   scanId,
+  onImportSuccess,
 }: ReceiptScanReviewSheetProps) {
   const scan = useQuery(api.receiptScan.getLatestScan, { billId })
   const importScannedItems = useMutation(api.receiptScan.importScannedItems)
@@ -181,6 +183,7 @@ export function ReceiptScanReviewSheet({
       })
       await dismissScan({ scanId })
       toast.success(`${importSelection.data.length} артикула добавени`)
+      onImportSuccess?.()
       onOpenChange(false)
     } catch (error) {
       toast.error(

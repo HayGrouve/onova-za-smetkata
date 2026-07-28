@@ -85,9 +85,6 @@ function GuidanceFocusPrototypePage() {
     steps: guidanceBundle.steps,
     dismissedHintIds: guidanceBundle.dismissedHintIds,
     currentEditorStep: step,
-    stepCompletion,
-    onNavigateToStep: (nextStep, { resetScroll }) =>
-      goToStep(nextStep, { resetScroll }),
   })
 
   const activeStep = guidanceBundle.steps.find(

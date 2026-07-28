@@ -1,4 +1,3 @@
-import type { BillStepCompletion } from '../../../shared/bill-step-completion.ts'
 import type { GuidanceStep } from '../../../shared/host-onboarding.ts'
 import { currentGuidanceStep } from '../../../shared/host-onboarding.ts'
 
@@ -33,37 +32,10 @@ export function scrollBlockForStep(stepId: string): GuidanceScrollBlock {
   return GUIDANCE_SCROLL_BLOCKS[stepId] ?? 'center'
 }
 
-/** Forward-only auto-nav gated by step completion (#69). */
-export function planGuidanceAutoNavigation(input: {
-  activeStep: GuidanceStep
-  currentEditorStep: number
-  stepCompletion: BillStepCompletion
-}): { shouldNavigate: boolean; targetStep?: number; resetScroll: boolean } {
-  const { activeStep, currentEditorStep, stepCompletion } = input
-
-  if (activeStep.step === currentEditorStep) {
-    return { shouldNavigate: false, resetScroll: false }
-  }
-
-  if (activeStep.step < currentEditorStep) {
-    return { shouldNavigate: false, resetScroll: false }
-  }
-
-  const currentComplete =
-    stepCompletion[currentEditorStep as keyof BillStepCompletion]
-  if (!currentComplete) {
-    return { shouldNavigate: false, resetScroll: false }
-  }
-
-  return {
-    shouldNavigate: true,
-    targetStep: activeStep.step,
-    resetScroll: false,
-  }
-}
-
 export const GUIDANCE_FOCUS_TIMING = {
   UI_SETTLE_DELAY_MS: 800,
   POP_AFTER_SCROLL_MS: 550,
   SCROLL_RETRY_MS: [120, 350] as const,
+  /** Bottom sheet close is 300ms — wait for it before next-button pop. */
+  SHEET_CLOSE_SETTLE_MS: 350,
 } as const

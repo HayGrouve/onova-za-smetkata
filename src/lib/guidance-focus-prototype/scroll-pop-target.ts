@@ -20,15 +20,19 @@ export interface ScrollPopRunOptions {
   element: HTMLElement
   block: GuidanceScrollBlock
   shouldPop: boolean
+  onScrollStart?: () => void
   onPopStart?: () => void
 }
 
 /** Scroll with settle + retry chain; optionally trigger pop after scroll (#72). */
 export function runScrollPopSequence(options: ScrollPopRunOptions): () => void {
-  const { element, block, shouldPop, onPopStart } = options
+  const { element, block, shouldPop, onScrollStart, onPopStart } = options
   const reduced = prefersReducedMotion()
 
-  const scroll = () => scrollIntoGuidanceTarget(element, block)
+  const scroll = () => {
+    onScrollStart?.()
+    scrollIntoGuidanceTarget(element, block)
+  }
 
   const retryTimers: number[] = []
   const scrollDelayTimer = window.setTimeout(() => {

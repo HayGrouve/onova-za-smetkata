@@ -4,6 +4,8 @@ const WELCOME_DEFERRED_KEY = 'host-onboarding:welcome-deferred'
 const REPLAY_KEY = 'host-onboarding:replay'
 const DISMISSED_HINTS_PREFIX = 'host-onboarding:dismissed:'
 const CONTENT_ROUTE_PREFIX = 'host-onboarding:route:'
+const CONTENT_ROUTE_CHOICE_SEEN_PREFIX =
+  'host-onboarding:content-route-choice-pop-v2:'
 const HANDOFF_DISMISSED_PREFIX = 'host-onboarding:handoff:'
 
 function readSessionFlag(key: string): boolean {
@@ -89,6 +91,14 @@ export function saveContentRoute(
   sessionStorage.setItem(contentRouteKey(billId), route)
 }
 
+export function hasSeenContentRouteChoice(billId: string): boolean {
+  return readSessionFlag(`${CONTENT_ROUTE_CHOICE_SEEN_PREFIX}${billId}`)
+}
+
+export function markContentRouteChoiceSeen(billId: string) {
+  writeSessionFlag(`${CONTENT_ROUTE_CHOICE_SEEN_PREFIX}${billId}`, true)
+}
+
 export function isHandoffDismissedThisSession(billId: string): boolean {
   return readSessionFlag(`${HANDOFF_DISMISSED_PREFIX}${billId}`)
 }
@@ -109,6 +119,7 @@ export function clearHostOnboardingSession() {
       key === REPLAY_KEY ||
       key.startsWith(DISMISSED_HINTS_PREFIX) ||
       key.startsWith(CONTENT_ROUTE_PREFIX) ||
+      key.startsWith(CONTENT_ROUTE_CHOICE_SEEN_PREFIX) ||
       key.startsWith(HANDOFF_DISMISSED_PREFIX)
     ) {
       keysToRemove.push(key)

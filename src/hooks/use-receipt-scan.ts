@@ -9,10 +9,12 @@ export function useReceiptScan({
   billId,
   items,
   assignments,
+  onReceiptUploaded,
 }: {
   billId: Id<'bills'>
   items: Doc<'items'>[]
   assignments: Doc<'itemAssignments'>[]
+  onReceiptUploaded?: () => void
 }) {
   const generateUploadUrl = useMutation(api.files.generateUploadUrl)
   const updateBill = useMutation(api.bills.update)
@@ -116,6 +118,7 @@ export function useReceiptScan({
       }
       await updateBill({ billId, receiptStorageId: storageId })
       toast.success('Снимката е качена')
+      onReceiptUploaded?.()
     } catch (error) {
       const message =
         error instanceof Error
