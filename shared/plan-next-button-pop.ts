@@ -1,4 +1,4 @@
-import type { BillStepNumber } from './bill-step-completion.ts'
+import type { BillStepNumber } from './bill-step-completion'
 
 export interface NextButtonPopTracker {
   initialized: boolean

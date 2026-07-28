@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createNextButtonPopTracker,
   planNextButtonPop,
-} from './plan-next-button-pop.ts'
+} from './plan-next-button-pop'
 
 describe('planNextButtonPop', () => {
   it('does not pop on first run even when the step is already complete', () => {

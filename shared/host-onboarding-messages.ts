@@ -44,9 +44,22 @@ export const HOST_ONBOARDING_PAYMENT_CHECKPOINT = {
   back: 'Назад',
 } as const
 
+export const HOST_ONBOARDING_SHARE = {
+  titleReady: 'Споделете сметката с гостите',
+  bodyReady:
+    'Сметката е готова за споделяне — може да я редактирате и след това.',
+  titleNotReady: 'Довършете подготовката',
+  bodyNotReady: 'Щом всичко е разпределено, споделете линка оттук.',
+} as const
+
+export const HOST_ONBOARDING_REVIEW = {
+  title: 'Прегледайте сметката',
+  body: 'Следете плащанията и завършете сметката, когато всички са платили.',
+} as const
+
 export const HOST_ONBOARDING_HANDOFF = {
   title: 'Готово! Сметката е при гостите',
-  body: 'Следете плащанията в „Преглед" и завършете сметката, когато всички са платили.',
+  body: 'Следете плащанията по-долу и завършете сметката, когато всички са платили.',
 } as const
 
 export const HOST_ONBOARDING_CONTENT_ROUTE = {

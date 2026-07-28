@@ -3,7 +3,7 @@ import {
   GUIDANCE_FOCUS_TIMING,
   scrollBlockForStep,
   shouldScrollPopForStep,
-} from './plan-guidance-focus.ts'
+} from './plan-guidance-focus'
 
 describe('shouldScrollPopForStep', () => {
   it('skips passive scan-processing', () => {
@@ -31,5 +31,6 @@ describe('GUIDANCE_FOCUS_TIMING', () => {
     expect(GUIDANCE_FOCUS_TIMING.UI_SETTLE_DELAY_MS).toBe(800)
     expect(GUIDANCE_FOCUS_TIMING.POP_AFTER_SCROLL_MS).toBe(550)
     expect(GUIDANCE_FOCUS_TIMING.SHEET_CLOSE_SETTLE_MS).toBe(350)
+    expect(GUIDANCE_FOCUS_TIMING.NEXT_BUTTON_POP_DELAY_MS).toBe(800)
   })
 })

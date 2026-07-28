@@ -1,5 +1,5 @@
-import type { GuidanceStep } from './host-onboarding.ts'
-import { currentGuidanceStep } from './host-onboarding.ts'
+import type { GuidanceStep } from './host-onboarding'
+import { currentGuidanceStep } from './host-onboarding'
 
 /** Steps that show guidance copy only — no scroll+pop target (#68). */
 export const GUIDANCE_STEPS_WITHOUT_SCROLL_POP = new Set(['scan-processing'])
@@ -15,6 +15,7 @@ export const GUIDANCE_SCROLL_BLOCKS: Record<string, GuidanceScrollBlock> = {
   participants: 'center',
   allocation: 'center',
   share: 'center',
+  review: 'center',
 }
 
 export function shouldScrollPopForStep(stepId: string): boolean {
@@ -38,4 +39,6 @@ export const GUIDANCE_FOCUS_TIMING = {
   SCROLL_RETRY_MS: [120, 350] as const,
   /** Bottom sheet close is 300ms — wait for it before next-button pop. */
   SHEET_CLOSE_SETTLE_MS: 350,
+  /** Pause after step guidance completes before popping „Напред“. */
+  NEXT_BUTTON_POP_DELAY_MS: 800,
 } as const

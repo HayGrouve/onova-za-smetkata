@@ -33,6 +33,12 @@ export interface BillInviteCardProps {
     reducedHighlight: boolean
     onPopAnimationEnd: (stepId: string) => void
   }
+  allocationGuidance?: {
+    register: GuidanceTargetRegister
+    shouldPop: boolean
+    reducedHighlight: boolean
+    onPopAnimationEnd: (stepId: string) => void
+  }
 }
 
 export function BillInviteCard({
@@ -42,6 +48,7 @@ export function BillInviteCard({
   readOnly = false,
   onShareLink,
   shareGuidance,
+  allocationGuidance,
 }: BillInviteCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [joinUrl, setJoinUrl] = useState('')
@@ -101,56 +108,43 @@ export function BillInviteCard({
     }
   }
 
-  return (
-    <>
-      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-4">
-        <div className="flex items-center gap-2 self-start text-sm font-medium">
-          <QrCodeIcon className={ICON.section} aria-hidden />
-          Покани приятели
-        </div>
-        {disabled ? (
-          <p className="self-start text-sm text-muted-foreground">
-            Добавете поне един участник, за да покажете QR код.
+  const inviteCard = (
+    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-4">
+      <div className="flex items-center gap-2 self-start text-sm font-medium">
+        <QrCodeIcon className={ICON.section} aria-hidden />
+        Покани приятели
+      </div>
+      {disabled ? (
+        <p className="self-start text-sm text-muted-foreground">
+          Добавете поне един участник, за да покажете QR код.
+        </p>
+      ) : !shareToken ? (
+        <p className="self-start text-sm text-muted-foreground">
+          Линкът за покана се подготвя...
+        </p>
+      ) : (
+        <>
+          <span data-testid="join-url" className="sr-only">
+            {joinUrl}
+          </span>
+          <canvas
+            ref={canvasRef}
+            className="rounded-md border bg-white p-2"
+            aria-label="QR код за присъединяване към сметката"
+          />
+          <p className="text-center text-xs text-muted-foreground">
+            Приятелите сканират QR кода, избират името си и отбелязват какво са
+            консумирали. Използвайте само с хора на масата.
           </p>
-        ) : !shareToken ? (
-          <p className="self-start text-sm text-muted-foreground">
-            Линкът за покана се подготвя...
-          </p>
-        ) : (
-          <>
-            <span data-testid="join-url" className="sr-only">
-              {joinUrl}
-            </span>
-            <canvas
-              ref={canvasRef}
-              className="rounded-md border bg-white p-2"
-              aria-label="QR код за присъединяване към сметката"
-            />
-            <p className="text-center text-xs text-muted-foreground">
-              Приятелите сканират QR кода, избират името си и отбелязват какво
-              са консумирали. Използвайте само с хора на масата.
-            </p>
-            {shareGuidance ? (
-              <GuidanceTarget
-                stepId="share"
-                register={shareGuidance.register}
-                shouldPop={shareGuidance.shouldPop}
-                reducedHighlight={shareGuidance.reducedHighlight}
-                onPopAnimationEnd={shareGuidance.onPopAnimationEnd}
-                className="w-full"
-              >
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 w-full"
-                  disabled={!joinUrl}
-                  onClick={() => void handleShareLink()}
-                >
-                  <Share2Icon className={ICON.button} aria-hidden />
-                  Сподели линк
-                </Button>
-              </GuidanceTarget>
-            ) : (
+          {shareGuidance ? (
+            <GuidanceTarget
+              stepId="share"
+              register={shareGuidance.register}
+              shouldPop={shareGuidance.shouldPop}
+              reducedHighlight={shareGuidance.reducedHighlight}
+              onPopAnimationEnd={shareGuidance.onPopAnimationEnd}
+              className="w-full"
+            >
               <Button
                 type="button"
                 variant="outline"
@@ -161,21 +155,50 @@ export function BillInviteCard({
                 <Share2Icon className={ICON.button} aria-hidden />
                 Сподели линк
               </Button>
-            )}
-            {!readOnly ? (
-              <Button
-                type="button"
-                variant="ghost"
-                className="h-10 w-full text-muted-foreground"
-                onClick={() => setRotateOpen(true)}
-              >
-                <Link2OffIcon className={ICON.button} aria-hidden />
-                Обнови линка
-              </Button>
-            ) : null}
-          </>
-        )}
-      </div>
+            </GuidanceTarget>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 w-full"
+              disabled={!joinUrl}
+              onClick={() => void handleShareLink()}
+            >
+              <Share2Icon className={ICON.button} aria-hidden />
+              Сподели линк
+            </Button>
+          )}
+          {!readOnly ? (
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-10 w-full text-muted-foreground"
+              onClick={() => setRotateOpen(true)}
+            >
+              <Link2OffIcon className={ICON.button} aria-hidden />
+              Обнови линка
+            </Button>
+          ) : null}
+        </>
+      )}
+    </div>
+  )
+
+  return (
+    <>
+      {allocationGuidance ? (
+        <GuidanceTarget
+          stepId="allocation"
+          register={allocationGuidance.register}
+          shouldPop={allocationGuidance.shouldPop}
+          reducedHighlight={allocationGuidance.reducedHighlight}
+          onPopAnimationEnd={allocationGuidance.onPopAnimationEnd}
+        >
+          {inviteCard}
+        </GuidanceTarget>
+      ) : (
+        inviteCard
+      )}
 
       <Dialog open={rotateOpen} onOpenChange={setRotateOpen}>
         <DialogContent>

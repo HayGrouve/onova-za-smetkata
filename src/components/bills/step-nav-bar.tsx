@@ -4,6 +4,7 @@ import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { formatEur } from '#/lib/format-currency.ts'
 import { prefersReducedMotion } from '#/lib/guidance-focus/scroll-pop-target.ts'
+import { GUIDANCE_FOCUS_TIMING } from '../../../shared/plan-guidance-focus.ts'
 import { cn } from '#/lib/utils.ts'
 
 export interface StepNavBarProps {
@@ -35,7 +36,10 @@ export function StepNavBar({
     }
 
     setShowNextPop(false)
-    const timer = window.setTimeout(() => setShowNextPop(true), 50)
+    const timer = window.setTimeout(
+      () => setShowNextPop(true),
+      GUIDANCE_FOCUS_TIMING.NEXT_BUTTON_POP_DELAY_MS,
+    )
     return () => window.clearTimeout(timer)
   }, [nextButtonPopToken])
 

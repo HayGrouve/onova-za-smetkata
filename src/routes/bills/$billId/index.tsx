@@ -895,6 +895,7 @@ function BillEditorContent({
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
                   {guidanceSlot('allocation')}
+                  {guidanceSlot('share')}
                   <BillInviteCard
                     billId={billId}
                     shareToken={bill.shareToken}
@@ -905,18 +906,17 @@ function BillEditorContent({
                         ? (joinUrl) => interceptGuestShare(billId, joinUrl)
                         : undefined
                     }
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Добавете данък като отделен артикул. Бакшишът се въвежда на
-                    стъпка 1.
-                  </p>
-                  <ItemList
-                    billId={billId}
-                    items={items}
-                    participants={participants}
-                    assignments={assignments}
-                    labels={labels}
-                    readOnly={bill.status === 'final'}
+                    shareGuidance={
+                      onboardingActive
+                        ? {
+                            register: guidanceFocus.registerTarget,
+                            shouldPop: guidanceFocus.poppingStepId === 'share',
+                            reducedHighlight:
+                              guidanceFocus.reducedHighlightStepId === 'share',
+                            onPopAnimationEnd: guidanceFocus.onPopAnimationEnd,
+                          }
+                        : undefined
+                    }
                     allocationGuidance={
                       onboardingActive
                         ? {
@@ -931,6 +931,18 @@ function BillEditorContent({
                         : undefined
                     }
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Добавете данък като отделен артикул. Бакшишът се въвежда на
+                    стъпка 1.
+                  </p>
+                  <ItemList
+                    billId={billId}
+                    items={items}
+                    participants={participants}
+                    assignments={assignments}
+                    labels={labels}
+                    readOnly={bill.status === 'final'}
+                  />
                 </CardContent>
               </Card>
             </>
@@ -939,24 +951,6 @@ function BillEditorContent({
           {step === 4 && (
             <>
               {guidanceSlot('share')}
-              {onboardingActive ? (
-                <BillInviteCard
-                  billId={billId}
-                  shareToken={bill.shareToken}
-                  disabled={participants.length === 0}
-                  readOnly={bill.status === 'final'}
-                  onShareLink={(joinUrl) =>
-                    interceptGuestShare(billId, joinUrl)
-                  }
-                  shareGuidance={{
-                    register: guidanceFocus.registerTarget,
-                    shouldPop: guidanceFocus.poppingStepId === 'share',
-                    reducedHighlight:
-                      guidanceFocus.reducedHighlightStepId === 'share',
-                    onPopAnimationEnd: guidanceFocus.onPopAnimationEnd,
-                  }}
-                />
-              ) : null}
               <BillSummaryContent billId={billId} embedded />
             </>
           )}

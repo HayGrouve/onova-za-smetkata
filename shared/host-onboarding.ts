@@ -1,7 +1,11 @@
 import type { AssignmentInput, ItemInput } from './bill-calculations'
 import { resolveHostParticipantName } from './host-profile'
 import { itemHasFullUnitCoverage } from './unit-coverage'
-import { HOST_ONBOARDING_SCAN } from './host-onboarding-messages'
+import {
+  HOST_ONBOARDING_REVIEW,
+  HOST_ONBOARDING_SCAN,
+  HOST_ONBOARDING_SHARE,
+} from './host-onboarding-messages'
 
 export const HOST_ONBOARDING_VERSION = 1
 
@@ -223,15 +227,26 @@ export function deriveHostOnboardingGuidance(
   const share: GuidanceStep = {
     id: 'share',
     anchor: 'share',
-    step: 4,
-    title: 'Споделете сметката с гостите',
+    step: 3,
+    title: prepared
+      ? HOST_ONBOARDING_SHARE.titleReady
+      : HOST_ONBOARDING_SHARE.titleNotReady,
     body: prepared
-      ? 'Сметката е готова за споделяне — може да я редактирате и след това.'
-      : 'Щом всичко е разпределено, споделете линка оттук.',
+      ? HOST_ONBOARDING_SHARE.bodyReady
+      : HOST_ONBOARDING_SHARE.bodyNotReady,
     done: bill.sharedAt !== undefined,
   }
 
-  return [content, details, participants, allocation, share]
+  const review: GuidanceStep = {
+    id: 'review',
+    anchor: 'share',
+    step: 4,
+    title: HOST_ONBOARDING_REVIEW.title,
+    body: HOST_ONBOARDING_REVIEW.body,
+    done: bill.sharedAt === undefined,
+  }
+
+  return [content, details, participants, allocation, share, review]
 }
 
 export function currentGuidanceStep(
