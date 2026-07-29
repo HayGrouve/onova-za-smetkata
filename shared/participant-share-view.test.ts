@@ -48,6 +48,7 @@ describe('formatBreakdownLineSuffix', () => {
     expect(
       formatBreakdownLineSuffix({
         kind: 'item',
+        itemId: 'i2',
         label: 'Пици',
         amountCents: 600,
         sharedWithCount: 1,
@@ -58,6 +59,7 @@ describe('formatBreakdownLineSuffix', () => {
       formatBreakdownLineSuffix(
         {
           kind: 'item',
+          itemId: 'i1',
           label: 'Салата',
           amountCents: 600,
           sharedWithCount: 1,
@@ -70,6 +72,7 @@ describe('formatBreakdownLineSuffix', () => {
     expect(
       formatBreakdownLineSuffix({
         kind: 'item',
+        itemId: 'i3',
         label: 'Бира',
         amountCents: 400,
         units: 2,
@@ -81,6 +84,7 @@ describe('formatBreakdownLineSuffix', () => {
       formatBreakdownLineSuffix(
         {
           kind: 'item',
+          itemId: 'i3',
           label: 'Бира',
           amountCents: 600,
           units: 2,
@@ -99,6 +103,7 @@ describe('formatBreakdownLineUnitsText', () => {
     expect(
       formatBreakdownLineUnitsText({
         kind: 'item',
+        itemId: 'i3',
         label: 'Бира',
         amountCents: 400,
         units: 2,
@@ -109,6 +114,7 @@ describe('formatBreakdownLineUnitsText', () => {
     expect(
       formatBreakdownLineUnitsText({
         kind: 'item',
+        itemId: 'i2',
         label: 'Пица',
         amountCents: 600,
         sharedWithCount: 1,
@@ -123,6 +129,7 @@ describe('formatBreakdownLineSharedText', () => {
       formatBreakdownLineSharedText(
         {
           kind: 'item',
+          itemId: 'i1',
           label: 'Салата',
           amountCents: 600,
           sharedWithCount: 1,
@@ -135,6 +142,7 @@ describe('formatBreakdownLineSharedText', () => {
     expect(
       formatBreakdownLineSharedText({
         kind: 'item',
+        itemId: 'i3',
         label: 'Бира',
         amountCents: 400,
         units: 2,
