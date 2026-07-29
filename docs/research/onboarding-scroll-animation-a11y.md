@@ -131,12 +131,12 @@ Issue **#62** targets **WCAG 2.2 AA**. Criteria most relevant to scroll + pop:
 
 ## 5. Implementation checklist (Host onboarding scroll + pop)
 
-- [ ] **`matchMedia('(prefers-reduced-motion: reduce)')`** → `scrollIntoView({ behavior: 'auto', … })`; else `smooth`.
-- [ ] **Under reduce:** skip pop class; apply static border/outline highlight; ensure `markContentRouteChoiceSeen` / pop-end handlers still run.
-- [ ] **Do not auto-focus** on programmatic scroll; **do focus** first primary control on user-initiated “Към стъпка N”.
-- [ ] Add **`scroll-padding-top`** for sticky header + step bar (2.4.11).
-- [ ] Add **`aria-live="polite"`** + **`aria-atomic="true"`** on step-bar next-step guidance; keep card copy static.
-- [ ] Verify pop highlight meets **1.4.11** contrast if it acts as the only “where to look” cue under reduced motion.
+- [x] **`matchMedia('(prefers-reduced-motion: reduce)')`** → `scrollIntoView({ behavior: 'auto', … })`; else `smooth`. (`src/lib/guidance-focus/scroll-pop-target.ts`)
+- [x] **Under reduce:** skip pop class; apply static border/outline highlight (`use-guidance-focus.ts` → `reducedHighlightStepId`).
+- [x] **Do not auto-focus** on programmatic scroll (`use-guidance-focus.ts`).
+- [x] Add **`scroll-padding-top`** for sticky header + step bar (`src/styles.css`).
+- [x] Add **`aria-live="polite"`** + **`aria-atomic="true"`** on step-bar next-step guidance (`bills/$billId/index.tsx`).
+- [ ] Verify pop highlight meets **1.4.11** contrast under reduced motion (manual/visual QA).
 
 ---
 

@@ -1,6 +1,6 @@
 # E2E tests
 
-Playwright covers **3 critical-path** browser flows (session conflict, claim-search drawer, combined-pay banner timing). Tests need a **working dev auth** setup on Convex.
+Playwright covers **4 critical-path** browser flows (session conflict, claim-search drawer, combined-pay banner timing, host onboarding replay). Tests need a **working dev auth** setup on Convex.
 
 Run these locally before merge when you touch guest/host browser flows. In CI, the `e2e` job runs only when the repo secret `E2E_VITE_CONVEX_URL` is set; otherwise it is skipped. A **required PR gate** is deferred until E2E runs in CI for every PR.
 
@@ -47,6 +47,7 @@ Run these locally before merge when you touch guest/host browser flows. In CI, t
 | `session-conflict.spec.ts`       | Two browsers claim the same guest seat               |
 | `claim-search-drawer.spec.ts`    | Vaul drawer + item search on guest claim             |
 | `combined-guest-payment.spec.ts` | Host payment banner appears only after Revolut opens |
+| `host-onboarding.spec.ts`        | Host replay hints; dev welcome dismiss               |
 
 ## Common failures
 

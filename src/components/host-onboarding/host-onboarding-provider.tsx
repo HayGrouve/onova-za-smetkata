@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from 'react'
@@ -31,6 +32,7 @@ import {
   saveContentRoute,
   clearAllDismissedHintsThisSession,
   startReplayThisSession,
+  stopReplayThisSession,
 } from '#/lib/host-onboarding-session.ts'
 import { shareLink } from '#/lib/share-link.ts'
 import type { ShareLinkResult } from '#/lib/share-link.ts'
@@ -80,6 +82,8 @@ interface HostOnboardingContextValue {
   resumeGuidedBillId: Id<'bills'> | undefined
   needsAnotherGuidedBill: boolean
   guidanceOnForBill: (billId: Id<'bills'>) => boolean
+  /** Session replay or first-run guided bill — drives hint cards and step bar. */
+  guidanceHintsEnabledForBill: (billId: Id<'bills'>) => boolean
   makeGuidanceSlot: (input: BillGuidanceInput) => GuidanceSlot
   getStepBarSignal: (input: BillGuidanceInput) => StepBarSignal | null
   interceptGuestShare: (
@@ -96,6 +100,10 @@ interface HostOnboardingContextValue {
     billId: Id<'bills'>,
   ) => HostOnboardingContentRoute | undefined
   refreshBillSession: () => void
+  /** Bumps when session-local onboarding flags change (dismissed hints, routes). */
+  billSessionVersion: number
+  /** From Convex — when the guided bill was shared during first-run onboarding. */
+  onboardingSharedAt: number | undefined
   /** DEV only — reset state and open the welcome sheet for manual first-run testing. */
   triggerFirstRunForDevTesting: () => Promise<void>
 }
@@ -126,6 +134,9 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
 
   const [welcomeStage, setWelcomeStage] = useState<'intro' | 'name'>('intro')
   const [welcomeForcedOpen, setWelcomeForcedOpen] = useState(false)
+  const [welcomeDeferred, setWelcomeDeferred] = useState(() =>
+    isWelcomeDeferredThisSession(),
+  )
   const [checkpointOpen, setCheckpointOpen] = useState(false)
   const [pendingShare, setPendingShare] = useState<{
     billId: Id<'bills'>
@@ -144,9 +155,9 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
       isEligibleForAutomaticOnboarding({
         lifecycle: onboarding.lifecycle,
         billCount: onboarding.billCount,
-      }) && !isWelcomeDeferredThisSession()
+      }) && !welcomeDeferred
     )
-  }, [onboarding])
+  }, [onboarding, welcomeDeferred])
 
   const showWelcome =
     welcomeForcedOpen ||
@@ -154,13 +165,17 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
 
   const guidanceOnForBill = useCallback(
     (billId: Id<'bills'>) => {
-      if (replayActive) return true
       if (!onboarding) return false
       if (onboarding.lifecycle !== 'active') return false
       if (onboarding.guidedBillId === undefined) return false
       return onboarding.guidedBillId === billId
     },
-    [onboarding, replayActive],
+    [onboarding],
+  )
+
+  const guidanceHintsEnabledForBill = useCallback(
+    (billId: Id<'bills'>) => replayActive || guidanceOnForBill(billId),
+    [replayActive, guidanceOnForBill],
   )
 
   const buildGuidance = useCallback(
@@ -217,6 +232,9 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
       if (!guidanceOnForBill(billId)) {
         return performShare(billId, joinUrl)
       }
+      if (paymentStatus === 'loading') {
+        return false
+      }
       if (
         paymentStatus === 'configured' ||
         onboarding?.paymentCheckpointDismissed
@@ -238,16 +256,23 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
 
   const dismissWelcome = useCallback(() => {
     deferWelcomeThisSession()
+    setWelcomeDeferred(true)
     setWelcomeForcedOpen(false)
   }, [])
 
   const stopGuidance = useCallback(async () => {
+    if (replayActive) {
+      stopReplayThisSession()
+      setReplayActive(false)
+      refreshBillSession()
+      return
+    }
     const confirmed = await confirm(getStopGuidanceCopy())
     if (!confirmed) return
     await skipOnboarding({})
     setReplayActive(false)
     refreshBillSession()
-  }, [confirm, refreshBillSession, skipOnboarding])
+  }, [confirm, refreshBillSession, replayActive, skipOnboarding])
 
   const startReplay = useCallback(() => {
     clearAllDismissedHintsThisSession()
@@ -267,6 +292,7 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
 
   const triggerFirstRunForDevTesting = useCallback(async () => {
     clearHostOnboardingSession()
+    setWelcomeDeferred(false)
     setReplayActive(false)
     setWelcomeStage('intro')
     try {
@@ -286,6 +312,17 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
     }
   }, [onboarding, refreshBillSession, resetForDevTesting])
 
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+    const windowWithE2e = window as Window & {
+      __e2eResetHostOnboarding?: () => Promise<void>
+    }
+    windowWithE2e.__e2eResetHostOnboarding = triggerFirstRunForDevTesting
+    return () => {
+      delete windowWithE2e.__e2eResetHostOnboarding
+    }
+  }, [triggerFirstRunForDevTesting])
+
   const value = useMemo<HostOnboardingContextValue>(
     () => ({
       showWelcome,
@@ -298,12 +335,11 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
         onboarding?.lifecycle === 'active' &&
         onboarding.guidedBillId === undefined,
       guidanceOnForBill,
+      guidanceHintsEnabledForBill,
       makeGuidanceSlot: (input) => (anchor) => {
-        if (!guidanceOnForBill(input.billId) && !replayActive) return null
-
         if (
           onboarding?.lifecycle === 'completed' &&
-          guidanceOnForBill(input.billId) &&
+          onboarding.guidedBillId === input.billId &&
           !isHandoffDismissedThisSession(input.billId)
         ) {
           if (anchor !== 'share' || input.step !== 4) return null
@@ -317,10 +353,7 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
           )
         }
 
-        if (!guidanceOnForBill(input.billId) && replayActive) {
-          // Replay without a guided bill shows nothing bill-specific.
-          return null
-        }
+        if (!guidanceHintsEnabledForBill(input.billId)) return null
 
         const guidance = buildGuidance(input)
         const stepGuidance = guidance.editorStepGuidance
@@ -337,7 +370,7 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
         )
       },
       getStepBarSignal: (input) => {
-        if (!guidanceOnForBill(input.billId)) return null
+        if (!guidanceHintsEnabledForBill(input.billId)) return null
         const signal = buildGuidance(input).stepBarLabel
         if (!signal) return null
         if (signal.kind === 'on') return { kind: 'on' }
@@ -354,6 +387,8 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
       chooseContentRoute,
       getContentRoute: (billId) => readContentRoute(billId),
       refreshBillSession,
+      billSessionVersion,
+      onboardingSharedAt: onboarding?.sharedAt,
       triggerFirstRunForDevTesting,
     }),
     [
@@ -361,6 +396,7 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
       dismissWelcome,
       onboarding,
       guidanceOnForBill,
+      guidanceHintsEnabledForBill,
       replayActive,
       buildGuidance,
       interceptGuestShare,
@@ -368,12 +404,17 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
       startReplay,
       chooseContentRoute,
       refreshBillSession,
+      billSessionVersion,
       triggerFirstRunForDevTesting,
     ],
   )
 
   async function handleCreateFirstBill(name: string) {
-    return await createFirstBill({ hostDisplayName: name })
+    const billId = await createFirstBill({ hostDisplayName: name })
+    deferWelcomeThisSession()
+    setWelcomeDeferred(true)
+    setWelcomeForcedOpen(false)
+    return billId
   }
 
   async function handleStartGuidedWithExistingBills() {
@@ -385,17 +426,19 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
 
   async function handleShareWithoutPayment() {
     if (!pendingShare) return
+    const { billId, joinUrl } = pendingShare
+    setPendingShare(null)
     await dismissCheckpoint({})
     setCheckpointOpen(false)
-    await performShare(pendingShare.billId, pendingShare.joinUrl)
-    setPendingShare(null)
+    await performShare(billId, joinUrl)
   }
 
   async function handlePaymentSavedAndShare() {
     if (!pendingShare) return
-    setCheckpointOpen(false)
-    await performShare(pendingShare.billId, pendingShare.joinUrl)
+    const { billId, joinUrl } = pendingShare
     setPendingShare(null)
+    setCheckpointOpen(false)
+    await performShare(billId, joinUrl)
   }
 
   return (
@@ -420,7 +463,10 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
       />
       <PaymentCheckpointSheet
         open={checkpointOpen}
-        onOpenChange={setCheckpointOpen}
+        onOpenChange={(open) => {
+          setCheckpointOpen(open)
+          if (!open) setPendingShare(null)
+        }}
         onShareWithoutPayment={() => void handleShareWithoutPayment()}
         onSavedAndShare={() => void handlePaymentSavedAndShare()}
       />

@@ -81,13 +81,15 @@ export function useBillEditorController({
     api.hostOnboarding.recordPreparedIfNeeded,
   )
   const {
-    guidanceOnForBill,
+    guidanceHintsEnabledForBill,
     makeGuidanceSlot,
     getStepBarSignal,
     interceptGuestShare,
     chooseContentRoute,
     getContentRoute,
     refreshBillSession,
+    billSessionVersion,
+    onboardingSharedAt,
   } = useHostOnboarding()
 
   const relations = useMemo(() => mapBillRelations(data), [data])
@@ -217,7 +219,7 @@ export function useBillEditorController({
     ],
   )
 
-  const onboardingActive = guidanceOnForBill(billId)
+  const onboardingActive = guidanceHintsEnabledForBill(billId)
   const contentRoute = getContentRoute(billId)
   const receiptUploaded = isReceiptUploadedForEditor({
     receiptStorageId: bill.receiptStorageId,
@@ -280,6 +282,7 @@ export function useBillEditorController({
           receiptUploaded: guidanceInput.receiptUploaded,
           receiptScanning: guidanceInput.receiptScanning,
           scanReviewOpen: guidanceInput.scanReviewOpen,
+          sharedAt: onboardingSharedAt,
         },
         dismissedHintIds: readDismissedHintIds(billId),
         editorStep: step,
@@ -287,6 +290,7 @@ export function useBillEditorController({
       }),
     [
       billId,
+      billSessionVersion,
       metadata.restaurantName,
       restaurantFromOcr,
       derived.hostParticipantName,
@@ -294,6 +298,7 @@ export function useBillEditorController({
       guidanceInput,
       contentRoute,
       step,
+      onboardingSharedAt,
     ],
   )
 

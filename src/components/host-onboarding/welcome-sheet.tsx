@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
@@ -51,6 +51,12 @@ export function WelcomeSheet({
   const [error, setError] = useState<string | undefined>()
   const [submitting, setSubmitting] = useState(false)
   const hasExistingBills = billCount > 0
+
+  useEffect(() => {
+    if (open && stage === 'name') {
+      setName(suggestedName)
+    }
+  }, [open, stage, suggestedName])
 
   async function handleStartGuidedWithExistingBills() {
     setSubmitting(true)
