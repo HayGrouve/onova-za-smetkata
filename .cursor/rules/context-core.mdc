@@ -1,0 +1,33 @@
+---
+description: Core domain vocabulary for Онова за сметката (always on)
+alwaysApply: true
+---
+
+# Domain terms
+
+Use these consistently in code, UI copy, tests, and issues. Full glossary: **`CONTEXT.md`**.
+
+| Term | Meaning | Avoid |
+| ---- | ------- | ----- |
+| **Host** | Authenticated bill owner | "member"; "guest" for the host's seat |
+| **Guest** | Non-host participant; money may be collected from them | Using "guest" for the host's participant seat |
+| **Participant** | Named seat on a bill (claims, tip, payment) | "member" |
+| **Share** | Participant's food + tip total | "owed" for host collection status |
+| **Unit** | One countable piece of a line item (`quantity` stacks units) | Treating qty > 1 as one indivisible pool |
+| **Outstanding** | Money still to collect from guests | Outstanding for the host (host never has it) |
+| **Bill status** | **draft** (Чернова) or **final** (Приключени) | completed, closed, settled |
+
+## Key modules (logic lives here, not in routes)
+
+| Concern | Module |
+| ------- | ------ |
+| Bill readiness / prepared bill | `shared/bill-readiness.ts` |
+| Host onboarding guidance (Напътствия) | `shared/guidance-controller.ts` |
+| Bill editor orchestration | `shared/bill-editing-controller.ts` → `useBillEditorController` |
+| Guest claim page | `shared/guest-claim-session.ts` → `useGuestClaimSession` |
+| Participant share presentation | `shared/participant-share-view.ts` |
+
+## Host vs guest (auth)
+
+- **Host** routes: `/bills/$billId`, `/bills/$billId/summary` — `requireAuth` / `requireBillOwner` server-side; `useRequireHostAuth` client-side.
+- **Guest** routes: join via `?t={shareToken}` → `/join` → `/claim` — guest session token required for mutations; guest queries must not leak other participants' payment details.

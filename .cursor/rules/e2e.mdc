@@ -1,0 +1,23 @@
+---
+description: Playwright E2E conventions for this repo
+globs: e2e/**/*.ts
+alwaysApply: false
+---
+
+# E2E
+
+Playwright covers **3 critical-path** guest/host browser flows. Full setup and failure modes: **`e2e/README.md`**.
+
+| Spec | Journey |
+| ---- | ------- |
+| `session-conflict.spec.ts` | Two browsers claim the same guest seat |
+| `claim-search-drawer.spec.ts` | Vaul drawer + item search on guest claim |
+| `combined-guest-payment.spec.ts` | Host payment banner appears only after Revolut opens |
+
+## Prerequisites
+
+- Dev Convex deployment with **`DEV_MODE=true`** (not production); see `convex/lib/devMode.ts`.
+- **`VITE_CONVEX_URL`** in `.env.local` pointing at that deployment.
+- Terminal 1: `npx convex dev`; terminal 2: `pnpm run test:e2e` (or dev already on :3000).
+
+Run E2E locally when you touch guest/host browser flows. CI runs only when `E2E_VITE_CONVEX_URL` is set.

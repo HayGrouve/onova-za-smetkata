@@ -1,0 +1,30 @@
+---
+description: Frontend and UI conventions
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Frontend
+
+Stack: TanStack Router/Start, shadcn/ui, Tailwind. Route file patterns: **`.cursor/rules/tanstack-start.mdc`**.
+
+## Imports
+
+- Use `#/*` or `@/*` for `src/*` with **`.ts`/`.tsx` extensions** (`verbatimModuleSyntax`).
+- Import `shared/` with relative paths from `src/` or `convex/`.
+
+## UI
+
+- **Bulgarian only** — no i18n framework.
+- Prefer centralized message modules: `shared/guest-flow-messages.ts`, `shared/combined-payment-messages.ts`, `src/lib/destructive-action-copy.ts`.
+- Domain vocabulary: **`CONTEXT.md`** / **`.cursor/rules/context-core.mdc`**.
+
+Install shadcn components:
+
+```bash
+pnpm dlx shadcn@latest add <component>
+```
+
+## Logic placement
+
+Keep routes and components thin. Business logic belongs in **`shared/`** or **`convex/lib/`**; React seams in **`src/hooks/`**. See **`docs/agents/guidelines.md`**.

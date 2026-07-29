@@ -1,0 +1,33 @@
+---
+description: Convex backend conventions for this repo
+globs: convex/**/*.ts
+alwaysApply: false
+---
+
+# Convex
+
+Auth is **`@convex-dev/auth`** — reuse helpers in `convex/lib/` (e.g. `requireAuth`, `requireBillOwner`, `requireGuestSession`). Do not invent parallel auth patterns.
+
+When Convex plugin skills suggest generic auth setup (WorkOS, Auth0, custom JWT), follow this repo's **`@convex-dev/auth`** helpers in `convex/lib/` instead.
+
+## Functions
+
+- Public `query` / `mutation` / `action`: define **`args`** and **`returns`** validators.
+- **`await`** all promises (`ctx.db.*`, `ctx.scheduler.*`).
+- Keep wrappers thin; put reusable logic in **`convex/lib/`**.
+- Never use **`Date.now()`** inside queries — pass time as an arg or use status fields + scheduled jobs.
+- Prefer **`.withIndex()`** over `.filter()` on database queries.
+- Schedule only **`internal.*`** functions, never public `api.*`.
+- Files with **`"use node"`** may export actions only — no queries or mutations.
+
+## Schema & DB
+
+- Flat documents, relationships via IDs; index foreign keys in `convex/schema.ts`.
+- Use explicit table names: `ctx.db.get("table", id)`, `patch`, `delete`.
+- Secrets and `DEV_MODE` live in the **Convex Dashboard**, not Vercel.
+
+## Dev vs deploy
+
+Use **`npx convex dev`** during development. **`npx convex deploy`** is production/CI only.
+
+Schema validators: https://docs.convex.dev/database/types

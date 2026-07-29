@@ -1,0 +1,27 @@
+---
+description: Core project conventions for Онова за сметката
+alwaysApply: true
+---
+
+# Project
+
+**Онова за сметката** — Bulgarian mobile web PWA for restaurant bill splitting.
+
+**Stack:** TanStack Start (not Next.js), Convex, Vercel, `@convex-dev/auth`.
+
+## Before changing code
+
+1. **`CONTEXT.md`** — full domain glossary (core terms are also in `.cursor/rules/context-core.mdc`).
+2. **`docs/agents/guidelines.md`** — architecture, imports, testing, env, pitfalls.
+3. **`AGENTS.md`** — agent workflow, issue tracker, triage labels.
+4. **`docs/adr/`** — architectural decisions for the area you touch (may be empty).
+
+## Quality bar
+
+- User-facing copy is **Bulgarian**; reuse shared message modules when they exist.
+- Never enable **`DEV_MODE`** on production Convex deployments.
+- Do not edit generated files: `convex/_generated/*`, `src/routeTree.gen.ts`.
+- Run **`pnpm run ci:preflight`** before finishing; E2E if guest/host browser flows changed.
+- Issues and PRs use **GitHub** (`gh`), not GitLab.
+
+Scoped Cursor rules: `context-core`, `convex`, `frontend`, `shared`, `e2e`, `tanstack-start` (under `.cursor/rules/`).

@@ -93,5 +93,6 @@ _Avoid_: wiring tab semantics, item filters, and share breakdown separately in t
 ## Related docs
 
 - `docs/agents/guidelines.md` — architecture, testing, and implementation conventions for agents
+- `.cursor/rules/context-core.mdc` — always-on summary of core terms above (for Cursor agents)
 - `README.md` — local development and scripts
 - `docs/DEPLOY.md` — production deploy, env vars, security

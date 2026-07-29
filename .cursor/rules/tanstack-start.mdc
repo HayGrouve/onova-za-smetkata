@@ -1,0 +1,34 @@
+---
+description: TanStack Start / Router conventions for this repo
+globs: src/routes/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# TanStack Start
+
+This repo uses **TanStack Start + TanStack Router**, not Next.js. Do not apply Next.js App Router or Pages Router patterns.
+
+## File routes
+
+- Routes live in **`src/routes/`** as file-based routes (`createFileRoute`).
+- After adding or moving route files: **`pnpm run generate-routes`** and commit `src/routeTree.gen.ts` if it changed.
+- **Do not edit** `src/routeTree.gen.ts` by hand.
+
+## Route file shape
+
+```typescript
+export const Route = createFileRoute('/bills/$billId/')({
+  validateSearch: (search) => ({ /* … */ }),
+  head: () => buildNoIndexHead('…'),
+  component: PageComponent,
+})
+```
+
+- Use **`Route.useParams()`**, **`Route.useSearch()`** inside the page component.
+- Keep routes thin: orchestration belongs in **`shared/*-controller.ts`** hooks under `src/hooks/`, not ad hoc in the route file.
+- Import with `#/*` aliases and **`.ts`/`.tsx` extensions** (`verbatimModuleSyntax`).
+
+## Data fetching
+
+- Convex: `useQuery` / `useMutation` from `convex/react` in route components or dedicated hooks.
+- Auth guards: host routes use `useRequireHostAuth`; server mutations use `convex/lib/` helpers.

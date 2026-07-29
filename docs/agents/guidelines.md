@@ -31,7 +31,7 @@ Before duplicating logic, check whether `shared/` or `convex/lib/` already owns 
 
 ## Host vs guest
 
-Use terms from `CONTEXT.md`. At a high level:
+Domain terms and auth boundaries: **`.cursor/rules/context-core.mdc`**. Implementation detail:
 
 - **Host** — authenticated bill owner. Routes like `/bills/$billId`, `/bills/$billId/summary`. Guarded by `requireAuth` / `requireBillOwner` on the server and `useRequireHostAuth` on the client.
 - **Guest** — unauthenticated participant. Joins via `?t={shareToken}` → `/join` → `/claim`. Mutations require a valid guest session token (`convex/lib/requireGuestSession.ts`).
@@ -47,7 +47,7 @@ Guest-facing queries must not leak other participants' payment details. Respect 
 
 ## Convex
 
-See `.cursorrules` for schema validator (`v`) and system-field conventions.
+See `.cursor/rules/convex.mdc` for backend conventions; schema validators and system fields: https://docs.convex.dev/database/types
 
 - New tables and indices go in `convex/schema.ts`.
 - Put reusable server logic in `convex/lib/`, not duplicated across top-level modules.
@@ -122,4 +122,4 @@ Copy `.env.example` → `.env.local` and set `VITE_CONVEX_URL`. Enable `DEV_MODE
 - `README.md` — setup and scripts
 - `docs/DEPLOY.md` — env matrix, deploy path, security notes, backfills
 - `e2e/README.md` — Playwright prerequisites and failure modes
-- `.cursorrules` — Convex schema specifics
+- `.cursor/rules/` — Cursor rules (`project`, `context-core`, `convex`, `frontend`, `shared`, `e2e`, `tanstack-start`)
