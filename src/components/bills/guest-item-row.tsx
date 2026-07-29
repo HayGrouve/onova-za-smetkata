@@ -44,7 +44,7 @@ export function GuestItemRow({
   onItemSelected,
 }: GuestItemRowProps) {
   const [spodeliOpen, setSpodeliOpen] = useState(false)
-  const toggleAssignment = useMutation(api.assignments.toggle)
+  const joinUnit = useMutation(api.assignments.joinUnit)
   const leaveUnit = useMutation(api.assignments.leaveUnit)
 
   const { myUnits, coveredUnits, isSelectedByMe } = getGuestClaimItemState(
@@ -112,7 +112,21 @@ export function GuestItemRow({
   async function handleToggle() {
     if (readOnly) return
     try {
-      await toggleAssignment({ itemId: item._id, participantId, sessionToken })
+      if (isSelectedByMe) {
+        await leaveUnit({
+          itemId: item._id,
+          participantId,
+          unitIndex: 0,
+          sessionToken,
+        })
+      } else {
+        await joinUnit({
+          itemId: item._id,
+          participantId,
+          unitIndex: 0,
+          sessionToken,
+        })
+      }
       onItemSelected?.()
     } catch (error) {
       toast.error(getConvexErrorMessage(error))

@@ -3,8 +3,11 @@ import {
   countCoveredUnits,
   countItemsWithEmptyUnits,
   countUnitsJoinedByParticipant,
+  formatUnitTitle,
+  isParticipantOnUnit,
   itemHasEmptyUnit,
   itemHasFullUnitCoverage,
+  otherParticipantLabelsOnUnit,
   participantIdsOnUnit,
 } from './unit-coverage'
 
@@ -47,5 +50,24 @@ describe('unit coverage', () => {
       'p2',
     ])
     expect(countUnitsJoinedByParticipant('i1', 'p1', assignments)).toBe(2)
+  })
+
+  it('detects membership and labels other participants on a unit', () => {
+    const assignments = [
+      { itemId: 'i1', participantId: 'p1', unitIndex: 1 },
+      { itemId: 'i1', participantId: 'p2', unitIndex: 0 },
+    ]
+    expect(isParticipantOnUnit('i1', 1, 'p1', assignments)).toBe(true)
+    expect(isParticipantOnUnit('i1', 0, 'p1', assignments)).toBe(false)
+    expect(
+      otherParticipantLabelsOnUnit('i1', 0, 'p1', assignments, {
+        p2: 'Мария',
+      }),
+    ).toEqual(['Мария'])
+  })
+
+  it('formats 1-based unit titles', () => {
+    expect(formatUnitTitle('Вода', 0)).toBe('Вода · бройка 1')
+    expect(formatUnitTitle('Вода', 2)).toBe('Вода · бройка 3')
   })
 })

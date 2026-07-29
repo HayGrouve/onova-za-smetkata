@@ -4,7 +4,7 @@ import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { formatEur } from '#/lib/format-currency.ts'
 import { prefersReducedMotion } from '#/lib/guidance-focus/scroll-pop-target.ts'
-import { GUIDANCE_FOCUS_TIMING } from '../../../shared/plan-guidance-focus.ts'
+import { GUIDANCE_FOCUS_TIMING } from '../../../shared/guidance-controller.ts'
 import { cn } from '#/lib/utils.ts'
 
 export interface StepNavBarProps {

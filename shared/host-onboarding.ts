@@ -1,11 +1,17 @@
 import type { AssignmentInput, ItemInput } from './bill-calculations'
 import { resolveHostParticipantName } from './host-profile'
-import { itemHasFullUnitCoverage } from './unit-coverage'
+import {
+  isAllocationReady,
+  isPreparedBill,
+  isRestaurantReady,
+} from './bill-readiness'
 import {
   HOST_ONBOARDING_REVIEW,
   HOST_ONBOARDING_SCAN,
   HOST_ONBOARDING_SHARE,
 } from './host-onboarding-messages'
+
+export { isPreparedBill } from './bill-readiness'
 
 export const HOST_ONBOARDING_VERSION = 1
 
@@ -62,26 +68,6 @@ export function isEligibleForAutomaticOnboarding(input: {
     input.billCount === 0 &&
     input.lifecycle === 'notStarted'
   )
-}
-
-export function isPreparedBill(input: {
-  restaurantName: string
-  guestCount: number
-  items: ItemInput[]
-  assignments: AssignmentInput[]
-}): boolean {
-  const restaurantReady = input.restaurantName.trim().length > 0
-  const guestsReady = input.guestCount >= 1
-  const itemsReady =
-    input.items.length > 0 &&
-    input.items.every((item) => item.unitPriceCents > 0)
-  const unitsReady =
-    input.items.length > 0 &&
-    input.items.every((item) =>
-      itemHasFullUnitCoverage(item, input.assignments),
-    )
-
-  return restaurantReady && guestsReady && itemsReady && unitsReady
 }
 
 export function planUsernameOnWelcomeConfirm(
@@ -181,7 +167,7 @@ export function deriveHostOnboardingGuidance(
     body: bill.restaurantFromOcr
       ? 'Името е разпознато от бележката — потвърдете го или го поправете.'
       : 'Името се вижда от гостите, когато отворят линка.',
-    done: bill.restaurantName.trim() !== '',
+    done: isRestaurantReady(bill.restaurantName),
   }
 
   const participants: GuidanceStep = {
@@ -209,12 +195,10 @@ export function deriveHostOnboardingGuidance(
           : hasMultiUnitItem(bill.items)
             ? 'Всяка бройка отива при някого — изберете повече от един участник, за да я разделите поравно.'
             : 'Всеки артикул отива при някого — изберете повече от един участник, за да го разделите поравно.',
-    done:
-      bill.items.length > 0 &&
-      bill.items.every((item) => item.unitPriceCents > 0) &&
-      bill.items.every((item) =>
-        itemHasFullUnitCoverage(item, input.bill.assignments),
-      ),
+    done: isAllocationReady({
+      items: bill.items,
+      assignments: bill.assignments,
+    }),
   }
 
   const prepared = isPreparedBill({

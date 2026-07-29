@@ -16,7 +16,7 @@ import { buildBillJoinUrl, resolveAppOrigin } from '#/lib/bill-join-url.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { shareLink } from '#/lib/share-link.ts'
 import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
-import type { GuidanceTargetRegister } from '#/lib/guidance-focus/use-guidance-focus.ts'
+import type { GuidanceFocusHandle } from '#/lib/guidance-focus/use-guidance-focus.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -27,18 +27,8 @@ export interface BillInviteCardProps {
   readOnly?: boolean
   /** When set, handles guest-link sharing (e.g. onboarding payment checkpoint). */
   onShareLink?: (joinUrl: string) => Promise<boolean>
-  shareGuidance?: {
-    register: GuidanceTargetRegister
-    shouldPop: boolean
-    reducedHighlight: boolean
-    onPopAnimationEnd: (stepId: string) => void
-  }
-  allocationGuidance?: {
-    register: GuidanceTargetRegister
-    shouldPop: boolean
-    reducedHighlight: boolean
-    onPopAnimationEnd: (stepId: string) => void
-  }
+  shareGuidance?: GuidanceFocusHandle
+  allocationGuidance?: GuidanceFocusHandle
 }
 
 export function BillInviteCard({
@@ -139,10 +129,7 @@ export function BillInviteCard({
           {shareGuidance ? (
             <GuidanceTarget
               stepId="share"
-              register={shareGuidance.register}
-              shouldPop={shareGuidance.shouldPop}
-              reducedHighlight={shareGuidance.reducedHighlight}
-              onPopAnimationEnd={shareGuidance.onPopAnimationEnd}
+              focus={shareGuidance}
               className="w-full"
             >
               <Button
@@ -187,13 +174,7 @@ export function BillInviteCard({
   return (
     <>
       {allocationGuidance ? (
-        <GuidanceTarget
-          stepId="allocation"
-          register={allocationGuidance.register}
-          shouldPop={allocationGuidance.shouldPop}
-          reducedHighlight={allocationGuidance.reducedHighlight}
-          onPopAnimationEnd={allocationGuidance.onPopAnimationEnd}
-        >
+        <GuidanceTarget stepId="allocation" focus={allocationGuidance}>
           {inviteCard}
         </GuidanceTarget>
       ) : (

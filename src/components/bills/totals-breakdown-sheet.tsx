@@ -1,6 +1,7 @@
 import { PieChartIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import type { calculateBillTotals } from '#/lib/bill-calculations.ts'
+import { paymentStatusLabel } from '#/lib/participant-share-view.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import {
@@ -12,12 +13,6 @@ import {
 import { Badge } from '#/components/ui/badge.tsx'
 import { Separator } from '#/components/ui/separator.tsx'
 import type { Doc } from '../../../convex/_generated/dataModel'
-
-const statusLabels = {
-  unpaid: 'неплатено',
-  partial: 'частично',
-  paid: 'платено',
-} as const
 
 export interface TotalsBreakdownSheetProps {
   open: boolean
@@ -67,7 +62,7 @@ export function TotalsBreakdownSheet({
                 <div>
                   <p className="font-medium">{labels[p._id] ?? p.name}</p>
                   <Badge variant="outline" className="mt-0.5">
-                    {statusLabels[t.status]}
+                    {paymentStatusLabel(t.status)}
                   </Badge>
                 </div>
                 <p className="money">{formatEur(t.owedCents)}</p>

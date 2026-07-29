@@ -1,0 +1,970 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Architecture review — Онова за сметката</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs'
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: 'neutral',
+        securityLevel: 'loose',
+      })
+    </script>
+    <style>
+      .seam {
+        stroke-dasharray: 4 4;
+      }
+      .leak {
+        stroke: #dc2626;
+        stroke-width: 2;
+      }
+      .deep-box {
+        background: linear-gradient(135deg, #0f172a, #1e293b);
+        color: #e2e8f0;
+      }
+      .shallow-box {
+        background: #fef3c7;
+        border-color: #f59e0b;
+      }
+      .iface-bar {
+        background: #94a3b8;
+      }
+      .impl-bar {
+        background: #cbd5e1;
+      }
+      .iface-bar-deep {
+        background: #334155;
+        height: 24px;
+      }
+      .impl-bar-deep {
+        background: #64748b;
+        height: 120px;
+      }
+      .iface-bar-shallow {
+        background: #94a3b8;
+        height: 72px;
+      }
+      .impl-bar-shallow {
+        background: #cbd5e1;
+        height: 80px;
+      }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans">
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
+      <header class="border-b border-stone-200 pb-8">
+        <h1 class="font-serif text-3xl text-slate-900 tracking-tight">
+          Architecture review
+        </h1>
+        <p class="mt-1 text-stone-500 text-sm">
+          Онова за сметката · 29 Jul 2026 · last updated 29 Jul 2026 (session
+          handoff)
+        </p>
+
+        <!-- Progress tracker -->
+        <section
+          id="progress"
+          class="mt-8 rounded-xl border border-stone-200 bg-white p-6 shadow-sm"
+        >
+          <h2 class="font-serif text-lg text-slate-900">Progress</h2>
+          <p class="mt-1 text-sm text-stone-600">
+            All 6 strong candidates done.
+          </p>
+          <div class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <a
+              href="#c1"
+              class="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm hover:bg-emerald-50"
+            >
+              <span
+                class="shrink-0 rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-medium text-white"
+                >Done</span
+              >
+              <span class="text-stone-800">#1 Unit membership</span>
+            </a>
+            <a
+              href="#c2"
+              class="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm hover:bg-emerald-50"
+            >
+              <span
+                class="shrink-0 rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-medium text-white"
+                >Done</span
+              >
+              <span class="text-stone-800">#2 Напътствия controller</span>
+            </a>
+            <a
+              href="#c3"
+              class="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm hover:bg-emerald-50"
+            >
+              <span
+                class="shrink-0 rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-medium text-white"
+                >Done</span
+              >
+              <span class="text-stone-800">#3 Bill readiness</span>
+            </a>
+            <a
+              href="#c4"
+              class="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm hover:bg-emerald-50"
+            >
+              <span
+                class="shrink-0 rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-medium text-white"
+                >Done</span
+              >
+              <span class="text-stone-800">#4 Share view model</span>
+            </a>
+            <a
+              href="#c5"
+              class="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm hover:bg-emerald-50"
+            >
+              <span
+                class="shrink-0 rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-medium text-white"
+                >Done</span
+              >
+              <span class="text-stone-800">#5 Bill-editing controller</span>
+            </a>
+            <a
+              href="#c6"
+              class="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm hover:bg-emerald-50"
+            >
+              <span
+                class="shrink-0 rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-medium text-white"
+                >Done</span
+              >
+              <span class="text-stone-800">#6 Guest claim session</span>
+            </a>
+          </div>
+          <dl class="mt-4 grid gap-3 text-xs text-stone-600 sm:grid-cols-3">
+            <div>
+              <dt class="uppercase tracking-wider text-stone-500">Done</dt>
+              <dd class="mt-0.5 font-mono text-stone-800">
+                ci:preflight green · 446 tests
+              </dd>
+            </div>
+            <div>
+              <dt class="uppercase tracking-wider text-stone-500">
+                Domain docs
+              </dt>
+              <dd class="mt-0.5">
+                <code class="text-xs">CONTEXT.md</code> — Unit membership, Bill
+                readiness, Guidance controller, Participant Share view,
+                Bill-editing controller, Guest claim session
+              </dd>
+            </div>
+            <div>
+              <dt class="uppercase tracking-wider text-stone-500">
+                Resume with
+              </dt>
+              <dd class="mt-0.5">
+                All six candidates shipped. Optional follow-ups below.
+              </dd>
+            </div>
+          </dl>
+
+          <!-- New session handoff -->
+          <div
+            class="mt-6 rounded-lg border border-emerald-200 bg-emerald-50/60 p-4 text-sm text-stone-800"
+          >
+            <h3 class="font-medium text-emerald-950">Complete</h3>
+            <p class="mt-2 text-stone-700">
+              All strong candidates <strong>#1–#6 are shipped</strong>.
+            </p>
+            <p class="mt-3 text-xs text-stone-600">
+              Shipped (#6):
+              <code class="text-xs">shared/guest-claim-session.ts</code>,
+              <code class="text-xs">shared/guest-claim-items.ts</code>,
+              <code class="text-xs">useGuestClaimSession</code>,
+              <code class="text-xs">ClaimItemsPanel</code>. Claim route thinned
+              to auth redirect + layout.
+            </p>
+            <p class="mt-3 text-xs text-stone-600">
+              Optional follow-ups (not blocking):
+              <code class="text-xs">useGuidanceFocus</code> DOM timing still
+              untested (#2); <code class="text-xs">recordPreparedIfNeeded</code>
+              still runs from client effect (#3).
+            </p>
+          </div>
+        </section>
+
+        <dl
+          class="mt-6 flex flex-wrap gap-6 text-xs uppercase tracking-wider text-stone-600"
+        >
+          <div class="flex items-center gap-2">
+            <span
+              class="inline-block w-4 h-4 border-2 border-slate-700 rounded"
+            ></span>
+            module
+          </div>
+          <div class="flex items-center gap-2">
+            <span
+              class="inline-block w-8 border-t-2 border-dashed border-slate-400"
+            ></span>
+            seam
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="inline-block w-6 text-red-600">→</span> leakage
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="inline-block w-4 h-4 deep-box rounded"></span> deep
+            module
+          </div>
+        </dl>
+      </header>
+
+      <section id="candidates" class="space-y-10">
+        <!-- Candidate 1 -->
+        <article
+          id="c1"
+          class="rounded-xl border border-emerald-200 bg-white shadow-sm overflow-hidden"
+        >
+          <div
+            class="px-6 pt-6 pb-4 border-b border-emerald-100 bg-emerald-50/40"
+          >
+            <div class="flex flex-wrap items-center gap-3 mb-2">
+              <h2 class="font-serif text-xl">
+                Unify Unit membership mutation paths
+              </h2>
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-600 text-white"
+                >Done</span
+              >
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800"
+                >Strong</span
+              >
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600"
+                >ports &amp; adapters</span
+              >
+            </div>
+            <p class="font-mono text-sm text-stone-600">
+              convex/assignments.ts · host-unit-assignment-dialog.tsx ·
+              unit-line-summary.tsx · assignment-row.tsx · spodeli-dialog.tsx ·
+              shared/unit-coverage.ts
+            </p>
+          </div>
+          <div class="px-6 py-5 grid md:grid-cols-2 gap-6">
+            <div>
+              <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">
+                Before
+              </p>
+              <div
+                class="rounded-lg border border-slate-200 bg-stone-50 p-3 h-[320px] overflow-hidden"
+              >
+                <pre class="mermaid text-xs">
+flowchart TB
+  subgraph host["Host allocation UI"]
+    AR[AssignmentRow<br/>qty=1 chips only]
+    IL[ItemList<br/>Раздели поравно]
+  end
+  subgraph guest["Guest claim UI"]
+    GIR[GuestItemRow]
+    SD[SpodeliDialog<br/>per-Unit]
+  end
+  subgraph backend["convex/assignments.ts"]
+    T[toggle → syncEvenAssignments]
+    J[joinUnit / leaveUnit]
+  end
+  AR --> T
+  IL --> T
+  GIR --> SD
+  SD --> J
+  T -.leak.-> UC[unit-coverage.ts]
+  J -.leak.-> GCI[guest-claim-items.ts]
+  classDef leak stroke:#dc2626,stroke-width:2px
+  class T,J,UC,GCI leak
+                </pre>
+              </div>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">
+                After
+              </p>
+              <div
+                class="rounded-lg border border-slate-700 p-4 h-[320px] flex flex-col justify-center"
+              >
+                <div class="deep-box rounded-lg p-4 text-center">
+                  <p
+                    class="text-xs uppercase tracking-wider text-slate-400 mb-1"
+                  >
+                    Unit membership module
+                  </p>
+                  <p class="text-sm font-medium">
+                    assign · join · leave · even-split
+                  </p>
+                  <p class="text-xs text-slate-400 mt-3">
+                    one primitive, composed operations
+                  </p>
+                  <div
+                    class="mt-4 flex justify-center gap-3 text-xs text-slate-500"
+                  >
+                    <span>Host UI</span><span>·</span><span>Guest UI</span
+                    ><span>·</span><span>Convex adapter</span>
+                  </div>
+                </div>
+                <p class="text-xs text-center text-stone-500 mt-4">
+                  Host multi-qty gets same per-Unit surface as Guest
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="px-6 pb-6 space-y-3 text-sm">
+            <p>
+              <strong class="text-stone-700">Problem.</strong> Per-Unit
+              membership is one domain concept but two incompatible backend
+              seams —
+              <code class="text-xs bg-stone-100 px-1 rounded"
+                >toggle/syncEven</code
+              >
+              vs
+              <code class="text-xs bg-stone-100 px-1 rounded"
+                >joinUnit/leaveUnit</code
+              >
+              — and Host vs Guest UIs diverge on qty&gt;1.
+            </p>
+            <p>
+              <strong class="text-stone-700">Solution.</strong> Deepen one Unit
+              membership module; even-split becomes a composition, not a
+              separate mutation path.
+            </p>
+            <ul class="list-disc list-inside text-stone-600 space-y-1">
+              <li>locality: mutations concentrate in one module</li>
+              <li>leverage: Host and Guest share one interface</li>
+              <li>
+                interface is the test surface for even-split vs per-Unit claim
+              </li>
+            </ul>
+            <div
+              class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-950"
+            >
+              <strong>Shipped.</strong> Removed
+              <code class="text-xs">toggle</code>;
+              <code class="text-xs">joinUnit</code>/<code class="text-xs"
+                >leaveUnit</code
+              >
+              only; Host multi-qty gets <strong>Редактирай</strong> dialog with
+              per-Unit chips; deepened
+              <code class="text-xs">unit-coverage.ts</code>; shared
+              <code class="text-xs">UnitLineSummary</code>.
+            </div>
+          </div>
+        </article>
+
+        <!-- Candidate 2 -->
+        <article
+          id="c2"
+          class="rounded-xl border border-emerald-200 bg-white shadow-sm overflow-hidden"
+        >
+          <div
+            class="px-6 pt-6 pb-4 border-b border-emerald-100 bg-emerald-50/40"
+          >
+            <div class="flex flex-wrap items-center gap-3 mb-2">
+              <h2 class="font-serif text-xl">
+                Collapse Напътствия orchestration
+              </h2>
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-600 text-white"
+                >Done</span
+              >
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800"
+                >Strong</span
+              >
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600"
+                >in-process</span
+              >
+            </div>
+            <p class="font-mono text-sm text-stone-600">
+              shared/guidance-controller.ts · use-guidance-focus.ts ·
+              guidance-target.tsx · host-onboarding-provider.tsx ·
+              routes/bills/$billId/index.tsx
+            </p>
+          </div>
+          <div class="px-6 py-5 grid md:grid-cols-2 gap-6">
+            <div>
+              <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">
+                Before — cross-section
+              </p>
+              <div
+                class="rounded-lg border border-slate-200 bg-stone-50 p-3 h-[320px] space-y-1"
+              >
+                <div
+                  class="h-10 border-l-4 border-amber-400 bg-amber-50 pl-2 flex items-center text-xs"
+                >
+                  route index.tsx — wiring, duplicate derive
+                </div>
+                <div
+                  class="h-10 border-l-4 border-amber-300 bg-amber-50/70 pl-2 flex items-center text-xs"
+                >
+                  host-onboarding-provider — lifecycle
+                </div>
+                <div
+                  class="h-10 border-l-4 border-amber-200 bg-amber-50/50 pl-2 flex items-center text-xs"
+                >
+                  use-guidance-focus — timers, refs (untested)
+                </div>
+                <div
+                  class="h-10 border-l-4 border-stone-300 bg-stone-100 pl-2 flex items-center text-xs"
+                >
+                  plan-guidance-focus — shallow wrapper
+                </div>
+                <div
+                  class="h-10 border-l-4 border-stone-300 bg-stone-100 pl-2 flex items-center text-xs"
+                >
+                  plan-next-button-pop — shallow wrapper
+                </div>
+                <div
+                  class="h-10 border-l-4 border-stone-300 bg-stone-100 pl-2 flex items-center text-xs"
+                >
+                  host-onboarding.ts — curriculum
+                </div>
+                <div
+                  class="h-10 border-l-4 border-red-300 bg-red-50 pl-2 flex items-center text-xs"
+                >
+                  bill-invite-card, participant-list… — registerTarget leakage
+                </div>
+              </div>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">
+                After — mass diagram
+              </p>
+              <div
+                class="rounded-lg border border-slate-200 bg-white p-4 h-[320px] flex flex-col items-center justify-center gap-2"
+              >
+                <div class="w-48 text-center">
+                  <div class="iface-bar-deep rounded-t"></div>
+                  <div
+                    class="impl-bar-deep rounded-b flex items-center justify-center text-xs text-white"
+                  >
+                    guidance controller
+                  </div>
+                  <p class="text-xs text-stone-500 mt-2">
+                    curriculum · step · scroll/pop · dismissals
+                  </p>
+                </div>
+                <div class="flex gap-4 mt-4">
+                  <div class="text-xs text-center">
+                    <div class="w-16 h-8 border rounded bg-stone-50"></div>
+                    target adapters
+                  </div>
+                  <div class="text-xs text-center">
+                    <div class="w-16 h-8 border rounded bg-stone-50"></div>
+                    scroll-pop (boundary)
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="px-6 pb-6 space-y-3 text-sm">
+            <p>
+              <strong class="text-stone-700">Problem.</strong> Напътствия spans
+              7+ shallow modules; planners are tested but timing/race logic in
+              <code class="text-xs bg-stone-100 px-1 rounded"
+                >use-guidance-focus</code
+              >
+              has no test surface.
+            </p>
+            <p>
+              <strong class="text-stone-700">Solution.</strong> One guidance
+              controller owns curriculum, active step, scroll/pop plan, and
+              session dismissals; route becomes thin wiring.
+            </p>
+            <ul class="list-disc list-inside text-stone-600 space-y-1">
+              <li>locality: “what Host sees now” in one module</li>
+              <li>leverage: invite card, step bar become target adapters</li>
+              <li>state machine testable without DOM</li>
+            </ul>
+            <div
+              class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-950"
+            >
+              <strong>Shipped.</strong>
+              <code class="text-xs">computeGuidanceState</code> in
+              <code class="text-xs">guidance-controller.ts</code>; deleted
+              shallow planners; thinned
+              <code class="text-xs">useGuidanceFocus</code>;
+              <code class="text-xs">&lt;GuidanceTarget focus={…} /&gt;</code>.
+              Follow-up: DOM timing in hook still untested.
+            </div>
+          </div>
+        </article>
+
+        <!-- Candidate 3 -->
+        <article
+          id="c3"
+          class="rounded-xl border border-emerald-200 bg-white shadow-sm overflow-hidden"
+        >
+          <div
+            class="px-6 pt-6 pb-4 border-b border-emerald-100 bg-emerald-50/40"
+          >
+            <div class="flex flex-wrap items-center gap-3 mb-2">
+              <h2 class="font-serif text-xl">
+                Unify Prepared bill readiness criteria
+              </h2>
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-600 text-white"
+                >Done</span
+              >
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800"
+                >Strong</span
+              >
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600"
+                >in-process</span
+              >
+            </div>
+            <p class="font-mono text-sm text-stone-600">
+              shared/bill-readiness.ts · bill-step-completion.ts ·
+              host-onboarding.ts · bill-calculations.ts
+            </p>
+          </div>
+          <div class="px-6 py-5 grid md:grid-cols-2 gap-6">
+            <div>
+              <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">
+                Before
+              </p>
+              <div
+                class="rounded-lg border border-slate-200 bg-stone-50 p-3 h-[320px]"
+              >
+                <pre class="mermaid text-xs">
+flowchart LR
+  IPB[isPreparedBill]
+  GBS[getBillStepCompletion]
+  DHO[deriveHostOnboardingGuidance]
+  VBF[validateBillForFinalize]
+  FX[useEffect → recordPreparedIfNeeded]
+  IPB --> DHO
+  GBS --> Route[step bar]
+  GBS -.drift.-> IPB
+  FX --> Convex[convex/hostOnboarding]
+  Convex --> IPB
+  VBF -.drift.-> IPB
+  classDef leak stroke:#dc2626,stroke-width:2px
+  class GBS,VBF,FX leak
+                </pre>
+              </div>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">
+                After
+              </p>
+              <div
+                class="rounded-lg border border-slate-700 p-4 h-[320px] flex flex-col justify-center items-center"
+              >
+                <div
+                  class="deep-box rounded-lg p-5 w-full max-w-xs text-center"
+                >
+                  <p class="text-xs uppercase tracking-wider text-slate-400">
+                    Bill readiness module
+                  </p>
+                  <div class="mt-3 space-y-2 text-left text-xs">
+                    <div class="flex justify-between">
+                      <span>Prepared bill</span
+                      ><span class="text-slate-400">view</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span>Step completion</span
+                      ><span class="text-slate-400">view</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span>Finalize preconditions</span
+                      ><span class="text-slate-400">view</span>
+                    </div>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-3">
+                    one model, layered views
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="px-6 pb-6 space-y-3 text-sm">
+            <p>
+              <strong class="text-stone-700">Problem.</strong> Prepared bill
+              rules drift across four modules — step 3 can complete while items
+              are unpriced; client effect re-sends snapshots to Convex.
+            </p>
+            <p>
+              <strong class="text-stone-700">Solution.</strong> Single readiness
+              module; Напътствия, step bar, and finalize derive layered views
+              from one predicate set.
+            </p>
+            <ul class="list-disc list-inside text-stone-600 space-y-1">
+              <li>locality: Prepared bill defined once</li>
+              <li>leverage: share-step copy derives from same source</li>
+              <li>one test matrix for edge cases</li>
+            </ul>
+            <div
+              class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-950"
+            >
+              <strong>Shipped.</strong> Layered views in
+              <code class="text-xs">bill-readiness.ts</code>; step 3 now
+              requires priced items (fixes drift vs Prepared bill). Follow-up:
+              <code class="text-xs">recordPreparedIfNeeded</code> still runs
+              from client effect.
+            </div>
+          </div>
+        </article>
+
+        <!-- Candidate 4 -->
+        <article
+          id="c4"
+          class="rounded-xl border border-emerald-200 bg-white shadow-sm overflow-hidden"
+        >
+          <div
+            class="px-6 pt-6 pb-4 border-b border-emerald-100 bg-emerald-50/40"
+          >
+            <div class="flex flex-wrap items-center gap-3 mb-2">
+              <h2 class="font-serif text-xl">
+                Deepen Participant Share view model
+              </h2>
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-600 text-white"
+                >Done</span
+              >
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800"
+                >Worth exploring</span
+              >
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600"
+                >in-process</span
+              >
+            </div>
+            <p class="font-mono text-sm text-stone-600">
+              shared/bill-calculations.ts · bill-calculation-snapshot.ts ·
+              src/lib/bill-share.ts · participant-breakdown-content.tsx ·
+              claim.tsx · claim-share-drawer.tsx
+            </p>
+          </div>
+          <div class="px-6 py-5 grid md:grid-cols-2 gap-6">
+            <div>
+              <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">
+                Before — mass (shallow)
+              </p>
+              <div class="flex gap-4 justify-center items-end h-[320px] pb-4">
+                <div class="text-center w-20">
+                  <div class="iface-bar-shallow rounded-t mx-auto w-16"></div>
+                  <div class="impl-bar-shallow rounded-b mx-auto w-16"></div>
+                  <p class="text-xs mt-1">snapshot</p>
+                </div>
+                <div class="text-center w-20">
+                  <div class="iface-bar-shallow rounded-t mx-auto w-16"></div>
+                  <div class="impl-bar-shallow rounded-b mx-auto w-16"></div>
+                  <p class="text-xs mt-1">totals</p>
+                </div>
+                <div class="text-center w-20">
+                  <div class="iface-bar-shallow rounded-t mx-auto w-16"></div>
+                  <div class="impl-bar-shallow rounded-b mx-auto w-16"></div>
+                  <p class="text-xs mt-1">breakdown</p>
+                </div>
+                <div class="text-center w-20">
+                  <div class="iface-bar-shallow rounded-t mx-auto w-16"></div>
+                  <div class="impl-bar-shallow rounded-b mx-auto w-16"></div>
+                  <p class="text-xs mt-1">format</p>
+                </div>
+              </div>
+              <p class="text-xs text-center text-red-600">
+                statusLabels duplicated ×5 UI files
+              </p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">
+                After — mass (deep)
+              </p>
+              <div class="flex justify-center items-end h-[320px] pb-4">
+                <div class="text-center w-32">
+                  <div class="iface-bar-deep rounded-t mx-auto w-24"></div>
+                  <div
+                    class="impl-bar-deep rounded-b mx-auto w-24 flex items-center justify-center text-xs text-white"
+                  >
+                    Share view model
+                  </div>
+                  <p class="text-xs mt-2 text-stone-500">
+                    totals · lines · labels · export text
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="px-6 pb-6 space-y-3 text-sm">
+            <p>
+              <strong class="text-stone-700">Problem.</strong> Unit share
+              allocation math is deep and tested; every consumer manually
+              assembles snapshot + totals + breakdown + formatting —
+              presentation leaks across seams.
+            </p>
+            <p>
+              <strong class="text-stone-700">Solution.</strong> One module:
+              given bill relations + participantId → totals, breakdown lines,
+              display strings.
+            </p>
+            <ul class="list-disc list-inside text-stone-600 space-y-1">
+              <li>
+                locality: claim drawer and host summary share one interface
+              </li>
+              <li>golden tests without React</li>
+              <li>Outstanding labels defined once</li>
+            </ul>
+            <div
+              class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-950"
+            >
+              <strong>Shipped.</strong>
+              <code class="text-xs">buildParticipantShareView</code> in
+              <code class="text-xs">shared/participant-share-view.ts</code>;
+              unified <code class="text-xs">paymentStatusLabel</code> and
+              breakdown display strings; claim drawer, host summary, and share
+              export use the view model.
+            </div>
+          </div>
+        </article>
+
+        <!-- Candidate 5 -->
+        <article
+          id="c5"
+          class="rounded-xl border border-emerald-200 bg-white shadow-sm overflow-hidden"
+        >
+          <div
+            class="px-6 pt-6 pb-4 border-b border-emerald-100 bg-emerald-50/40"
+          >
+            <div class="flex flex-wrap items-center gap-3 mb-2">
+              <h2 class="font-serif text-xl">
+                Extract bill-editing controller from host route
+              </h2>
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-600 text-white"
+                >Done</span
+              >
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800"
+                >Worth exploring</span
+              >
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600"
+                >in-process</span
+              >
+            </div>
+            <p class="font-mono text-sm text-stone-600">
+              shared/bill-editing-controller.ts · use-bill-editor-controller.ts
+              · src/routes/bills/$billId/index.tsx (~633 lines)
+            </p>
+          </div>
+          <div class="px-6 py-5 grid md:grid-cols-2 gap-6">
+            <div>
+              <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">
+                Before
+              </p>
+              <div
+                class="rounded-lg border border-slate-200 bg-stone-50 p-3 h-[320px]"
+              >
+                <pre class="mermaid text-xs">
+flowchart TB
+  R["index.tsx<br/>1052 lines"]
+  R --> Steps[step nav]
+  R --> OCR[receipt scan]
+  R --> HO[onboarding effects]
+  R --> Calc[calculateBillTotals]
+  R --> GT[GuidanceTarget wiring]
+  R --> IL[item-list]
+  R --> PL[participant-list]
+  classDef hub fill:#fef3c7,stroke:#f59e0b
+  class R hub
+                </pre>
+              </div>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">
+                After
+              </p>
+              <div
+                class="rounded-lg border border-slate-200 p-4 h-[320px] flex flex-col gap-3 justify-center"
+              >
+                <div
+                  class="border-2 border-dashed border-slate-300 rounded p-3 text-center text-sm text-stone-600"
+                >
+                  route — layout + wiring
+                </div>
+                <div class="deep-box rounded p-4 text-center text-sm">
+                  bill-editing controller<br /><span
+                    class="text-xs text-slate-400"
+                    >steps · OCR phase · guidance input · completion</span
+                  >
+                </div>
+                <div class="flex gap-2 justify-center text-xs text-stone-500">
+                  <span>item-list</span><span>participant-list</span
+                  ><span>steps-bar</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="px-6 pb-6 space-y-3 text-sm">
+            <p>
+              <strong class="text-stone-700">Problem.</strong> Host bill editor
+              route is a shallow integration shell — any Напътствия, OCR, or
+              step change touches 1000+ lines.
+            </p>
+            <p>
+              <strong class="text-stone-700">Solution.</strong> Deepen a
+              bill-editing controller; route becomes layout seam only.
+            </p>
+            <ul class="list-disc list-inside text-stone-600 space-y-1">
+              <li>locality: OCR→guidance handoff in one place</li>
+              <li>leverage: prototype route reuses controller</li>
+              <li>unit tests without Convex/React Query</li>
+            </ul>
+            <div
+              class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-950"
+            >
+              <strong>Shipped.</strong>
+              <code class="text-xs">buildBillEditorDerivedState</code> and
+              guidance helpers in
+              <code class="text-xs">bill-editing-controller.ts</code>;
+              <code class="text-xs">useBillEditorController</code> owns metadata
+              draft, OCR phase, guidance wiring, and onboarding effects; route
+              is layout + step panels.
+            </div>
+          </div>
+        </article>
+
+        <!-- Candidate 6 -->
+        <article
+          id="c6"
+          class="rounded-xl border border-emerald-200 bg-white shadow-sm overflow-hidden"
+        >
+          <div
+            class="px-6 pt-6 pb-4 border-b border-emerald-100 bg-emerald-50/40"
+          >
+            <div class="flex flex-wrap items-center gap-3 mb-2">
+              <h2 class="font-serif text-xl">
+                Deepen Guest claim session module
+              </h2>
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-600 text-white"
+                >Done</span
+              >
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800"
+                >Worth exploring</span
+              >
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600"
+                >local-substitutable</span
+              >
+            </div>
+            <p class="font-mono text-sm text-stone-600">
+              src/routes/bills/$billId/claim.tsx · guest-claim-items.ts ·
+              guest-participant-session.ts · claim-share-drawer.tsx
+            </p>
+          </div>
+          <div class="px-6 py-5 grid md:grid-cols-2 gap-6">
+            <div>
+              <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">
+                Before
+              </p>
+              <div
+                class="rounded-lg border border-slate-200 bg-stone-50 p-3 h-[320px]"
+              >
+                <pre class="mermaid text-xs">
+sequenceDiagram
+  participant Route as claim.tsx
+  participant Session as guest-participant-session
+  participant Items as guest-claim-items
+  participant Drawer as claim-share-drawer
+  Route->>Session: redirect / heartbeat
+  Route->>Items: tab filter (multi-qty rules)
+  Route->>Route: build snapshot
+  Route->>Drawer: breakdown + ResizeObserver
+  Note over Route,Drawer: tab semantics wired only here
+                </pre>
+              </div>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">
+                After
+              </p>
+              <div
+                class="rounded-lg border border-slate-700 p-4 h-[320px] flex flex-col justify-center"
+              >
+                <div class="deep-box rounded-lg p-4">
+                  <p
+                    class="text-xs uppercase tracking-wider text-slate-400 text-center"
+                  >
+                    Guest claim session
+                  </p>
+                  <ul class="mt-3 text-xs space-y-1 text-slate-300">
+                    <li>· item visibility by tab</li>
+                    <li>· claim state per item / Unit</li>
+                    <li>· share drawer inputs</li>
+                  </ul>
+                </div>
+                <p class="text-xs text-center text-stone-500 mt-3">
+                  route → auth redirect + layout only
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="px-6 pb-6 space-y-3 text-sm">
+            <p>
+              <strong class="text-stone-700">Problem.</strong> Multi-qty tab
+              rules tested in isolation but wired only in the route;
+              <code class="text-xs bg-stone-100 px-1 rounded"
+                >guest-claim-items</code
+              >
+              shallowly adapts
+              <code class="text-xs bg-stone-100 px-1 rounded"
+                >unit-coverage</code
+              >.
+            </p>
+            <p>
+              <strong class="text-stone-700">Solution.</strong> Guest claim
+              session owns tab semantics, claim state, and drawer inputs
+              together.
+            </p>
+            <ul class="list-disc list-inside text-stone-600 space-y-1">
+              <li>locality: Сподели tab rules next to claim logic</li>
+              <li>leverage: host preview-on-claim reuses session model</li>
+              <li>extend existing guest-claim-items tests</li>
+            </ul>
+            <div
+              class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-950"
+            >
+              <strong>Shipped.</strong>
+              <code class="text-xs">buildGuestClaimSessionState</code> in
+              <code class="text-xs">guest-claim-session.ts</code>;
+              <code class="text-xs">useGuestClaimSession</code> hook;
+              <code class="text-xs">ClaimItemsPanel</code> for shared tab/search
+              UI; item filters moved to
+              <code class="text-xs">shared/guest-claim-items.ts</code>; claim
+              route thinned to auth redirect + layout. Reuses
+              <code class="text-xs">buildParticipantShareView</code> for drawer
+              inputs.
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section
+        id="top-recommendation"
+        class="rounded-xl border-2 border-emerald-200 bg-emerald-50/50 p-8"
+      >
+        <h2 class="font-serif text-2xl text-emerald-950">Complete</h2>
+        <p class="mt-4 text-lg text-emerald-950">
+          All six architecture review candidates are shipped.
+        </p>
+        <p class="mt-2 text-stone-700">
+          Optional follow-ups: DOM timing tests for
+          <code class="text-xs">useGuidanceFocus</code> (#2); move
+          <code class="text-xs">recordPreparedIfNeeded</code> off client effect
+          (#3).
+        </p>
+        <p class="mt-4 text-sm text-stone-600">
+          Completed order: Unit membership → Bill readiness → Напътствия
+          controller → Share view → Bill-editing controller → Guest claim
+          session.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

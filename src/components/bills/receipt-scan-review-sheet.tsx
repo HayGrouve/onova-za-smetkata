@@ -27,7 +27,7 @@ import {
 } from '#/lib/receipt-scan-utils.ts'
 import { cn } from '#/lib/utils.ts'
 import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
-import type { GuidanceTargetRegister } from '#/lib/guidance-focus/use-guidance-focus.ts'
+import type { GuidanceFocusHandle } from '#/lib/guidance-focus/use-guidance-focus.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -38,12 +38,7 @@ export interface ReceiptScanReviewSheetProps {
   importMode: 'add' | 'replace'
   scanId: Id<'receiptScans'>
   onImportSuccess?: () => void
-  scanReviewGuidance?: {
-    register: GuidanceTargetRegister
-    shouldPop: boolean
-    reducedHighlight: boolean
-    onPopAnimationEnd: (stepId: string) => void
-  }
+  scanReviewGuidance?: GuidanceFocusHandle
 }
 
 interface ReviewRow {
@@ -402,10 +397,7 @@ export function ReceiptScanReviewSheet({
               {scanReviewGuidance ? (
                 <GuidanceTarget
                   stepId="scan-review"
-                  register={scanReviewGuidance.register}
-                  shouldPop={scanReviewGuidance.shouldPop}
-                  reducedHighlight={scanReviewGuidance.reducedHighlight}
-                  onPopAnimationEnd={scanReviewGuidance.onPopAnimationEnd}
+                  focus={scanReviewGuidance}
                   className="flex-1"
                 >
                   <Button

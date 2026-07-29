@@ -1,17 +1,13 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { BillStep } from '#/components/bills/bill-steps-bar.tsx'
 import type { GuidanceStep } from '../../../shared/host-onboarding.ts'
-import { isEditorStepGuidanceComplete } from '../../../shared/host-onboarding.ts'
 import {
   createNextButtonPopTracker,
+  focusPlanForStep,
   planNextButtonPop,
-} from '../../../shared/plan-next-button-pop.ts'
-import type { NextButtonPopTracker } from '../../../shared/plan-next-button-pop.ts'
-import {
-  resolveActiveGuidanceStep,
-  scrollBlockForStep,
   shouldScrollPopForStep,
-} from '../../../shared/plan-guidance-focus.ts'
+} from '../../../shared/guidance-controller.ts'
+import type { NextButtonPopTracker } from '../../../shared/guidance-controller.ts'
 import {
   prefersReducedMotion,
   runScrollPopSequence,
@@ -22,33 +18,31 @@ export type GuidanceTargetRegister = (
   element: HTMLElement | null,
 ) => void
 
+export interface GuidanceFocusHandle {
+  registerTarget: GuidanceTargetRegister
+  poppingStepId: string | null
+  reducedHighlightStepId: string | null
+  activeStepId: string | undefined
+  onPopAnimationEnd: (stepId: string) => void
+  queueStepFocus: (stepId: string) => void
+  nextButtonPopToken: number
+  onNextButtonPopEnd: () => void
+}
+
 export interface UseGuidanceFocusOptions {
   enabled: boolean
-  steps: GuidanceStep[]
-  dismissedHintIds: string[]
+  activeStep: GuidanceStep | undefined
   currentEditorStep: BillStep
+  editorStepGuidanceComplete: boolean
   /** When true, defer next-button pop (e.g. add-guest input still focused). */
   blockAutoNavigation?: boolean
   /** When false, queue the pop until the step nav bar is visible (e.g. review sheet). */
   canShowNextButtonPop?: boolean
 }
 
-export interface UseGuidanceFocusResult {
-  registerTarget: GuidanceTargetRegister
-  poppingStepId: string | null
-  reducedHighlightStepId: string | null
-  activeStepId: string | undefined
-  onPopAnimationEnd: (stepId: string) => void
-  /** Re-run scroll+pop for a step (e.g. after receipt upload mounts OCR button). */
-  queueStepFocus: (stepId: string) => void
-  /** Increments when the step nav “Напред” button should pop. */
-  nextButtonPopToken: number
-  onNextButtonPopEnd: () => void
-}
-
 export function useGuidanceFocus(
   options: UseGuidanceFocusOptions,
-): UseGuidanceFocusResult {
+): GuidanceFocusHandle {
   const targetsRef = useRef(new Map<string, HTMLElement>())
   const [poppingStepId, setPoppingStepId] = useState<string | null>(null)
   const [reducedHighlightStepId, setReducedHighlightStepId] = useState<
@@ -58,36 +52,19 @@ export function useGuidanceFocus(
   const lastScrolledStepIdRef = useRef<string | null>(null)
   const prevActiveStepIdRef = useRef<string | undefined>(undefined)
   const prevEditorStepRef = useRef(options.currentEditorStep)
-  const prevDismissedCountRef = useRef(options.dismissedHintIds.length)
   const queuedStepIdRef = useRef<string | null>(null)
   const scrollCleanupRef = useRef<(() => void) | null>(null)
-  const editorStepGuidanceComplete = useMemo(
-    () =>
-      isEditorStepGuidanceComplete(
-        options.steps,
-        options.currentEditorStep,
-        options.dismissedHintIds,
-      ),
-    [options.steps, options.currentEditorStep, options.dismissedHintIds],
-  )
   const nextButtonPopTrackerRef = useRef<NextButtonPopTracker>(
     createNextButtonPopTracker(
       options.currentEditorStep,
-      editorStepGuidanceComplete,
+      options.editorStepGuidanceComplete,
     ),
   )
   const [focusRequestVersion, setFocusRequestVersion] = useState(0)
   const [targetsVersion, setTargetsVersion] = useState(0)
   const activeStepIdRef = useRef<string | undefined>(undefined)
 
-  const activeStep = useMemo(
-    () =>
-      options.enabled
-        ? resolveActiveGuidanceStep(options.steps, options.dismissedHintIds)
-        : undefined,
-    [options.enabled, options.steps, options.dismissedHintIds],
-  )
-
+  const activeStep = options.enabled ? options.activeStep : undefined
   activeStepIdRef.current = activeStep?.id
 
   const cancelActiveFocus = useCallback(() => {
@@ -122,7 +99,8 @@ export function useGuidanceFocus(
   }, [])
 
   const focusStep = useCallback((step: GuidanceStep) => {
-    if (!shouldScrollPopForStep(step.id)) return
+    const { shouldScrollPop, scrollBlock } = focusPlanForStep(step)
+    if (!shouldScrollPop) return
 
     const element = targetsRef.current.get(step.id)
     if (!element) return
@@ -132,7 +110,7 @@ export function useGuidanceFocus(
 
     const cleanup = runScrollPopSequence({
       element,
-      block: scrollBlockForStep(step.id),
+      block: scrollBlock,
       shouldPop: true,
       onScrollStart: () => {
         lastScrolledStepIdRef.current = step.id
@@ -158,13 +136,6 @@ export function useGuidanceFocus(
   }, [options.currentEditorStep])
 
   useLayoutEffect(() => {
-    if (options.dismissedHintIds.length < prevDismissedCountRef.current) {
-      lastScrolledStepIdRef.current = null
-    }
-    prevDismissedCountRef.current = options.dismissedHintIds.length
-  }, [options.dismissedHintIds.length])
-
-  useLayoutEffect(() => {
     if (!options.enabled) {
       cancelActiveFocus()
     }
@@ -175,7 +146,7 @@ export function useGuidanceFocus(
       tracker: nextButtonPopTrackerRef.current,
       enabled: options.enabled,
       editorStep: options.currentEditorStep,
-      stepComplete: editorStepGuidanceComplete,
+      stepComplete: options.editorStepGuidanceComplete,
       blocked: options.blockAutoNavigation ?? false,
       canShow: options.canShowNextButtonPop ?? true,
     })
@@ -188,7 +159,7 @@ export function useGuidanceFocus(
   }, [
     options.enabled,
     options.currentEditorStep,
-    editorStepGuidanceComplete,
+    options.editorStepGuidanceComplete,
     options.blockAutoNavigation,
     options.canShowNextButtonPop,
   ])

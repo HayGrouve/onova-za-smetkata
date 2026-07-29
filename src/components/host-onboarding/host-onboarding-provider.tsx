@@ -34,12 +34,9 @@ import {
 } from '#/lib/host-onboarding-session.ts'
 import { shareLink } from '#/lib/share-link.ts'
 import type { ShareLinkResult } from '#/lib/share-link.ts'
-import {
-  deriveHostOnboardingGuidance,
-  guidanceForEditorStep,
-  isEligibleForAutomaticOnboarding,
-  stepBarGuidanceLabel,
-} from '../../../shared/host-onboarding.ts'
+import { computeGuidanceState } from '../../../shared/guidance-controller.ts'
+import type { GuidanceState } from '../../../shared/guidance-controller.ts'
+import { isEligibleForAutomaticOnboarding } from '../../../shared/host-onboarding.ts'
 import type {
   GuidanceAnchor,
   GuidanceStep,
@@ -167,10 +164,10 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
   )
 
   const buildGuidance = useCallback(
-    (input: BillGuidanceInput) => {
+    (input: BillGuidanceInput): GuidanceState => {
       void billSessionVersion
       const dismissedHintIds = readDismissedHintIds(input.billId)
-      const steps = deriveHostOnboardingGuidance({
+      return computeGuidanceState({
         bill: {
           restaurantName: input.restaurantName,
           restaurantFromOcr: input.restaurantFromOcr,
@@ -185,8 +182,9 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
           sharedAt: onboarding?.sharedAt,
         },
         dismissedHintIds,
+        editorStep: input.step,
+        stepLabels: BILL_STEP_LABELS,
       })
-      return { steps, dismissedHintIds }
     },
     [billSessionVersion, onboarding?.sharedAt],
   )
@@ -324,12 +322,8 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
           return null
         }
 
-        const { steps, dismissedHintIds } = buildGuidance(input)
-        const stepGuidance = guidanceForEditorStep(
-          steps,
-          input.step,
-          dismissedHintIds,
-        )
+        const guidance = buildGuidance(input)
+        const stepGuidance = guidance.editorStepGuidance
         if (!stepGuidance || stepGuidance.anchor !== anchor) return null
         return (
           <GuidanceCardView
@@ -344,13 +338,7 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
       },
       getStepBarSignal: (input) => {
         if (!guidanceOnForBill(input.billId)) return null
-        const { steps, dismissedHintIds } = buildGuidance(input)
-        const signal = stepBarGuidanceLabel({
-          steps,
-          currentStep: input.step,
-          dismissedHintIds,
-          stepLabels: BILL_STEP_LABELS,
-        })
+        const signal = buildGuidance(input).stepBarLabel
         if (!signal) return null
         if (signal.kind === 'on') return { kind: 'on' }
         return {

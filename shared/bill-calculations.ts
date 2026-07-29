@@ -1,5 +1,10 @@
 import { countItemsWithEmptyUnits, itemHasEmptyUnit } from './unit-coverage'
 import {
+  hasAtLeastOneParticipant,
+  hasItemsWithPositiveLineTotal,
+  isRestaurantReady,
+} from './bill-readiness'
+import {
   splitLineTotal,
   splitUnitShareAmongAssignees,
 } from './unit-share-allocation'
@@ -344,22 +349,21 @@ export function validateBillForFinalize(input: {
 }): ValidationError[] {
   const errors: ValidationError[] = []
 
-  if (!input.restaurantName.trim()) {
+  if (!isRestaurantReady(input.restaurantName)) {
     errors.push({
       code: 'missing_restaurant',
       message: 'Въведете име на ресторант.',
     })
   }
 
-  if (input.participants.length === 0) {
+  if (!hasAtLeastOneParticipant(input.participants)) {
     errors.push({
       code: 'no_participants',
       message: 'Добавете поне един участник.',
     })
   }
 
-  const pricedItems = input.items.filter((i) => lineTotalCents(i) > 0)
-  if (pricedItems.length === 0) {
+  if (!hasItemsWithPositiveLineTotal(input.items)) {
     errors.push({
       code: 'no_items',
       message: 'Добавете поне един артикул с цена.',

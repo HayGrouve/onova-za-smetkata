@@ -42,6 +42,10 @@ _Avoid_: owed (when talking about the host’s collection status — the host ha
 One countable piece of a line item (`quantity` stacks units). Each unit can be claimed independently with its own participant set and even split.
 _Avoid_: treating quantity > 1 as a single indivisible claim pool
 
+**Unit membership**:
+Which Participants are assigned to which Unit on an item line. Stored as rows linking `(itemId, unitIndex, participantId)`. Mutations are `joinUnit` / `leaveUnit`; bulk “everyone on every Unit” is `assignEven`.
+_Avoid_: separate host vs guest assignment models; `toggle` (removed)
+
 **Unit index**:
 Zero-based position of a unit on an item line (`0 … quantity−1`). Item membership rows reference `(itemId, participantId, unitIndex)`.
 _Avoid_: one-based indexing in storage; overloading “unit” to mean the whole line
@@ -59,12 +63,32 @@ Whether a bill is still being prepared (**draft**, product UI **Чернова**
 _Avoid_: completed, closed, settled (settled is about collection, not bill status)
 
 **Prepared bill**:
-A first-onboarding milestone: the bill has a restaurant name, at least one Guest, at least one validly priced item, and every item Unit is assigned. A prepared bill may still have **draft** Bill status.
-_Avoid_: completed bill, final bill
+A first-onboarding milestone: the bill has a restaurant name, at least one Guest, at least one validly priced item, and every item Unit is assigned. A prepared bill may still have **draft** Bill status. Predicates live in `shared/bill-readiness.ts` (`isPreparedBill`, `isAllocationReady`, step views).
+_Avoid_: duplicating readiness checks in routes or components; completed bill, final bill
+
+**Bill readiness**:
+Layered views over one predicate set — Prepared bill milestone, editor step completion, allocation guidance, finalize validation. Module: `shared/bill-readiness.ts`.
+_Avoid_: copy-pasted conditionals for restaurant / guests / priced items / unit coverage
 
 **Напътствия**:
-The contextual guidance a first-time Host receives while making their first bill (product UI `Спри напътствията`, `Помощ и напътствия`). Plural for the mode as a whole; singular (`напътствието`) for a single instruction.
-_Avoid_: съвети, помощник, тур, обучение (it is neither a standalone wizard nor a tour)
+The contextual guidance a first-time Host receives while making their first bill (product UI `Спри напътствията`, `Помощ и напътствия`). Plural for the mode as a whole; singular (`напътствието`) for a single instruction. Orchestration module: `shared/guidance-controller.ts` (`computeGuidanceState`); DOM scroll/pop stays in `useGuidanceFocus`.
+_Avoid_: съвети, помощник, тур, обучение (it is neither a standalone wizard nor a tour); duplicating `deriveHostOnboardingGuidance` at call sites
+
+**Guidance controller**:
+Pure module for Напътствия state — curriculum, active step, step-bar signal, focus plan, next-button pop plan. React executes scroll/pop at the DOM seam.
+_Avoid_: planning guidance in route or provider ad hoc
+
+**Participant Share view**:
+Presentation model for one participant's Share — totals, breakdown lines with display strings, payment status label. Built from bill snapshot + participant id via `buildParticipantShareView` in `shared/participant-share-view.ts`.
+_Avoid_: assembling snapshot + breakdown + labels separately in each UI consumer; duplicating `statusLabels` maps
+
+**Bill-editing controller**:
+Orchestration for the host bill editor — step clamp/redirect, metadata draft state, derived snapshot/totals/completion, OCR→guidance handoff, guidance input. Pure module: `shared/bill-editing-controller.ts`; React seam: `useBillEditorController`.
+_Avoid_: wiring OCR, guidance, and step completion ad hoc in the route file
+
+**Guest claim session**:
+Orchestration for the guest/host claim page — tab filter (`Остават` / `Мои`), search, per-item claim state, share drawer inputs. Pure module: `shared/guest-claim-session.ts` (item filters in `shared/guest-claim-items.ts`); React seam: `useGuestClaimSession`.
+_Avoid_: wiring tab semantics, item filters, and share breakdown separately in the claim route
 
 ## Related docs
 

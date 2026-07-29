@@ -1,18 +1,15 @@
 import { useMutation } from 'convex/react'
 import { toast } from 'sonner'
 import { cn } from '#/lib/utils.ts'
-import { formatEur } from '#/lib/format-currency.ts'
 import {
   formatSpodeliUnitTitle,
   getAssigneeIdsOnUnit,
   getOtherClaimantLabelsForUnit,
   isParticipantOnUnit,
 } from '#/lib/guest-claim-items.ts'
-import {
-  formatShareParticipantCount,
-  previewShareCents,
-} from '#/lib/guest-share-preview.ts'
+import { previewShareCents } from '#/lib/guest-share-preview.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { UnitLineSummary } from '#/components/bills/unit-line-summary.tsx'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
 import type { ParticipantInput } from '../../../shared/bill-calculations'
@@ -156,6 +153,12 @@ function SpodeliUnitCard({
       'guest-claim-card--selected border-primary/50 bg-primary/10 dark:border-primary/40 dark:bg-primary/15',
   )
 
+  const actionHint = !readOnly ? (
+    <p className="text-xs font-medium text-muted-foreground">
+      {joined ? 'Докоснете, за да излезете' : 'Присъедини се'}
+    </p>
+  ) : null
+
   return (
     <button
       type="button"
@@ -165,54 +168,15 @@ function SpodeliUnitCard({
       data-testid={`spodeli-unit-${unitIndex + 1}`}
       aria-label={`${formatSpodeliUnitTitle(item.name, unitIndex)}, ${joined ? 'ваше' : 'докоснете за отбелязване'}`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <p className="font-medium">
-          {formatSpodeliUnitTitle(item.name, unitIndex)}
-        </p>
-        <p className="money shrink-0 text-sm font-medium">
-          {formatEur(item.unitPriceCents)}
-        </p>
-      </div>
-      {joined ? (
-        <>
-          <p className="text-xs font-medium text-primary">✓ Ваше</p>
-          {otherClaimants.length > 0 ? (
-            <p className="text-xs text-muted-foreground">
-              Споделено с {otherClaimants.join(', ')} (
-              {formatShareParticipantCount(otherClaimants.length)})
-            </p>
-          ) : null}
-          <p className="text-xs text-muted-foreground">
-            Вашият дял: {formatEur(shareCents)}
-          </p>
-          {!readOnly ? (
-            <p className="text-xs font-medium text-muted-foreground">
-              Докоснете, за да излезете
-            </p>
-          ) : null}
-        </>
-      ) : (
-        <>
-          {isEmpty ? (
-            <p className="text-xs text-muted-foreground">Празна бройка</p>
-          ) : (
-            <>
-              <p className="text-xs text-muted-foreground">
-                Споделено с {otherClaimants.join(', ')} (
-                {formatShareParticipantCount(otherClaimants.length)})
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Вашият дял: {formatEur(shareCents)}
-              </p>
-            </>
-          )}
-          {!readOnly ? (
-            <p className="text-xs font-medium text-muted-foreground">
-              Присъедини се
-            </p>
-          ) : null}
-        </>
-      )}
+      <UnitLineSummary
+        unitTitle={formatSpodeliUnitTitle(item.name, unitIndex)}
+        unitPriceCents={item.unitPriceCents}
+        isEmpty={isEmpty}
+        otherClaimantLabels={otherClaimants}
+        joined={joined}
+        shareCents={shareCents}
+        actionHint={actionHint}
+      />
     </button>
   )
 }

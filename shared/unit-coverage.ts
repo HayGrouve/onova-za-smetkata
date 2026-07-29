@@ -70,3 +70,54 @@ export function countUnitsJoinedByParticipant(
       assignment.participantId === participantId,
   ).length
 }
+
+export function isParticipantOnUnit(
+  itemId: string,
+  unitIndex: number,
+  participantId: string,
+  assignments: AssignmentInput[],
+): boolean {
+  return assignments.some(
+    (assignment) =>
+      assignment.itemId === itemId &&
+      assignment.unitIndex === unitIndex &&
+      assignment.participantId === participantId,
+  )
+}
+
+export function otherParticipantLabelsOnUnit(
+  itemId: string,
+  unitIndex: number,
+  excludeParticipantId: string,
+  assignments: AssignmentInput[],
+  labels: Record<string, string>,
+): string[] {
+  const others = new Set<string>()
+  for (const assignment of assignments) {
+    if (assignment.itemId !== itemId || assignment.unitIndex !== unitIndex) {
+      continue
+    }
+    if (assignment.participantId === excludeParticipantId) continue
+    others.add(labels[assignment.participantId] ?? assignment.participantId)
+  }
+  return [...others]
+}
+
+export function otherParticipantLabelsOnItem(
+  itemId: string,
+  excludeParticipantId: string,
+  assignments: AssignmentInput[],
+  labels: Record<string, string>,
+): string[] {
+  const others = new Set<string>()
+  for (const assignment of assignments) {
+    if (assignment.itemId !== itemId) continue
+    if (assignment.participantId === excludeParticipantId) continue
+    others.add(labels[assignment.participantId] ?? assignment.participantId)
+  }
+  return [...others]
+}
+
+export function formatUnitTitle(itemName: string, unitIndex: number): string {
+  return `${itemName} · бройка ${unitIndex + 1}`
+}

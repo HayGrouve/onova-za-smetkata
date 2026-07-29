@@ -2,26 +2,14 @@ import type { ReactNode } from 'react'
 import type {
   BillBreakdownInput,
   ParticipantTotals,
-  PaymentStatus,
 } from '#/lib/bill-calculations.ts'
-import { calculateParticipantBreakdown } from '#/lib/bill-calculations.ts'
-import {
-  formatBreakdownLineLabel,
-  formatBreakdownLineSharedText,
-  formatBreakdownLineUnitsText,
-} from '#/lib/bill-share.ts'
+import { buildParticipantShareView } from '#/lib/participant-share-view.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Separator } from '#/components/ui/separator.tsx'
 import { ParticipantPayActions } from '#/components/bills/participant-pay-actions.tsx'
 import { PaymentActions } from '#/components/bills/payment-actions.tsx'
 import type { Id, Doc } from '../../../convex/_generated/dataModel'
-
-const statusLabels: Record<PaymentStatus, string> = {
-  unpaid: 'неплатено',
-  partial: 'частично',
-  paid: 'платено',
-}
 
 export interface ParticipantBreakdownContentProps {
   billId: Id<'bills'>
@@ -63,53 +51,47 @@ export function ParticipantBreakdownContent({
   summaryFooter,
   participantLabels,
 }: ParticipantBreakdownContentProps) {
-  const breakdown = calculateParticipantBreakdown(breakdownInput, participantId)
-  const remainingCents = Math.max(0, totals.balanceCents)
-  const participantCount = breakdownInput.participants.length
+  const shareView = buildParticipantShareView({
+    breakdownInput,
+    totals,
+    participantId,
+    participantLabels,
+  })
 
   return (
     <div className="flex flex-col gap-3">
       {showStatusBadge ? (
         <div className="flex items-center justify-end">
-          <Badge variant="outline">{statusLabels[totals.status]}</Badge>
+          <Badge variant="outline">{shareView.statusLabel}</Badge>
         </div>
       ) : null}
 
-      {breakdown.lines.length === 0 ? (
+      {shareView.isEmpty ? (
         <p className="text-sm text-muted-foreground">
           Няма разпределени артикули.
         </p>
       ) : (
-        breakdown.lines.map((line, index) => {
-          const unitsText =
-            line.kind === 'item'
-              ? formatBreakdownLineUnitsText(line)
-              : undefined
-          const sharedText =
-            line.kind === 'item'
-              ? formatBreakdownLineSharedText(line, participantLabels)
-              : undefined
-
-          return (
-            <div
-              key={`${line.kind}-${line.kind === 'item' ? line.itemId : line.label}-${index}`}
-              className="flex items-start justify-between gap-3 text-sm"
-            >
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <p className="text-muted-foreground">
-                  {formatBreakdownLineLabel(line, participantCount)}
+        shareView.lines.map((line) => (
+          <div
+            key={line.key}
+            className="flex items-start justify-between gap-3 text-sm"
+          >
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <p className="text-muted-foreground">{line.label}</p>
+              {line.unitsText ? (
+                <p className="text-xs text-muted-foreground">
+                  {line.unitsText}
                 </p>
-                {unitsText ? (
-                  <p className="text-xs text-muted-foreground">{unitsText}</p>
-                ) : null}
-                {sharedText ? (
-                  <p className="text-xs text-muted-foreground">{sharedText}</p>
-                ) : null}
-              </div>
-              <p className="money shrink-0">{formatEur(line.amountCents)}</p>
+              ) : null}
+              {line.sharedText ? (
+                <p className="text-xs text-muted-foreground">
+                  {line.sharedText}
+                </p>
+              ) : null}
             </div>
-          )
-        })
+            <p className="money shrink-0">{formatEur(line.amountCents)}</p>
+          </div>
+        ))
       )}
 
       {summaryVariant === 'claim-footer' && summaryFooter == null ? null : (
@@ -118,18 +100,18 @@ export function ParticipantBreakdownContent({
 
           {summaryVariant === 'claim-footer' ? (
             <>
-              {totals.paidCents > 0 ? (
+              {shareView.totals.paidCents > 0 ? (
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <p className="text-xs text-muted-foreground">Дължи</p>
                     <p className="money font-medium">
-                      {formatEur(totals.owedCents)}
+                      {formatEur(shareView.totals.owedCents)}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Платено</p>
                     <p className="money font-medium">
-                      {formatEur(totals.paidCents)}
+                      {formatEur(shareView.totals.paidCents)}
                     </p>
                   </div>
                 </div>
@@ -141,27 +123,29 @@ export function ParticipantBreakdownContent({
               <div>
                 <p className="text-xs text-muted-foreground">Дължи</p>
                 <p className="money font-medium">
-                  {formatEur(totals.owedCents)}
+                  {formatEur(shareView.totals.owedCents)}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Платено</p>
                 <p className="money font-medium">
-                  {formatEur(totals.paidCents)}
+                  {formatEur(shareView.totals.paidCents)}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Остатък</p>
-                <p className="money font-medium">{formatEur(remainingCents)}</p>
+                <p className="money font-medium">
+                  {formatEur(shareView.remainingCents)}
+                </p>
               </div>
             </div>
           )}
         </>
       )}
 
-      {showPayActions && remainingCents > 0 ? (
+      {showPayActions && shareView.remainingCents > 0 ? (
         <ParticipantPayActions
-          remainingCents={remainingCents}
+          remainingCents={shareView.remainingCents}
           label={label}
           onOpenSettings={onOpenPaymentSettings}
         />
@@ -172,7 +156,7 @@ export function ParticipantBreakdownContent({
           billId={billId}
           participantId={participantId}
           label={label}
-          totals={totals}
+          totals={shareView.totals}
           payments={payments}
           readOnly={paymentActionsReadOnly}
         />

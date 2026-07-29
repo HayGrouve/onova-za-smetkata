@@ -2,7 +2,10 @@ import { createFileRoute } from '@tanstack/react-router'
 import { CameraIcon, KeyboardIcon, UserPlusIcon } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import type { BillStep } from '#/components/bills/bill-steps-bar.tsx'
-import { BillStepsBar } from '#/components/bills/bill-steps-bar.tsx'
+import {
+  BillStepsBar,
+  BILL_STEP_LABELS,
+} from '#/components/bills/bill-steps-bar.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import {
   Card,
@@ -18,7 +21,7 @@ import { ICON } from '#/lib/app-icons.ts'
 import { cn } from '#/lib/utils.ts'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
 import { getBillStepCompletion } from '#/lib/bill-step-completion.ts'
-import { deriveHostOnboardingGuidance } from '../../../shared/host-onboarding.ts'
+import { computeGuidanceState } from '../../../shared/guidance-controller.ts'
 import { HOST_ONBOARDING_CONTENT_ROUTE } from '../../../shared/host-onboarding-messages.ts'
 
 export const Route = createFileRoute('/prototype/guidance-focus')({
@@ -41,10 +44,10 @@ function GuidanceFocusPrototypePage() {
         participants:
           guestCount > 0
             ? [
-                { id: 'host', name: 'Аз' },
-                { id: 'g1', name: 'Гост' },
+                { id: 'host', sortOrder: 0 },
+                { id: 'g1', sortOrder: 1 },
               ]
-            : [{ id: 'host', name: 'Аз' }],
+            : [{ id: 'host', sortOrder: 0 }],
         items: [],
         assignments: [],
         hostParticipantId: 'host',
@@ -52,25 +55,27 @@ function GuidanceFocusPrototypePage() {
     [restaurantName, guestCount],
   )
 
-  const guidanceBundle = useMemo(() => {
-    const dismissedHintIds: string[] = []
-    const steps = deriveHostOnboardingGuidance({
-      bill: {
-        restaurantName,
-        restaurantFromOcr: false,
-        hostParticipantName: 'Аз',
-        guestCount,
-        items: [],
-        assignments: [],
-        contentRoute,
-        receiptUploaded: false,
-        receiptScanning: false,
-        scanReviewOpen: false,
-      },
-      dismissedHintIds,
-    })
-    return { steps, dismissedHintIds }
-  }, [contentRoute, restaurantName, guestCount])
+  const guidanceState = useMemo(
+    () =>
+      computeGuidanceState({
+        bill: {
+          restaurantName,
+          restaurantFromOcr: false,
+          hostParticipantName: 'Аз',
+          guestCount,
+          items: [],
+          assignments: [],
+          contentRoute,
+          receiptUploaded: false,
+          receiptScanning: false,
+          scanReviewOpen: false,
+        },
+        dismissedHintIds: [],
+        editorStep: step,
+        stepLabels: BILL_STEP_LABELS,
+      }),
+    [contentRoute, restaurantName, guestCount, step],
+  )
 
   const goToStep = useCallback(
     (next: BillStep, options?: { resetScroll?: boolean }) => {
@@ -82,14 +87,12 @@ function GuidanceFocusPrototypePage() {
 
   const guidanceFocus = useGuidanceFocus({
     enabled: true,
-    steps: guidanceBundle.steps,
-    dismissedHintIds: guidanceBundle.dismissedHintIds,
+    activeStep: guidanceState.activeStep,
     currentEditorStep: step,
+    editorStepGuidanceComplete: guidanceState.editorStepGuidanceComplete,
   })
 
-  const activeStep = guidanceBundle.steps.find(
-    (s) => s.id === guidanceFocus.activeStepId,
-  )
+  const activeStep = guidanceState.activeStep
 
   return (
     <div className="page-shell pb-24">
@@ -125,15 +128,7 @@ function GuidanceFocusPrototypePage() {
         {step === 1 && (
           <>
             {!contentRoute ? (
-              <GuidanceTarget
-                stepId="content-route"
-                register={guidanceFocus.registerTarget}
-                shouldPop={guidanceFocus.poppingStepId === 'content-route'}
-                reducedHighlight={
-                  guidanceFocus.reducedHighlightStepId === 'content-route'
-                }
-                onPopAnimationEnd={guidanceFocus.onPopAnimationEnd}
-              >
+              <GuidanceTarget stepId="content-route" focus={guidanceFocus}>
                 <div className="flex flex-col gap-3 rounded-xl border border-dashed p-4">
                   <p className="font-medium text-primary">
                     {HOST_ONBOARDING_CONTENT_ROUTE.title}
@@ -162,15 +157,7 @@ function GuidanceFocusPrototypePage() {
               </GuidanceTarget>
             ) : null}
 
-            <GuidanceTarget
-              stepId="restaurant"
-              register={guidanceFocus.registerTarget}
-              shouldPop={guidanceFocus.poppingStepId === 'restaurant'}
-              reducedHighlight={
-                guidanceFocus.reducedHighlightStepId === 'restaurant'
-              }
-              onPopAnimationEnd={guidanceFocus.onPopAnimationEnd}
-            >
+            <GuidanceTarget stepId="restaurant" focus={guidanceFocus}>
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Данни за сметката</CardTitle>
@@ -193,15 +180,7 @@ function GuidanceFocusPrototypePage() {
         )}
 
         {step === 2 && (
-          <GuidanceTarget
-            stepId="participants"
-            register={guidanceFocus.registerTarget}
-            shouldPop={guidanceFocus.poppingStepId === 'participants'}
-            reducedHighlight={
-              guidanceFocus.reducedHighlightStepId === 'participants'
-            }
-            onPopAnimationEnd={guidanceFocus.onPopAnimationEnd}
-          >
+          <GuidanceTarget stepId="participants" focus={guidanceFocus}>
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Участници</CardTitle>
@@ -235,7 +214,7 @@ function GuidanceFocusPrototypePage() {
           </CardHeader>
           <CardContent>
             <ul className="space-y-1 font-mono">
-              {guidanceBundle.steps.map((s) => (
+              {guidanceState.steps.map((s) => (
                 <li
                   key={s.id}
                   className={cn(

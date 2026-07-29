@@ -12,9 +12,9 @@ import { ICON } from '#/lib/app-icons.ts'
 import type {
   BillBreakdownInput,
   ParticipantTotals,
-  PaymentStatus,
 } from '#/lib/bill-calculations.ts'
 import { formatCopyAmount } from '#/lib/bill-share.ts'
+import { paymentStatusLabel } from '#/lib/participant-share-view.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import {
   buildRevolutPaymentNote,
@@ -27,12 +27,6 @@ import { launchRevolut } from '#/lib/revolut-launch.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { COMBINED_PAYMENT_MESSAGES } from '../../../shared/combined-payment-messages'
-
-const statusLabels: Record<PaymentStatus, string> = {
-  unpaid: 'неплатено',
-  partial: 'частично',
-  paid: 'платено',
-}
 
 export interface GuestClaimFooterProps {
   billId: Id<'bills'>
@@ -303,7 +297,9 @@ export function GuestClaimFooter({
   return (
     <ClaimShareDrawer
       title="Разбивка на дяла"
-      status={<Badge variant="outline">{statusLabels[totals.status]}</Badge>}
+      status={
+        <Badge variant="outline">{paymentStatusLabel(totals.status)}</Badge>
+      }
       details={
         <div className="flex flex-col gap-3">
           <ParticipantBreakdownContent

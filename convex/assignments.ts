@@ -36,7 +36,24 @@ async function deleteItemAssignments(ctx: MutationCtx, itemId: Id<'items'>) {
   }
 }
 
-async function syncEvenAssignments(
+async function insertUnitMembership(
+  ctx: MutationCtx,
+  args: {
+    billId: Id<'bills'>
+    itemId: Id<'items'>
+    participantId: Id<'participants'>
+    unitIndex: number
+  },
+) {
+  await ctx.db.insert('itemAssignments', {
+    billId: args.billId,
+    itemId: args.itemId,
+    participantId: args.participantId,
+    unitIndex: args.unitIndex,
+  })
+}
+
+async function applyEvenSplitToItem(
   ctx: MutationCtx,
   item: { _id: Id<'items'>; billId: Id<'bills'>; quantity: number },
   participantIds: Id<'participants'>[],
@@ -52,7 +69,7 @@ async function syncEvenAssignments(
 
   for (let unitIndex = 0; unitIndex < item.quantity; unitIndex++) {
     for (const participantId of sortedIds) {
-      await ctx.db.insert('itemAssignments', {
+      await insertUnitMembership(ctx, {
         billId: item.billId,
         itemId: item._id,
         participantId,
@@ -138,7 +155,7 @@ async function mutateUnitMembership(
 
   if (args.join) {
     if (!existing) {
-      await ctx.db.insert('itemAssignments', {
+      await insertUnitMembership(ctx, {
         billId: item.billId,
         itemId: args.itemId,
         participantId: args.participantId,
@@ -184,75 +201,6 @@ export const leaveUnit = mutation({
   },
 })
 
-export const toggle = mutation({
-  args: {
-    itemId: v.id('items'),
-    participantId: v.id('participants'),
-    sessionToken: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const item = await ctx.db.get(args.itemId)
-    if (!item) {
-      throw new ConvexError('Артикулът не е намерен.')
-    }
-
-    if (item.quantity !== 1) {
-      throw new ConvexError(
-        'За артикули с количество над 1 използвайте Сподели.',
-      )
-    }
-
-    const bill = await ctx.db.get(item.billId)
-    if (!bill) {
-      throw new ConvexError('Сметката не е намерена.')
-    }
-
-    await assertCanMutateAssignment(ctx, {
-      billId: item.billId,
-      participantId: args.participantId,
-      sessionToken: args.sessionToken,
-    })
-
-    if (args.sessionToken) {
-      await assertRateLimit(
-        ctx,
-        `assign:toggle:${args.sessionToken}`,
-        60,
-        60_000,
-      )
-    }
-
-    const participant = await ctx.db.get(args.participantId)
-    assertAssignmentEditable({
-      billStatus: bill.status,
-      itemBillId: item.billId,
-      participantBillId: participant?.billId,
-    })
-
-    const existing = await ctx.db
-      .query('itemAssignments')
-      .withIndex('by_itemId', (q) => q.eq('itemId', args.itemId))
-      .collect()
-    const isAssigned = existing.some(
-      (assignment) => assignment.participantId === args.participantId,
-    )
-
-    const nextParticipantIds = isAssigned
-      ? existing
-          .filter(
-            (assignment) => assignment.participantId !== args.participantId,
-          )
-          .map((assignment) => assignment.participantId)
-      : [
-          ...existing.map((assignment) => assignment.participantId),
-          args.participantId,
-        ]
-
-    await syncEvenAssignments(ctx, item, nextParticipantIds)
-    await touchBill(ctx, item.billId)
-  },
-})
-
 export const assignEven = mutation({
   args: { itemId: v.id('items') },
   handler: async (ctx, args) => {
@@ -279,7 +227,7 @@ export const assignEven = mutation({
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((participant) => participant._id)
 
-    await syncEvenAssignments(ctx, item, participantIds)
+    await applyEvenSplitToItem(ctx, item, participantIds)
     await touchBill(ctx, item.billId)
   },
 })
@@ -330,7 +278,7 @@ export const assignAll = mutation({
         continue
       }
 
-      await syncEvenAssignments(ctx, item, participantIds)
+      await applyEvenSplitToItem(ctx, item, participantIds)
     }
     await touchBill(ctx, args.billId)
   },

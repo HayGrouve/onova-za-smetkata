@@ -28,7 +28,7 @@ import {
 } from '#/lib/last-friend-group-storage.ts'
 import { sortFriendGroupsWithPinned } from '#/lib/sort-friend-groups-with-pinned.ts'
 import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
-import type { GuidanceTargetRegister } from '#/lib/guidance-focus/use-guidance-focus.ts'
+import type { GuidanceFocusHandle } from '#/lib/guidance-focus/use-guidance-focus.ts'
 import { cn } from '#/lib/utils.ts'
 import { validateParticipantAdd } from '#/lib/participant-schema.ts'
 import { Input } from '#/components/ui/input.tsx'
@@ -44,10 +44,7 @@ export interface ParticipantListProps {
   readOnly?: boolean
   suggestedGroupName?: string
   participantsGuidance?: {
-    register: GuidanceTargetRegister
-    shouldPop: boolean
-    reducedHighlight: boolean
-    onPopAnimationEnd: (stepId: string) => void
+    focus: GuidanceFocusHandle
     onAddGuestFocusChange?: (focused: boolean) => void
   }
 }
@@ -378,10 +375,7 @@ export function ParticipantList({
                   <p className="text-xs text-muted-foreground">Ръчно</p>
                   <GuidanceTarget
                     stepId="participants"
-                    register={participantsGuidance.register}
-                    shouldPop={participantsGuidance.shouldPop}
-                    reducedHighlight={participantsGuidance.reducedHighlight}
-                    onPopAnimationEnd={participantsGuidance.onPopAnimationEnd}
+                    focus={participantsGuidance.focus}
                   >
                     <form
                       className="flex flex-col gap-1.5"
@@ -443,10 +437,7 @@ export function ParticipantList({
                   {participantsGuidance ? (
                     <GuidanceTarget
                       stepId="participants"
-                      register={participantsGuidance.register}
-                      shouldPop={participantsGuidance.shouldPop}
-                      reducedHighlight={participantsGuidance.reducedHighlight}
-                      onPopAnimationEnd={participantsGuidance.onPopAnimationEnd}
+                      focus={participantsGuidance.focus}
                     >
                       <form
                         className="flex flex-col gap-1.5"

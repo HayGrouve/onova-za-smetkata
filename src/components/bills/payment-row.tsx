@@ -2,23 +2,15 @@ import { CopyIcon } from 'lucide-react'
 import { copyRemainingAmount } from '#/components/bills/participant-pay-actions.tsx'
 import { PaymentActions } from '#/components/bills/payment-actions.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
-import type {
-  ParticipantTotals,
-  PaymentStatus,
-} from '#/lib/bill-calculations.ts'
+import type { ParticipantTotals } from '#/lib/bill-calculations.ts'
+import { paymentStatusLabel } from '#/lib/participant-share-view.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { getPaymentRowBorderClass } from '#/lib/payment-row-styles.ts'
 import { cn } from '#/lib/utils.ts'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
 
-const statusLabels: Record<PaymentStatus, string> = {
-  unpaid: 'неплатено',
-  partial: 'частично',
-  paid: 'платено',
-}
-
 const statusVariants: Record<
-  PaymentStatus,
+  ParticipantTotals['status'],
   'outline' | 'secondary' | 'default'
 > = {
   unpaid: 'outline',
@@ -65,14 +57,14 @@ export function PaymentRow({
         >
           <p className="font-medium">{label}</p>
           <Badge variant={statusVariants[totals.status]}>
-            {statusLabels[totals.status]}
+            {paymentStatusLabel(totals.status)}
           </Badge>
         </button>
       ) : (
         <div className="flex items-center justify-between gap-2">
           <p className="font-medium">{label}</p>
           <Badge variant={statusVariants[totals.status]}>
-            {statusLabels[totals.status]}
+            {paymentStatusLabel(totals.status)}
           </Badge>
         </div>
       )}

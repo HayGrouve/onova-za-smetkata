@@ -93,7 +93,7 @@ describe('getBillStepCompletion', () => {
     ).toBe(true)
   })
 
-  it('marks step 3 done for zero-price items when assigned', () => {
+  it('does not mark step 3 done for zero-price items even when assigned', () => {
     const free = { id: 'i2', unitPriceCents: 0, quantity: 1 }
     expect(
       getBillStepCompletion({
@@ -102,7 +102,7 @@ describe('getBillStepCompletion', () => {
         items: [free],
         assignments: [{ itemId: 'i2', participantId: 'p1', unitIndex: 0 }],
       })[3],
-    ).toBe(true)
+    ).toBe(false)
   })
 
   it('does not require restaurant for step 3 done', () => {

@@ -1,18 +1,25 @@
+import { useState } from 'react'
 import { useMutation } from 'convex/react'
-import { UsersIcon } from 'lucide-react'
+import { PencilIcon, UsersIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '#/lib/utils.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { HostUnitAssignmentDialog } from '#/components/bills/host-unit-assignment-dialog.tsx'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
 import { Button } from '#/components/ui/button.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
-import { countCoveredUnits } from '../../../shared/unit-coverage'
+import {
+  countCoveredUnits,
+  isParticipantOnUnit,
+} from '../../../shared/unit-coverage'
 
 export interface AssignmentRowProps {
   itemId: Id<'items'>
+  itemName: string
   itemQuantity: number
+  itemUnitPriceCents: number
   participants: Doc<'participants'>[]
   labels: Record<string, string>
   itemAssignments: Doc<'itemAssignments'>[]
@@ -20,13 +27,23 @@ export interface AssignmentRowProps {
 
 export function AssignmentRow({
   itemId,
+  itemName,
   itemQuantity,
+  itemUnitPriceCents,
   participants,
   labels,
   itemAssignments,
 }: AssignmentRowProps) {
-  const toggleAssignment = useMutation(api.assignments.toggle)
+  const joinUnit = useMutation(api.assignments.joinUnit)
+  const leaveUnit = useMutation(api.assignments.leaveUnit)
   const assignEven = useMutation(api.assignments.assignEven)
+  const [editOpen, setEditOpen] = useState(false)
+
+  const assignmentInputs = itemAssignments.map((assignment) => ({
+    itemId: assignment.itemId,
+    participantId: assignment.participantId,
+    unitIndex: assignment.unitIndex,
+  }))
 
   async function handleAssignEven() {
     try {
@@ -38,8 +55,18 @@ export function AssignmentRow({
   }
 
   async function handleToggle(participantId: Id<'participants'>) {
+    const isAssigned = isParticipantOnUnit(
+      itemId,
+      0,
+      participantId,
+      assignmentInputs,
+    )
     try {
-      await toggleAssignment({ itemId, participantId })
+      if (isAssigned) {
+        await leaveUnit({ itemId, participantId, unitIndex: 0 })
+      } else {
+        await joinUnit({ itemId, participantId, unitIndex: 0 })
+      }
     } catch (error) {
       toast.error(getConvexErrorMessage(error))
     }
@@ -62,10 +89,11 @@ export function AssignmentRow({
         ) : null}
         <div className="flex flex-wrap gap-1.5">
           {participants.map((participant) => {
-            const isAssigned = itemAssignments.some(
-              (assignment) =>
-                assignment.participantId === participant._id &&
-                assignment.unitIndex === 0,
+            const isAssigned = isParticipantOnUnit(
+              itemId,
+              0,
+              participant._id,
+              assignmentInputs,
             )
             return (
               <button
@@ -87,11 +115,7 @@ export function AssignmentRow({
 
   const coveredUnits = countCoveredUnits(
     { id: itemId, unitPriceCents: 0, quantity: itemQuantity },
-    itemAssignments.map((assignment) => ({
-      itemId: assignment.itemId,
-      participantId: assignment.participantId,
-      unitIndex: assignment.unitIndex,
-    })),
+    assignmentInputs,
   )
 
   return (
@@ -102,10 +126,35 @@ export function AssignmentRow({
         </p>
       ) : (
         <p className="text-xs text-muted-foreground">
-          Използвайте Сподели или разделете поравно между всички участници.
+          Редактирайте бройките или разделете поравно между всички участници.
         </p>
       )}
-      {renderAssignEvenButton(handleAssignEven)}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 w-fit"
+          onClick={() => setEditOpen(true)}
+          data-testid={`host-unit-edit-${itemId}`}
+        >
+          <PencilIcon className={ICON.button} aria-hidden />
+          Редактирай
+        </Button>
+        {renderAssignEvenButton(handleAssignEven)}
+      </div>
+      <HostUnitAssignmentDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        item={{
+          _id: itemId,
+          name: itemName,
+          quantity: itemQuantity,
+          unitPriceCents: itemUnitPriceCents,
+        }}
+        participants={participants}
+        itemAssignments={itemAssignments}
+        participantLabels={labels}
+      />
     </div>
   )
 }

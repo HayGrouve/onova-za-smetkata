@@ -1,5 +1,5 @@
-import { GUIDANCE_FOCUS_TIMING } from '../../../shared/plan-guidance-focus.ts'
-import type { GuidanceScrollBlock } from '../../../shared/plan-guidance-focus.ts'
+import { GUIDANCE_FOCUS_TIMING } from '../../../shared/guidance-controller.ts'
+import type { GuidanceScrollBlock } from '../../../shared/guidance-controller.ts'
 
 export function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined') return false

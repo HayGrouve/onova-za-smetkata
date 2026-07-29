@@ -8,7 +8,11 @@ import type {
   ParticipantInput,
   PaymentInput,
 } from './bill-calculations'
-import { itemHasFullUnitCoverage } from './unit-coverage'
+import {
+  isAllocationReady,
+  isBillDetailsStepReady,
+  isParticipantsStepReady,
+} from './bill-readiness'
 
 export type BillStepNumber = 1 | 2 | 3 | 4
 
@@ -27,16 +31,15 @@ export interface BillStepCompletionInput {
 export function getBillStepCompletion(
   input: BillStepCompletionInput,
 ): BillStepCompletion {
-  const step1 = input.restaurantName.trim().length > 0
-  const billParticipants = input.hostParticipantId
-    ? input.participants.filter((p) => p.id !== input.hostParticipantId)
-    : input.participants
-  const step2 = billParticipants.length >= 1
-  const step3 =
-    input.items.length >= 1 &&
-    input.items.every((item) =>
-      itemHasFullUnitCoverage(item, input.assignments),
-    )
+  const step1 = isBillDetailsStepReady(input.restaurantName)
+  const step2 = isParticipantsStepReady({
+    participants: input.participants,
+    hostParticipantId: input.hostParticipantId,
+  })
+  const step3 = isAllocationReady({
+    items: input.items,
+    assignments: input.assignments,
+  })
 
   const finalizeReady = validateBillForFinalize(input).length === 0
   const totals = calculateBillTotals({

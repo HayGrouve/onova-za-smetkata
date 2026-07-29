@@ -11,18 +11,17 @@ import {
   isParticipantOnUnit,
   sortGuestClaimItems,
 } from './guest-claim-items'
-import type { Id } from '../../convex/_generated/dataModel'
 
-const participantA = 'p-a' as Id<'participants'>
-const participantB = 'p-b' as Id<'participants'>
+const participantA = 'p-a'
+const participantB = 'p-b'
 
 describe('getGuestClaimItemState', () => {
   it('marks single-qty item as selected when participant joined unit 0', () => {
     const state = getGuestClaimItemState(
-      { _id: 'item-1' as Id<'items'>, quantity: 1 },
+      { _id: 'item-1', quantity: 1 },
       [
         {
-          itemId: 'item-1' as Id<'items'>,
+          itemId: 'item-1',
           participantId: participantA,
           unitIndex: 0,
         },
@@ -36,10 +35,10 @@ describe('getGuestClaimItemState', () => {
 
   it('keeps single-qty items available when assigned to others', () => {
     const state = getGuestClaimItemState(
-      { _id: 'item-1' as Id<'items'>, quantity: 1 },
+      { _id: 'item-1', quantity: 1 },
       [
         {
-          itemId: 'item-1' as Id<'items'>,
+          itemId: 'item-1',
           participantId: participantB,
           unitIndex: 0,
         },
@@ -53,15 +52,15 @@ describe('getGuestClaimItemState', () => {
 
   it('counts covered units and personal membership on multi-qty items', () => {
     const state = getGuestClaimItemState(
-      { _id: 'item-1' as Id<'items'>, quantity: 3 },
+      { _id: 'item-1', quantity: 3 },
       [
         {
-          itemId: 'item-1' as Id<'items'>,
+          itemId: 'item-1',
           participantId: participantB,
           unitIndex: 0,
         },
         {
-          itemId: 'item-1' as Id<'items'>,
+          itemId: 'item-1',
           participantId: participantA,
           unitIndex: 1,
         },
@@ -78,19 +77,19 @@ describe('sortGuestClaimItems', () => {
   it('orders items by sortOrder regardless of selection state', () => {
     const items = [
       {
-        _id: 'first' as Id<'items'>,
+        _id: 'first',
         name: 'Ябълка',
         sortOrder: 0,
         quantity: 1,
       },
-      { _id: 'second' as Id<'items'>, name: 'Бира', sortOrder: 1, quantity: 1 },
+      { _id: 'second', name: 'Бира', sortOrder: 1, quantity: 1 },
       {
-        _id: 'third' as Id<'items'>,
+        _id: 'third',
         name: 'Салата',
         sortOrder: 2,
         quantity: 4,
       },
-      { _id: 'fourth' as Id<'items'>, name: 'Мезе', sortOrder: 3, quantity: 1 },
+      { _id: 'fourth', name: 'Мезе', sortOrder: 3, quantity: 1 },
     ]
 
     expect(sortGuestClaimItems(items).map((item) => item._id)).toEqual([
@@ -105,12 +104,12 @@ describe('sortGuestClaimItems', () => {
 describe('filterUnclaimedGuestClaimItems', () => {
   it('removes single-qty items already claimed by the participant', () => {
     const items = [
-      { _id: 'open' as Id<'items'>, name: 'Бира', quantity: 1 },
-      { _id: 'claimed' as Id<'items'>, name: 'Салата', quantity: 1 },
+      { _id: 'open', name: 'Бира', quantity: 1 },
+      { _id: 'claimed', name: 'Салата', quantity: 1 },
     ]
     const assignments = [
       {
-        itemId: 'claimed' as Id<'items'>,
+        itemId: 'claimed',
         participantId: participantA,
         unitIndex: 0,
       },
@@ -124,15 +123,15 @@ describe('filterUnclaimedGuestClaimItems', () => {
   })
 
   it('keeps multi-qty items when the participant has not joined every unit', () => {
-    const items = [{ _id: 'multi' as Id<'items'>, name: 'Бира', quantity: 4 }]
+    const items = [{ _id: 'multi', name: 'Бира', quantity: 4 }]
     const assignments = [
       {
-        itemId: 'multi' as Id<'items'>,
+        itemId: 'multi',
         participantId: participantA,
         unitIndex: 0,
       },
       {
-        itemId: 'multi' as Id<'items'>,
+        itemId: 'multi',
         participantId: participantA,
         unitIndex: 1,
       },
@@ -147,22 +146,22 @@ describe('filterUnclaimedGuestClaimItems', () => {
 
   it('removes multi-qty items when the participant joined every unit', () => {
     const items = [
-      { _id: 'multi' as Id<'items'>, name: 'Бира', quantity: 3 },
-      { _id: 'open' as Id<'items'>, name: 'Салата', quantity: 3 },
+      { _id: 'multi', name: 'Бира', quantity: 3 },
+      { _id: 'open', name: 'Салата', quantity: 3 },
     ]
     const assignments = [
       {
-        itemId: 'multi' as Id<'items'>,
+        itemId: 'multi',
         participantId: participantA,
         unitIndex: 0,
       },
       {
-        itemId: 'multi' as Id<'items'>,
+        itemId: 'multi',
         participantId: participantA,
         unitIndex: 1,
       },
       {
-        itemId: 'multi' as Id<'items'>,
+        itemId: 'multi',
         participantId: participantA,
         unitIndex: 2,
       },
@@ -179,12 +178,12 @@ describe('filterUnclaimedGuestClaimItems', () => {
 describe('filterClaimedGuestClaimItems', () => {
   it('returns items claimed by the participant', () => {
     const items = [
-      { _id: 'open' as Id<'items'>, name: 'Бира', quantity: 1 },
-      { _id: 'claimed' as Id<'items'>, name: 'Салата', quantity: 1 },
+      { _id: 'open', name: 'Бира', quantity: 1 },
+      { _id: 'claimed', name: 'Салата', quantity: 1 },
     ]
     const assignments = [
       {
-        itemId: 'claimed' as Id<'items'>,
+        itemId: 'claimed',
         participantId: participantA,
         unitIndex: 0,
       },
@@ -215,7 +214,7 @@ describe('getOtherClaimantLabels', () => {
       getOtherClaimantLabels(
         [
           {
-            itemId: 'item-1' as Id<'items'>,
+            itemId: 'item-1',
             participantId: participantB,
             unitIndex: 0,
           },
@@ -230,17 +229,17 @@ describe('getOtherClaimantLabels', () => {
 describe('per-unit assignment helpers', () => {
   const assignments = [
     {
-      itemId: 'item-1' as Id<'items'>,
+      itemId: 'item-1',
       participantId: participantA,
       unitIndex: 1,
     },
     {
-      itemId: 'item-1' as Id<'items'>,
+      itemId: 'item-1',
       participantId: participantB,
       unitIndex: 0,
     },
     {
-      itemId: 'item-1' as Id<'items'>,
+      itemId: 'item-1',
       participantId: participantB,
       unitIndex: 1,
     },

@@ -173,7 +173,7 @@ Canonical production path: **merge (or push) to `main` → GitHub Actions `prefl
    - [ ] Summary bottom buttons not clipped on mobile
    - [ ] 404 page on unknown routes
    - [ ] Network tab: `getForGuest` response has `myPayments`, not `payments`
-   - [ ] Convex dashboard: `assignments.toggle` without `sessionToken` on guest bill → throws
+   - [ ] Convex dashboard: `assignments.joinUnit` without `sessionToken` on guest bill → throws (unless bill owner)
 
 ## Domain cutover (custom domain)
 

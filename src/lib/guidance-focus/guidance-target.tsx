@@ -1,14 +1,11 @@
 import type { ReactNode } from 'react'
 import { useLayoutEffect, useRef } from 'react'
 import { cn } from '#/lib/utils.ts'
-import type { GuidanceTargetRegister } from './use-guidance-focus.ts'
+import type { GuidanceFocusHandle } from './use-guidance-focus.ts'
 
 export interface GuidanceTargetProps {
   stepId: string
-  register: GuidanceTargetRegister
-  shouldPop?: boolean
-  reducedHighlight?: boolean
-  onPopAnimationEnd?: (stepId: string) => void
+  focus: GuidanceFocusHandle
   className?: string
   children: ReactNode
 }
@@ -16,23 +13,22 @@ export interface GuidanceTargetProps {
 /** Registers a scroll+pop target for an active guidance step. */
 export function GuidanceTarget({
   stepId,
-  register,
-  shouldPop = false,
-  reducedHighlight = false,
-  onPopAnimationEnd,
+  focus,
   className,
   children,
 }: GuidanceTargetProps) {
   const ref = useRef<HTMLDivElement>(null)
+  const shouldPop = focus.poppingStepId === stepId
+  const reducedHighlight = focus.reducedHighlightStepId === stepId
 
   useLayoutEffect(() => {
-    register(stepId, ref.current)
-    return () => register(stepId, null)
-  }, [register, stepId])
+    focus.registerTarget(stepId, ref.current)
+    return () => focus.registerTarget(stepId, null)
+  }, [focus.registerTarget, stepId])
 
   function handleAnimationEnd(event: React.AnimationEvent<HTMLDivElement>) {
     if (event.animationName !== 'content-route-choice-pop') return
-    onPopAnimationEnd?.(stepId)
+    focus.onPopAnimationEnd(stepId)
   }
 
   return (

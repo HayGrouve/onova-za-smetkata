@@ -223,7 +223,9 @@ export function ItemList({
             />
             <AssignmentRow
               itemId={item._id}
+              itemName={item.name}
               itemQuantity={item.quantity}
+              itemUnitPriceCents={item.unitPriceCents}
               participants={participants}
               labels={labels}
               itemAssignments={assignments.filter((a) => a.itemId === item._id)}

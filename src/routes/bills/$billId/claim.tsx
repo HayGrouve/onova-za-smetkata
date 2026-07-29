@@ -1,34 +1,22 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
-import { SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { toast } from 'sonner'
+import { ClaimItemsPanel } from '#/components/bills/claim-items-panel.tsx'
 import { GuestClaimFooter } from '#/components/bills/guest-claim-footer.tsx'
 import { HostClaimFooter } from '#/components/bills/host-claim-footer.tsx'
 import { CombinedCoverNotice } from '#/components/bills/combined-cover-notice.tsx'
-import { GuestItemRow } from '#/components/bills/guest-item-row.tsx'
 import { Button } from '#/components/ui/button.tsx'
-import { Input } from '#/components/ui/input.tsx'
-import { Label } from '#/components/ui/label.tsx'
 import { QueryErrorBoundary } from '#/components/ui/query-error-boundary.tsx'
+import { useGuestClaimSession } from '#/hooks/use-guest-claim-session.ts'
 import { useGuestSessionHeartbeat } from '#/hooks/use-guest-session-heartbeat.ts'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
-import { calculateBillTotals } from '#/lib/bill-calculations.ts'
-import type { BillBreakdownInput } from '#/lib/bill-calculations.ts'
-import { toBillCalculationSnapshot } from '#/lib/bill-calculation-snapshot.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import {
   clearStoredGuestParticipant,
   getStoredGuestSession,
 } from '#/lib/guest-participant-session.ts'
-import {
-  sortGuestClaimItems,
-  filterGuestClaimItemsBySearch,
-  filterUnclaimedGuestClaimItems,
-  filterClaimedGuestClaimItems,
-} from '#/lib/guest-claim-items.ts'
 import { GUEST_FLOW_MESSAGES } from '#/lib/guest-flow-messages.ts'
-import { cn } from '#/lib/utils.ts'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Doc, Id } from '../../../../convex/_generated/dataModel'
@@ -65,6 +53,23 @@ function BillClaimPage() {
   )
 }
 
+function mapClaimItems(items: Doc<'items'>[]) {
+  return items.map((item) => ({
+    id: item._id,
+    name: item.name,
+    quantity: item.quantity,
+    sortOrder: item.sortOrder,
+  }))
+}
+
+function mapClaimAssignments(assignments: Doc<'itemAssignments'>[]) {
+  return assignments.map((assignment) => ({
+    itemId: assignment.itemId,
+    participantId: assignment.participantId,
+    unitIndex: assignment.unitIndex,
+  }))
+}
+
 function GuestClaimContent({
   billId,
   shareTokenFromUrl,
@@ -73,8 +78,6 @@ function GuestClaimContent({
   shareTokenFromUrl: string
 }) {
   const navigate = useNavigate()
-  const [search, setSearch] = useState('')
-  const [itemTab, setItemTab] = useState<'remaining' | 'mine'>('remaining')
 
   const storedSession = useMemo(() => getStoredGuestSession(billId), [billId])
   const shareToken = storedSession?.shareToken ?? shareTokenFromUrl
@@ -138,83 +141,48 @@ function GuestClaimContent({
   }, [data, redirectToJoin, shareToken, storedSession])
 
   const storedParticipantId = storedSession?.participantId ?? null
+  const labels = useMemo(
+    () => (data ? buildParticipantLabels(data.participants) : {}),
+    [data],
+  )
 
-  const billSnapshot = useMemo(() => {
-    if (!data) return null
-    return toBillCalculationSnapshot(
-      {
-        participants: data.participants,
-        items: data.items,
-        assignments: data.assignments,
-        payments: data.myPayments,
-      },
-      {
-        tipCents: data.bill.tipCents ?? 0,
-        hostParticipantId: data.hostParticipantId,
-      },
-    )
-  }, [data])
+  const { itemTab, setItemTab, search, setSearch, clearSearch, session } =
+    useGuestClaimSession({
+      items: data ? mapClaimItems(data.items) : [],
+      assignments: data ? mapClaimAssignments(data.assignments) : [],
+      participantId: storedParticipantId,
+      billRelations: data
+        ? {
+            participants: data.participants,
+            items: data.items,
+            assignments: data.assignments,
+            payments: data.myPayments,
+          }
+        : undefined,
+      billContext: data
+        ? {
+            tipCents: data.bill.tipCents ?? 0,
+            hostParticipantId: data.hostParticipantId,
+          }
+        : undefined,
+      participantLabels: labels,
+    })
 
-  const totals = useMemo(() => {
-    if (!billSnapshot || !storedParticipantId) return null
-    return calculateBillTotals(billSnapshot.calculationInput)
-  }, [billSnapshot, storedParticipantId])
-
-  const breakdownInput = useMemo((): BillBreakdownInput | null => {
-    return billSnapshot?.breakdownInput ?? null
-  }, [billSnapshot])
-
-  const visibleItems = useMemo(() => {
-    if (!data || !storedParticipantId) return []
-    const sorted = sortGuestClaimItems(data.items)
-    const participantId = storedParticipantId as Id<'participants'>
-    const filtered =
-      itemTab === 'mine'
-        ? filterClaimedGuestClaimItems(sorted, data.assignments, participantId)
-        : filterUnclaimedGuestClaimItems(
-            sorted,
-            data.assignments,
-            participantId,
-          )
-    return filterGuestClaimItemsBySearch(filtered, search)
-  }, [data, itemTab, search, storedParticipantId])
-
-  const remainingCount = useMemo(() => {
-    if (!data || !storedParticipantId) return 0
-    return filterUnclaimedGuestClaimItems(
-      data.items,
-      data.assignments,
-      storedParticipantId as Id<'participants'>,
-    ).length
-  }, [data, storedParticipantId])
-
-  const claimedCount = useMemo(() => {
-    if (!data || !storedParticipantId) return 0
-    return filterClaimedGuestClaimItems(
-      data.items,
-      data.assignments,
-      storedParticipantId as Id<'participants'>,
-    ).length
-  }, [data, storedParticipantId])
-
-  const assignmentsByItemId = useMemo(() => {
-    const map = new Map<Id<'items'>, Doc<'itemAssignments'>[]>()
+  const itemDocsById = useMemo(() => {
+    const map = new Map<string, Doc<'items'>>()
     if (!data) return map
-    for (const assignment of data.assignments) {
-      const list = map.get(assignment.itemId) ?? []
-      list.push(assignment)
-      map.set(assignment.itemId, list)
+    for (const item of data.items) {
+      map.set(item._id, item)
     }
     return map
-  }, [data?.assignments])
-
-  const hasUnclaimedItems = remainingCount > 0
+  }, [data?.items])
 
   if (
     !shareToken ||
     data === undefined ||
     storedParticipantId === null ||
-    !storedSession
+    !storedSession ||
+    !session
   ) {
     return (
       <div className="page-container py-10 text-center text-muted-foreground">
@@ -232,12 +200,9 @@ function GuestClaimContent({
     return null
   }
 
-  const labels = buildParticipantLabels(data.participants)
   const label = labels[participant._id] ?? participant.name
   const readOnly = data.bill.status === 'final'
-  const participantTotals = totals?.byParticipant[storedParticipantId]
-  const hasItems = data.items.length > 0
-  const hasSearchQuery = search.trim().length > 0
+  const shareDrawer = session.shareDrawer
 
   function handleSwitchIdentity() {
     void releaseSession({
@@ -281,100 +246,35 @@ function GuestClaimContent({
           />
         ) : null}
 
-        {hasItems ? (
-          <div
-            className="grid grid-cols-2 gap-2 rounded-lg border bg-muted/40 p-1"
-            role="tablist"
-            aria-label="Филтър на артикули"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={itemTab === 'remaining'}
-              className={cn(
-                'h-11 rounded-md text-sm font-medium transition-colors',
-                itemTab === 'remaining'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground',
-              )}
-              onClick={() => setItemTab('remaining')}
-            >
-              Остават ({remainingCount})
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={itemTab === 'mine'}
-              className={cn(
-                'h-11 rounded-md text-sm font-medium transition-colors',
-                itemTab === 'mine'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground',
-              )}
-              onClick={() => setItemTab('mine')}
-            >
-              Мои ({claimedCount})
-            </button>
-          </div>
-        ) : null}
-
-        {(hasUnclaimedItems || itemTab === 'mine') && (
-          <div className="relative z-10">
-            <Label htmlFor="claim-item-search" className="sr-only">
-              Търсене по артикул
-            </Label>
-            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              id="claim-item-search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Търсене по артикул"
-              className="h-11 pl-9"
-            />
-          </div>
-        )}
-
-        <div className="flex flex-col gap-3">
-          {!hasItems ? (
-            <p className="text-sm text-muted-foreground">
-              Все още няма артикули.
-            </p>
-          ) : visibleItems.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {hasSearchQuery
-                ? 'Няма артикули, съответстващи на търсенето.'
-                : itemTab === 'mine'
-                  ? 'Все още няма отбелязани артикули.'
-                  : 'Всички артикули са отбелязани.'}
-            </p>
-          ) : (
-            visibleItems.map((item) => (
-              <GuestItemRow
-                key={item._id}
-                item={item}
-                participantId={storedParticipantId as Id<'participants'>}
-                participants={billSnapshot?.calculationInput.participants ?? []}
-                sessionToken={storedSession.sessionToken}
-                itemAssignments={assignmentsByItemId.get(item._id) ?? []}
-                participantLabels={labels}
-                readOnly={readOnly}
-                hidePrices={itemTab === 'mine'}
-                onItemSelected={() => setSearch('')}
-              />
-            ))
-          )}
-        </div>
+        <ClaimItemsPanel
+          session={session}
+          itemTab={itemTab}
+          onItemTabChange={setItemTab}
+          search={search}
+          onSearchChange={setSearch}
+          searchInputId="claim-item-search"
+          participantId={storedParticipantId as Id<'participants'>}
+          participants={data.participants.map((entry) => ({
+            id: entry._id,
+            sortOrder: entry.sortOrder,
+          }))}
+          sessionToken={storedSession.sessionToken}
+          participantLabels={labels}
+          readOnly={readOnly}
+          onItemSelected={clearSearch}
+          itemDocsById={itemDocsById}
+        />
       </div>
 
-      {participantTotals && breakdownInput ? (
+      {shareDrawer ? (
         <GuestClaimFooter
           billId={billId}
           shareToken={shareToken}
           participantId={storedParticipantId as Id<'participants'>}
           sessionToken={storedSession.sessionToken}
           label={label}
-          breakdownInput={breakdownInput}
-          totals={participantTotals}
+          breakdownInput={shareDrawer.breakdownInput}
+          totals={shareDrawer.participantTotals}
           participantBalances={data.participantBalances}
           participantLabels={labels}
           pendingCover={pendingCover ?? undefined}
@@ -391,8 +291,6 @@ function HostClaimContent({ billId }: { billId: Id<'bills'> }) {
   const { isAuthenticated, isLoading: authLoading } = useRequireHostAuth(
     `/bills/${billId}/claim?mode=host`,
   )
-  const [search, setSearch] = useState('')
-  const [itemTab, setItemTab] = useState<'remaining' | 'mine'>('remaining')
 
   const data = useQuery(api.bills.get, isAuthenticated ? { billId } : 'skip')
 
@@ -413,84 +311,50 @@ function HostClaimContent({ billId }: { billId: Id<'bills'> }) {
   }, [authLoading, data, isAuthenticated, redirectToEditor])
 
   const hostParticipantId = data?.bill.hostParticipantId ?? null
+  const labels = useMemo(
+    () => (data ? buildParticipantLabels(data.participants) : {}),
+    [data],
+  )
 
-  const billSnapshot = useMemo(() => {
-    if (!data || !hostParticipantId) return null
-    return toBillCalculationSnapshot(
-      {
-        participants: data.participants,
-        items: data.items,
-        assignments: data.assignments,
-        payments: data.payments,
-      },
-      {
-        tipCents: data.bill.tipCents ?? 0,
-        hostParticipantId,
-      },
-    )
-  }, [data, hostParticipantId])
+  const { itemTab, setItemTab, search, setSearch, clearSearch, session } =
+    useGuestClaimSession({
+      items: data ? mapClaimItems(data.items) : [],
+      assignments: data ? mapClaimAssignments(data.assignments) : [],
+      participantId: hostParticipantId,
+      billRelations:
+        data && hostParticipantId
+          ? {
+              participants: data.participants,
+              items: data.items,
+              assignments: data.assignments,
+              payments: data.payments,
+            }
+          : undefined,
+      billContext:
+        data && hostParticipantId
+          ? {
+              tipCents: data.bill.tipCents ?? 0,
+              hostParticipantId,
+            }
+          : undefined,
+      participantLabels: labels,
+    })
 
-  const totals = useMemo(() => {
-    if (!billSnapshot) return null
-    return calculateBillTotals(billSnapshot.calculationInput)
-  }, [billSnapshot])
-
-  const breakdownInput = useMemo((): BillBreakdownInput | null => {
-    return billSnapshot?.breakdownInput ?? null
-  }, [billSnapshot])
-
-  const visibleItems = useMemo(() => {
-    if (!data || !hostParticipantId) return []
-    const sorted = sortGuestClaimItems(data.items)
-    const filtered =
-      itemTab === 'mine'
-        ? filterClaimedGuestClaimItems(
-            sorted,
-            data.assignments,
-            hostParticipantId,
-          )
-        : filterUnclaimedGuestClaimItems(
-            sorted,
-            data.assignments,
-            hostParticipantId,
-          )
-    return filterGuestClaimItemsBySearch(filtered, search)
-  }, [data, hostParticipantId, itemTab, search])
-
-  const remainingCount = useMemo(() => {
-    if (!data || !hostParticipantId) return 0
-    return filterUnclaimedGuestClaimItems(
-      data.items,
-      data.assignments,
-      hostParticipantId,
-    ).length
-  }, [data, hostParticipantId])
-
-  const claimedCount = useMemo(() => {
-    if (!data || !hostParticipantId) return 0
-    return filterClaimedGuestClaimItems(
-      data.items,
-      data.assignments,
-      hostParticipantId,
-    ).length
-  }, [data, hostParticipantId])
-
-  const assignmentsByItemId = useMemo(() => {
-    const map = new Map<Id<'items'>, Doc<'itemAssignments'>[]>()
+  const itemDocsById = useMemo(() => {
+    const map = new Map<string, Doc<'items'>>()
     if (!data) return map
-    for (const assignment of data.assignments) {
-      const list = map.get(assignment.itemId) ?? []
-      list.push(assignment)
-      map.set(assignment.itemId, list)
+    for (const item of data.items) {
+      map.set(item._id, item)
     }
     return map
-  }, [data?.assignments])
+  }, [data?.items])
 
   if (
     authLoading ||
     !isAuthenticated ||
     data === undefined ||
-    !hostParticipantId
+    !hostParticipantId ||
+    !session
   ) {
     return (
       <div className="page-container py-10 text-center text-muted-foreground">
@@ -505,13 +369,9 @@ function HostClaimContent({ billId }: { billId: Id<'bills'> }) {
     return null
   }
 
-  const labels = buildParticipantLabels(data.participants)
   const label = labels[participant._id] ?? participant.name
   const readOnly = data.bill.status === 'final'
-  const participantTotals = totals?.byParticipant[hostParticipantId]
-  const hasItems = data.items.length > 0
-  const hasSearchQuery = search.trim().length > 0
-  const hasUnclaimedItems = remainingCount > 0
+  const shareDrawer = session.shareDrawer
 
   return (
     <div className="page-container">
@@ -529,97 +389,32 @@ function HostClaimContent({ billId }: { billId: Id<'bills'> }) {
           )}
         </div>
 
-        {hasItems ? (
-          <div
-            className="grid grid-cols-2 gap-2 rounded-lg border bg-muted/40 p-1"
-            role="tablist"
-            aria-label="Филтър на артикули"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={itemTab === 'remaining'}
-              className={cn(
-                'h-11 rounded-md text-sm font-medium transition-colors',
-                itemTab === 'remaining'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground',
-              )}
-              onClick={() => setItemTab('remaining')}
-            >
-              Остават ({remainingCount})
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={itemTab === 'mine'}
-              className={cn(
-                'h-11 rounded-md text-sm font-medium transition-colors',
-                itemTab === 'mine'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground',
-              )}
-              onClick={() => setItemTab('mine')}
-            >
-              Мои ({claimedCount})
-            </button>
-          </div>
-        ) : null}
-
-        {(hasUnclaimedItems || itemTab === 'mine') && (
-          <div className="relative z-10">
-            <Label htmlFor="host-claim-item-search" className="sr-only">
-              Търсене по артикул
-            </Label>
-            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              id="host-claim-item-search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Търсене по артикул"
-              className="h-11 pl-9"
-            />
-          </div>
-        )}
-
-        <div className="flex flex-col gap-3">
-          {!hasItems ? (
-            <p className="text-sm text-muted-foreground">
-              Все още няма артикули.
-            </p>
-          ) : visibleItems.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {hasSearchQuery
-                ? 'Няма артикули, съответстващи на търсенето.'
-                : itemTab === 'mine'
-                  ? 'Все още няма отбелязани артикули.'
-                  : 'Всички артикули са отбелязани.'}
-            </p>
-          ) : (
-            visibleItems.map((item) => (
-              <GuestItemRow
-                key={item._id}
-                item={item}
-                participantId={hostParticipantId}
-                participants={billSnapshot?.calculationInput.participants ?? []}
-                itemAssignments={assignmentsByItemId.get(item._id) ?? []}
-                participantLabels={labels}
-                readOnly={readOnly}
-                hidePrices={itemTab === 'mine'}
-                onItemSelected={() => setSearch('')}
-              />
-            ))
-          )}
-        </div>
+        <ClaimItemsPanel
+          session={session}
+          itemTab={itemTab}
+          onItemTabChange={setItemTab}
+          search={search}
+          onSearchChange={setSearch}
+          searchInputId="host-claim-item-search"
+          participantId={hostParticipantId}
+          participants={data.participants.map((entry) => ({
+            id: entry._id,
+            sortOrder: entry.sortOrder,
+          }))}
+          participantLabels={labels}
+          readOnly={readOnly}
+          onItemSelected={clearSearch}
+          itemDocsById={itemDocsById}
+        />
       </div>
 
-      {participantTotals && breakdownInput ? (
+      {shareDrawer ? (
         <HostClaimFooter
           billId={billId}
           participantId={hostParticipantId}
           label={label}
-          breakdownInput={breakdownInput}
-          totals={participantTotals}
+          breakdownInput={shareDrawer.breakdownInput}
+          totals={shareDrawer.participantTotals}
           participantLabels={labels}
           readOnly={readOnly}
         />
