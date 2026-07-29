@@ -90,6 +90,10 @@ _Avoid_: wiring OCR, guidance, and step completion ad hoc in the route file
 Orchestration for the guest/host claim page — tab filter (`Остават` / `Мои`), search, per-item claim state, share drawer inputs. Pure module: `shared/guest-claim-session.ts` (item filters in `shared/guest-claim-items.ts`); React seam: `useGuestClaimSession`.
 _Avoid_: wiring tab semantics, item filters, and share breakdown separately in the claim route
 
+**Guest flow session**:
+Orchestration for the Guest journey — join resume, seat pick, claim redirects, session-lost recovery, doc mapping to Guest claim session input. Pure module: `shared/guest-flow-session.ts`; React seams: `useGuestJoinFlow`, `useGuestClaimFlow` (the latter composes `useGuestClaimSession`).
+_Avoid_: duplicating redirect/resume logic in routes; conflating with Guest claim session
+
 ## Related docs
 
 - `docs/agents/guidelines.md` — architecture, testing, and implementation conventions for agents

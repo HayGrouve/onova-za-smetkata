@@ -25,6 +25,7 @@ Use these consistently in code, UI copy, tests, and issues. Full glossary: **`CO
 | Host onboarding guidance (Напътствия) | `shared/guidance-controller.ts` |
 | Bill editor orchestration | `shared/bill-editing-controller.ts` → `useBillEditorController` |
 | Guest claim page | `shared/guest-claim-session.ts` → `useGuestClaimSession` |
+| Guest journey (join → claim) | `shared/guest-flow-session.ts` → `useGuestJoinFlow`, `useGuestClaimFlow` |
 | Participant share presentation | `shared/participant-share-view.ts` |
 
 ## Host vs guest (auth)

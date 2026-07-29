@@ -1,22 +1,16 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useMutation, useQuery } from 'convex/react'
+import { useQuery } from 'convex/react'
 import { useCallback, useEffect, useMemo } from 'react'
-import { toast } from 'sonner'
 import { ClaimItemsPanel } from '#/components/bills/claim-items-panel.tsx'
 import { GuestClaimFooter } from '#/components/bills/guest-claim-footer.tsx'
 import { HostClaimFooter } from '#/components/bills/host-claim-footer.tsx'
 import { CombinedCoverNotice } from '#/components/bills/combined-cover-notice.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { QueryErrorBoundary } from '#/components/ui/query-error-boundary.tsx'
+import { useGuestClaimFlow } from '#/hooks/use-guest-claim-flow.ts'
 import { useGuestClaimSession } from '#/hooks/use-guest-claim-session.ts'
-import { useGuestSessionHeartbeat } from '#/hooks/use-guest-session-heartbeat.ts'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
-import {
-  clearStoredGuestParticipant,
-  getStoredGuestSession,
-} from '#/lib/guest-participant-session.ts'
-import { GUEST_FLOW_MESSAGES } from '#/lib/guest-flow-messages.ts'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Doc, Id } from '../../../../convex/_generated/dataModel'
@@ -77,111 +71,32 @@ function GuestClaimContent({
   billId: Id<'bills'>
   shareTokenFromUrl: string
 }) {
-  const navigate = useNavigate()
-
-  const storedSession = useMemo(() => getStoredGuestSession(billId), [billId])
-  const shareToken = storedSession?.shareToken ?? shareTokenFromUrl
-
-  const data = useQuery(
-    api.bills.getForGuest,
-    shareToken
-      ? {
-          billId,
-          shareToken,
-          sessionToken: storedSession?.sessionToken,
-        }
-      : 'skip',
-  )
-  const pendingCover = useQuery(
-    api.combinedPayments.getPendingCoverForGuest,
-    shareToken && storedSession
-      ? {
-          billId,
-          shareToken,
-          sessionToken: storedSession.sessionToken,
-        }
-      : 'skip',
-  )
-  const releaseSession = useMutation(api.guestSessions.release)
-
-  const redirectToJoin = useCallback(() => {
-    void navigate({
-      to: '/bills/$billId/join',
-      params: { billId },
-      search: shareToken ? { t: shareToken } : { t: '' },
-    })
-  }, [billId, navigate, shareToken])
-
-  const handleSessionLost = useCallback(() => {
-    if (storedSession && shareToken) {
-      void releaseSession({
-        billId,
-        shareToken,
-        sessionToken: storedSession.sessionToken,
-      })
-    }
-    clearStoredGuestParticipant(billId)
-    toast.error(GUEST_FLOW_MESSAGES.sessionLostRedirect)
-    redirectToJoin()
-  }, [billId, redirectToJoin, releaseSession, shareToken, storedSession])
-
-  useGuestSessionHeartbeat(
-    data?.bill.status === 'final' ? null : storedSession,
-    handleSessionLost,
-  )
-
-  useEffect(() => {
-    if (!shareToken) {
-      redirectToJoin()
-      return
-    }
-    if (storedSession === null && data !== undefined) {
-      redirectToJoin()
-    }
-  }, [data, redirectToJoin, shareToken, storedSession])
-
-  const storedParticipantId = storedSession?.participantId ?? null
-  const labels = useMemo(
-    () => (data ? buildParticipantLabels(data.participants) : {}),
-    [data],
-  )
-
-  const { itemTab, setItemTab, search, setSearch, clearSearch, session } =
-    useGuestClaimSession({
-      items: data ? mapClaimItems(data.items) : [],
-      assignments: data ? mapClaimAssignments(data.assignments) : [],
-      participantId: storedParticipantId,
-      billRelations: data
-        ? {
-            participants: data.participants,
-            items: data.items,
-            assignments: data.assignments,
-            payments: data.myPayments,
-          }
-        : undefined,
-      billContext: data
-        ? {
-            tipCents: data.bill.tipCents ?? 0,
-            hostParticipantId: data.hostParticipantId,
-          }
-        : undefined,
-      participantLabels: labels,
-    })
-
-  const itemDocsById = useMemo(() => {
-    const map = new Map<string, Doc<'items'>>()
-    if (!data) return map
-    for (const item of data.items) {
-      map.set(item._id, item)
-    }
-    return map
-  }, [data?.items])
+  const {
+    gate,
+    data,
+    pendingCover,
+    shareToken,
+    storedSession,
+    participantId,
+    participantLabel,
+    readOnly,
+    labels,
+    itemDocsById,
+    handleSwitchIdentity,
+    itemTab,
+    setItemTab,
+    search,
+    setSearch,
+    clearSearch,
+    session,
+  } = useGuestClaimFlow(billId, shareTokenFromUrl)
 
   if (
-    !shareToken ||
-    data === undefined ||
-    storedParticipantId === null ||
+    gate.status !== 'ready' ||
+    !data ||
     !storedSession ||
+    !participantId ||
+    !participantLabel ||
     !session
   ) {
     return (
@@ -191,28 +106,7 @@ function GuestClaimContent({
     )
   }
 
-  const participant = data.participants.find(
-    (p) => p._id === storedParticipantId,
-  )
-  if (!participant) {
-    clearStoredGuestParticipant(billId)
-    redirectToJoin()
-    return null
-  }
-
-  const label = labels[participant._id] ?? participant.name
-  const readOnly = data.bill.status === 'final'
   const shareDrawer = session.shareDrawer
-
-  function handleSwitchIdentity() {
-    void releaseSession({
-      billId,
-      shareToken,
-      sessionToken: storedSession.sessionToken,
-    })
-    clearStoredGuestParticipant(billId)
-    redirectToJoin()
-  }
 
   return (
     <div className="page-container">
@@ -222,14 +116,16 @@ function GuestClaimContent({
             {data.bill.restaurantName.trim() || 'Сметка'}
           </p>
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold">Вие сте: {label}</h2>
+            <h2 className="text-lg font-semibold">
+              Вие сте: {participantLabel}
+            </h2>
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={handleSwitchIdentity}
             >
-              Не съм {label}
+              Не съм {participantLabel}
             </Button>
           </div>
           {readOnly && (
@@ -253,7 +149,7 @@ function GuestClaimContent({
           search={search}
           onSearchChange={setSearch}
           searchInputId="claim-item-search"
-          participantId={storedParticipantId as Id<'participants'>}
+          participantId={participantId}
           participants={data.participants.map((entry) => ({
             id: entry._id,
             sortOrder: entry.sortOrder,
@@ -270,9 +166,9 @@ function GuestClaimContent({
         <GuestClaimFooter
           billId={billId}
           shareToken={shareToken}
-          participantId={storedParticipantId as Id<'participants'>}
+          participantId={participantId}
           sessionToken={storedSession.sessionToken}
-          label={label}
+          label={participantLabel}
           breakdownInput={shareDrawer.breakdownInput}
           totals={shareDrawer.participantTotals}
           participantBalances={data.participantBalances}

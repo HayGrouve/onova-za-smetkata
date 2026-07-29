@@ -1,24 +1,12 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useMutation, useQuery } from 'convex/react'
-import { useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
+import { createFileRoute } from '@tanstack/react-router'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { QueryErrorBoundary } from '#/components/ui/query-error-boundary.tsx'
+import { useGuestJoinFlow } from '#/hooks/use-guest-join-flow.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import { GUEST_FLOW_MESSAGES } from '#/lib/guest-flow-messages.ts'
-import {
-  clearStoredGuestParticipant,
-  createGuestSessionToken,
-  getConvexErrorMessage,
-  getOrCreateGuestDeviceId,
-  getStoredGuestSession,
-  setStoredGuestSession,
-} from '#/lib/guest-participant-session.ts'
-import { buildTakenParticipantIds } from '#/lib/join-taken-seats.ts'
 import { buildJoinShareHead } from '#/lib/site-meta.ts'
 import { joinableParticipants } from '../../../../shared/joinable-participants.ts'
-import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
 
 export const Route = createFileRoute('/bills/$billId/join')({
@@ -56,63 +44,10 @@ function BillJoinContent({
   billId: Id<'bills'>
   shareToken: string
 }) {
-  const navigate = useNavigate()
-  const data = useQuery(api.bills.getForGuest, { billId, shareToken })
-  const activeSessions = useQuery(api.guestSessions.listActiveForBill, {
-    billId,
-    shareToken,
-  })
-  const claimSession = useMutation(api.guestSessions.claim)
-  const [claimingId, setClaimingId] = useState<Id<'participants'> | null>(null)
-  const [resuming, setResuming] = useState(true)
+  const { gate, data, takenParticipantIds, claimingId, handlePick } =
+    useGuestJoinFlow(billId, shareToken)
 
-  const storedSession = useMemo(
-    () => getStoredGuestSession(billId),
-    [billId, activeSessions],
-  )
-
-  const takenParticipantIds = useMemo(
-    () =>
-      buildTakenParticipantIds(activeSessions, storedSession?.participantId),
-    [activeSessions, storedSession?.participantId],
-  )
-
-  useEffect(() => {
-    if (data === undefined || activeSessions === undefined) return
-    const stored = getStoredGuestSession(billId)
-    if (!stored || stored.shareToken !== shareToken) {
-      setResuming(false)
-      return
-    }
-
-    const cancelledRef = { current: false }
-    void (async () => {
-      try {
-        await claimSession({
-          billId,
-          shareToken,
-          participantId: stored.participantId as Id<'participants'>,
-          sessionToken: stored.sessionToken,
-          deviceId: getOrCreateGuestDeviceId(),
-        })
-        if (cancelledRef.current) return
-        void navigate({
-          to: '/bills/$billId/claim',
-          params: { billId },
-          search: { t: shareToken },
-        })
-      } catch {
-        clearStoredGuestParticipant(billId)
-        if (!cancelledRef.current) setResuming(false)
-      }
-    })()
-
-    return () => {
-      cancelledRef.current = true
-    }
-  }, [billId, claimSession, data, activeSessions, navigate, shareToken])
-
-  if (data === undefined || activeSessions === undefined || resuming) {
+  if (gate === 'loading' || !data) {
     return (
       <div className="page-container py-10 text-center text-muted-foreground">
         Зареждане...
@@ -132,37 +67,6 @@ function BillJoinContent({
     year: 'numeric',
   }).format(new Date(bill.date))
   const isFinal = bill.status === 'final'
-
-  async function handlePick(participantId: Id<'participants'>) {
-    if (takenParticipantIds.has(participantId)) return
-
-    const sessionToken = createGuestSessionToken()
-    setClaimingId(participantId)
-    try {
-      await claimSession({
-        billId,
-        shareToken,
-        participantId,
-        sessionToken,
-        deviceId: getOrCreateGuestDeviceId(),
-      })
-      setStoredGuestSession({
-        billId,
-        participantId,
-        sessionToken,
-        shareToken,
-      })
-      void navigate({
-        to: '/bills/$billId/claim',
-        params: { billId },
-        search: { t: shareToken },
-      })
-    } catch (error) {
-      toast.error(getConvexErrorMessage(error))
-    } finally {
-      setClaimingId(null)
-    }
-  }
 
   return (
     <div className="page-container flex flex-col gap-6 py-6">
