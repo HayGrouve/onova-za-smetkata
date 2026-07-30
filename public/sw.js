@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'onova-static-v2'
+const CACHE_VERSION = 'onova-static-v3'
 
 /** Static assets only — bill data always requires network (Convex). */
 const PRECACHE_URLS = [

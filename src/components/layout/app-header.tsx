@@ -232,8 +232,8 @@ export function AppHeader() {
     bill !== undefined
 
   return (
-    <header className="sticky-surface sticky top-0 z-50 border-b pt-[env(safe-area-inset-top)]">
-      <div className="page-shell flex h-14 items-center gap-2">
+    <header className="sticky-surface sticky top-0 z-50 overflow-visible border-b pt-[env(safe-area-inset-top)]">
+      <div className="page-shell flex h-14 items-center gap-2 overflow-visible">
         {backTo ? (
           <Button
             variant="ghost"
@@ -246,12 +246,22 @@ export function AppHeader() {
               <ChevronLeftIcon className="size-5" />
             </Link>
           </Button>
-        ) : pathname !== '/' ? (
-          <div className="size-9 shrink-0" aria-hidden />
         ) : null}
-        <h1 className="min-w-0 flex-1 truncate text-base font-semibold">
-          {title}
-        </h1>
+        <div className="flex min-w-0 flex-1 items-center gap-3 overflow-visible">
+          {!backTo ? (
+            <div className="shrink-0 self-end">
+              <img
+                src="/logo.png"
+                alt=""
+                aria-hidden
+                className="relative z-10 size-14 translate-y-3 rounded-full ring-2 ring-background shadow-sm"
+              />
+            </div>
+          ) : null}
+          <h1 className="min-w-0 flex-1 truncate text-base font-semibold">
+            {title}
+          </h1>
+        </div>
         <AppHeaderMenu
           showHostActions={showHostActions}
           isHomeRoute={pathname === '/'}
