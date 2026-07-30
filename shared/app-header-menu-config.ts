@@ -65,10 +65,12 @@ function finalizeItem(
 function shareJoinLinkItem(
   input: AppHeaderMenuConfigInput,
 ): AppHeaderMenuItemDescriptor {
+  const hidden = input.billStatus === 'final'
   return {
     id: 'shareJoinLink',
     label: 'Сподели линк',
-    disabled: input.participantCount < 1,
+    hidden,
+    disabled: hidden ? undefined : input.participantCount < 1,
   }
 }
 
@@ -126,6 +128,9 @@ export function buildAppHeaderMenuConfig(
     case 'guestClaim':
       return []
     case 'editor':
+      if (input.billStatus === 'final') {
+        return [shareBillTextItem(), deleteBillItem()]
+      }
       return [
         shareJoinLinkItem(input),
         rotateShareTokenItem(input),
@@ -143,6 +148,9 @@ export function buildAppHeaderMenuConfig(
         deleteBillItem(),
       ]
     case 'hostClaim':
+      if (input.billStatus === 'final') {
+        return [shareBillTextItem(), deleteBillItem()]
+      }
       return [
         shareJoinLinkItem(input),
         rotateShareTokenItem(input),

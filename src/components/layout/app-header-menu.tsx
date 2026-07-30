@@ -2,6 +2,7 @@ import { useAuthActions } from '@convex-dev/auth/react'
 import {
   BookOpenIcon,
   CheckCircleIcon,
+  ChevronDownIcon,
   CogIcon,
   Link2OffIcon,
   LogOutIcon,
@@ -30,6 +31,11 @@ import type {
 } from '../../../shared/app-header-menu-config.ts'
 import { Button } from '#/components/ui/button.tsx'
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '#/components/ui/collapsible.tsx'
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -46,6 +52,7 @@ import {
 } from '#/components/ui/tooltip.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 import { getSignOutCopy } from '#/lib/destructive-action-copy.ts'
+import { cn } from '#/lib/utils.ts'
 
 const BILL_ACTION_ICONS: Record<AppHeaderMenuBillActionId, typeof Share2Icon> =
   {
@@ -60,6 +67,8 @@ const BILL_ACTION_ICONS: Record<AppHeaderMenuBillActionId, typeof Share2Icon> =
 
 export interface AppHeaderMenuProps {
   showHostActions: boolean
+  /** When false, global host items nest under „Още настройки“. */
+  isHomeRoute?: boolean
   viewerLabel?: string | null
   viewerEmail?: string | null
   billMenuItems?: AppHeaderMenuItemDescriptor[]
@@ -109,8 +118,105 @@ function BillMenuItem({
   return menuItem
 }
 
+function HostSettingsMenuItems({
+  onSignOut,
+  onOpenProfile,
+  onOpenPaymentSettings,
+  onOpenFriendGroups,
+  onStartReplay,
+}: {
+  onSignOut: () => void
+  onOpenProfile: () => void
+  onOpenPaymentSettings: () => void
+  onOpenFriendGroups: () => void
+  onStartReplay: () => void
+}) {
+  return (
+    <>
+      <DropdownMenuItem onSelect={onOpenProfile}>
+        <UserIcon className={ICON.button} aria-hidden />
+        Профил
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={onOpenPaymentSettings}>
+        <CogIcon className={ICON.button} aria-hidden />
+        Настройки за плащане
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={onOpenFriendGroups}>
+        <UsersIcon className={ICON.button} aria-hidden />
+        Моите групи
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={onStartReplay}>
+        <BookOpenIcon className={ICON.button} aria-hidden />
+        {HOST_ONBOARDING_HOME.helpAndGuidance}
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        variant="destructive"
+        onSelect={(event) => {
+          event.preventDefault()
+          onSignOut()
+        }}
+      >
+        <LogOutIcon className={ICON.button} aria-hidden />
+        Изход
+      </DropdownMenuItem>
+    </>
+  )
+}
+
+function CollapsibleHostSettingsSection({
+  open,
+  onOpenChange,
+  onSignOut,
+  onOpenProfile,
+  onOpenPaymentSettings,
+  onOpenFriendGroups,
+  onStartReplay,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSignOut: () => void
+  onOpenProfile: () => void
+  onOpenPaymentSettings: () => void
+  onOpenFriendGroups: () => void
+  onStartReplay: () => void
+}) {
+  return (
+    <Collapsible open={open} onOpenChange={onOpenChange}>
+      <CollapsibleTrigger asChild>
+        <DropdownMenuItem
+          aria-expanded={open}
+          onSelect={(event) => {
+            event.preventDefault()
+          }}
+        >
+          <CogIcon className={ICON.button} aria-hidden />
+          Още настройки
+          <ChevronDownIcon
+            className={cn(
+              ICON.button,
+              'ml-auto shrink-0 transition-transform duration-200',
+              open && 'rotate-180',
+            )}
+            aria-hidden
+          />
+        </DropdownMenuItem>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-1 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
+        <HostSettingsMenuItems
+          onOpenProfile={onOpenProfile}
+          onOpenPaymentSettings={onOpenPaymentSettings}
+          onOpenFriendGroups={onOpenFriendGroups}
+          onStartReplay={onStartReplay}
+          onSignOut={onSignOut}
+        />
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
+
 export function AppHeaderMenu({
   showHostActions,
+  isHomeRoute = false,
   viewerLabel,
   viewerEmail,
   billMenuItems = [],
@@ -125,6 +231,8 @@ export function AppHeaderMenu({
   const { startReplay } = useHostOnboarding()
   const { confirm } = useConfirmAction()
   const [mounted, setMounted] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [moreSettingsOpen, setMoreSettingsOpen] = useState(false)
 
   const visibleBillItems = billMenuItems.filter((item) => !item.hidden)
 
@@ -142,9 +250,24 @@ export function AppHeaderMenu({
     await signOut()
   }
 
+  function handleMenuOpenChange(nextOpen: boolean) {
+    setMenuOpen(nextOpen)
+    if (!nextOpen) {
+      setMoreSettingsOpen(false)
+    }
+  }
+
+  const hostSettingsHandlers = {
+    onOpenProfile: () => openProfile(),
+    onOpenPaymentSettings: () => openPaymentSettings(),
+    onOpenFriendGroups: () => openFriendGroups(),
+    onStartReplay: () => startReplay(),
+    onSignOut: () => void handleSignOutWithConfirm(),
+  }
+
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={menuOpen} onOpenChange={handleMenuOpenChange}>
         <DropdownMenuTrigger asChild>
           <Button
             type="button"
@@ -205,32 +328,15 @@ export function AppHeaderMenu({
           {showHostActions ? (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => openProfile()}>
-                <UserIcon className={ICON.button} aria-hidden />
-                Профил
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => openPaymentSettings()}>
-                <CogIcon className={ICON.button} aria-hidden />
-                Настройки за плащане
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => openFriendGroups()}>
-                <UsersIcon className={ICON.button} aria-hidden />
-                Моите групи
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => startReplay()}>
-                <BookOpenIcon className={ICON.button} aria-hidden />
-                {HOST_ONBOARDING_HOME.helpAndGuidance}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                variant="destructive"
-                onSelect={(e) => {
-                  e.preventDefault()
-                  void handleSignOutWithConfirm()
-                }}
-              >
-                <LogOutIcon className={ICON.button} aria-hidden />
-                Изход
-              </DropdownMenuItem>
+              {isHomeRoute ? (
+                <HostSettingsMenuItems {...hostSettingsHandlers} />
+              ) : (
+                <CollapsibleHostSettingsSection
+                  open={moreSettingsOpen}
+                  onOpenChange={setMoreSettingsOpen}
+                  {...hostSettingsHandlers}
+                />
+              )}
             </>
           ) : null}
         </DropdownMenuContent>

@@ -65,20 +65,15 @@ describe('buildAppHeaderMenuConfig', () => {
       expect(items.find((i) => i.id === 'shareJoinLink')?.disabled).toBe(true)
     })
 
-    it('hides rotate on final bills', () => {
-      const items = buildAppHeaderMenuConfig({
-        ...base,
-        billStatus: 'final',
-      })
-      expect(items.find((i) => i.id === 'rotateShareToken')?.hidden).toBe(true)
-    })
-
-    it('hides finalize on final bills', () => {
-      const items = buildAppHeaderMenuConfig({
-        ...base,
-        billStatus: 'final',
-      })
-      expect(items.find((i) => i.id === 'finalizeBill')?.hidden).toBe(true)
+    it('shows share bill text instead of join link on final bills', () => {
+      expect(
+        visibleIds(
+          buildAppHeaderMenuConfig({
+            ...base,
+            billStatus: 'final',
+          }),
+        ),
+      ).toEqual(['shareBillText', 'deleteBill'])
     })
 
     it('enables finalize when validation passes and all guests paid', () => {
@@ -157,6 +152,18 @@ describe('buildAppHeaderMenuConfig', () => {
     it('does not include finalize', () => {
       const ids = buildAppHeaderMenuConfig(base).map((i) => i.id)
       expect(ids).not.toContain('finalizeBill')
+    })
+  })
+
+  describe('host claim (final)', () => {
+    it('lists share bill text and delete only', () => {
+      expect(
+        visibleIds(
+          buildAppHeaderMenuConfig(
+            input({ routeContext: 'hostClaim', billStatus: 'final' }),
+          ),
+        ),
+      ).toEqual(['shareBillText', 'deleteBill'])
     })
   })
 })

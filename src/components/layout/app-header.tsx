@@ -254,6 +254,7 @@ export function AppHeader() {
         </h1>
         <AppHeaderMenu
           showHostActions={showHostActions}
+          isHomeRoute={pathname === '/'}
           viewerLabel={viewer?.label}
           viewerEmail={viewer?.email}
           billMenuItems={billMenuEnabled ? billMenuItems : []}
