@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useAuthActions, useConvexAuth } from '@convex-dev/auth/react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -132,6 +132,22 @@ function LoginPage() {
           </Button>
         </form>
       )}
+
+      <p className="text-center text-xs text-muted-foreground">
+        <Link
+          to="/privacy"
+          className="underline underline-offset-2 hover:text-foreground"
+        >
+          Поверителност
+        </Link>
+        {' · '}
+        <Link
+          to="/terms"
+          className="underline underline-offset-2 hover:text-foreground"
+        >
+          Условия
+        </Link>
+      </p>
     </div>
   )
 }

@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
@@ -19,6 +21,16 @@ import { Route as BillsBillIdSummaryRouteImport } from './routes/bills/$billId/s
 import { Route as BillsBillIdJoinRouteImport } from './routes/bills/$billId/join'
 import { Route as BillsBillIdClaimRouteImport } from './routes/bills/$billId/claim'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -70,6 +82,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/prototype/guidance-focus': typeof PrototypeGuidanceFocusRoute
   '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
@@ -81,6 +95,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/prototype/guidance-focus': typeof PrototypeGuidanceFocusRoute
   '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
@@ -93,6 +109,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/prototype/guidance-focus': typeof PrototypeGuidanceFocusRoute
   '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
@@ -106,6 +124,8 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/login'
+    | '/privacy'
+    | '/terms'
     | '/prototype/guidance-focus'
     | '/prototype/host-paid-presentation'
     | '/bills/$billId/claim'
@@ -117,6 +137,8 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/login'
+    | '/privacy'
+    | '/terms'
     | '/prototype/guidance-focus'
     | '/prototype/host-paid-presentation'
     | '/bills/$billId/claim'
@@ -128,6 +150,8 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/login'
+    | '/privacy'
+    | '/terms'
     | '/prototype/guidance-focus'
     | '/prototype/host-paid-presentation'
     | '/bills/$billId/claim'
@@ -140,6 +164,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
   LoginRoute: typeof LoginRoute
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
   PrototypeGuidanceFocusRoute: typeof PrototypeGuidanceFocusRoute
   PrototypeHostPaidPresentationRoute: typeof PrototypeHostPaidPresentationRoute
   BillsBillIdClaimRoute: typeof BillsBillIdClaimRoute
@@ -150,6 +176,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -220,6 +260,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
   LoginRoute: LoginRoute,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
   PrototypeGuidanceFocusRoute: PrototypeGuidanceFocusRoute,
   PrototypeHostPaidPresentationRoute: PrototypeHostPaidPresentationRoute,
   BillsBillIdClaimRoute: BillsBillIdClaimRoute,

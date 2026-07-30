@@ -7,7 +7,7 @@
 - [ ] Vercel env: `VITE_CONVEX_URL` = prod Convex cloud URL
 - [ ] Convex prod env: `GEMINI_API_KEY` (for receipt OCR)
 - [ ] Convex prod auth env vars (see below)
-- [ ] Google OAuth redirect URI includes prod Convex site callback
+- [ ] Google OAuth consent screen + redirect URIs configured per `docs/google-oauth-setup.md`
 - [ ] Resend domain verified; `AUTH_RESEND_FROM` set on prod Convex
 - [ ] Optional: `VITE_SENTRY_DSN` on Vercel for client error tracking
 - [ ] GitHub Actions secrets for production release (see below)
@@ -49,13 +49,19 @@ Never put `GEMINI_API_KEY`, JWT keys, OAuth secrets, `DEV_MODE`, or deploy keys/
 - **Rate limits:** Guest claims are limited per actor and per bill; assignment toggles, heartbeats, releases, and receipt uploads are rate-limited server-side.
 - **Cleanup cron:** `cleanup.run` purges expired guest sessions, stale rate-limit buckets, and old terminal receipt scans every 6 hours (registered in `convex/crons.ts`).
 
-### Google OAuth redirect URI (production)
+### Google OAuth (production)
 
-Add this authorized redirect URI in Google Cloud Console:
+Full setup and verification checklist: **`docs/google-oauth-setup.md`**.
 
-`https://<your-prod-deployment>.convex.site/api/auth/callback/google`
+Add these authorized redirect URIs in Google Cloud Console (same OAuth client):
 
-Example: `https://coordinated-warbler-782.convex.site/api/auth/callback/google`
+`https://coordinated-warbler-782.convex.site/api/auth/callback/google`
+
+Shared dev deployment:
+
+`https://striped-shepherd-984.convex.site/api/auth/callback/google`
+
+Consent screen must link to `https://onova-za-smetkata.com/privacy` and `/terms`. See ADR 0001 in `docs/adr/`.
 
 ### Sentry
 
@@ -215,7 +221,7 @@ Do this **after** smoke tests pass on `https://<project>.vercel.app`.
 | Build fails on Vercel (other)                        | Missing `VITE_CONVEX_URL`                   | Set in Vercel Production env (pulled by CLI)                                                |
 | Apex domain `DEPLOYMENT_NOT_FOUND`                   | Domain not assigned to Vercel project       | Add domain in Vercel project settings                                                       |
 | Preflight fails on PWA icons                         | PNGs not generated                          | Run `pnpm run generate-icons` and commit                                                    |
-| Google sign-in `redirect_uri_mismatch`               | Wrong callback in Google Console            | Add prod `*.convex.site/api/auth/callback/google`                                           |
+| Google sign-in `redirect_uri_mismatch`               | Wrong callback in Google Console            | Add prod/dev `*.convex.site/api/auth/callback/google` per `docs/google-oauth-setup.md`      |
 | Magic link / `auth:signIn` fails in prod             | Auth env only on dev deployment             | Set `SITE_URL`, JWT keys, Resend key on **prod** Convex                                     |
 | OCR always fails                                     | Missing `GEMINI_API_KEY` in Convex prod     | Set in Convex Dashboard                                                                     |
 | Data from wrong environment                          | Dev Convex URL in Vercel                    | Point Vercel at prod URL                                                                    |
@@ -232,7 +238,7 @@ Complete once before calling production “solid”:
 | `VITE_APP_ORIGIN`                             | Vercel            | `https://onova-za-smetkata.com` for OG/QR                                 |
 | `SITE_URL`                                    | Convex prod       | Same custom domain for magic links                                        |
 | `AUTH_RESEND_FROM`                            | Convex prod       | Verified domain, e.g. `Онова за сметката <noreply@onova-za-smetkata.com>` |
-| `AUTH_RESEND_KEY`, JWT, Google OAuth          | Convex prod       | Dashboard → Settings → Environment                                        |
+| `AUTH_RESEND_KEY`, JWT, Google OAuth          | Convex prod       | Dashboard → Settings → Environment; OAuth: `docs/google-oauth-setup.md`   |
 | `GEMINI_API_KEY`                              | Convex prod       | Receipt OCR                                                               |
 | `DEV_MODE`                                    | Convex prod       | Must **not** be `true`                                                    |
 | Backfill                                      | Convex prod       | Manual when needed (see release steps); not automated in Actions          |
