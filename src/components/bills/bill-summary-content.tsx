@@ -3,14 +3,10 @@ import {
   BanknoteIcon,
   CheckCircleIcon,
   CircleDollarSignIcon,
-  PencilIcon,
-  Trash2Icon,
 } from 'lucide-react'
-import { useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { CombinedPaymentBanner } from '#/components/bills/combined-payment-banner.tsx'
 import { ParticipantDetailSheet } from '#/components/bills/participant-detail-sheet.tsx'
 import { PaymentProgress } from '#/components/bills/payment-progress.tsx'
@@ -21,7 +17,6 @@ import {
 } from '#/components/bills/payment-settings-open-button.tsx'
 import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
 import { ReceiptPreviewCard } from '#/components/bills/receipt-preview-card.tsx'
-import { ShareBillButton } from '#/components/bills/share-bill-button.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import {
@@ -53,12 +48,10 @@ import type {
   PaymentStatus,
 } from '#/lib/bill-calculations.ts'
 import { toBillCalculationSnapshot } from '#/lib/bill-calculation-snapshot.ts'
-import { getBillDeleteCopy } from '#/lib/destructive-action-copy.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import { isHostParticipant } from '../../../shared/host-bill-participant.ts'
-import { cn } from '#/lib/utils.ts'
 import { BillHeaderTitleSync } from '#/components/layout/bill-header-title.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
 import { api } from '../../../convex/_generated/api'
@@ -80,13 +73,9 @@ export function BillSummaryContent({
   billId,
   embedded = false,
 }: BillSummaryContentProps) {
-  const navigate = useNavigate()
   const data = useQuery(api.bills.get, { billId })
   const finalizeBill = useMutation(api.bills.finalize)
-  const removeBill = useMutation(api.bills.remove)
-  const { confirm } = useConfirmAction()
   const [isFinalizing, setIsFinalizing] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
   const [finalizeOpen, setFinalizeOpen] = useState(false)
   const [detailParticipantId, setDetailParticipantId] =
     useState<Id<'participants'> | null>(null)
@@ -185,20 +174,6 @@ export function BillSummaryContent({
     }
   }
 
-  async function handleDeleteWithConfirm() {
-    const confirmed = await confirm(getBillDeleteCopy())
-    if (!confirmed) return
-    setIsDeleting(true)
-    try {
-      await removeBill({ billId })
-      await navigate({ to: '/' })
-    } catch {
-      toast.error('Неуспешно изтриване на сметката')
-    } finally {
-      setIsDeleting(false)
-    }
-  }
-
   return (
     <div className="flex flex-col gap-4">
       {!embedded && <BillHeaderTitleSync title={bill.restaurantName} />}
@@ -229,21 +204,6 @@ export function BillSummaryContent({
               <p className="mt-1 text-sm text-muted-foreground">{bill.note}</p>
             )}
           </div>
-          {breakdownInput ? (
-            <ShareBillButton
-              restaurantName={bill.restaurantName}
-              date={new Date(bill.date)}
-              note={bill.note}
-              billTotalCents={totals.billTotalCents}
-              breakdown={breakdownInput}
-              participants={participants.map((p) => ({
-                id: p._id,
-                label: labels[p._id] ?? p.name,
-                sortOrder: p.sortOrder,
-                totals: totals.byParticipant[p._id],
-              }))}
-            />
-          ) : null}
         </CardContent>
       </Card>
 
@@ -406,34 +366,6 @@ export function BillSummaryContent({
           </Dialog>
         </>
       )}
-
-      <div className="flex gap-2">
-        {isDraft && !embedded ? (
-          <Button
-            variant="outline"
-            className="h-11 flex-1"
-            onClick={() =>
-              void navigate({
-                to: '/bills/$billId',
-                params: { billId },
-                search: { step: 1 },
-              })
-            }
-          >
-            <PencilIcon className={ICON.button} aria-hidden />
-            Редактирай
-          </Button>
-        ) : null}
-        <Button
-          variant="destructive"
-          className={cn('h-11', isDraft && !embedded ? 'flex-1' : 'w-full')}
-          disabled={isDeleting}
-          onClick={() => void handleDeleteWithConfirm()}
-        >
-          <Trash2Icon className={ICON.button} aria-hidden />
-          Изтрий
-        </Button>
-      </div>
 
       {detailParticipantId && (
         <ParticipantDetailSheet
