@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { useMutation, useQuery } from 'convex/react'
 import { useMemo, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { CombinedPaymentBanner } from '#/components/bills/combined-payment-banner.tsx'
 import { ParticipantDetailSheet } from '#/components/bills/participant-detail-sheet.tsx'
@@ -53,6 +54,7 @@ import { ICON } from '#/lib/app-icons.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import { isHostParticipant } from '../../../shared/host-bill-participant.ts'
 import { BillHeaderTitleSync } from '#/components/layout/bill-header-title.tsx'
+import { navigateToFinalBillSummary } from '#/lib/navigate-to-final-bill-summary.ts'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -75,6 +77,7 @@ export function BillSummaryContent({
 }: BillSummaryContentProps) {
   const data = useQuery(api.bills.get, { billId })
   const finalizeBill = useMutation(api.bills.finalize)
+  const navigate = useNavigate()
   const [isFinalizing, setIsFinalizing] = useState(false)
   const [finalizeOpen, setFinalizeOpen] = useState(false)
   const [detailParticipantId, setDetailParticipantId] =
@@ -167,6 +170,7 @@ export function BillSummaryContent({
       await finalizeBill({ billId })
       setFinalizeOpen(false)
       toast.success('Сметката е завършена')
+      await navigateToFinalBillSummary(navigate, billId)
     } catch {
       toast.error('Неуспешно завършване на сметката')
     } finally {
@@ -188,24 +192,28 @@ export function BillSummaryContent({
         )}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CircleDollarSignIcon className={ICON.section} aria-hidden />
-            Обща сума
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <div>
-            <p className="money text-2xl font-bold">
-              {formatEur(totals.billTotalCents)}
-            </p>
-            {bill.note && (
-              <p className="mt-1 text-sm text-muted-foreground">{bill.note}</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      {!embedded ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CircleDollarSignIcon className={ICON.section} aria-hidden />
+              Обща сума
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <div>
+              <p className="money text-2xl font-bold">
+                {formatEur(totals.billTotalCents)}
+              </p>
+              {bill.note && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {bill.note}
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {paymentSettingsStatus === 'unconfigured' && isDraft ? (
         <Card className="border-accent-foreground/40 bg-accent/40">
@@ -219,7 +227,9 @@ export function BillSummaryContent({
         </Card>
       ) : null}
 
-      {bill.receiptStorageId && <ReceiptPreviewCard billId={billId} />}
+      {!embedded && bill.receiptStorageId ? (
+        <ReceiptPreviewCard billId={billId} />
+      ) : null}
 
       {isDraft && errors.length > 0 && (
         <Card className="border-destructive/50">
@@ -241,10 +251,17 @@ export function BillSummaryContent({
 
       <Card>
         <CardHeader className="gap-3">
-          <CardTitle className="flex items-center gap-2">
-            <BanknoteIcon className={ICON.section} aria-hidden />
-            Плащания
-          </CardTitle>
+          <div className="flex items-start justify-between gap-3">
+            <CardTitle className="flex items-center gap-2">
+              <BanknoteIcon className={ICON.section} aria-hidden />
+              Плащания
+            </CardTitle>
+            {embedded ? (
+              <p className="money shrink-0 text-lg font-bold">
+                {formatEur(totals.billTotalCents)}
+              </p>
+            ) : null}
+          </div>
           <PaymentProgress
             participants={participants.map((p) => ({
               id: p._id,

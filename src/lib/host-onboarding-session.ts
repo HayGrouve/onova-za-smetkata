@@ -5,6 +5,7 @@ const REPLAY_KEY = 'host-onboarding:replay'
 const DISMISSED_HINTS_PREFIX = 'host-onboarding:dismissed:'
 const CONTENT_ROUTE_PREFIX = 'host-onboarding:route:'
 const HANDOFF_DISMISSED_PREFIX = 'host-onboarding:handoff:'
+const COLLAPSED_HINTS_PREFIX = 'host-onboarding:collapsed:'
 
 function readSessionFlag(key: string): boolean {
   if (typeof sessionStorage === 'undefined') return false
@@ -112,6 +113,43 @@ export function dismissHandoffThisSession(billId: string) {
   writeSessionFlag(`${HANDOFF_DISMISSED_PREFIX}${billId}`, true)
 }
 
+function collapsedHintsKey(billId: string) {
+  return `${COLLAPSED_HINTS_PREFIX}${billId}`
+}
+
+export function readCollapsedHintIds(billId: string): string[] {
+  if (typeof sessionStorage === 'undefined') return []
+  const raw = sessionStorage.getItem(collapsedHintsKey(billId))
+  if (!raw) return []
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    return Array.isArray(parsed)
+      ? parsed.filter((value): value is string => typeof value === 'string')
+      : []
+  } catch {
+    return []
+  }
+}
+
+export function setHintCollapsedThisSession(
+  billId: string,
+  hintId: string,
+  collapsed: boolean,
+) {
+  if (typeof sessionStorage === 'undefined') return
+  const current = readCollapsedHintIds(billId)
+  const next = collapsed
+    ? current.includes(hintId)
+      ? current
+      : [...current, hintId]
+    : current.filter((id) => id !== hintId)
+  if (next.length === 0) {
+    sessionStorage.removeItem(collapsedHintsKey(billId))
+    return
+  }
+  sessionStorage.setItem(collapsedHintsKey(billId), JSON.stringify(next))
+}
+
 /** Clears session-local onboarding flags (welcome defer, replay, hints, routes). */
 export function clearHostOnboardingSession() {
   if (typeof sessionStorage === 'undefined') return
@@ -124,7 +162,8 @@ export function clearHostOnboardingSession() {
       key === REPLAY_KEY ||
       key.startsWith(DISMISSED_HINTS_PREFIX) ||
       key.startsWith(CONTENT_ROUTE_PREFIX) ||
-      key.startsWith(HANDOFF_DISMISSED_PREFIX)
+      key.startsWith(HANDOFF_DISMISSED_PREFIX) ||
+      key.startsWith(COLLAPSED_HINTS_PREFIX)
     ) {
       keysToRemove.push(key)
     }

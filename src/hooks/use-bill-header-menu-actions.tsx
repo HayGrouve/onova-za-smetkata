@@ -19,7 +19,7 @@ import { buildBillJoinUrl, resolveAppOrigin } from '#/lib/bill-join-url.ts'
 import { formatBillShareText, shareOrCopyText } from '#/lib/bill-share.ts'
 import { getBillDeleteCopy } from '#/lib/destructive-action-copy.ts'
 import { formatEur } from '#/lib/format-currency.ts'
-import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { navigateToFinalBillSummary } from '#/lib/navigate-to-final-bill-summary.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import { shareLink } from '#/lib/share-link.ts'
 import { ICON } from '#/lib/app-icons.ts'
@@ -140,6 +140,7 @@ export function useBillHeaderMenuActions({
       await finalizeBill({ billId })
       setFinalizeOpen(false)
       toast.success('Сметката е завършена')
+      await navigateToFinalBillSummary(navigate, billId)
     } catch {
       toast.error('Неуспешно завършване на сметката')
     } finally {

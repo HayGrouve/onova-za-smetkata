@@ -14,6 +14,7 @@ import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { usePaymentSettings } from '#/components/bills/payment-settings-provider.tsx'
 import { BILL_STEP_LABELS } from '#/components/bills/bill-steps-bar.tsx'
 import type { BillStep } from '#/components/bills/bill-steps-bar.tsx'
+import type { EditorGuidancePanel } from '#/components/host-onboarding/sticky-guidance-bar.tsx'
 import { WelcomeSheet } from '#/components/host-onboarding/welcome-sheet.tsx'
 import { PaymentCheckpointSheet } from '#/components/host-onboarding/payment-checkpoint-sheet.tsx'
 import { Button } from '#/components/ui/button.tsx'
@@ -85,6 +86,9 @@ interface HostOnboardingContextValue {
   /** Session replay or first-run guided bill — drives hint cards and step bar. */
   guidanceHintsEnabledForBill: (billId: Id<'bills'>) => boolean
   makeGuidanceSlot: (input: BillGuidanceInput) => GuidanceSlot
+  resolveEditorGuidancePanel: (
+    input: BillGuidanceInput,
+  ) => EditorGuidancePanel | null
   getStepBarSignal: (input: BillGuidanceInput) => StepBarSignal | null
   interceptGuestShare: (
     billId: Id<'bills'>,
@@ -368,6 +372,40 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
             onStopGuidance={() => void stopGuidance()}
           />
         )
+      },
+      resolveEditorGuidancePanel: (input) => {
+        if (
+          onboarding?.lifecycle === 'completed' &&
+          onboarding.guidedBillId === input.billId &&
+          !isHandoffDismissedThisSession(input.billId) &&
+          input.step === 4
+        ) {
+          return {
+            kind: 'handoff',
+            hintId: 'handoff',
+            onDismiss: () => {
+              dismissHandoffThisSession(input.billId)
+              refreshBillSession()
+            },
+          }
+        }
+
+        if (!guidanceHintsEnabledForBill(input.billId)) return null
+
+        const guidance = buildGuidance(input)
+        const stepGuidance = guidance.editorStepGuidance
+        if (!stepGuidance) return null
+
+        return {
+          kind: 'hint',
+          hintId: stepGuidance.id,
+          step: stepGuidance,
+          onDismissHint: () => {
+            dismissHintThisSession(input.billId, stepGuidance.id)
+            refreshBillSession()
+          },
+          onStopGuidance: () => void stopGuidance(),
+        }
       },
       getStepBarSignal: (input) => {
         if (!guidanceHintsEnabledForBill(input.billId)) return null

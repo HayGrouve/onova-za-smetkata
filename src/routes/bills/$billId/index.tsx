@@ -53,6 +53,8 @@ import { useBillEditorController } from '#/hooks/use-bill-editor-controller.ts'
 import { BillHeaderTitleSync } from '#/components/layout/bill-header-title.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
 import { ContentRouteChoice } from '#/components/host-onboarding/content-route-choice.tsx'
+import { ReceiptTapToFullscreen } from '#/components/bills/receipt-tap-to-fullscreen.tsx'
+import { StickyGuidanceBar } from '#/components/host-onboarding/sticky-guidance-bar.tsx'
 import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
 import { HOST_ONBOARDING_STEP_BAR } from '../../../../shared/host-onboarding-messages.ts'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
@@ -140,7 +142,7 @@ function BillEditorContent({
     onboardingActive,
     receiptUploaded,
     showContentRouteChoice,
-    guidanceSlot,
+    guidancePanel,
     guidanceFocus,
     stepBarSignal,
     receiptScan,
@@ -152,6 +154,8 @@ function BillEditorContent({
     setMetadata,
     setFieldErrors,
     setAddGuestFocused,
+    refreshBillSession,
+    billSessionVersion,
   } = editor
 
   const receiptUrl = useQuery(api.files.getReceiptUrl, { billId })
@@ -189,12 +193,20 @@ function BillEditorContent({
         isScanning={receiptScan.isScanning}
       />
       <BillHeaderTitleSync title={bill.restaurantName} />
-      <BillStepsBar
-        step={step}
-        completed={derived.stepCompletion}
-        onStepSelect={goToStep}
-        guidanceSignal={stepBarGuidanceNode}
-      />
+      <div className="sticky-surface sticky top-14 z-30 border-b">
+        <BillStepsBar
+          step={step}
+          completed={derived.stepCompletion}
+          onStepSelect={goToStep}
+          guidanceSignal={stepBarGuidanceNode}
+        />
+        <StickyGuidanceBar
+          billId={billId}
+          panel={guidancePanel}
+          sessionVersion={billSessionVersion}
+          onSessionChange={refreshBillSession}
+        />
+      </div>
       <div
         key={step}
         className={cn(
@@ -241,25 +253,22 @@ function BillEditorContent({
                         </p>
                       </button>
                     </GuidanceTarget>
-                  ) : (
+                  ) : receiptUrl ? (
                     <div
                       className={cn(
                         'overflow-hidden rounded-lg border border-dashed',
                         receiptScan.isScanning && 'receipt-scan-image-active',
                       )}
                     >
-                      {receiptUrl ? (
-                        <img
-                          src={receiptUrl}
-                          alt="Касова бележка"
-                          className="block w-full object-contain"
-                        />
-                      ) : (
-                        <p className="p-4 text-sm text-muted-foreground">
-                          Зареждане на снимката...
-                        </p>
-                      )}
+                      <ReceiptTapToFullscreen
+                        receiptUrl={receiptUrl}
+                        thumbnailClassName="block w-full border-0"
+                      />
                     </div>
+                  ) : (
+                    <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                      Зареждане на снимката...
+                    </p>
                   )}
                   <input
                     ref={receiptScan.galleryInputRef}
@@ -330,9 +339,6 @@ function BillEditorContent({
                 </CardContent>
               </Card>
 
-              {!showContentRouteChoice ? guidanceSlot('content') : null}
-
-              {guidanceSlot('bill-details')}
               <GuidanceTarget stepId="restaurant" focus={guidanceFocus}>
                 <Card>
                   <CardHeader>
@@ -428,7 +434,6 @@ function BillEditorContent({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {guidanceSlot('participants')}
                 <ParticipantList
                   billId={billId}
                   participants={participants}
@@ -494,8 +499,6 @@ function BillEditorContent({
                   </div>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
-                  {guidanceSlot('allocation')}
-                  {guidanceSlot('share')}
                   <BillInviteCard
                     billId={billId}
                     shareToken={bill.shareToken}
@@ -528,12 +531,7 @@ function BillEditorContent({
             </>
           )}
 
-          {step === 4 && (
-            <>
-              {guidanceSlot('share')}
-              <BillSummaryContent billId={billId} embedded />
-            </>
-          )}
+          {step === 4 && <BillSummaryContent billId={billId} embedded />}
         </div>
       </div>
 
