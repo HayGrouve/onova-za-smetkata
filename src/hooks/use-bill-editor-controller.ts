@@ -82,7 +82,7 @@ export function useBillEditorController({
   )
   const {
     guidanceHintsEnabledForBill,
-    makeGuidanceSlot,
+    resolveEditorGuidancePanel,
     getStepBarSignal,
     interceptGuestShare,
     chooseContentRoute,
@@ -263,9 +263,9 @@ export function useBillEditorController({
     ],
   )
 
-  const guidanceSlot = useMemo(
-    () => makeGuidanceSlot(guidanceInput as BillGuidanceInput),
-    [makeGuidanceSlot, guidanceInput],
+  const guidancePanel = useMemo(
+    () => resolveEditorGuidancePanel(guidanceInput as BillGuidanceInput),
+    [resolveEditorGuidancePanel, guidanceInput, billSessionVersion],
   )
 
   const guidanceState = useMemo(
@@ -401,7 +401,7 @@ export function useBillEditorController({
     receiptUploaded,
     showContentRouteChoice,
     guidanceInput,
-    guidanceSlot,
+    guidancePanel,
     guidanceFocus,
     stepBarSignal,
     receiptScan,
@@ -413,5 +413,7 @@ export function useBillEditorController({
     setMetadata,
     setFieldErrors,
     goToStep,
+    refreshBillSession,
+    billSessionVersion,
   }
 }
