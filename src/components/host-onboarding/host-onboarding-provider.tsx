@@ -7,7 +7,7 @@ import {
   useState,
 } from 'react'
 import type { ReactNode } from 'react'
-import { useConvexAuth } from '@convex-dev/auth/react'
+import { useAuth } from '@clerk/tanstack-react-start'
 import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
 import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
@@ -50,6 +50,7 @@ import {
   HOST_ONBOARDING_HOME,
   HOST_ONBOARDING_STEP_BAR,
 } from '../../../shared/host-onboarding-messages.ts'
+import { useViewerNowMs } from '#/hooks/use-viewer-now-ms.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -117,12 +118,16 @@ const HostOnboardingContext = createContext<HostOnboardingContextValue | null>(
 )
 
 export function HostOnboardingProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useConvexAuth()
+  const { isSignedIn } = useAuth()
   const onboarding = useQuery(
     api.hostOnboarding.getForViewer,
-    isAuthenticated ? {} : 'skip',
+    isSignedIn ? {} : 'skip',
   )
-  const viewer = useQuery(api.users.viewer, isAuthenticated ? {} : 'skip')
+  const viewerNowMs = useViewerNowMs()
+  const viewer = useQuery(
+    api.users.viewer,
+    isSignedIn ? { nowMs: viewerNowMs } : 'skip',
+  )
   const createFirstBill = useMutation(api.hostOnboarding.createFirstBill)
   const startGuidedBillWithExistingBills = useMutation(
     api.hostOnboarding.startGuidedBillWithExistingBills,

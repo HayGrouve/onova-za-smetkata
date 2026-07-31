@@ -7,7 +7,7 @@ alwaysApply: true
 
 **Онова за сметката** — Bulgarian mobile web PWA for restaurant bill splitting.
 
-**Stack:** TanStack Start (not Next.js), Convex, Vercel, `@convex-dev/auth`.
+**Stack:** TanStack Start (not Next.js), Convex, Vercel, Clerk auth + Billing.
 
 ## Before changing code
 

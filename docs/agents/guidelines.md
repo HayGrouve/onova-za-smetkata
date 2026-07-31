@@ -97,7 +97,7 @@ npx convex dev    # terminal 1
 pnpm run dev      # terminal 2 — http://localhost:3000
 ```
 
-Copy `.env.example` → `.env.local` and set `VITE_CONVEX_URL`. Enable `DEV_MODE=true` on the **Convex dev deployment** for password dev auth.
+Copy `.env.example` → `.env.local` and set `VITE_CONVEX_URL` and `VITE_CLERK_PUBLISHABLE_KEY`. Set `CLERK_JWT_ISSUER_DOMAIN` on the **Convex dev deployment** (Dashboard).
 
 ## Before finishing
 

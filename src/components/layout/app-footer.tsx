@@ -1,5 +1,5 @@
 import { DownloadIcon } from 'lucide-react'
-import { useConvexAuth } from '@convex-dev/auth/react'
+import { useAuth } from '@clerk/tanstack-react-start'
 import { useRouterState } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Button } from '#/components/ui/button.tsx'
@@ -40,11 +40,11 @@ function SafariShareIcon({ className }: { className?: string }) {
 
 export function AppFooter() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const { isAuthenticated, isLoading } = useConvexAuth()
+  const { isSignedIn, isLoaded } = useAuth()
   const { canInstall, showIosSteps, install } = usePwaInstall()
   const [iosExpanded, setIosExpanded] = useState(false)
 
-  if (isLoading || !isAuthenticated || pathname !== '/') {
+  if (!isLoaded || !isSignedIn || pathname !== '/') {
     return null
   }
 

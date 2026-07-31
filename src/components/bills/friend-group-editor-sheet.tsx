@@ -20,6 +20,7 @@ import {
   getFriendGroupMemberRemoveCopy,
 } from '#/lib/destructive-action-copy.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { useSubscriptionPaywall } from '#/components/subscription/subscription-provider.tsx'
 import {
   formatFriendGroupErrors,
   parseFriendGroupInput,
@@ -54,6 +55,7 @@ export function FriendGroupEditorSheet({
   const updateGroup = useMutation(api.friendGroups.update)
   const removeGroup = useMutation(api.friendGroups.remove)
   const { confirm } = useConfirmAction()
+  const { handleMutationError } = useSubscriptionPaywall()
 
   const [name, setName] = useState('')
   const [memberNames, setMemberNames] = useState<string[]>([])
@@ -160,7 +162,9 @@ export function FriendGroupEditorSheet({
       onOpenChange(false)
       onSaved?.()
     } catch (error) {
-      toast.error(getConvexErrorMessage(error))
+      if (!handleMutationError(error)) {
+        toast.error(getConvexErrorMessage(error))
+      }
     } finally {
       setSaving(false)
     }

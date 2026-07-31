@@ -3,10 +3,8 @@ import { ConvexError, v } from 'convex/values'
 import type { Id } from './_generated/dataModel'
 import type { MutationCtx } from './_generated/server'
 import { requireAuth, requireBillOwner } from './lib/auth'
-import {
-  FRIEND_GROUP_MAX_GROUPS,
-  parseFriendGroupInput,
-} from './lib/friendGroupSchema'
+import { assertFriendGroupCreateQuota } from './lib/hostTier'
+import { parseFriendGroupInput } from './lib/friendGroupSchema'
 import {
   parseParticipantName,
   participantNameKey,
@@ -92,6 +90,10 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await requireAuth(ctx)
+    const user = await ctx.db.get(userId)
+    if (!user) {
+      throw new ConvexError('Потребителят не е намерен.')
+    }
 
     const parsed = parseFriendGroupInput({
       name: args.name,
@@ -106,13 +108,10 @@ export const create = mutation({
       .query('friendGroups')
       .withIndex('by_userId', (q) => q.eq('userId', userId))
       .collect()
-    if (existing.length >= FRIEND_GROUP_MAX_GROUPS) {
-      throw new ConvexError(
-        `Можете да имате до ${FRIEND_GROUP_MAX_GROUPS} групи.`,
-      )
-    }
 
     const now = Date.now()
+    await assertFriendGroupCreateQuota(user, existing.length, now)
+
     return await ctx.db.insert('friendGroups', {
       userId,
       name: parsed.data.name,

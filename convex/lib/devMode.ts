@@ -1,7 +1,7 @@
-/** Prod deployment slugs — never enable Password auth here, even if DEV_MODE is mis-set. */
+/** Prod deployment slugs — never enable dev-only mutations here. */
 const PROD_DEPLOYMENT_SLUGS = ['coordinated-warbler-782'] as const
 
-/** Known dev deployments where Password auth is allowed when DEV_MODE=true. */
+/** Known dev deployments where dev-only flags are allowed when DEV_MODE=true. */
 const DEV_DEPLOYMENT_SLUGS = ['striped-shepherd-984'] as const
 
 function normalizeDeploymentName(deployment: string): string {
@@ -51,7 +51,3 @@ export function isDevModeEnabled(): boolean {
 export function isDevMode(): boolean {
   return isDevModeEnabled()
 }
-
-export const DEV_USER_EMAIL = 'dev@local.test'
-export const DEV_USER_NAME = 'Dev User'
-export const DEV_USER_PASSWORD = 'devpassword'

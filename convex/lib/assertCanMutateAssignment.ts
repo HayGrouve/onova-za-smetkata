@@ -1,8 +1,8 @@
 import { ConvexError } from 'convex/values'
-import { getAuthUserId } from '@convex-dev/auth/server'
 import type { Id } from '../_generated/dataModel'
 import type { MutationCtx } from '../_generated/server'
 import { assertBillOwnedBy } from './bill_ownership'
+import { getOptionalAuthUserId } from './auth'
 import { GUEST_FLOW_MESSAGES } from './guestFlowMessages'
 import { requireGuestSession } from './requireGuestSession'
 
@@ -14,7 +14,7 @@ export async function assertCanMutateAssignment(
     sessionToken?: string
   },
 ): Promise<void> {
-  const userId = await getAuthUserId(ctx)
+  const userId = await getOptionalAuthUserId(ctx)
   if (userId !== null) {
     const bill = await ctx.db.get(args.billId)
     if (bill?.ownerId) {

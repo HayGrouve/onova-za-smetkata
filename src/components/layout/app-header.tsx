@@ -1,4 +1,4 @@
-import { useConvexAuth } from '@convex-dev/auth/react'
+import { useAuth } from '@clerk/tanstack-react-start'
 import { Link, useParams, useRouterState } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
 import { ChevronLeftIcon } from 'lucide-react'
@@ -16,6 +16,7 @@ import {
 import type { AppHeaderRouteContext } from '../../../shared/app-header-menu-config.ts'
 import { getBillFinalizeEligibility } from '../../../shared/bill-finalize-eligibility.ts'
 import { toBillCalculationSnapshot } from '#/lib/bill-calculation-snapshot.ts'
+import { useViewerNowMs } from '#/hooks/use-viewer-now-ms.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -170,7 +171,7 @@ export function AppHeader() {
   const searchStr = useRouterState({ select: (s) => s.location.searchStr })
   const { title, backTo, backParams, backSearch, routeContext, billId, bill } =
     useHeaderConfig()
-  const { isAuthenticated } = useConvexAuth()
+  const { isSignedIn } = useAuth()
 
   const isHostClaim =
     pathname.endsWith('/claim') &&
@@ -178,8 +179,12 @@ export function AppHeader() {
   const isGuestRoute =
     pathname.endsWith('/join') || (pathname.endsWith('/claim') && !isHostClaim)
   const isLogin = pathname === '/login'
-  const showHostActions = isAuthenticated && !isGuestRoute && !isLogin
-  const viewer = useQuery(api.users.viewer, showHostActions ? {} : 'skip')
+  const showHostActions = isSignedIn && !isGuestRoute && !isLogin
+  const viewerNowMs = useViewerNowMs()
+  const viewer = useQuery(
+    api.users.viewer,
+    showHostActions ? { nowMs: viewerNowMs } : 'skip',
+  )
 
   const billMenuEligibility = useMemo(() => {
     if (!bill || !showHostActions) {

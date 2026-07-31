@@ -1,4 +1,4 @@
-import { useAuthActions } from '@convex-dev/auth/react'
+import { useClerk } from '@clerk/tanstack-react-start'
 import {
   BookOpenIcon,
   CheckCircleIcon,
@@ -224,7 +224,7 @@ export function AppHeaderMenu({
   billMenuDialogs,
 }: AppHeaderMenuProps) {
   const { theme, setTheme } = useTheme()
-  const { signOut } = useAuthActions()
+  const { signOut } = useClerk()
   const { openPaymentSettings } = usePaymentSettingsSheet()
   const { openFriendGroups } = useFriendGroupsSheet()
   const { openProfile } = useProfileSheet()

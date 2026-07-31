@@ -2,6 +2,7 @@ import { useMutation, useQuery } from 'convex/react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { prepareReceiptImage } from '#/lib/prepare-receipt-image.ts'
+import { useSubscriptionPaywall } from '#/components/subscription/subscription-provider.tsx'
 import { api } from '../../convex/_generated/api'
 import type { Doc, Id } from '../../convex/_generated/dataModel'
 
@@ -19,6 +20,7 @@ export function useReceiptScan({
   const generateUploadUrl = useMutation(api.files.generateUploadUrl)
   const updateBill = useMutation(api.bills.update)
   const startScan = useMutation(api.receiptScan.startScan)
+  const { handleMutationError } = useSubscriptionPaywall()
 
   const latestScan = useQuery(api.receiptScan.getLatestScan, { billId })
   const galleryInputRef = useRef<HTMLInputElement>(null)
@@ -66,9 +68,11 @@ export function useReceiptScan({
   function beginScan(mode: 'add' | 'replace') {
     setImportMode(mode)
     setScanRequested(true)
-    void startScan({ billId }).catch(() => {
+    void startScan({ billId }).catch((error) => {
       setScanRequested(false)
-      toast.error('Неуспешно стартиране на разпознаването')
+      if (!handleMutationError(error)) {
+        toast.error('Неуспешно стартиране на разпознаването')
+      }
     })
   }
 

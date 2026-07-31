@@ -116,6 +116,10 @@ export function getConvexErrorMessage(error: unknown): string {
   if (error && typeof error === 'object' && 'data' in error) {
     const data = Reflect.get(error, 'data')
     if (typeof data === 'string' && data.trim()) return data
+    if (data && typeof data === 'object') {
+      const message = Reflect.get(data, 'message')
+      if (typeof message === 'string' && message.trim()) return message
+    }
   }
 
   if (error instanceof Error && error.message) {

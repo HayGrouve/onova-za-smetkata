@@ -27,6 +27,7 @@ export const run = internalMutation({
 
     const buckets = await ctx.db.query('rateLimitBuckets').collect()
     for (const bucket of buckets) {
+      if (bucket.key.startsWith('usage:')) continue
       if (now - bucket.windowStart < RATE_LIMIT_MAX_AGE_MS) continue
       await ctx.db.delete(bucket._id)
       purgedBuckets++

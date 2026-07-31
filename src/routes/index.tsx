@@ -16,6 +16,7 @@ import { Label } from '#/components/ui/label.tsx'
 import { QueryErrorPanel } from '#/components/ui/query-error-panel.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
+import { useSubscriptionPaywall } from '#/components/subscription/subscription-provider.tsx'
 import { PwaInstallBanner } from '#/components/pwa-install-banner.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 import {
@@ -88,6 +89,7 @@ function Home() {
   const navigate = useNavigate()
   const { status: statusFilter } = Route.useSearch()
   const { isAuthenticated, isLoading } = useRequireHostAuth('/')
+  const { handleMutationError } = useSubscriptionPaywall()
   const createBill = useMutation(api.bills.create)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -142,8 +144,10 @@ function Home() {
         params: { billId },
         search: { step: 1 },
       })
-    } catch {
-      toast.error('Неуспешно създаване на сметка')
+    } catch (error) {
+      if (!handleMutationError(error)) {
+        toast.error('Неуспешно създаване на сметка')
+      }
     } finally {
       setIsCreating(false)
     }

@@ -6,9 +6,9 @@ alwaysApply: false
 
 # Convex
 
-Auth is **`@convex-dev/auth`** — reuse helpers in `convex/lib/` (e.g. `requireAuth`, `requireBillOwner`, `requireGuestSession`). Do not invent parallel auth patterns.
+Auth is **Clerk** + **`convex/react-clerk`** — reuse helpers in `convex/lib/` (e.g. `requireAuth`, `requireBillOwner`, `requireGuestSession`, `hostTier`). Do not invent parallel auth patterns.
 
-When Convex plugin skills suggest generic auth setup (WorkOS, Auth0, custom JWT), follow this repo's **`@convex-dev/auth`** helpers in `convex/lib/` instead.
+When Convex plugin skills suggest generic auth setup (WorkOS, Auth0, custom JWT), follow this repo's **Clerk** helpers in `convex/lib/` instead.
 
 ## Functions
 

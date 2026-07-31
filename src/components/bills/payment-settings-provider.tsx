@@ -1,4 +1,4 @@
-import { useConvexAuth } from '@convex-dev/auth/react'
+import { useAuth } from '@clerk/tanstack-react-start'
 import { useQuery } from 'convex/react'
 import { createContext, useContext, useState } from 'react'
 import { PaymentSettingsSheet } from '#/components/bills/payment-settings-sheet.tsx'
@@ -24,12 +24,9 @@ export function PaymentSettingsProvider({
   children: React.ReactNode
 }) {
   const [open, setOpen] = useState(false)
-  const { isAuthenticated } = useConvexAuth()
-  const settings = useQuery(
-    api.paymentSettings.get,
-    isAuthenticated ? {} : 'skip',
-  )
-  const status: PaymentSettingsStatus = isAuthenticated
+  const { isSignedIn } = useAuth()
+  const settings = useQuery(api.paymentSettings.get, isSignedIn ? {} : 'skip')
+  const status: PaymentSettingsStatus = isSignedIn
     ? getPaymentSettingsStatus(settings)
     : 'unconfigured'
 
@@ -37,7 +34,7 @@ export function PaymentSettingsProvider({
     <PaymentSettingsContext.Provider
       value={{
         openPaymentSettings: () => setOpen(true),
-        settings: isAuthenticated ? settings : null,
+        settings: isSignedIn ? settings : null,
         status,
       }}
     >

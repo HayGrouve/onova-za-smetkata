@@ -1,27 +1,23 @@
-import { useConvexAuth } from '@convex-dev/auth/react'
+import { useAuth } from '@clerk/tanstack-react-start'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
-import { isClientDevMode } from '#/lib/dev-mode.ts'
 
 export function useRequireHostAuth(redirectPath: string) {
-  const devMode = isClientDevMode()
-  const { isAuthenticated, isLoading: authLoading } = useConvexAuth()
+  const { isSignedIn, isLoaded } = useAuth()
   const navigate = useNavigate()
 
-  const waitingForDevAuth = devMode && !isAuthenticated
-
   useEffect(() => {
-    if (devMode) return
-    if (!authLoading && !isAuthenticated) {
+    if (!isLoaded) return
+    if (!isSignedIn) {
       void navigate({
         to: '/login',
         search: { redirect: redirectPath },
       })
     }
-  }, [authLoading, devMode, isAuthenticated, navigate, redirectPath])
+  }, [isLoaded, isSignedIn, navigate, redirectPath])
 
   return {
-    isAuthenticated,
-    isLoading: authLoading || waitingForDevAuth,
+    isAuthenticated: isSignedIn ?? false,
+    isLoading: !isLoaded,
   }
 }

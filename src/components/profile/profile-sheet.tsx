@@ -1,7 +1,7 @@
-import { SaveIcon, UserIcon } from 'lucide-react'
+import { useAuth, useClerk } from '@clerk/tanstack-react-start'
+import { SaveIcon, SparklesIcon, UserIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
-import { useConvexAuth } from '@convex-dev/auth/react'
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
@@ -15,6 +15,7 @@ import {
 } from '#/components/ui/sheet.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 import { formatUsernameError, parseUsername } from '#/lib/host-profile.ts'
+import { useViewerNowMs } from '#/hooks/use-viewer-now-ms.ts'
 import { api } from '../../../convex/_generated/api'
 
 export interface ProfileSheetProps {
@@ -22,11 +23,18 @@ export interface ProfileSheetProps {
   onOpenChange: (open: boolean) => void
 }
 
+function formatUsageLine(used: number, limit: number | null, noun: string) {
+  if (limit === null) return `${noun}: неограничено`
+  return `${noun}: ${used}/${limit} този месец`
+}
+
 export function ProfileSheet({ open, onOpenChange }: ProfileSheetProps) {
-  const { isAuthenticated } = useConvexAuth()
+  const { isSignedIn } = useAuth()
+  const { openUserProfile } = useClerk()
+  const viewerNowMs = useViewerNowMs()
   const viewer = useQuery(
     api.users.viewer,
-    open && isAuthenticated ? {} : 'skip',
+    open && isSignedIn ? { nowMs: viewerNowMs } : 'skip',
   )
   const saveUsername = useMutation(api.users.saveUsername)
   const [username, setUsername] = useState('')
@@ -74,6 +82,42 @@ export function ProfileSheet({ open, onOpenChange }: ProfileSheetProps) {
         </SheetHeader>
 
         <div className="flex flex-col gap-4 px-4">
+          {viewer ? (
+            <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm">
+              <p className="font-medium">
+                План: {viewer.tier === 'pro' ? 'Pro' : 'Безплатен'}
+              </p>
+              <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                <li>
+                  {formatUsageLine(
+                    viewer.billsUsedThisMonth,
+                    viewer.billsLimit,
+                    'Сметки',
+                  )}
+                </li>
+                <li>
+                  {formatUsageLine(
+                    viewer.ocrUsedThisMonth,
+                    viewer.ocrLimit,
+                    'Сканирания',
+                  )}
+                </li>
+                <li>
+                  Групи: {viewer.friendGroupCount}/{viewer.friendGroupLimit}
+                </li>
+              </ul>
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-3 h-10 w-full"
+                onClick={() => openUserProfile()}
+              >
+                <SparklesIcon className={ICON.button} aria-hidden />
+                Управление на абонамента
+              </Button>
+            </div>
+          ) : null}
+
           <div className="flex flex-col gap-2">
             <Label htmlFor="profile-username">Потребителско име</Label>
             <Input

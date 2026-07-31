@@ -1,5 +1,4 @@
 import { ConvexError } from 'convex/values'
-import { getAuthUserId } from '@convex-dev/auth/server'
 import type { Doc, Id } from '../_generated/dataModel'
 import type { MutationCtx, QueryCtx } from '../_generated/server'
 import { assertBillOwnedBy } from './bill_ownership'
@@ -9,11 +8,37 @@ export { assertBillOwnedBy } from './bill_ownership'
 export async function requireAuth(
   ctx: QueryCtx | MutationCtx,
 ): Promise<Id<'users'>> {
-  const userId = await getAuthUserId(ctx)
-  if (userId === null) {
+  const identity = await ctx.auth.getUserIdentity()
+  if (!identity?.subject) {
     throw new ConvexError('Изисква се вход')
   }
-  return userId
+
+  const existing = await ctx.db
+    .query('users')
+    .withIndex('by_clerkSubject', (q) => q.eq('clerkSubject', identity.subject))
+    .unique()
+  if (existing) return existing._id
+
+  return await ctx.db.insert('users', {
+    clerkSubject: identity.subject,
+    email: identity.email,
+    name: identity.name,
+    image: identity.pictureUrl,
+    clerkPlanSlug: 'free_user',
+  })
+}
+
+export async function getOptionalAuthUserId(
+  ctx: QueryCtx | MutationCtx,
+): Promise<Id<'users'> | null> {
+  const identity = await ctx.auth.getUserIdentity()
+  if (!identity?.subject) return null
+
+  const existing = await ctx.db
+    .query('users')
+    .withIndex('by_clerkSubject', (q) => q.eq('clerkSubject', identity.subject))
+    .unique()
+  return existing?._id ?? null
 }
 
 export async function requireBillOwner(

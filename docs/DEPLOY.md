@@ -15,28 +15,25 @@
 
 ## Environment variables
 
-| Variable             | Where                           | Required                                                           |
-| -------------------- | ------------------------------- | ------------------------------------------------------------------ |
-| `VITE_CONVEX_URL`    | Vercel                          | Yes                                                                |
-| `VITE_APP_ORIGIN`    | Vercel                          | Yes for production OG/share URLs (`https://onova-za-smetkata.com`) |
-| `VITE_SENTRY_DSN`    | Vercel                          | No (Sentry client errors in production)                            |
-| `GEMINI_API_KEY`     | Convex Dashboard                | Yes (for OCR)                                                      |
-| `GEMINI_MODEL`       | Convex Dashboard                | No                                                                 |
-| `SITE_URL`           | Convex Dashboard (prod)         | Yes (auth; production HTTPS URL)                                   |
-| `JWT_PRIVATE_KEY`    | Convex Dashboard (prod)         | Yes (auth; generate via `npx @convex-dev/auth`)                    |
-| `JWKS`               | Convex Dashboard (prod)         | Yes (auth)                                                         |
-| `AUTH_GOOGLE_ID`     | Convex Dashboard (prod)         | Yes (Google sign-in)                                               |
-| `AUTH_GOOGLE_SECRET` | Convex Dashboard (prod)         | Yes                                                                |
-| `AUTH_RESEND_KEY`    | Convex Dashboard (prod)         | Yes (magic link email)                                             |
-| `AUTH_RESEND_FROM`   | Convex Dashboard (prod)         | No (defaults to Resend onboarding address)                         |
-| `DEV_MODE`           | Convex Dashboard (**dev only**) | No — auto sign-in as `Dev User`; **never enable in production**    |
-| `CONVEX_DEPLOYMENT`  | Local `.env.local`              | Yes for local `npx convex` CLI                                     |
-| `CONVEX_DEPLOY_KEY`  | GitHub Actions secret           | Yes — production deploy key (`deployment:deploy`)                  |
-| `VERCEL_TOKEN`       | GitHub Actions secret           | Yes — Vercel access token for CLI deploys                          |
-| `VERCEL_ORG_ID`      | GitHub Actions secret           | Yes                                                                |
-| `VERCEL_PROJECT_ID`  | GitHub Actions secret           | Yes                                                                |
+| Variable                       | Where                           | Required                                                              |
+| ------------------------------ | ------------------------------- | --------------------------------------------------------------------- |
+| `VITE_CONVEX_URL`              | Vercel                          | Yes                                                                   |
+| `VITE_APP_ORIGIN`              | Vercel                          | Yes for production OG/share URLs (`https://onova-za-smetkata.com`)    |
+| `VITE_SENTRY_DSN`              | Vercel                          | No (Sentry client errors in production)                               |
+| `GEMINI_API_KEY`               | Convex Dashboard                | Yes (for OCR)                                                         |
+| `GEMINI_MODEL`                 | Convex Dashboard                | No                                                                    |
+| `CLERK_JWT_ISSUER_DOMAIN`      | Convex Dashboard (dev + prod)   | Yes (Clerk JWT validation)                                            |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | Convex Dashboard                | Yes (Billing webhooks at `/clerk/webhook`)                            |
+| `VITE_CLERK_PUBLISHABLE_KEY`   | Vercel / `.env.local`           | Yes (Clerk client)                                                    |
+| `CLERK_SECRET_KEY`             | Vercel / `.env.local`           | Yes (TanStack Start `clerkMiddleware`)                                |
+| `DEV_MODE`                     | Convex Dashboard (**dev only**) | No — dev-only mutations (e.g. onboarding reset); **never production** |
+| `CONVEX_DEPLOYMENT`            | Local `.env.local`              | Yes for local `npx convex` CLI                                        |
+| `CONVEX_DEPLOY_KEY`            | GitHub Actions secret           | Yes — production deploy key (`deployment:deploy`)                     |
+| `VERCEL_TOKEN`                 | GitHub Actions secret           | Yes — Vercel access token for CLI deploys                             |
+| `VERCEL_ORG_ID`                | GitHub Actions secret           | Yes                                                                   |
+| `VERCEL_PROJECT_ID`            | GitHub Actions secret           | Yes                                                                   |
 
-Never put `GEMINI_API_KEY`, JWT keys, OAuth secrets, `DEV_MODE`, or deploy keys/tokens in the repo.
+Never put `GEMINI_API_KEY`, Clerk secrets, `DEV_MODE`, or deploy keys/tokens in the repo.
 
 ### Security notes
 
@@ -44,24 +41,22 @@ Never put `GEMINI_API_KEY`, JWT keys, OAuth secrets, `DEV_MODE`, or deploy keys/
 - **Capability URLs:** Share join links only with people at the table. Rotating the token invalidates leaked links.
 - **Guest sessions:** Assignment mutations require a valid guest session token or host auth. Expired sessions must re-claim a name on the join page.
 - **Guest payment privacy:** `getForGuest` returns `myPayments` only — never the full payments list.
-- **DEV_MODE:** Password provider is enabled only when `DEV_MODE=true` on an **explicit dev deployment allowlist** (`striped-shepherd-984` plus optional `CONVEX_DEV_DEPLOYMENTS`). Never set `DEV_MODE=true` on production.
+- **DEV_MODE:** Enables dev-only mutations (e.g. onboarding reset) only when `DEV_MODE=true` on an **explicit dev deployment allowlist** (`striped-shepherd-984` plus optional `CONVEX_DEV_DEPLOYMENTS`). Never set `DEV_MODE=true` on production. Host E2E auth uses **Clerk Testing Tokens**, not `DEV_MODE`.
 - **Guest identity risk:** Guest names are claimable without accounts; if a session expires (~90s without heartbeat), another device can claim the same name. Document as accepted product risk for accountless guests.
 - **Rate limits:** Guest claims are limited per actor and per bill; assignment toggles, heartbeats, releases, and receipt uploads are rate-limited server-side.
 - **Cleanup cron:** `cleanup.run` purges expired guest sessions, stale rate-limit buckets, and old terminal receipt scans every 6 hours (registered in `convex/crons.ts`).
 
-### Google OAuth (production)
+### Clerk (production)
 
-Full setup and verification checklist: **`docs/google-oauth-setup.md`**.
+1. Create a Clerk **production** instance separate from dev.
+2. Enable Google + Email sign-in; set localization to Bulgarian (`bgBG`).
+3. Create JWT template **`convex`** with `applicationID: convex`.
+4. Enable Billing → Plans: keep `free_user`, add **`pro`** at €2.99/month EUR.
+5. Set on **production** Convex: `CLERK_JWT_ISSUER_DOMAIN`, `CLERK_WEBHOOK_SIGNING_SECRET`.
+6. Register webhook URL: `https://<prod-deployment>.convex.site/clerk/webhook`.
+7. Set on Vercel: `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`.
 
-Add these authorized redirect URIs in Google Cloud Console (same OAuth client):
-
-`https://coordinated-warbler-782.convex.site/api/auth/callback/google`
-
-Shared dev deployment:
-
-`https://striped-shepherd-984.convex.site/api/auth/callback/google`
-
-Consent screen must link to `https://onova-za-smetkata.com/privacy` and `/terms`. See ADR 0001 in `docs/adr/`.
+See ADR 0002 in `docs/adr/`. Google OAuth consent screen is configured in the Clerk Dashboard.
 
 ### Sentry
 

@@ -29,6 +29,12 @@ import { toBillCalculationSnapshot } from './lib/billCalculationSnapshot'
 import { planHostParticipantOnBillCreate } from './lib/hostBillParticipant'
 import { touchBill } from './lib/touchBill'
 import { clearGuidedBillReference } from './lib/hostOnboardingBillHooks'
+import {
+  assertBillCreateQuota,
+  formatUsageMonthKey,
+  incrementUsageCount,
+  usageCounterKey,
+} from './lib/hostTier'
 
 export const list = query({
   args: {},
@@ -161,6 +167,8 @@ export const create = mutation({
     }
 
     const now = Date.now()
+    await assertBillCreateQuota(ctx, owner, ownerId, now)
+
     const billId = await ctx.db.insert('bills', {
       ownerId,
       restaurantName: '',
@@ -184,6 +192,13 @@ export const create = mutation({
     })
     await ctx.db.patch(billId, { hostParticipantId })
     await touchBill(ctx, billId)
+
+    const monthKey = formatUsageMonthKey(now)
+    await incrementUsageCount(
+      ctx,
+      usageCounterKey(ownerId, 'bills', monthKey),
+      now,
+    )
 
     return billId
   },

@@ -13,6 +13,12 @@ import { restaurantNameSchema } from './lib/billMetadataSchema'
 import { validateReceiptImportItems } from './lib/receiptImportSchema'
 import { assertRateLimit } from './lib/rateLimit'
 import { touchBill } from './lib/touchBill'
+import {
+  assertOcrStartQuota,
+  formatUsageMonthKey,
+  incrementUsageCount,
+  usageCounterKey,
+} from './lib/hostTier'
 
 const editedItemValidator = v.object({
   name: v.string(),
@@ -25,6 +31,14 @@ export const startScan = mutation({
   handler: async (ctx, args) => {
     const bill = await requireBillOwner(ctx, args.billId)
     assertBillDraft(bill)
+
+    const owner = await ctx.db.get(bill.ownerId)
+    if (!owner) {
+      throw new ConvexError('Потребителят не е намерен.')
+    }
+
+    const now = Date.now()
+    await assertOcrStartQuota(ctx, owner, bill.ownerId, now)
     await assertRateLimit(ctx, `ocr:${args.billId}`, 10, 3_600_000)
     if (!bill.receiptStorageId) {
       throw new Error('Няма прикачена снимка на бележка за тази сметка')
@@ -40,6 +54,13 @@ export const startScan = mutation({
     await ctx.scheduler.runAfter(0, internal.receiptScanAction.runScan, {
       scanId,
     })
+
+    const monthKey = formatUsageMonthKey(now)
+    await incrementUsageCount(
+      ctx,
+      usageCounterKey(bill.ownerId, 'ocr', monthKey),
+      now,
+    )
 
     return scanId
   },

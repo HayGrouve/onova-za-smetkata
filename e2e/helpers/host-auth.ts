@@ -1,3 +1,4 @@
+import { clerk, setupClerkTestingToken } from '@clerk/testing/playwright'
 import { expect, test as base } from '@playwright/test'
 import type { Browser, BrowserContext, Page } from '@playwright/test'
 
@@ -6,8 +7,8 @@ export const E2E_HOST_AUTH_MESSAGE = [
   '',
   'Prerequisites:',
   '1. Terminal A: `npx convex dev`',
-  '2. Convex Dashboard on that deployment: `DEV_MODE=true` (`npx convex env set DEV_MODE true`)',
-  '3. `.env.local`: `VITE_CONVEX_URL` points to the same dev deployment',
+  '2. `.env.local`: `VITE_CONVEX_URL`, `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`',
+  '3. Optional: `E2E_CLERK_USER_EMAIL` for a Clerk dev test user',
   '4. Terminal B: `pnpm run test:e2e` (or reuse an existing `pnpm run dev`)',
 ].join('\n')
 
@@ -15,8 +16,15 @@ export async function openHostContext(
   browser: Browser,
 ): Promise<{ context: BrowserContext; page: Page }> {
   const context = await browser.newContext()
+  await setupClerkTestingToken({ context })
   const page = await context.newPage()
   await page.goto('/')
+
+  const email = process.env.E2E_CLERK_USER_EMAIL?.trim()
+  if (email) {
+    await clerk.signIn({ page, emailAddress: email })
+    await page.goto('/')
+  }
 
   try {
     await expect(page.getByRole('button', { name: 'Нова сметка' })).toBeVisible(
