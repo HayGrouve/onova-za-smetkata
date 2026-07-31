@@ -9,10 +9,11 @@
  */
 
 import type * as assignments from "../assignments.js";
-import type * as auth from "../auth.js";
 import type * as backfill from "../backfill.js";
 import type * as bills from "../bills.js";
 import type * as cleanup from "../cleanup.js";
+import type * as clerkWebhookAction from "../clerkWebhookAction.js";
+import type * as clerkWebhooks from "../clerkWebhooks.js";
 import type * as combinedPayments from "../combinedPayments.js";
 import type * as crons from "../crons.js";
 import type * as files from "../files.js";
@@ -43,8 +44,8 @@ import type * as lib_hostBillParticipant from "../lib/hostBillParticipant.js";
 import type * as lib_hostOnboarding from "../lib/hostOnboarding.js";
 import type * as lib_hostOnboardingBillHooks from "../lib/hostOnboardingBillHooks.js";
 import type * as lib_hostProfile from "../lib/hostProfile.js";
+import type * as lib_hostTier from "../lib/hostTier.js";
 import type * as lib_itemSchema from "../lib/itemSchema.js";
-import type * as lib_magicLinkEmail from "../lib/magicLinkEmail.js";
 import type * as lib_money from "../lib/money.js";
 import type * as lib_participantSchema from "../lib/participantSchema.js";
 import type * as lib_paymentAmountSchema from "../lib/paymentAmountSchema.js";
@@ -72,10 +73,11 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   assignments: typeof assignments;
-  auth: typeof auth;
   backfill: typeof backfill;
   bills: typeof bills;
   cleanup: typeof cleanup;
+  clerkWebhookAction: typeof clerkWebhookAction;
+  clerkWebhooks: typeof clerkWebhooks;
   combinedPayments: typeof combinedPayments;
   crons: typeof crons;
   files: typeof files;
@@ -106,8 +108,8 @@ declare const fullApi: ApiFromModules<{
   "lib/hostOnboarding": typeof lib_hostOnboarding;
   "lib/hostOnboardingBillHooks": typeof lib_hostOnboardingBillHooks;
   "lib/hostProfile": typeof lib_hostProfile;
+  "lib/hostTier": typeof lib_hostTier;
   "lib/itemSchema": typeof lib_itemSchema;
-  "lib/magicLinkEmail": typeof lib_magicLinkEmail;
   "lib/money": typeof lib_money;
   "lib/participantSchema": typeof lib_participantSchema;
   "lib/paymentAmountSchema": typeof lib_paymentAmountSchema;

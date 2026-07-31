@@ -65,6 +65,13 @@ export const viewer = query({
   },
 })
 
+export const ensureCurrent = mutation({
+  args: {},
+  handler: async (ctx) => {
+    return await requireAuth(ctx)
+  },
+})
+
 export const saveUsername = mutation({
   args: {
     username: v.optional(v.string()),
