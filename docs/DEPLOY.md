@@ -49,7 +49,7 @@ Never put `GEMINI_API_KEY`, Clerk secrets, `DEV_MODE`, or deploy keys/tokens in 
 ### Clerk (production)
 
 1. Create a Clerk **production** instance separate from dev.
-2. Enable Google + Email sign-in; set localization to Bulgarian (`bgBG`).
+2. Enable Google + Email sign-in; Bulgarian Clerk UI via `ClerkProvider localization={bgBG}` in app code (not a dashboard setting).
 3. Create JWT template **`convex`** with `applicationID: convex`.
 4. Enable Billing → Plans: keep `free_user`, add **`pro`** at €2.99/month EUR.
 5. Set on **production** Convex: `CLERK_JWT_ISSUER_DOMAIN`, `CLERK_WEBHOOK_SIGNING_SECRET`.
