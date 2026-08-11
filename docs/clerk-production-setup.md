@@ -12,7 +12,10 @@ Step-by-step checklist for configuring **Clerk**, **Convex**, and **Vercel** pro
 | Convex cloud URL       | `https://coordinated-warbler-782.convex.cloud` |
 | Convex webhook base    | `https://coordinated-warbler-782.convex.site`  |
 | Public site            | `https://onova-za-smetkata.com`                |
+| Clerk Frontend API     | `https://clerk.onova-za-smetkata.com`          |
 | Deploy trigger         | Push or merge to `main` → GitHub Actions       |
+
+**Status:** Host sign-in (Google + email) verified on production **2026-08-11**. See [Troubleshooting](#troubleshooting) for env/DNS pitfalls encountered during cutover.
 
 ---
 
@@ -85,13 +88,15 @@ Future: when Paraglide i18n lands, sync `localization` with app locale (`bgBG` /
 | Name                  | `convex` (exact) |
 | `applicationID` claim | `convex`         |
 
-Copy the **Frontend API URL** (issuer). Example shape:
+Copy the **Frontend API URL** (issuer). With a **custom Clerk domain** (this project), use the `clerk.` subdomain:
 
 ```text
-https://<your-prod-slug>.clerk.accounts.com
+https://clerk.onova-za-smetkata.com
 ```
 
-This becomes `CLERK_JWT_ISSUER_DOMAIN` on Convex.
+Without a custom domain, the shape is `https://<your-prod-slug>.clerk.accounts.com`.
+
+This becomes `CLERK_JWT_ISSUER_DOMAIN` on Convex (Phase 2).
 
 ### 1.5 API keys
 
@@ -101,6 +106,24 @@ This becomes `CLERK_JWT_ISSUER_DOMAIN` on Convex.
 | ------------------------- | ------------------------------------- |
 | `pk_live_…` (Publishable) | Vercel → `VITE_CLERK_PUBLISHABLE_KEY` |
 | `sk_live_…` (Secret)      | Vercel → `CLERK_SECRET_KEY`           |
+
+> **Stack note:** This app is **TanStack Start + Vite**, not Next.js. Use `VITE_CLERK_PUBLISHABLE_KEY` — **not** `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`. Clerk’s server middleware also accepts `CLERK_PUBLISHABLE_KEY` (same `pk_live_…` value) as a fallback.
+
+### 1.5.1 Custom domain DNS (Frontend API)
+
+Clerk Dashboard → **Configure → Domains**. After adding the production domain, Clerk shows DNS records for the **`clerk.` subdomain** (Frontend API).
+
+1. Add the **CNAME** from the dashboard to your DNS provider (`clerk.onova-za-smetkata.com` → Clerk’s target).
+2. If using **Cloudflare**, set the record to **DNS only** (grey cloud) — orange-cloud proxy breaks Clerk’s DNS check.
+3. Wait until Clerk shows **Verified** for DNS and **Issued** for SSL (up to 48h propagation).
+
+**Do not** point `clerk.onova-za-smetkata.com` at Vercel. That hostname must reach Clerk’s Frontend API so the browser can load `@clerk/clerk-js` from:
+
+```text
+https://clerk.onova-za-smetkata.com/npm/@clerk/clerk-js@…/dist/clerk.browser.js
+```
+
+Detail: `research/clerk-production-auth-diagnosis.md`.
 
 ### 1.6 Allowed domains
 
@@ -216,7 +239,7 @@ Open [Convex Dashboard](https://dashboard.convex.dev) → deployment **`coordina
 
 | Variable                       | Value                                     |
 | ------------------------------ | ----------------------------------------- |
-| `CLERK_JWT_ISSUER_DOMAIN`      | Clerk prod Frontend API URL (Phase 1.4)   |
+| `CLERK_JWT_ISSUER_DOMAIN`      | `https://clerk.onova-za-smetkata.com`     |
 | `CLERK_WEBHOOK_SIGNING_SECRET` | Clerk webhook signing secret (Phase 3)    |
 | `GEMINI_API_KEY`               | Keep if receipt OCR is already configured |
 
@@ -276,11 +299,32 @@ Actions runs `vercel pull --environment=production` before build, so these must 
 | `VITE_CLERK_PUBLISHABLE_KEY` | `pk_live_…` from Clerk prod                    |
 | `CLERK_SECRET_KEY`           | `sk_live_…` from Clerk prod                    |
 
-### 4.2 Optional
+### 4.2 Recommended
+
+| Variable                | Value                     |
+| ----------------------- | ------------------------- |
+| `CLERK_PUBLISHABLE_KEY` | Same `pk_live_…` as above |
+
+`@clerk/tanstack-react-start` reads `VITE_CLERK_PUBLISHABLE_KEY` first, then `CLERK_PUBLISHABLE_KEY`. Setting both avoids SSR middleware “Publishable key is missing” if only one prefix is visible at runtime.
+
+### 4.3 Optional
 
 | Variable          | Purpose               |
 | ----------------- | --------------------- |
 | `VITE_SENTRY_DSN` | Client error tracking |
+
+### 4.4 Do not set (unless you know why)
+
+These are **not** in the TanStack Start quickstart and caused production incidents when mis-set:
+
+| Variable                                          | Why avoid                                                                                                     |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`               | Next.js prefix — **ignored** by this Vite app                                                                 |
+| `CLERK_JS_URL` / `CLERK_JS` / `VITE_CLERK_JS_URL` | Wrong value → browser requests `https://npm/@clerk/clerk-js@…` (`ERR_NAME_NOT_RESOLVED`); SignIn never mounts |
+| `CLERK_PROXY_URL` / `VITE_CLERK_PROXY_URL`        | Only for [FAPI proxy](https://clerk.com/docs/guides/dashboard/dns-domains/proxy-fapi) setups                  |
+| `CLERK_DOMAIN`                                    | Satellite-domain setups only                                                                                  |
+
+After any env change, **redeploy** via GitHub Actions (`vercel pull` bakes Production env at build time).
 
 Never commit secrets to the repo.
 
@@ -368,9 +412,9 @@ Run on `https://onova-za-smetkata.com` (or Vercel prod URL before domain cutover
 
 ### Auth
 
-- [ ] Home loads (no „Липсва конфигурация…“ screens)
-- [ ] Sign in with **Google** or **email** (Clerk prod UI)
-- [ ] Brief „Зареждане…“ then host home loads (`ensureCurrent` creates Convex user row)
+- [x] Home loads (no „Липсва конфигурация…“ screens) — verified 2026-08-11
+- [x] Sign in with **Google** or **email** (Clerk prod UI at `/login`) — verified 2026-08-11
+- [x] Brief „Зареждане…“ then host home loads (`ensureCurrent` creates Convex user row) — verified 2026-08-11
 
 ### Host flows
 
@@ -400,30 +444,34 @@ Full checklist: [`DEPLOY.md` — Smoke test](./DEPLOY.md#release-steps).
 
 ## Environment matrix (quick reference)
 
-| Variable                       | Convex prod | Vercel prod |
-| ------------------------------ | ----------- | ----------- |
-| `CLERK_JWT_ISSUER_DOMAIN`      | ✅          | —           |
-| `CLERK_WEBHOOK_SIGNING_SECRET` | ✅          | —           |
-| `GEMINI_API_KEY`               | ✅          | —           |
-| `DEV_MODE`                     | ❌ never    | —           |
-| `VITE_CONVEX_URL`              | —           | ✅          |
-| `VITE_APP_ORIGIN`              | —           | ✅          |
-| `VITE_CLERK_PUBLISHABLE_KEY`   | —           | ✅          |
-| `CLERK_SECRET_KEY`             | —           | ✅          |
+| Variable                       | Convex prod  | Vercel prod |
+| ------------------------------ | ------------ | ----------- |
+| `CLERK_JWT_ISSUER_DOMAIN`      | ✅           | —           |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | ✅ (billing) | —           |
+| `GEMINI_API_KEY`               | ✅           | —           |
+| `DEV_MODE`                     | ❌ never     | —           |
+| `VITE_CONVEX_URL`              | —            | ✅          |
+| `VITE_APP_ORIGIN`              | —            | ✅          |
+| `VITE_CLERK_PUBLISHABLE_KEY`   | —            | ✅          |
+| `CLERK_PUBLISHABLE_KEY`        | —            | recommended |
+| `CLERK_SECRET_KEY`             | —            | ✅          |
 
 ---
 
 ## Troubleshooting
 
-| Symptom                                                | Likely cause                | Fix                                                                   |
-| ------------------------------------------------------ | --------------------------- | --------------------------------------------------------------------- |
-| Convex deploy: missing `clerkSubject`                  | Legacy user rows            | Delete or wipe `users` (Phase 5)                                      |
-| Sign-in OK, app stuck on „Зареждане…“                  | JWT issuer mismatch         | Set `CLERK_JWT_ISSUER_DOMAIN` on Convex prod                          |
-| „Липсва конфигурация на входа“                         | Missing publishable key     | Set `VITE_CLERK_PUBLISHABLE_KEY` on Vercel prod; redeploy             |
-| Host queries throw „Изисква се вход“ right after login | Race before user row exists | Ensure latest `EnsureConvexUser` + `users.ensureCurrent` are deployed |
-| Pro upgrade doesn't apply                              | Webhook misconfiguration    | Verify webhook URL, signing secret, and Clerk delivery logs           |
-| Google sign-in `redirect_uri_mismatch`                 | Domain not allowed in Clerk | Add prod domain in Clerk Dashboard                                    |
-| OCR fails                                              | Missing Gemini key          | Set `GEMINI_API_KEY` on Convex prod                                   |
+| Symptom                                                                                | Likely cause                                                                    | Fix                                                                                                                         |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Vercel 500: **Publishable key is missing**                                             | `NEXT_PUBLIC_*` instead of `VITE_*`, or publishable key removed                 | Set `VITE_CLERK_PUBLISHABLE_KEY` (+ optional `CLERK_PUBLISHABLE_KEY`); delete `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`; redeploy |
+| `/login` shows text but **no Clerk form**; console `GET https://npm/@clerk/clerk-js@…` | Mis-set `CLERK_JS_URL` / `CLERK_JS`, or `clerk.` subdomain DNS points at Vercel | Remove bad `CLERK_JS_*` vars; fix Clerk FAPI CNAME (§1.5.1); redeploy                                                       |
+| Home / login stuck on **„Зареждане…“**                                                 | Clerk JS never loads (`isLoaded` false)                                         | Same as above; Network tab should show **200** from `clerk.onova-za-smetkata.com/npm/@clerk/clerk-js@…`                     |
+| Convex deploy: missing `clerkSubject`                                                  | Legacy user rows                                                                | Delete or wipe `users` (Phase 5)                                                                                            |
+| Sign-in OK, app stuck on „Зареждане…“ **after** Clerk UI                               | JWT issuer mismatch                                                             | Set `CLERK_JWT_ISSUER_DOMAIN` = `https://clerk.onova-za-smetkata.com` on Convex prod                                        |
+| „Липсва конфигурация на входа“                                                         | Missing publishable key in client bundle                                        | Set `VITE_CLERK_PUBLISHABLE_KEY` on Vercel prod; redeploy                                                                   |
+| Host queries throw „Изисква се вход“ right after login                                 | Race before user row exists                                                     | Ensure latest `EnsureConvexUser` + `users.ensureCurrent` are deployed                                                       |
+| Pro upgrade doesn't apply                                                              | Webhook misconfiguration                                                        | Verify webhook URL, signing secret, and Clerk delivery logs                                                                 |
+| Google sign-in `redirect_uri_mismatch`                                                 | Domain not allowed in Clerk / Google                                            | Add prod domain in Clerk; Google redirect = §1.8                                                                            |
+| OCR fails                                                                              | Missing Gemini key                                                              | Set `GEMINI_API_KEY` on Convex prod                                                                                         |
 
 ---
 
