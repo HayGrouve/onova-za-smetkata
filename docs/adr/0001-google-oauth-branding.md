@@ -33,4 +33,4 @@ Do **not** set `CUSTOM_AUTH_SITE_URL` now. It requires Convex Pro custom domain 
 | `CUSTOM_AUTH_SITE_URL` on `onova-za-smetkata.com` | Extra infra (Convex Pro, DNS, SSL); consent screen branding is the primary fix |
 | Code changes in `convex/auth.ts`                  | Convex Auth Google provider has no UI branding knobs                           |
 
-Setup steps: **`docs/google-oauth-setup.md`**.
+Setup steps: **`docs/clerk-production-setup.md`** §1.8 (supersedes `docs/google-oauth-setup.md`).

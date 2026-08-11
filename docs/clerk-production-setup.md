@@ -144,7 +144,7 @@ Use that URI **exactly** in Google Cloud — do not use the old Convex Auth call
 
 #### Step A — OAuth consent screen (Google Cloud Console)
 
-If you already configured this for the old Convex Auth flow, review and update it. Full branding checklist: [`google-oauth-setup.md`](./google-oauth-setup.md).
+If you already configured this for the old Convex Auth flow, review and update it (remove old Convex callback URIs from the OAuth client).
 
 Navigate to **APIs & Services → OAuth consent screen**:
 

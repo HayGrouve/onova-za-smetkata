@@ -6,9 +6,7 @@
 - [ ] Convex **production** deployment exists
 - [ ] Vercel env: `VITE_CONVEX_URL` = prod Convex cloud URL
 - [ ] Convex prod env: `GEMINI_API_KEY` (for receipt OCR)
-- [ ] Convex prod auth env vars (see below)
-- [ ] Google OAuth consent screen + redirect URIs configured per `docs/google-oauth-setup.md`
-- [ ] Resend domain verified; `AUTH_RESEND_FROM` set on prod Convex
+- [ ] Clerk production instance configured per `docs/clerk-production-setup.md` (Google SSO, email sign-in, Billing, webhooks)
 - [ ] Optional: `VITE_SENTRY_DSN` on Vercel for client error tracking
 - [ ] GitHub Actions secrets for production release (see below)
 - [ ] `vercel.json` in repo sets `git.deploymentEnabled.main: false` so a push to `main` does **not** auto-deploy production on Vercel
@@ -56,21 +54,13 @@ Never put `GEMINI_API_KEY`, Clerk secrets, `DEV_MODE`, or deploy keys/tokens in 
 6. Register webhook URL: `https://<prod-deployment>.convex.site/clerk/webhook`.
 7. Set on Vercel: `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`.
 
-See ADR 0002 in `docs/adr/`. Google OAuth consent screen is configured in the Clerk Dashboard.
+See ADR 0002 in `docs/adr/`. Full Clerk + Google OAuth steps: **`docs/clerk-production-setup.md`**.
 
 ### Sentry
 
 1. Create a Sentry project (React).
 2. Set `VITE_SENTRY_DSN` on Vercel.
 3. After deploy, trigger a test error and confirm it appears in Sentry.
-
-### Resend
-
-Verify your sending domain in Resend, then set on **production** Convex:
-
-```
-AUTH_RESEND_FROM=Онова за сметката <noreply@yourdomain.com>
-```
 
 ## Vercel project setup
 
@@ -82,6 +72,7 @@ AUTH_RESEND_FROM=Онова за сметката <noreply@yourdomain.com>
    - `VITE_CONVEX_URL=https://coordinated-warbler-782.convex.cloud`
    - `VITE_APP_ORIGIN=https://onova-za-smetkata.com` (required for correct OG previews)
    - Optional: `VITE_SENTRY_DSN`
+   - `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` (Clerk prod)
 6. Production Git auto-deploys for `main` are **off** (`vercel.json` → `git.deploymentEnabled.main: false`). PR preview deploys from Git stay enabled. Production releases are triggered only by the GitHub Actions workflow after Convex succeeds.
 
 ## Release steps
@@ -158,7 +149,7 @@ Canonical production path: **merge (or push) to `main` → GitHub Actions `prefl
 
    - [ ] GitHub Actions: all three production jobs green for the merge commit
    - [ ] Home loads; bills list appears
-   - [ ] Sign in (Google + magic link)
+   - [ ] Sign in (Google + email via Clerk)
    - [ ] Create bill → add participant → add item → assign
    - [ ] QR invite / share link opens guest join flow
    - [ ] Guest can claim items; second device sees name as „Заето“
@@ -193,9 +184,8 @@ Do this **after** smoke tests pass on `https://<project>.vercel.app`.
    - Delete **CNAME** `www` → `*.netlify.app`
 3. Let Vercel manage apex ALIAS records for the assigned project.
 4. Wait for SSL provisioning.
-5. Convex prod: `SITE_URL=https://onova-za-smetkata.com`
-6. Vercel: `VITE_APP_ORIGIN=https://onova-za-smetkata.com` → redeploy.
-7. Re-run smoke tests on `https://onova-za-smetkata.com`.
+5. Vercel: `VITE_APP_ORIGIN=https://onova-za-smetkata.com` → redeploy.
+6. Re-run smoke tests on `https://onova-za-smetkata.com`.
 
 ### Phase 3 — Decommission Netlify
 
@@ -216,8 +206,9 @@ Do this **after** smoke tests pass on `https://<project>.vercel.app`.
 | Build fails on Vercel (other)                        | Missing `VITE_CONVEX_URL`                   | Set in Vercel Production env (pulled by CLI)                                                |
 | Apex domain `DEPLOYMENT_NOT_FOUND`                   | Domain not assigned to Vercel project       | Add domain in Vercel project settings                                                       |
 | Preflight fails on PWA icons                         | PNGs not generated                          | Run `pnpm run generate-icons` and commit                                                    |
-| Google sign-in `redirect_uri_mismatch`               | Wrong callback in Google Console            | Add prod/dev `*.convex.site/api/auth/callback/google` per `docs/google-oauth-setup.md`      |
-| Magic link / `auth:signIn` fails in prod             | Auth env only on dev deployment             | Set `SITE_URL`, JWT keys, Resend key on **prod** Convex                                     |
+| Google sign-in `redirect_uri_mismatch`               | Wrong callback in Google Console            | Use Clerk redirect URI per `docs/clerk-production-setup.md` §1.8                            |
+| Clerk sign-in fails / blank auth UI                  | Missing Clerk keys on Vercel                | Set `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`; redeploy via Actions                  |
+| Convex rejects host mutations                        | JWT issuer mismatch                         | Set `CLERK_JWT_ISSUER_DOMAIN` on Convex prod to Clerk Frontend API URL                      |
 | OCR always fails                                     | Missing `GEMINI_API_KEY` in Convex prod     | Set in Convex Dashboard                                                                     |
 | Data from wrong environment                          | Dev Convex URL in Vercel                    | Point Vercel at prod URL                                                                    |
 | Guest assignment fails                               | Missing/expired session                     | Re-join and pick name again                                                                 |
@@ -227,23 +218,24 @@ Do this **after** smoke tests pass on `https://<project>.vercel.app`.
 
 Complete once before calling production “solid”:
 
-| Item                                          | Where             | Notes                                                                     |
-| --------------------------------------------- | ----------------- | ------------------------------------------------------------------------- |
-| `VITE_CONVEX_URL`                             | Vercel            | Prod Convex cloud URL                                                     |
-| `VITE_APP_ORIGIN`                             | Vercel            | `https://onova-za-smetkata.com` for OG/QR                                 |
-| `SITE_URL`                                    | Convex prod       | Same custom domain for magic links                                        |
-| `AUTH_RESEND_FROM`                            | Convex prod       | Verified domain, e.g. `Онова за сметката <noreply@onova-za-smetkata.com>` |
-| `AUTH_RESEND_KEY`, JWT, Google OAuth          | Convex prod       | Dashboard → Settings → Environment; OAuth: `docs/google-oauth-setup.md`   |
-| `GEMINI_API_KEY`                              | Convex prod       | Receipt OCR                                                               |
-| `DEV_MODE`                                    | Convex prod       | Must **not** be `true`                                                    |
-| Backfill                                      | Convex prod       | Manual when needed (see release steps); not automated in Actions          |
-| Domain + SSL                                  | Vercel            | Custom domain active                                                      |
-| Netlify decommissioned                        | Netlify           | No stale DNS to old host                                                  |
-| GitHub Actions secrets                        | GitHub            | `CONVEX_DEPLOY_KEY`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` |
-| `vercel.json` disables `main` Git prod deploy | Repo              | Production only via Actions after Convex                                  |
-| Smoke test                                    | Production URL    | See release steps above                                                   |
-| Link preview                                  | WhatsApp/Telegram | Join URL shows OG image                                                   |
-| Optional Sentry                               | Vercel            | `VITE_SENTRY_DSN`                                                         |
+| Item                                             | Where             | Notes                                                                     |
+| ------------------------------------------------ | ----------------- | ------------------------------------------------------------------------- |
+| `VITE_CONVEX_URL`                                | Vercel            | Prod Convex cloud URL                                                     |
+| `VITE_APP_ORIGIN`                                | Vercel            | `https://onova-za-smetkata.com` for OG/QR                                 |
+| `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | Vercel            | Clerk production instance                                                 |
+| `CLERK_JWT_ISSUER_DOMAIN`                        | Convex prod       | Clerk Frontend API URL (JWT validation)                                   |
+| `CLERK_WEBHOOK_SIGNING_SECRET`                   | Convex prod       | Billing webhook at `/clerk/webhook`                                       |
+| Clerk webhook + Google SSO                       | Clerk Dashboard   | See `docs/clerk-production-setup.md`                                      |
+| `GEMINI_API_KEY`                                 | Convex prod       | Receipt OCR                                                               |
+| `DEV_MODE`                                       | Convex prod       | Must **not** be `true`                                                    |
+| Backfill                                         | Convex prod       | Manual when needed (see release steps); not automated in Actions          |
+| Domain + SSL                                     | Vercel            | Custom domain active                                                      |
+| Netlify decommissioned                           | Netlify           | No stale DNS to old host                                                  |
+| GitHub Actions secrets                           | GitHub            | `CONVEX_DEPLOY_KEY`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` |
+| `vercel.json` disables `main` Git prod deploy    | Repo              | Production only via Actions after Convex                                  |
+| Smoke test                                       | Production URL    | See release steps above                                                   |
+| Link preview                                     | WhatsApp/Telegram | Join URL shows OG image                                                   |
+| Optional Sentry                                  | Vercel            | `VITE_SENTRY_DSN`                                                         |
 
 ### E2E in CI (optional)
 

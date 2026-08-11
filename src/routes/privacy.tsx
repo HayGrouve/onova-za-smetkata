@@ -25,7 +25,7 @@ function PrivacyPage() {
         <ul className="list-disc space-y-1 pl-5">
           <li>
             <strong>Данни за вход (само домакини):</strong> имейл адрес и име от
-            Google или от магически линк. Използват се единствено за
+            Google или при вход с имейл. Използват се единствено за
             идентификация на акаунта ви.
           </li>
           <li>
@@ -55,7 +55,7 @@ function PrivacyPage() {
         </h2>
         <ul className="list-disc space-y-1 pl-5">
           <li>За предоставяне на функционалността на приложението</li>
-          <li>За изпращане на линкове за вход по имейл (магически линк)</li>
+          <li>За вход в акаунта (Google или имейл)</li>
           <li>За поддръжка, сигурност и подобряване на услугата</li>
         </ul>
         <p>Не продаваме лични данни на трети страни.</p>
@@ -67,17 +67,18 @@ function PrivacyPage() {
         </h2>
         <ul className="list-disc space-y-1 pl-5">
           <li>
+            <strong>Clerk</strong> — автентикация на домакини (Google и имейл),
+            абонаменти и свързани системни имейли
+          </li>
+          <li>
             <strong>Google</strong> — при вход с Google (OAuth), според
             политиката на Google
           </li>
           <li>
-            <strong>Convex</strong> — хостинг на базата данни и автентикация
+            <strong>Convex</strong> — хостинг на базата данни и backend логика
           </li>
           <li>
             <strong>Vercel</strong> — хостинг на уеб приложението
-          </li>
-          <li>
-            <strong>Resend</strong> — изпращане на имейли за магически линк
           </li>
         </ul>
       </section>
@@ -103,7 +104,7 @@ function PrivacyPage() {
         </p>
       </section>
 
-      <p className="text-xs">Последна актуализация: юли 2026 г.</p>
+      <p className="text-xs">Последна актуализация: август 2026 г.</p>
     </LegalPageLayout>
   )
 }
