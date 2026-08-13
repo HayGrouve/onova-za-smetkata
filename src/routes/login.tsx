@@ -27,14 +27,14 @@ function LoginPage() {
 
   if (!isLoaded || isSignedIn) {
     return (
-      <div className="page-container py-10 text-center text-muted-foreground">
+      <div className="page-shell flex flex-1 items-center justify-center py-10 text-center text-muted-foreground">
         Зареждане...
       </div>
     )
   }
 
   return (
-    <div className="page-container flex min-h-[70dvh] flex-col justify-center gap-6 py-8">
+    <div className="page-shell flex flex-1 flex-col items-center justify-center gap-6 py-8">
       <div className="flex flex-col gap-2 text-center">
         <h1 className="text-xl font-semibold">Онова за сметката</h1>
         <p className="text-sm text-muted-foreground">

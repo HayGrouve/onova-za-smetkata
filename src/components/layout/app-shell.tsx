@@ -19,7 +19,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="flex min-h-dvh flex-col">
                   <AppHeader />
                   <OfflineBanner />
-                  <main className="flex-1">{children}</main>
+                  <main className="flex flex-1 flex-col">{children}</main>
                   <AppFooter />
                 </div>
               </BillHeaderTitleProvider>
