@@ -6,31 +6,32 @@
 - [ ] Convex **production** deployment exists
 - [ ] Vercel env: `VITE_CONVEX_URL` = prod Convex cloud URL
 - [ ] Convex prod env: `GEMINI_API_KEY` (for receipt OCR)
-- [ ] Clerk production instance configured per `docs/clerk-production-setup.md` (Google SSO, email sign-in, Billing, webhooks)
+- [ ] Clerk production instance configured per `docs/clerk-production-setup.md` (Google SSO, email sign-in — **auth only**, not Clerk Billing)
+- [ ] Stripe Billing for Host Pro when that work ships (Checkout + Customer Portal + webhooks) — [ADR 0003](./adr/0003-stripe-billing-beside-clerk.md)
 - [ ] Optional: `VITE_SENTRY_DSN` on Vercel for client error tracking
 - [ ] GitHub Actions secrets for production release (see below)
 - [ ] `vercel.json` in repo sets `git.deploymentEnabled.main: false` so a push to `main` does **not** auto-deploy production on Vercel
 
 ## Environment variables
 
-| Variable                       | Where                           | Required                                                              |
-| ------------------------------ | ------------------------------- | --------------------------------------------------------------------- |
-| `VITE_CONVEX_URL`              | Vercel                          | Yes                                                                   |
-| `VITE_APP_ORIGIN`              | Vercel                          | Yes for production OG/share URLs (`https://onova-za-smetkata.com`)    |
-| `VITE_SENTRY_DSN`              | Vercel                          | No (Sentry client errors in production)                               |
-| `GEMINI_API_KEY`               | Convex Dashboard                | Yes (for OCR)                                                         |
-| `GEMINI_MODEL`                 | Convex Dashboard                | No                                                                    |
-| `CLERK_JWT_ISSUER_DOMAIN`      | Convex Dashboard (dev + prod)   | Yes (Clerk JWT validation)                                            |
-| `CLERK_WEBHOOK_SIGNING_SECRET` | Convex Dashboard                | Yes (Billing webhooks at `/clerk/webhook`)                            |
-| `VITE_CLERK_PUBLISHABLE_KEY`   | Vercel / `.env.local`           | Yes (Clerk client — **Vite** prefix, not `NEXT_PUBLIC_*`)             |
-| `CLERK_PUBLISHABLE_KEY`        | Vercel / `.env.local`           | Recommended (same `pk_live_…`; SSR middleware fallback)               |
-| `CLERK_SECRET_KEY`             | Vercel / `.env.local`           | Yes (TanStack Start `clerkMiddleware`)                                |
-| `DEV_MODE`                     | Convex Dashboard (**dev only**) | No — dev-only mutations (e.g. onboarding reset); **never production** |
-| `CONVEX_DEPLOYMENT`            | Local `.env.local`              | Yes for local `npx convex` CLI                                        |
-| `CONVEX_DEPLOY_KEY`            | GitHub Actions secret           | Yes — production deploy key (`deployment:deploy`)                     |
-| `VERCEL_TOKEN`                 | GitHub Actions secret           | Yes — Vercel access token for CLI deploys                             |
-| `VERCEL_ORG_ID`                | GitHub Actions secret           | Yes                                                                   |
-| `VERCEL_PROJECT_ID`            | GitHub Actions secret           | Yes                                                                   |
+| Variable                       | Where                           | Required                                                                                |
+| ------------------------------ | ------------------------------- | --------------------------------------------------------------------------------------- |
+| `VITE_CONVEX_URL`              | Vercel                          | Yes                                                                                     |
+| `VITE_APP_ORIGIN`              | Vercel                          | Yes for production OG/share URLs (`https://onova-za-smetkata.com`)                      |
+| `VITE_SENTRY_DSN`              | Vercel                          | No (Sentry client errors in production)                                                 |
+| `GEMINI_API_KEY`               | Convex Dashboard                | Yes (for OCR)                                                                           |
+| `GEMINI_MODEL`                 | Convex Dashboard                | No                                                                                      |
+| `CLERK_JWT_ISSUER_DOMAIN`      | Convex Dashboard (dev + prod)   | Yes (Clerk JWT validation)                                                              |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | Convex Dashboard                | Only if leftover `/clerk/webhook` is still deployed; **not** the Host Pro path (Stripe) |
+| `VITE_CLERK_PUBLISHABLE_KEY`   | Vercel / `.env.local`           | Yes (Clerk client — **Vite** prefix, not `NEXT_PUBLIC_*`)                               |
+| `CLERK_PUBLISHABLE_KEY`        | Vercel / `.env.local`           | Recommended (same `pk_live_…`; SSR middleware fallback)                                 |
+| `CLERK_SECRET_KEY`             | Vercel / `.env.local`           | Yes (TanStack Start `clerkMiddleware`)                                                  |
+| `DEV_MODE`                     | Convex Dashboard (**dev only**) | No — dev-only mutations (e.g. onboarding reset); **never production**                   |
+| `CONVEX_DEPLOYMENT`            | Local `.env.local`              | Yes for local `npx convex` CLI                                                          |
+| `CONVEX_DEPLOY_KEY`            | GitHub Actions secret           | Yes — production deploy key (`deployment:deploy`)                                       |
+| `VERCEL_TOKEN`                 | GitHub Actions secret           | Yes — Vercel access token for CLI deploys                                               |
+| `VERCEL_ORG_ID`                | GitHub Actions secret           | Yes                                                                                     |
+| `VERCEL_PROJECT_ID`            | GitHub Actions secret           | Yes                                                                                     |
 
 Never put `GEMINI_API_KEY`, Clerk secrets, `DEV_MODE`, or deploy keys/tokens in the repo.
 
@@ -45,17 +46,20 @@ Never put `GEMINI_API_KEY`, Clerk secrets, `DEV_MODE`, or deploy keys/tokens in 
 - **Rate limits:** Guest claims are limited per actor and per bill; assignment toggles, heartbeats, releases, and receipt uploads are rate-limited server-side.
 - **Cleanup cron:** `cleanup.run` purges expired guest sessions, stale rate-limit buckets, and old terminal receipt scans every 6 hours (registered in `convex/crons.ts`).
 
-### Clerk (production)
+### Clerk (production) — Host auth only
 
 1. Create a Clerk **production** instance separate from dev.
 2. Enable Google + Email sign-in; Bulgarian Clerk UI via `ClerkProvider localization={bgBG}` in app code (not a dashboard setting).
 3. Create JWT template **`convex`** with `applicationID: convex`.
-4. Enable Billing → Plans: keep `free_user`, add **`pro`** at €2.99/month EUR.
-5. Set on **production** Convex: `CLERK_JWT_ISSUER_DOMAIN`, `CLERK_WEBHOOK_SIGNING_SECRET`.
-6. Register webhook URL: `https://<prod-deployment>.convex.site/clerk/webhook`.
-7. Set on Vercel: `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` (optional duplicate: `CLERK_PUBLISHABLE_KEY`). **Do not** use `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` — this stack is Vite, not Next.js.
+4. **Do not** enable Clerk Billing. Host Pro is Stripe ([ADR 0003](./adr/0003-stripe-billing-beside-clerk.md)).
+5. Set on **production** Convex: `CLERK_JWT_ISSUER_DOMAIN`.
+6. Set on Vercel: `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` (optional duplicate: `CLERK_PUBLISHABLE_KEY`). **Do not** use `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` — this stack is Vite, not Next.js.
 
-See ADR 0002 in `docs/adr/`. Full Clerk + Google OAuth steps: **`docs/clerk-production-setup.md`** (prod auth verified 2026-08-11).
+See [ADR 0002](./adr/0002-clerk-auth-billing.md). Full Clerk + Google OAuth steps: **`docs/clerk-production-setup.md`** (prod auth verified 2026-08-11).
+
+### Stripe (Host Pro)
+
+When Host Pro ships: Stripe Product/Price in **EUR**, Checkout + Customer Portal, webhook to Convex (not Clerk). Quota enforcement stays in `convex/lib/hostTier.ts`. Guest Revolut/IBAN is unrelated.
 
 ### Sentry
 
@@ -221,24 +225,24 @@ Do this **after** smoke tests pass on `https://<project>.vercel.app`.
 
 Complete once before calling production “solid”:
 
-| Item                                             | Where             | Notes                                                                     |
-| ------------------------------------------------ | ----------------- | ------------------------------------------------------------------------- |
-| `VITE_CONVEX_URL`                                | Vercel            | Prod Convex cloud URL                                                     |
-| `VITE_APP_ORIGIN`                                | Vercel            | `https://onova-za-smetkata.com` for OG/QR                                 |
-| `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | Vercel            | Clerk production instance (auth verified 2026-08-11)                      |
-| `CLERK_JWT_ISSUER_DOMAIN`                        | Convex prod       | `https://clerk.onova-za-smetkata.com`                                     |
-| `CLERK_WEBHOOK_SIGNING_SECRET`                   | Convex prod       | Billing webhook at `/clerk/webhook`                                       |
-| Clerk webhook + Google SSO                       | Clerk Dashboard   | See `docs/clerk-production-setup.md`                                      |
-| `GEMINI_API_KEY`                                 | Convex prod       | Receipt OCR                                                               |
-| `DEV_MODE`                                       | Convex prod       | Must **not** be `true`                                                    |
-| Backfill                                         | Convex prod       | Manual when needed (see release steps); not automated in Actions          |
-| Domain + SSL                                     | Vercel            | Custom domain active                                                      |
-| Netlify decommissioned                           | Netlify           | No stale DNS to old host                                                  |
-| GitHub Actions secrets                           | GitHub            | `CONVEX_DEPLOY_KEY`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` |
-| `vercel.json` disables `main` Git prod deploy    | Repo              | Production only via Actions after Convex                                  |
-| Smoke test                                       | Production URL    | See release steps above                                                   |
-| Link preview                                     | WhatsApp/Telegram | Join URL shows OG image                                                   |
-| Optional Sentry                                  | Vercel            | `VITE_SENTRY_DSN`                                                         |
+| Item                                             | Where             | Notes                                                                       |
+| ------------------------------------------------ | ----------------- | --------------------------------------------------------------------------- |
+| `VITE_CONVEX_URL`                                | Vercel            | Prod Convex cloud URL                                                       |
+| `VITE_APP_ORIGIN`                                | Vercel            | `https://onova-za-smetkata.com` for OG/QR                                   |
+| `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | Vercel            | Clerk production instance (auth verified 2026-08-11)                        |
+| `CLERK_JWT_ISSUER_DOMAIN`                        | Convex prod       | `https://clerk.onova-za-smetkata.com`                                       |
+| Google SSO                                       | Clerk Dashboard   | See `docs/clerk-production-setup.md` §1.8 — **no Clerk Billing**            |
+| Stripe Billing (Host Pro)                        | Stripe Dashboard  | When Host Pro ships — [ADR 0003](./adr/0003-stripe-billing-beside-clerk.md) |
+| `GEMINI_API_KEY`                                 | Convex prod       | Receipt OCR                                                                 |
+| `DEV_MODE`                                       | Convex prod       | Must **not** be `true`                                                      |
+| Backfill                                         | Convex prod       | Manual when needed (see release steps); not automated in Actions            |
+| Domain + SSL                                     | Vercel            | Custom domain active                                                        |
+| Netlify decommissioned                           | Netlify           | No stale DNS to old host                                                    |
+| GitHub Actions secrets                           | GitHub            | `CONVEX_DEPLOY_KEY`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`   |
+| `vercel.json` disables `main` Git prod deploy    | Repo              | Production only via Actions after Convex                                    |
+| Smoke test                                       | Production URL    | See release steps above                                                     |
+| Link preview                                     | WhatsApp/Telegram | Join URL shows OG image                                                     |
+| Optional Sentry                                  | Vercel            | `VITE_SENTRY_DSN`                                                           |
 
 ### E2E in CI (optional)
 

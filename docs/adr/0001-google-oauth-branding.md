@@ -1,6 +1,8 @@
 # Google OAuth branding strategy
 
-Google sign-in branding is controlled by the Google Cloud OAuth consent screen and the OAuth callback domain — not by app code. We configure one GCP project with app name **Онова за сметката**, our logo, and privacy/terms URLs; OAuth callbacks stay on `*.convex.site` (default Convex Auth) rather than a custom auth domain.
+**Status:** Auth **routing** superseded by [ADR 0002](./0002-clerk-auth-billing.md) (Clerk). Consent-screen branding (app name, logo, privacy/terms) still applies in Google Cloud; the callback is Clerk’s URI, not `*.convex.site`. Host Pro is Stripe — [ADR 0003](./0003-stripe-billing-beside-clerk.md).
+
+Google sign-in branding is controlled by the Google Cloud OAuth consent screen and the OAuth callback domain — not by app code. We configure one GCP project with app name **Онова за сметката**, our logo, and privacy/terms URLs.
 
 ## Target outcome (#99)
 

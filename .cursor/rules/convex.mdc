@@ -8,6 +8,8 @@ alwaysApply: false
 
 Auth is **Clerk** + **`convex/react-clerk`** — reuse helpers in `convex/lib/` (e.g. `requireAuth`, `requireBillOwner`, `requireGuestSession`, `hostTier`). Do not invent parallel auth patterns.
 
+**Host Pro** is **Stripe Billing** (Checkout + Customer Portal + webhooks into Convex). Do not add Clerk Billing APIs (`PricingTable`, `has({ plan })`, Clerk subscription webhooks) as the source of truth. Quotas stay in `convex/lib/hostTier.ts`.
+
 When Convex plugin skills suggest generic auth setup (WorkOS, Auth0, custom JWT), follow this repo's **Clerk** helpers in `convex/lib/` instead.
 
 ## Functions

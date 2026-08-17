@@ -1,5 +1,7 @@
 # Research: Clerk Billing (B2C) — tier gates vs metered quotas
 
+> **Decision:** Clerk Billing is **not** used. Quotas stay in Convex (`hostTier`); subscription state will come from Stripe — [ADR 0003](../docs/adr/0003-stripe-billing-beside-clerk.md). The Convex-vs-entitlement split in this note still applies.
+
 Part of wayfinder map [#103](https://github.com/HayGrouve/onova-za-smetkata/issues/103). Resolves research ticket [#104](https://github.com/HayGrouve/onova-za-smetkata/issues/104).
 
 ## Question

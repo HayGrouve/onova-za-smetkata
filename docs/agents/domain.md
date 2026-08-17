@@ -6,12 +6,12 @@ How agent skills should consume this repo's domain documentation.
 
 - **Product domain**: bill splitting for restaurants — glossary in root **`CONTEXT.md`** (core terms also in `.cursor/rules/context-core.mdc`).
 - **Engineering conventions**: **`docs/agents/guidelines.md`**.
-- **ADRs**: **`docs/adr/`** (created lazily via `/domain-modeling` when decisions are made).
+- **ADRs**: **`docs/adr/`**. Host auth = Clerk ([0002](../adr/0002-clerk-auth-billing.md)); Host Pro = Stripe Billing ([0003](../adr/0003-stripe-billing-beside-clerk.md)).
 
 ## Before exploring
 
 1. Read **`CONTEXT.md`** for vocabulary and module pointers.
-2. Check **`docs/adr/`** for decisions that touch your area. If the folder is empty, proceed — do not suggest creating ADRs upfront.
+2. Check **`docs/adr/`** for decisions that touch your area. Host auth/billing: Clerk vs Stripe is already decided (0002 / 0003).
 
 ## Use the glossary's vocabulary
 

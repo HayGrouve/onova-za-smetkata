@@ -1,5 +1,7 @@
 # Research: Clerk Billing platform constraints
 
+> **Decision:** Clerk Billing is **not** used. Host Pro is Stripe Billing — [ADR 0003](../docs/adr/0003-stripe-billing-beside-clerk.md). This note records why Clerk Billing was rejected.
+
 Part of wayfinder map [#114](https://github.com/HayGrouve/onova-za-smetkata/issues/114). Resolves [#115](https://github.com/HayGrouve/onova-za-smetkata/issues/115).
 
 ## Question

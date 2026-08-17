@@ -1,5 +1,7 @@
 # Research: Clerk Billing integration gap audit
 
+> **Decision:** Do not close remaining Clerk Billing gaps. Host Pro is Stripe — [ADR 0003](../docs/adr/0003-stripe-billing-beside-clerk.md). This audit describes leftover Clerk Billing code vs the old spec.
+
 Part of wayfinder map [#114](https://github.com/HayGrouve/onova-za-smetkata/issues/114). Resolves [#116](https://github.com/HayGrouve/onova-za-smetkata/issues/116).
 
 ## Question

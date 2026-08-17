@@ -6,6 +6,20 @@ Project-specific conventions for agents working in this repo. Read this after `C
 
 **Онова за сметката** — mobile web PWA for splitting restaurant bills in Bulgarian. Hosts create bills, assign receipt items to participants, track guest payments, and share totals. Guests join via share link without an account.
 
+## Host identity and SaaS billing
+
+These are separate products. Do not collapse them into “Clerk Billing”.
+
+| Concern                                                                   | Owner                                                                       |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Host sign-in (Google + email)                                             | **Clerk** — [ADR 0002](../adr/0002-clerk-auth-billing.md)                   |
+| Host Pro subscription (€2.99/mo EUR, Checkout + Customer Portal, SCA/3DS) | **Stripe Billing** — [ADR 0003](../adr/0003-stripe-billing-beside-clerk.md) |
+| Free/Pro quota enforcement                                                | **Convex** (`convex/lib/hostTier.ts`)                                       |
+| Guest join                                                                | Share token + `guestSessions` (no Clerk account)                            |
+| Guest restaurant payment                                                  | Host Revolut / IBAN (not Stripe)                                            |
+
+Do **not** enable Clerk Billing in the Clerk Dashboard. Existing `convex/clerkWebhookAction.ts` / `/clerk/webhook` code is leftover Clerk Billing mirroring; new Host Pro work goes through Stripe, not those APIs.
+
 ## Architecture map
 
 ```
@@ -112,6 +126,7 @@ Copy `.env.example` → `.env.local` and set `VITE_CONVEX_URL` and `VITE_CLERK_P
 - Editing generated files instead of their sources.
 - Putting business logic only in React components instead of `shared/` or `convex/lib/`.
 - Confusing **client** dev mode (`import.meta.env.DEV`) with **server** `DEV_MODE` — both are needed for local auto-auth.
+- Treating **Clerk Billing** as the Host Pro stack — Host Pro is Stripe ([ADR 0003](../adr/0003-stripe-billing-beside-clerk.md)).
 - Using English in user-facing copy.
 - Drifting from `CONTEXT.md` terms (e.g. calling a Guest a "member" or the host's seat a "guest").
 - Assuming E2E runs in CI — it is optional unless `E2E_VITE_CONVEX_URL` is configured.
@@ -119,6 +134,8 @@ Copy `.env.example` → `.env.local` and set `VITE_CONVEX_URL` and `VITE_CLERK_P
 ## Related docs
 
 - `CONTEXT.md` — domain glossary (required reading)
+- `docs/adr/0002-clerk-auth-billing.md` — Clerk for Host auth
+- `docs/adr/0003-stripe-billing-beside-clerk.md` — Stripe Billing for Host Pro
 - `README.md` — setup and scripts
 - `docs/DEPLOY.md` — env matrix, deploy path, security notes, backfills
 - `e2e/README.md` — Playwright prerequisites and failure modes

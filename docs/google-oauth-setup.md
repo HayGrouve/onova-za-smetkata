@@ -10,4 +10,4 @@ Use **[clerk-production-setup.md](./clerk-production-setup.md)** — Phase 1, **
 
 Do **not** use old Convex Auth redirect URIs (`*.convex.site/api/auth/callback/google`) or Convex env vars (`AUTH_GOOGLE_*`, `SITE_URL`).
 
-**Historical context:** [ADR 0001](./adr/0001-google-oauth-branding.md) (consent screen strategy). Auth routing is now [ADR 0002](./adr/0002-clerk-auth-billing.md) (Clerk).
+**Historical context:** [ADR 0001](./adr/0001-google-oauth-branding.md) (consent screen strategy). Auth routing is now [ADR 0002](./adr/0002-clerk-auth-billing.md) (Clerk). Host Pro billing is [ADR 0003](./adr/0003-stripe-billing-beside-clerk.md) (Stripe, not Clerk Billing).

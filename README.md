@@ -44,6 +44,10 @@ pnpm run deploy        # Convex deploy (frontend via Vercel Git integration)
 - [TanStack Start](https://tanstack.com/start) + React 19
 - [Convex](https://convex.dev) backend
 - [Vercel](https://vercel.com) hosting
+- [Clerk](https://clerk.com) — Host authentication only
+- [Stripe Billing](https://stripe.com/billing) — Host Pro subscription (not Clerk Billing)
 - [Shadcn UI](https://ui.shadcn.com) + Tailwind CSS
 - [Playwright](https://playwright.dev) E2E
 - [Sentry](https://sentry.io) (optional, production)
+
+Guests do not use Clerk or Stripe: they join via share link and pay the Host (Revolut/IBAN). Decisions: [ADR 0002](docs/adr/0002-clerk-auth-billing.md), [ADR 0003](docs/adr/0003-stripe-billing-beside-clerk.md).

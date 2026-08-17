@@ -1,8 +1,10 @@
 # Clerk auth + Billing — implementation spec
 
+> **Billing half superseded.** Host Pro is **Stripe Billing**, not Clerk Billing — [ADR 0003](../adr/0003-stripe-billing-beside-clerk.md). The **Clerk auth** sections below still describe the shipped sign-in stack ([ADR 0002](../adr/0002-clerk-auth-billing.md)). Do not implement `<PricingTable />`, Clerk Plans, or Clerk subscription webhooks from this spec.
+
 Wayfinder map [#103](https://github.com/HayGrouve/onova-za-smetkata/issues/103). Resolves task [#113](https://github.com/HayGrouve/onova-za-smetkata/issues/113).
 
-**Status:** Build-ready spec synthesizing locked decisions (#104–#108, #107, #111, #112).
+**Status:** Historical for Clerk Billing. Auth parts remain useful. New Host Pro work follows ADR 0003.
 
 **Scope:** Host authentication + SaaS subscription only. Guest join/claim (share tokens, `guestSessions`) unchanged.
 
@@ -10,19 +12,19 @@ Wayfinder map [#103](https://github.com/HayGrouve/onova-za-smetkata/issues/103).
 
 ## Locked product decisions
 
-| Decision         | Value                                                                          | Ticket |
-| ---------------- | ------------------------------------------------------------------------------ | ------ |
-| Stack            | **Clerk auth + Clerk Billing**                                                 | #108   |
-| Tiers            | **Free + Pro**                                                                 | #107   |
-| Free limits      | 5 bills/mo, 5 OCR/mo, 1 friend group (20 members max)                          | #107   |
-| Pro limits       | Unlimited bills/OCR, 50 friend groups                                          | #107   |
-| Pro price        | **€2.99/mo**, monthly only, no trial/discount                                  | #111   |
-| At quota         | Soft block — existing bills editable; only new creates/scans blocked           | #107   |
-| Payment failed   | 7-day grace, keep Pro; downgrade after grace                                   | #112   |
-| Voluntary cancel | Pro until `current_period_end`                                                 | #112   |
-| Post-downgrade   | Counters carry over; no read-only mode                                         | #112   |
-| Pre-public       | Few test users — **wipe or fresh start** acceptable; no prod migration runbook | #108   |
-| Quota engine     | **Convex authoritative**; Clerk gates plan tier only                           | #104   |
+| Decision         | Value                                                                          | Ticket   |
+| ---------------- | ------------------------------------------------------------------------------ | -------- |
+| Stack            | **Clerk auth + Stripe Billing** (Clerk Billing withdrawn — ADR 0003)           | —        |
+| Tiers            | **Free + Pro**                                                                 | #107     |
+| Free limits      | 5 bills/mo, 5 OCR/mo, 1 friend group (20 members max)                          | #107     |
+| Pro limits       | Unlimited bills/OCR, 50 friend groups                                          | #107     |
+| Pro price        | **€2.99/mo**, monthly only, no trial/discount                                  | #111     |
+| At quota         | Soft block — existing bills editable; only new creates/scans blocked           | #107     |
+| Payment failed   | 7-day grace, keep Pro; downgrade after grace                                   | #112     |
+| Voluntary cancel | Pro until `current_period_end`                                                 | #112     |
+| Post-downgrade   | Counters carry over; no read-only mode                                         | #112     |
+| Pre-public       | Few test users — **wipe or fresh start** acceptable; no prod migration runbook | #108     |
+| Quota engine     | **Convex authoritative**; Stripe subscription state mirrored into Convex       | ADR 0003 |
 
 ---
 

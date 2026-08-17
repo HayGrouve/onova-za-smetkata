@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Frontend
 
-Stack: TanStack Router/Start, shadcn/ui, Tailwind. Route file patterns: **`.cursor/rules/tanstack-start.mdc`**.
+Stack: TanStack Router/Start, shadcn/ui, Tailwind. Route file patterns: **`.cursor/rules/tanstack-start.mdc`**. Host sign-in is **Clerk**; Host Pro checkout is **Stripe**, not Clerk `<PricingTable />`.
 
 ## Imports
 

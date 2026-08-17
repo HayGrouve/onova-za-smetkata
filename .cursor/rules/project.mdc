@@ -7,14 +7,14 @@ alwaysApply: true
 
 **Онова за сметката** — Bulgarian mobile web PWA for restaurant bill splitting.
 
-**Stack:** TanStack Start (not Next.js), Convex, Vercel, Clerk auth + Billing.
+**Stack:** TanStack Start (not Next.js), Convex, Vercel. **Host auth:** Clerk. **Host Pro billing:** Stripe Billing (not Clerk Billing). Guest join stays share-token; guest restaurant payments stay Revolut/IBAN.
 
 ## Before changing code
 
 1. **`CONTEXT.md`** — full domain glossary (core terms are also in `.cursor/rules/context-core.mdc`).
 2. **`docs/agents/guidelines.md`** — architecture, imports, testing, env, pitfalls.
 3. **`AGENTS.md`** — agent workflow, issue tracker, triage labels.
-4. **`docs/adr/`** — architectural decisions for the area you touch (may be empty).
+4. **`docs/adr/`** — architectural decisions for the area you touch (Host auth: Clerk; Host Pro: Stripe Billing).
 
 ## Quality bar
 

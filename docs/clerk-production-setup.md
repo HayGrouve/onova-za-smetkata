@@ -1,8 +1,10 @@
-# Clerk auth + billing — production setup
+# Clerk Host auth — production setup
 
-Step-by-step checklist for configuring **Clerk**, **Convex**, and **Vercel** production, then shipping the Clerk migration via GitHub Actions.
+Step-by-step checklist for configuring **Clerk** (Host sign-in), **Convex**, and **Vercel** production.
 
-**Related docs:** general deploy runbook [`DEPLOY.md`](./DEPLOY.md) · decision record [`adr/0002-clerk-auth-billing.md`](./adr/0002-clerk-auth-billing.md) · implementation spec [`specs/clerk-auth-billing-implementation.md`](./specs/clerk-auth-billing-implementation.md)
+**Host Pro is Stripe Billing, not Clerk Billing** — [ADR 0003](./adr/0003-stripe-billing-beside-clerk.md). This runbook is **auth only**. Do not enable Clerk Plans / Billing in the Dashboard.
+
+**Related docs:** general deploy runbook [`DEPLOY.md`](./DEPLOY.md) · auth decision [`adr/0002-clerk-auth-billing.md`](./adr/0002-clerk-auth-billing.md) · billing decision [`adr/0003-stripe-billing-beside-clerk.md`](./adr/0003-stripe-billing-beside-clerk.md)
 
 **Production references (this project):**
 
@@ -135,23 +137,11 @@ Add production URLs:
 - `https://www.onova-za-smetkata.com` (if used)
 - Your Vercel production URL (for smoke tests before custom domain cutover)
 
-### 1.7 Billing plans (B2C)
+### 1.7 Clerk Billing — do not enable
 
-**Billing → Plans for Users**
+**Do not** turn on **Billing → Plans for Users**. Host Pro is charged with **Stripe Billing** ([ADR 0003](./adr/0003-stripe-billing-beside-clerk.md)). Clerk Billing is USD-only and cannot run 3DS.
 
-| Slug        | Price            | Notes                                  |
-| ----------- | ---------------- | -------------------------------------- |
-| `free_user` | $0               | Default; auto-assigned                 |
-| `pro`       | ~$3.29/month USD | Monthly only — see currency note below |
-
-> **Clerk Billing currency:** All charges are processed in **USD** regardless of Stripe account locale ([Clerk Billing FAQ](https://clerk.com/docs/guides/billing/overview)). Product copy may still reference ≈€2.99 until [#118](https://github.com/HayGrouve/onova-za-smetkata/issues/118) locks display vs charge wording.
-
-Connect **Stripe** in Clerk Billing for real payments in production. Dev uses Clerk's shared test gateway; prod requires Stripe.
-
-Optional plan features (UX gates only; quotas enforced in Convex):
-
-- `ocr` on `pro`
-- `friend_groups` on `pro`
+Skip connecting Stripe inside the Clerk Dashboard. Stripe is a separate product for Host Pro, not Clerk’s payment gateway.
 
 ### 1.8 Google SSO (production — required)
 
@@ -237,11 +227,10 @@ Open [Convex Dashboard](https://dashboard.convex.dev) → deployment **`coordina
 
 ### 2.1 Add or update
 
-| Variable                       | Value                                     |
-| ------------------------------ | ----------------------------------------- |
-| `CLERK_JWT_ISSUER_DOMAIN`      | `https://clerk.onova-za-smetkata.com`     |
-| `CLERK_WEBHOOK_SIGNING_SECRET` | Clerk webhook signing secret (Phase 3)    |
-| `GEMINI_API_KEY`               | Keep if receipt OCR is already configured |
+| Variable                  | Value                                     |
+| ------------------------- | ----------------------------------------- |
+| `CLERK_JWT_ISSUER_DOMAIN` | `https://clerk.onova-za-smetkata.com`     |
+| `GEMINI_API_KEY`          | Keep if receipt OCR is already configured |
 
 ### 2.2 Enforce
 
@@ -261,9 +250,13 @@ Removing them avoids confusion; leaving them in place should not break Clerk aut
 
 ---
 
-## Phase 3 — Clerk webhook → Convex
+## Phase 3 — Clerk webhook → Convex (legacy Billing only)
 
-In Clerk Dashboard → **Webhooks → Add endpoint**:
+The repo still has `/clerk/webhook` from an earlier Clerk Billing experiment (`convex/http.ts`). **Do not subscribe new Clerk Billing events** and **do not** treat this as Host Pro.
+
+When Host Pro ships, register **Stripe** webhooks on Convex instead ([ADR 0003](./adr/0003-stripe-billing-beside-clerk.md)). Keep `CLERK_JWT_ISSUER_DOMAIN` for auth; `CLERK_WEBHOOK_SIGNING_SECRET` is only needed while the leftover Clerk handler remains deployed.
+
+If you still need the old endpoint for a wipe/migration window:
 
 **Endpoint URL:**
 
@@ -271,16 +264,7 @@ In Clerk Dashboard → **Webhooks → Add endpoint**:
 https://coordinated-warbler-782.convex.site/clerk/webhook
 ```
 
-**Subscribe to events:**
-
-- `subscriptionItem.active`
-- `subscriptionItem.canceled`
-- `subscriptionItem.pastDue`
-- `subscription.updated`
-
-Copy the **Signing Secret** → set as `CLERK_WEBHOOK_SIGNING_SECRET` on Convex prod (Phase 2.1).
-
-The handler lives in `convex/http.ts` and mirrors plan state into `users.clerkPlanSlug`, `subscriptionStatus`, etc.
+Prefer disabling that Clerk webhook once Stripe mirroring is live.
 
 ---
 
@@ -430,13 +414,15 @@ Run on `https://onova-za-smetkata.com` (or Vercel prod URL before domain cutover
 - [ ] Guest can claim items; second device sees name as „Заето“
 - [ ] Finalized bill: guest claim page is read-only
 
-### Billing (optional)
+### Host Pro (Stripe — not Clerk)
+
+Skip until Stripe Checkout is implemented. Then smoke against Stripe test mode, not Clerk Plans.
 
 - [ ] Hit a free-tier limit → paywall appears
-- [ ] Upgrade to Pro via Clerk checkout
-- [ ] Clerk webhook delivers successfully
-- [ ] Convex `users` row shows `clerkPlanSlug: "pro"`, `subscriptionStatus: "active"`
+- [ ] Upgrade to Pro via **Stripe Checkout**
+- [ ] Stripe webhook updates Convex `users` (`subscriptionStatus: "active"`, plan slug)
 - [ ] Pro limits unlock (unlimited bills/OCR, more friend groups)
+- [ ] Customer Portal cancel / grace matches `hostTier` rules
 
 Full checklist: [`DEPLOY.md` — Smoke test](./DEPLOY.md#release-steps).
 
@@ -444,17 +430,17 @@ Full checklist: [`DEPLOY.md` — Smoke test](./DEPLOY.md#release-steps).
 
 ## Environment matrix (quick reference)
 
-| Variable                       | Convex prod  | Vercel prod |
-| ------------------------------ | ------------ | ----------- |
-| `CLERK_JWT_ISSUER_DOMAIN`      | ✅           | —           |
-| `CLERK_WEBHOOK_SIGNING_SECRET` | ✅ (billing) | —           |
-| `GEMINI_API_KEY`               | ✅           | —           |
-| `DEV_MODE`                     | ❌ never     | —           |
-| `VITE_CONVEX_URL`              | —            | ✅          |
-| `VITE_APP_ORIGIN`              | —            | ✅          |
-| `VITE_CLERK_PUBLISHABLE_KEY`   | —            | ✅          |
-| `CLERK_PUBLISHABLE_KEY`        | —            | recommended |
-| `CLERK_SECRET_KEY`             | —            | ✅          |
+| Variable                       | Convex prod                    | Vercel prod |
+| ------------------------------ | ------------------------------ | ----------- |
+| `CLERK_JWT_ISSUER_DOMAIN`      | ✅                             | —           |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | leftover `/clerk/webhook` only | —           |
+| `GEMINI_API_KEY`               | ✅                             | —           |
+| `DEV_MODE`                     | ❌ never                       | —           |
+| `VITE_CONVEX_URL`              | —                              | ✅          |
+| `VITE_APP_ORIGIN`              | —                              | ✅          |
+| `VITE_CLERK_PUBLISHABLE_KEY`   | —                              | ✅          |
+| `CLERK_PUBLISHABLE_KEY`        | —                              | recommended |
+| `CLERK_SECRET_KEY`             | —                              | ✅          |
 
 ---
 

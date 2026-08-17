@@ -1,5 +1,7 @@
 # Auth + billing alternatives
 
+> **Decision:** **Approach B** — Clerk for Host auth, Stripe Billing for Host Pro. See [ADR 0002](../docs/adr/0002-clerk-auth-billing.md) and [ADR 0003](../docs/adr/0003-stripe-billing-beside-clerk.md). This note is historical comparison, not an open choice.
+
 Research for [#103](https://github.com/HayGrouve/onova-za-smetkata/issues/103) (wayfinder map) — answers [#106](https://github.com/HayGrouve/onova-za-smetkata/issues/106).
 
 **Question:** For free-tier bill/OCR limits and a paid unlock, compare three stacks: Clerk all-in, Clerk auth + Stripe Billing, and keep `@convex-dev/auth` + Stripe directly.

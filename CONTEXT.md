@@ -94,9 +94,19 @@ _Avoid_: wiring tab semantics, item filters, and share breakdown separately in t
 Orchestration for the Guest journey — join resume, seat pick, claim redirects, session-lost recovery, doc mapping to Guest claim session input. Pure module: `shared/guest-flow-session.ts`; React seams: `useGuestJoinFlow`, `useGuestClaimFlow` (the latter composes `useGuestClaimSession`).
 _Avoid_: duplicating redirect/resume logic in routes; conflating with Guest claim session
 
+**Host Pro**:
+The paid SaaS tier that lifts Free-tier limits (bills per month, OCR scans, friend groups). The Host pays the product, not the restaurant.
+_Avoid_: mixing this with Outstanding / Guest restaurant payments; calling Guest Revolut “billing”
+
+**Free tier**:
+The default Host SaaS level with monthly bill and OCR limits. Existing bills stay editable at quota; only new creates/scans are blocked.
+_Avoid_: treating quota as a hard lock on the current bill
+
 ## Related docs
 
 - `docs/agents/guidelines.md` — architecture, testing, and implementation conventions for agents
 - `.cursor/rules/context-core.mdc` — always-on summary of core terms above (for Cursor agents)
 - `README.md` — local development and scripts
 - `docs/DEPLOY.md` — production deploy, env vars, security
+- `docs/adr/0002-clerk-auth-billing.md` — Clerk for Host sign-in
+- `docs/adr/0003-stripe-billing-beside-clerk.md` — Stripe Billing for Host Pro
