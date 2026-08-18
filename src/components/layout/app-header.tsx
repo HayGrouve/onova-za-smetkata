@@ -13,33 +13,12 @@ import {
   buildAppHeaderMenuConfig,
   shouldShowBillMenuGroup,
 } from '../../../shared/app-header-menu-config.ts'
-import type { AppHeaderRouteContext } from '../../../shared/app-header-menu-config.ts'
+import { resolveAppHeaderRouteContext } from '../../../shared/app-header-route-context.ts'
 import { getBillFinalizeEligibility } from '../../../shared/bill-finalize-eligibility.ts'
 import { toBillCalculationSnapshot } from '#/lib/bill-calculation-snapshot.ts'
 import { useViewerNowMs } from '#/hooks/use-viewer-now-ms.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
-
-function resolveRouteContext(
-  pathname: string,
-  searchStr: string,
-  billId: Id<'bills'> | undefined,
-): AppHeaderRouteContext {
-  if (pathname === '/') return 'home'
-  if (pathname === '/login') return 'login'
-  if (!billId) return 'home'
-
-  const isSummary = pathname.endsWith('/summary')
-  const isJoin = pathname.endsWith('/join')
-  const isClaim = pathname.endsWith('/claim')
-  const claimMode = new URLSearchParams(searchStr).get('mode')
-
-  if (isJoin) return 'guestJoin'
-  if (isClaim && claimMode !== 'host') return 'guestClaim'
-  if (isClaim && claimMode === 'host') return 'hostClaim'
-  if (isSummary) return 'summary'
-  return 'editor'
-}
 
 function useHeaderConfig() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
@@ -47,7 +26,7 @@ function useHeaderConfig() {
   const params = useParams({ strict: false })
   const billId = params.billId as Id<'bills'> | undefined
   const billHeaderTitle = useBillHeaderTitleValue()
-  const routeContext = resolveRouteContext(pathname, searchStr, billId)
+  const routeContext = resolveAppHeaderRouteContext(pathname, searchStr, billId)
 
   const isHome = pathname === '/'
   const isLogin = pathname === '/login'
@@ -83,6 +62,18 @@ function useHeaderConfig() {
     return {
       title: 'Вход',
       backTo: null,
+      backParams: undefined,
+      backSearch: undefined,
+      routeContext,
+      billId,
+      bill,
+    }
+  }
+
+  if (routeContext === 'hostAccount') {
+    return {
+      title: 'Акаунт',
+      backTo: '/' as const,
       backParams: undefined,
       backSearch: undefined,
       routeContext,

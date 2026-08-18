@@ -33,6 +33,14 @@ describe('buildAppHeaderMenuConfig', () => {
     ).toEqual([])
   })
 
+  it('returns no bill items on Host account', () => {
+    expect(
+      visibleIds(
+        buildAppHeaderMenuConfig(input({ routeContext: 'hostAccount' })),
+      ),
+    ).toEqual([])
+  })
+
   it('returns theme-only contexts for guest join and guest claim', () => {
     for (const routeContext of ['guestJoin', 'guestClaim'] as const) {
       expect(

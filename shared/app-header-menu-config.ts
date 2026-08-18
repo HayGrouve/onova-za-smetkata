@@ -1,6 +1,7 @@
 export type AppHeaderRouteContext =
   | 'home'
   | 'login'
+  | 'hostAccount'
   | 'editor'
   | 'summary'
   | 'hostClaim'
@@ -124,6 +125,7 @@ export function buildAppHeaderMenuConfig(
   switch (input.routeContext) {
     case 'home':
     case 'login':
+    case 'hostAccount':
     case 'guestJoin':
     case 'guestClaim':
       return []
