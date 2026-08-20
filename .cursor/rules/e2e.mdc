@@ -14,6 +14,7 @@ Playwright covers critical-path guest/host browser flows. Full setup and failure
 | `claim-search-drawer.spec.ts` | Vaul drawer + item search on guest claim |
 | `combined-guest-payment.spec.ts` | Host payment banner appears only after Revolut opens |
 | `host-account-route.spec.ts` | Host Акаунт route: unsigned redirect; signed-in `/user-profile` and `/user-profile/security` |
+| `host-onboarding.spec.ts` | Host replay hints; welcome dismiss |
 
 ## Prerequisites
 

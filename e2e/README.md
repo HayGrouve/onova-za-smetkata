@@ -45,12 +45,13 @@ Run these locally before merge when you touch guest/host browser flows. In CI, t
 
 ## Specs
 
-| File                             | Journey                                              |
-| -------------------------------- | ---------------------------------------------------- |
-| `session-conflict.spec.ts`       | Two browsers claim the same guest seat               |
-| `claim-search-drawer.spec.ts`    | Vaul drawer + item search on guest claim             |
-| `combined-guest-payment.spec.ts` | Host payment banner appears only after Revolut opens |
-| `host-onboarding.spec.ts`        | Host replay hints; welcome dismiss                   |
+| File                             | Journey                                                                      |
+| -------------------------------- | ---------------------------------------------------------------------------- |
+| `session-conflict.spec.ts`       | Two browsers claim the same guest seat                                       |
+| `claim-search-drawer.spec.ts`    | Vaul drawer + item search on guest claim                                     |
+| `combined-guest-payment.spec.ts` | Host payment banner appears only after Revolut opens                         |
+| `host-account-route.spec.ts`     | Host Акаунт: unsigned redirect; `/user-profile` and `/user-profile/security` |
+| `host-onboarding.spec.ts`        | Host replay hints; welcome dismiss                                           |
 
 ## Common failures
 
