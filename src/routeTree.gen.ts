@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UserProfileSplatRouteImport } from './routes/user-profile.$'
+import { Route as PrototypeThemeControlRouteImport } from './routes/prototype/theme-control'
 import { Route as PrototypeHostPaidPresentationRouteImport } from './routes/prototype/host-paid-presentation'
 import { Route as PrototypeGuidanceFocusRouteImport } from './routes/prototype/guidance-focus'
 import { Route as BillsBillIdIndexRouteImport } from './routes/bills/$billId/index'
@@ -50,6 +51,11 @@ const IndexRoute = IndexRouteImport.update({
 const UserProfileSplatRoute = UserProfileSplatRouteImport.update({
   id: '/user-profile/$',
   path: '/user-profile/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrototypeThemeControlRoute = PrototypeThemeControlRouteImport.update({
+  id: '/prototype/theme-control',
+  path: '/prototype/theme-control',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrototypeHostPaidPresentationRoute =
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/prototype/guidance-focus': typeof PrototypeGuidanceFocusRoute
   '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
+  '/prototype/theme-control': typeof PrototypeThemeControlRoute
   '/user-profile/$': typeof UserProfileSplatRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/prototype/guidance-focus': typeof PrototypeGuidanceFocusRoute
   '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
+  '/prototype/theme-control': typeof PrototypeThemeControlRoute
   '/user-profile/$': typeof UserProfileSplatRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/prototype/guidance-focus': typeof PrototypeGuidanceFocusRoute
   '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
+  '/prototype/theme-control': typeof PrototypeThemeControlRoute
   '/user-profile/$': typeof UserProfileSplatRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/prototype/guidance-focus'
     | '/prototype/host-paid-presentation'
+    | '/prototype/theme-control'
     | '/user-profile/$'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/prototype/guidance-focus'
     | '/prototype/host-paid-presentation'
+    | '/prototype/theme-control'
     | '/user-profile/$'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/prototype/guidance-focus'
     | '/prototype/host-paid-presentation'
+    | '/prototype/theme-control'
     | '/user-profile/$'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
@@ -180,6 +192,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   PrototypeGuidanceFocusRoute: typeof PrototypeGuidanceFocusRoute
   PrototypeHostPaidPresentationRoute: typeof PrototypeHostPaidPresentationRoute
+  PrototypeThemeControlRoute: typeof PrototypeThemeControlRoute
   UserProfileSplatRoute: typeof UserProfileSplatRoute
   BillsBillIdClaimRoute: typeof BillsBillIdClaimRoute
   BillsBillIdJoinRoute: typeof BillsBillIdJoinRoute
@@ -229,6 +242,13 @@ declare module '@tanstack/react-router' {
       path: '/user-profile/$'
       fullPath: '/user-profile/$'
       preLoaderRoute: typeof UserProfileSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prototype/theme-control': {
+      id: '/prototype/theme-control'
+      path: '/prototype/theme-control'
+      fullPath: '/prototype/theme-control'
+      preLoaderRoute: typeof PrototypeThemeControlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/prototype/host-paid-presentation': {
@@ -284,6 +304,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   PrototypeGuidanceFocusRoute: PrototypeGuidanceFocusRoute,
   PrototypeHostPaidPresentationRoute: PrototypeHostPaidPresentationRoute,
+  PrototypeThemeControlRoute: PrototypeThemeControlRoute,
   UserProfileSplatRoute: UserProfileSplatRoute,
   BillsBillIdClaimRoute: BillsBillIdClaimRoute,
   BillsBillIdJoinRoute: BillsBillIdJoinRoute,

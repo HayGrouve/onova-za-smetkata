@@ -10,6 +10,7 @@
     "dev": "vite dev --port 3000",
     "prototype:host-paid": "vite dev --port 3000 --open /prototype/host-paid-presentation?variant=A",
     "prototype:guidance-focus": "vite dev --port 3000 --open /prototype/guidance-focus",
+    "prototype:theme-control": "vite dev --port 3000 --open /prototype/theme-control?variant=A",
     "generate-routes": "tsr generate",
     "build": "vite build",
     "preview": "vite preview",
