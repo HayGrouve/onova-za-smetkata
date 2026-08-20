@@ -1,28 +1,20 @@
-import { useClerk } from '@clerk/tanstack-react-start'
 import {
   BookOpenIcon,
   CheckCircleIcon,
   ChevronDownIcon,
   CogIcon,
   Link2OffIcon,
-  LogOutIcon,
-  MonitorIcon,
-  MoonIcon,
   MoreVerticalIcon,
   PencilIcon,
   Share2Icon,
   ShareIcon,
-  SunIcon,
   Trash2Icon,
-  UserIcon,
   UsersIcon,
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
-import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { useFriendGroupsSheet } from '#/components/bills/friend-groups-provider.tsx'
-import { useProfileSheet } from '#/components/profile/profile-provider.tsx'
 import { useHostOnboarding } from '#/components/host-onboarding/host-onboarding-provider.tsx'
 import { HOST_ONBOARDING_HOME } from '../../../shared/host-onboarding-messages.ts'
 import type {
@@ -40,8 +32,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu.tsx'
@@ -51,8 +41,8 @@ import {
   TooltipTrigger,
 } from '#/components/ui/tooltip.tsx'
 import { ICON } from '#/lib/app-icons.ts'
-import { getSignOutCopy } from '#/lib/destructive-action-copy.ts'
 import { cn } from '#/lib/utils.ts'
+import { ThemeRocker } from '#/components/layout/theme-rocker.tsx'
 
 const BILL_ACTION_ICONS: Record<AppHeaderMenuBillActionId, typeof Share2Icon> =
   {
@@ -69,8 +59,6 @@ export interface AppHeaderMenuProps {
   showHostActions: boolean
   /** When false, global host items nest under „Още настройки“. */
   isHomeRoute?: boolean
-  viewerLabel?: string | null
-  viewerEmail?: string | null
   billMenuItems?: AppHeaderMenuItemDescriptor[]
   onBillAction?: (actionId: AppHeaderMenuBillActionId) => void
   billMenuDialogs?: React.ReactNode
@@ -119,24 +107,16 @@ function BillMenuItem({
 }
 
 function HostSettingsMenuItems({
-  onSignOut,
-  onOpenProfile,
   onOpenPaymentSettings,
   onOpenFriendGroups,
   onStartReplay,
 }: {
-  onSignOut: () => void
-  onOpenProfile: () => void
   onOpenPaymentSettings: () => void
   onOpenFriendGroups: () => void
   onStartReplay: () => void
 }) {
   return (
     <>
-      <DropdownMenuItem onSelect={onOpenProfile}>
-        <UserIcon className={ICON.button} aria-hidden />
-        Профил
-      </DropdownMenuItem>
       <DropdownMenuItem onSelect={onOpenPaymentSettings}>
         <CogIcon className={ICON.button} aria-hidden />
         Настройки за плащане
@@ -149,16 +129,6 @@ function HostSettingsMenuItems({
         <BookOpenIcon className={ICON.button} aria-hidden />
         {HOST_ONBOARDING_HOME.helpAndGuidance}
       </DropdownMenuItem>
-      <DropdownMenuItem
-        variant="destructive"
-        onSelect={(event) => {
-          event.preventDefault()
-          onSignOut()
-        }}
-      >
-        <LogOutIcon className={ICON.button} aria-hidden />
-        Изход
-      </DropdownMenuItem>
     </>
   )
 }
@@ -166,16 +136,12 @@ function HostSettingsMenuItems({
 function CollapsibleHostSettingsSection({
   open,
   onOpenChange,
-  onSignOut,
-  onOpenProfile,
   onOpenPaymentSettings,
   onOpenFriendGroups,
   onStartReplay,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSignOut: () => void
-  onOpenProfile: () => void
   onOpenPaymentSettings: () => void
   onOpenFriendGroups: () => void
   onStartReplay: () => void
@@ -203,11 +169,9 @@ function CollapsibleHostSettingsSection({
       </CollapsibleTrigger>
       <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-1 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
         <HostSettingsMenuItems
-          onOpenProfile={onOpenProfile}
           onOpenPaymentSettings={onOpenPaymentSettings}
           onOpenFriendGroups={onOpenFriendGroups}
           onStartReplay={onStartReplay}
-          onSignOut={onSignOut}
         />
       </CollapsibleContent>
     </Collapsible>
@@ -217,19 +181,14 @@ function CollapsibleHostSettingsSection({
 export function AppHeaderMenu({
   showHostActions,
   isHomeRoute = false,
-  viewerLabel,
-  viewerEmail,
   billMenuItems = [],
   onBillAction,
   billMenuDialogs,
 }: AppHeaderMenuProps) {
   const { theme, setTheme } = useTheme()
-  const { signOut } = useClerk()
   const { openPaymentSettings } = usePaymentSettingsSheet()
   const { openFriendGroups } = useFriendGroupsSheet()
-  const { openProfile } = useProfileSheet()
   const { startReplay } = useHostOnboarding()
-  const { confirm } = useConfirmAction()
   const [mounted, setMounted] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [moreSettingsOpen, setMoreSettingsOpen] = useState(false)
@@ -240,16 +199,6 @@ export function AppHeaderMenu({
     setMounted(true)
   }, [])
 
-  async function handleSignOutWithConfirm() {
-    const confirmed = await confirm(getSignOutCopy())
-    if (!confirmed) return
-    await handleSignOut()
-  }
-
-  async function handleSignOut() {
-    await signOut()
-  }
-
   function handleMenuOpenChange(nextOpen: boolean) {
     setMenuOpen(nextOpen)
     if (!nextOpen) {
@@ -258,11 +207,9 @@ export function AppHeaderMenu({
   }
 
   const hostSettingsHandlers = {
-    onOpenProfile: () => openProfile(),
     onOpenPaymentSettings: () => openPaymentSettings(),
     onOpenFriendGroups: () => openFriendGroups(),
     onStartReplay: () => startReplay(),
-    onSignOut: () => void handleSignOutWithConfirm(),
   }
 
   return (
@@ -280,17 +227,6 @@ export function AppHeaderMenu({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
-          {showHostActions && viewerLabel ? (
-            <>
-              <DropdownMenuLabel
-                className="truncate font-normal text-muted-foreground"
-                title={viewerEmail ?? viewerLabel}
-              >
-                {viewerLabel}
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-            </>
-          ) : null}
           {visibleBillItems.length > 0 && onBillAction ? (
             <>
               <DropdownMenuLabel className="font-normal text-muted-foreground">
@@ -307,23 +243,10 @@ export function AppHeaderMenu({
             </>
           ) : null}
           {mounted ? (
-            <DropdownMenuRadioGroup
-              value={theme ?? 'system'}
-              onValueChange={setTheme}
-            >
-              <DropdownMenuRadioItem value="light">
-                <SunIcon className={ICON.button} aria-hidden />
-                Светла тема
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="dark">
-                <MoonIcon className={ICON.button} aria-hidden />
-                Тъмна тема
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="system">
-                <MonitorIcon className={ICON.button} aria-hidden />
-                Системна тема
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
+            <ThemeRocker
+              theme={theme}
+              onThemeChange={(mode) => setTheme(mode)}
+            />
           ) : null}
           {showHostActions ? (
             <>

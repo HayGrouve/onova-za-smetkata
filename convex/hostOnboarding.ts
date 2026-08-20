@@ -12,12 +12,10 @@ import {
   getHostOnboardingForUser,
   tryMarkOnboardingComplete,
 } from './lib/hostOnboarding'
-import { formatUsernameError, parseUsername } from './lib/hostProfile'
 import { isDevModeEnabled } from './lib/devMode'
 import {
   isPreparedBill,
   isTerminalOnboardingLifecycle,
-  planUsernameOnWelcomeConfirm,
 } from '../shared/host-onboarding'
 
 export const getForViewer = query({
@@ -50,10 +48,8 @@ export const getForViewer = query({
 })
 
 export const createFirstBill = mutation({
-  args: {
-    hostDisplayName: v.string(),
-  },
-  handler: async (ctx, args) => {
+  args: {},
+  handler: async (ctx) => {
     const userId = await requireAuth(ctx)
     const owner = await ctx.db.get(userId)
     if (!owner) {
@@ -75,24 +71,6 @@ export const createFirstBill = mutation({
       throw new ConvexError('Напътствията вече са приключили.')
     }
 
-    const parsed = parseUsername(args.hostDisplayName)
-    if (!parsed.success) {
-      throw new ConvexError(formatUsernameError(parsed.error))
-    }
-    if (!parsed.data) {
-      throw new ConvexError('Името не може да е празно')
-    }
-
-    const confirmedName = parsed.data
-    const usernamePlan = planUsernameOnWelcomeConfirm(
-      confirmedName,
-      owner.username,
-      owner.name,
-    )
-    if (usernamePlan.shouldSaveUsername && usernamePlan.username) {
-      await ctx.db.patch(userId, { username: usernamePlan.username })
-    }
-
     const now = Date.now()
     const billId = await ctx.db.insert('bills', {
       ownerId: userId,
@@ -107,8 +85,7 @@ export const createFirstBill = mutation({
     })
 
     const hostPlan = planHostParticipantOnBillCreate({
-      username: confirmedName,
-      authName: null,
+      authName: owner.name,
     })
     const hostParticipantId = await ctx.db.insert('participants', {
       billId,
@@ -289,7 +266,6 @@ async function insertGuidedBillForOwner(
   })
 
   const hostPlan = planHostParticipantOnBillCreate({
-    username: owner.username,
     authName: owner.name,
   })
   const hostParticipantId = await ctx.db.insert('participants', {
@@ -315,7 +291,7 @@ export const startGuidedBillWithExistingBills = mutation({
     const billCount = await countOwnedBills(ctx, userId)
     if (billCount === 0) {
       throw new ConvexError(
-        'Първоначалните напътствия изискват потвърждение на името ви.',
+        'Първоначалните напътствия започват от началния екран, когато все още нямате сметки.',
       )
     }
 

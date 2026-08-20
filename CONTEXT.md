@@ -19,20 +19,20 @@ The authenticated bill owner who creates and manages the bill.
 _Avoid_: bill creator (except as plain description), owner (except for auth/data ownership)
 
 **Host account**:
-The Host's Clerk sign-in identity — emails, password or passkeys, MFA, connected accounts, sessions, account deletion. Managed in Clerk's UserButton / UserProfile, not in the product Host profile.
-_Avoid_: mixing this with Host profile, Host Pro, or Guest restaurant payments; calling Clerk UserProfile "Профил" in product copy
+The Host's Clerk sign-in identity — Auth name, emails, password or passkeys, MFA, connected accounts, sessions, account deletion. Managed in Clerk's UserButton / UserProfile. There is no in-app **Профил** sheet.
+_Avoid_: mixing this with Host Pro or Guest restaurant payments; calling Clerk UserProfile "Профил" in product copy; "user settings" as a name for this
 
 **Host profile**:
-The in-app product sheet (`Профил`): optional Username and Free/Pro usage. Not Clerk account management and not Host Pro checkout.
-_Avoid_: using "user settings" for this and Host account as one thing; putting Revolut/IBAN or friend groups here
+Retired. Was the in-app `Профил` sheet (Username + Free/Pro usage). Name lives on Host account; Host Pro usage is not shown from that sheet.
+_Avoid_: reviving an in-app Профил; treating Host account as Host profile
 
 **Username**:
-An optional name the host saves on their Host profile (`Потребителско име`) for how they appear as a participant on bills they create.
-_Avoid_: display name, hostDisplayName, account username (Clerk's username is Host account, not this field)
+Retired as a product field. Was an optional in-app `Потребителско име` for the Host's participant seat. The Host appears as Auth name, else **домакин**.
+_Avoid_: reintroducing Потребителско име for the Host seat; using this word for Auth name or Clerk's username identifier (which stays off)
 
 **Auth name**:
-The name on the authenticated user from the identity provider (e.g. Google).
-_Avoid_: username (that term is reserved for the profile field above)
+The Host's name on the Host account (Clerk) — typically from the identity provider, editable in UserProfile. This is how the Host appears as a Participant on bills they create. If unset, the seat is **домакин**.
+_Avoid_: username, Потребителско име, display name as a separate product field
 
 **Participant**:
 A named seat on a bill used for item claims, tip share, and payment tracking.
@@ -118,3 +118,4 @@ _Avoid_: treating quota as a hard lock on the current bill
 - `docs/DEPLOY.md` — production deploy, env vars, security
 - `docs/adr/0002-clerk-auth-billing.md` — Clerk for Host sign-in
 - `docs/adr/0003-stripe-billing-beside-clerk.md` — Stripe Billing for Host Pro
+- `docs/specs/kebab-chrome-after-clerk.md` — kebab chrome and Auth name after Clerk

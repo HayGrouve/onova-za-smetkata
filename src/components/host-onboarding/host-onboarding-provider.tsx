@@ -50,7 +50,6 @@ import {
   HOST_ONBOARDING_HOME,
   HOST_ONBOARDING_STEP_BAR,
 } from '../../../shared/host-onboarding-messages.ts'
-import { useViewerNowMs } from '#/hooks/use-viewer-now-ms.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -123,11 +122,6 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
     api.hostOnboarding.getForViewer,
     isSignedIn ? {} : 'skip',
   )
-  const viewerNowMs = useViewerNowMs()
-  const viewer = useQuery(
-    api.users.viewer,
-    isSignedIn ? { nowMs: viewerNowMs } : 'skip',
-  )
   const createFirstBill = useMutation(api.hostOnboarding.createFirstBill)
   const startGuidedBillWithExistingBills = useMutation(
     api.hostOnboarding.startGuidedBillWithExistingBills,
@@ -141,7 +135,6 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
   const { confirm } = useConfirmAction()
   const { status: paymentStatus } = usePaymentSettings()
 
-  const [welcomeStage, setWelcomeStage] = useState<'intro' | 'name'>('intro')
   const [welcomeForcedOpen, setWelcomeForcedOpen] = useState(false)
   const [welcomeDeferred, setWelcomeDeferred] = useState(() =>
     isWelcomeDeferredThisSession(),
@@ -303,7 +296,6 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
     clearHostOnboardingSession()
     setWelcomeDeferred(false)
     setReplayActive(false)
-    setWelcomeStage('intro')
     try {
       await resetForDevTesting({})
     } catch (error) {
@@ -452,8 +444,8 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
     ],
   )
 
-  async function handleCreateFirstBill(name: string) {
-    const billId = await createFirstBill({ hostDisplayName: name })
+  async function handleCreateFirstBill() {
+    const billId = await createFirstBill({})
     deferWelcomeThisSession()
     setWelcomeDeferred(true)
     setWelcomeForcedOpen(false)
@@ -495,13 +487,9 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
             setWelcomeForcedOpen(false)
           }
         }}
-        stage={welcomeStage}
-        onAdvanceStage={() => setWelcomeStage('name')}
         onDismiss={dismissWelcome}
-        authName={viewer?.name}
-        username={viewer?.username}
         billCount={onboarding?.billCount ?? 0}
-        onConfirmName={handleCreateFirstBill}
+        onCreateFirstBill={handleCreateFirstBill}
         onStartGuidedWithExistingBills={handleStartGuidedWithExistingBills}
       />
       <PaymentCheckpointSheet

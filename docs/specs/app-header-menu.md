@@ -2,18 +2,20 @@
 
 Build-ready spec for map [#82](https://github.com/HayGrouve/onova-za-smetkata/issues/82). Implements decisions from [#83](https://github.com/HayGrouve/onova-za-smetkata/issues/83), [#84](https://github.com/HayGrouve/onova-za-smetkata/issues/84), [#87](https://github.com/HayGrouve/onova-za-smetkata/issues/87), [#88](https://github.com/HayGrouve/onova-za-smetkata/issues/88). Action inventory: `research/header-menu-bill-actions-audit.md`.
 
+**Chrome supersede:** viewer label, theme rows, and global host items are locked in [`kebab-chrome-after-clerk.md`](./kebab-chrome-after-clerk.md) (map [Host kebab chrome after Clerk](https://github.com/HayGrouve/onova-za-smetkata/issues/149)). Bill-group matrix below is unchanged.
+
 ## Composition rules (all contexts)
 
-| Section                       | When shown                                          |
-| ----------------------------- | --------------------------------------------------- |
-| Viewer label                  | Authenticated host (`showHostActions`)              |
-| **Сметка** bill group         | Host on a bill-scoped route with `billId` in params |
-| Theme (light / dark / system) | Always (menu visible on all routes)                 |
-| Global host items             | Authenticated host, not login, not guest route      |
+| Section                   | When shown                                                                         |
+| ------------------------- | ---------------------------------------------------------------------------------- |
+| Viewer label              | **Never** — dropped ([kebab-chrome-after-clerk.md](./kebab-chrome-after-clerk.md)) |
+| **Сметка** bill group     | Host on a bill-scoped route with `billId` in params                                |
+| Theme (three-stop rocker) | Always (menu visible on all routes)                                                |
+| Global host items         | Authenticated host, not login, not guest route                                     |
 
-Global host items (unchanged order): Профил → Настройки за плащане → Моите групи → Помощ и напътствия → Изход.
+Global host items (order): Настройки за плащане → Моите групи → Помощ и напътствия. **No Профил. No Изход.**
 
-Guest routes (`/join`, guest `/claim`): theme only ([#84](https://github.com/HayGrouve/onova-za-smetkata/issues/84)).
+Guest routes (`/join`, guest `/claim`): theme rocker only ([#84](https://github.com/HayGrouve/onova-za-smetkata/issues/84)).
 
 Bill routes: merge — bill group above theme, then global host items ([#83](https://github.com/HayGrouve/onova-za-smetkata/issues/83)).
 
@@ -25,18 +27,18 @@ Legend: **show** = enabled item · _disabled_ = visible, disabled · — = hidde
 
 ### Home `/`
 
-| Section | Items                 |
-| ------- | --------------------- |
-| Bill    | —                     |
-| Theme   | light / dark / system |
-| Host    | full global list      |
+| Section | Items                                     |
+| ------- | ----------------------------------------- |
+| Bill    | —                                         |
+| Theme   | three-stop rocker (sun \| system \| moon) |
+| Host    | full global list                          |
 
 ### Login `/login`
 
 | Section | Items                       |
 | ------- | --------------------------- |
 | Bill    | —                           |
-| Theme   | light / dark / system       |
+| Theme   | three-stop rocker           |
 | Host    | — (`showHostActions=false`) |
 
 ### Bill editor `/bills/$billId` (draft)

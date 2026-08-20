@@ -5,7 +5,6 @@ import { BillHeaderTitleProvider } from '#/components/layout/bill-header-title.t
 import { PaymentSettingsProvider } from '#/components/bills/payment-settings-provider.tsx'
 import { HostOnboardingProvider } from '#/components/host-onboarding/host-onboarding-provider.tsx'
 import { FriendGroupsProvider } from '#/components/bills/friend-groups-provider.tsx'
-import { ProfileProvider } from '#/components/profile/profile-provider.tsx'
 import { PwaInstallProvider } from '#/components/pwa-install-provider.tsx'
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -14,16 +13,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <PaymentSettingsProvider>
         <HostOnboardingProvider>
           <FriendGroupsProvider>
-            <ProfileProvider>
-              <BillHeaderTitleProvider>
-                <div className="flex min-h-dvh flex-col">
-                  <AppHeader />
-                  <OfflineBanner />
-                  <main className="flex flex-1 flex-col">{children}</main>
-                  <AppFooter />
-                </div>
-              </BillHeaderTitleProvider>
-            </ProfileProvider>
+            <BillHeaderTitleProvider>
+              <div className="flex min-h-dvh flex-col">
+                <AppHeader />
+                <OfflineBanner />
+                <main className="flex flex-1 flex-col">{children}</main>
+                <AppFooter />
+              </div>
+            </BillHeaderTitleProvider>
           </FriendGroupsProvider>
         </HostOnboardingProvider>
       </PaymentSettingsProvider>

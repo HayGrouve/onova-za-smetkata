@@ -18,6 +18,33 @@ async function expectUserButtonLeftOfSettings(page: Page) {
   expect(userBox!.x + userBox!.width).toBeLessThanOrEqual(settingsBox!.x + 1)
 }
 
+async function expectThemeRocker(page: Page) {
+  await expect(page.getByRole('radio', { name: 'Светла' })).toBeVisible()
+  await expect(page.getByRole('radio', { name: 'Системна' })).toBeVisible()
+  await expect(page.getByRole('radio', { name: 'Тъмна' })).toBeVisible()
+}
+
+async function expectHostKebabChrome(page: Page, moreSettingsNested: boolean) {
+  await expect(page.getByRole('menuitem', { name: 'Профил' })).toHaveCount(0)
+  await expect(page.getByRole('menuitem', { name: 'Изход' })).toHaveCount(0)
+  await expect(page.locator('[data-slot="dropdown-menu-label"]')).toHaveCount(0)
+  await expectThemeRocker(page)
+
+  if (moreSettingsNested) {
+    await page.getByRole('menuitem', { name: 'Още настройки' }).click()
+  }
+
+  await expect(
+    page.getByRole('menuitem', { name: 'Настройки за плащане' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('menuitem', { name: 'Моите групи' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('menuitem', { name: 'Помощ и напътствия' }),
+  ).toBeVisible()
+}
+
 test('unsigned /user-profile redirects to login with redirect', async ({
   page,
 }) => {
@@ -40,10 +67,7 @@ test('signed-in Host can open Акаунт and security without 404', async ({
   ).not.toBeVisible()
 
   await page.getByRole('button', { name: 'Настройки' }).click()
-  await page.getByRole('menuitem', { name: 'Още настройки' }).click()
-  await page.getByRole('menuitem', { name: 'Профил' }).click()
-  await expect(page.getByRole('heading', { name: 'Профил' })).toBeVisible()
-  await expect(page).toHaveURL(/\/user-profile/)
+  await expectHostKebabChrome(page, true)
   await page.keyboard.press('Escape')
 
   await page.goto('/user-profile/security')
@@ -66,8 +90,7 @@ test('signed-in Host sees UserButton left of kebab; Manage account opens Ака�
   await expectUserButtonLeftOfSettings(page)
 
   await page.getByRole('button', { name: 'Настройки' }).click()
-  await expect(page.getByRole('menuitem', { name: 'Профил' })).toBeVisible()
-  await expect(page.getByRole('menuitem', { name: 'Изход' })).toBeVisible()
+  await expectHostKebabChrome(page, false)
   await page.keyboard.press('Escape')
 
   await userButtonTrigger(page).click()
@@ -80,7 +103,9 @@ test('signed-in Host sees UserButton left of kebab; Manage account opens Ака�
   await context.close()
 })
 
-test('guest join and claim have no UserButton', async ({ browser }) => {
+test('guest join and claim have no UserButton; theme stays in the kebab', async ({
+  browser,
+}) => {
   const { context: hostContext, page: hostPage } =
     await openHostContext(browser)
 
@@ -107,9 +132,17 @@ test('guest join and claim have no UserButton', async ({ browser }) => {
   const guestPage = await guest.newPage()
   await guestPage.goto(joinUrl!)
   await expect(userButtonTrigger(guestPage)).toHaveCount(0)
+  await guestPage.getByRole('button', { name: 'Настройки' }).click()
+  await expectThemeRocker(guestPage)
+  await expect(
+    guestPage.getByRole('menuitem', { name: 'Настройки за плащане' }),
+  ).toHaveCount(0)
+  await guestPage.keyboard.press('Escape')
   await guestPage.getByRole('button', { name: participantName }).click()
   await expect(guestPage).toHaveURL(new RegExp(`/bills/${billId}/claim`))
   await expect(userButtonTrigger(guestPage)).toHaveCount(0)
+  await guestPage.getByRole('button', { name: 'Настройки' }).click()
+  await expectThemeRocker(guestPage)
 
   await hostContext.close()
   await guest.close()

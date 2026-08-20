@@ -8,25 +8,15 @@ import {
 } from './host-bill-participant'
 
 describe('planHostParticipantOnBillCreate', () => {
-  it('uses Username when set', () => {
+  it('snapshots Auth name onto the Host seat', () => {
     expect(
       planHostParticipantOnBillCreate({
-        username: '  Цветомир  ',
-        authName: 'Google Name',
-      }),
-    ).toEqual({ name: 'Цветомир', sortOrder: HOST_PARTICIPANT_SORT_ORDER })
-  })
-
-  it('falls back to Auth name when Username is empty', () => {
-    expect(
-      planHostParticipantOnBillCreate({
-        username: '',
-        authName: 'Google Name',
+        authName: '  Google Name  ',
       }),
     ).toEqual({ name: 'Google Name', sortOrder: HOST_PARTICIPANT_SORT_ORDER })
   })
 
-  it('falls back to домакин when neither name is set', () => {
+  it('falls back to домакин when Auth name is unset', () => {
     expect(planHostParticipantOnBillCreate({})).toEqual({
       name: 'домакин',
       sortOrder: HOST_PARTICIPANT_SORT_ORDER,

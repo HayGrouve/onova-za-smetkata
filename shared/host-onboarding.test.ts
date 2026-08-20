@@ -5,7 +5,6 @@ import {
   isEditorStepGuidanceComplete,
   isEligibleForAutomaticOnboarding,
   isPreparedBill,
-  planUsernameOnWelcomeConfirm,
   shouldCompleteOnboarding,
   stepBarGuidanceLabel,
 } from './host-onboarding'
@@ -52,20 +51,6 @@ describe('isEligibleForAutomaticOnboarding', () => {
         billCount: 0,
       }),
     ).toBe(false)
-  })
-})
-
-describe('planUsernameOnWelcomeConfirm', () => {
-  it('does not save when accepting the suggested Auth name', () => {
-    expect(
-      planUsernameOnWelcomeConfirm('Иван Петров', undefined, 'Иван Петров'),
-    ).toEqual({ shouldSaveUsername: false })
-  })
-
-  it('saves when the Host edits the suggestion', () => {
-    expect(
-      planUsernameOnWelcomeConfirm('Иван', undefined, 'Иван Петров'),
-    ).toEqual({ shouldSaveUsername: true, username: 'Иван' })
   })
 })
 

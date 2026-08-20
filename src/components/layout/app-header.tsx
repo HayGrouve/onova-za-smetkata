@@ -16,7 +16,6 @@ import {
 import { resolveAppHeaderRouteContext } from '../../../shared/app-header-route-context.ts'
 import { getBillFinalizeEligibility } from '../../../shared/bill-finalize-eligibility.ts'
 import { toBillCalculationSnapshot } from '#/lib/bill-calculation-snapshot.ts'
-import { useViewerNowMs } from '#/hooks/use-viewer-now-ms.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -171,11 +170,6 @@ export function AppHeader() {
     pathname.endsWith('/join') || (pathname.endsWith('/claim') && !isHostClaim)
   const isLogin = pathname === '/login'
   const showHostActions = isSignedIn && !isGuestRoute && !isLogin
-  const viewerNowMs = useViewerNowMs()
-  const viewer = useQuery(
-    api.users.viewer,
-    showHostActions ? { nowMs: viewerNowMs } : 'skip',
-  )
 
   const billMenuEligibility = useMemo(() => {
     if (!bill || !showHostActions) {
@@ -273,8 +267,6 @@ export function AppHeader() {
         <AppHeaderMenu
           showHostActions={showHostActions}
           isHomeRoute={pathname === '/'}
-          viewerLabel={viewer?.label}
-          viewerEmail={viewer?.email}
           billMenuItems={billMenuEnabled ? billMenuItems : []}
           onBillAction={billMenuEnabled ? handleBillAction : undefined}
           billMenuDialogs={billMenuEnabled ? dialogs : undefined}

@@ -3,6 +3,7 @@ import type { UserIdentity } from 'convex/server'
 import type { Doc, Id } from '../_generated/dataModel'
 import type { MutationCtx, QueryCtx } from '../_generated/server'
 import { assertBillOwnedBy } from './bill_ownership'
+import { nextSyncedAuthName } from './hostProfile'
 
 export { assertBillOwnedBy } from './bill_ownership'
 
@@ -20,15 +21,24 @@ function newUserFields(identity: UserIdentity) {
   }
 }
 
-async function findUserIdByIdentity(
+async function findUserByIdentity(
   ctx: QueryCtx | MutationCtx,
   identity: UserIdentity,
-): Promise<Id<'users'> | null> {
-  const existing = await ctx.db
+): Promise<Doc<'users'> | null> {
+  return await ctx.db
     .query('users')
     .withIndex('by_clerkSubject', (q) => q.eq('clerkSubject', identity.subject))
     .unique()
-  return existing?._id ?? null
+}
+
+async function syncAuthNameFromIdentity(
+  ctx: MutationCtx,
+  user: Doc<'users'>,
+  identity: UserIdentity,
+) {
+  const nextName = nextSyncedAuthName(user.name, identity.name)
+  if (!nextName) return
+  await ctx.db.patch(user._id, { name: nextName })
 }
 
 export async function requireAuth(ctx: MutationCtx): Promise<Id<'users'>>
@@ -41,8 +51,13 @@ export async function requireAuth(
     throw new ConvexError('Изисква се вход')
   }
 
-  const existingUserId = await findUserIdByIdentity(ctx, identity)
-  if (existingUserId) return existingUserId
+  const existing = await findUserByIdentity(ctx, identity)
+  if (existing) {
+    if (isMutationCtx(ctx)) {
+      await syncAuthNameFromIdentity(ctx, existing, identity)
+    }
+    return existing._id
+  }
 
   if (!isMutationCtx(ctx)) {
     throw new ConvexError('Изисква се вход')

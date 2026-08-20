@@ -1,5 +1,4 @@
 import type { AssignmentInput, ItemInput } from './bill-calculations'
-import { resolveHostParticipantName } from './host-profile'
 import {
   isAllocationReady,
   isPreparedBill,
@@ -68,21 +67,6 @@ export function isEligibleForAutomaticOnboarding(input: {
     input.billCount === 0 &&
     input.lifecycle === 'notStarted'
   )
-}
-
-export function planUsernameOnWelcomeConfirm(
-  confirmedName: string,
-  currentUsername: string | undefined,
-  authName: string | undefined,
-): { shouldSaveUsername: boolean; username?: string } {
-  const suggested = resolveHostParticipantName({
-    username: currentUsername,
-    authName,
-  })
-  if (confirmedName === suggested) {
-    return { shouldSaveUsername: false }
-  }
-  return { shouldSaveUsername: true, username: confirmedName }
 }
 
 function hasMultiUnitItem(items: ItemInput[]): boolean {

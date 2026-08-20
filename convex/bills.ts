@@ -182,7 +182,6 @@ export const create = mutation({
     })
 
     const hostPlan = planHostParticipantOnBillCreate({
-      username: owner.username,
       authName: owner.name,
     })
     const hostParticipantId = await ctx.db.insert('participants', {

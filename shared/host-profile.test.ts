@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatUsernameError,
+  nextSyncedAuthName,
   parseUsername,
   resolveHostParticipantName,
 } from './host-profile'
@@ -34,37 +35,45 @@ describe('parseUsername', () => {
 })
 
 describe('resolveHostParticipantName', () => {
-  it('prefers Username over Auth name', () => {
+  it('uses Auth name for the Host seat', () => {
     expect(
       resolveHostParticipantName({
-        username: 'Цветомир',
-        authName: 'Tsvetomir Google',
-      }),
-    ).toBe('Цветомир')
-  })
-
-  it('falls back to Auth name when Username is unset', () => {
-    expect(
-      resolveHostParticipantName({
-        username: undefined,
         authName: 'Tsvetomir Google',
       }),
     ).toBe('Tsvetomir Google')
   })
 
-  it('treats blank Username as unset and uses Auth name', () => {
+  it('trims Auth name', () => {
     expect(
       resolveHostParticipantName({
-        username: '   ',
-        authName: 'Tsvetomir Google',
+        authName: '  Иван Петров  ',
       }),
-    ).toBe('Tsvetomir Google')
+    ).toBe('Иван Петров')
   })
 
-  it('falls back to „домакин“ when Username and Auth name are missing', () => {
+  it('falls back to „домакин“ when Auth name is missing or blank', () => {
     expect(resolveHostParticipantName({})).toBe('домакин')
-    expect(resolveHostParticipantName({ username: null, authName: '  ' })).toBe(
-      'домакин',
-    )
+    expect(resolveHostParticipantName({ authName: null })).toBe('домакин')
+    expect(resolveHostParticipantName({ authName: '  ' })).toBe('домакин')
+  })
+})
+
+describe('nextSyncedAuthName', () => {
+  it('returns the Clerk name when Convex has none', () => {
+    expect(nextSyncedAuthName(undefined, 'Иван Петров')).toBe('Иван Петров')
+  })
+
+  it('returns undefined when the stored name already matches', () => {
+    expect(nextSyncedAuthName('Иван Петров', 'Иван Петров')).toBeUndefined()
+    expect(nextSyncedAuthName('  Иван Петров  ', 'Иван Петров')).toBeUndefined()
+  })
+
+  it('returns the Clerk name when it changed', () => {
+    expect(nextSyncedAuthName('Старо', 'Ново')).toBe('Ново')
+  })
+
+  it('does not clear a stored name when Clerk omits one', () => {
+    expect(nextSyncedAuthName('Иван', undefined)).toBeUndefined()
+    expect(nextSyncedAuthName('Иван', '  ')).toBeUndefined()
   })
 })

@@ -8,7 +8,6 @@ export type HostParticipantPlan = {
 }
 
 export type PlanHostParticipantOnBillCreateInput = {
-  username?: string | null
   authName?: string | null
 }
 
@@ -17,7 +16,6 @@ export function planHostParticipantOnBillCreate(
 ): HostParticipantPlan {
   return {
     name: resolveHostParticipantName({
-      username: input.username,
       authName: input.authName,
     }),
     sortOrder: HOST_PARTICIPANT_SORT_ORDER,

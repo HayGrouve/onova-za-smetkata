@@ -4,7 +4,9 @@ Wayfinder map [#138](https://github.com/HayGrouve/onova-za-smetkata/issues/138).
 
 **Status:** Locked for implementation. This spec is the hand-off; it does not implement the UI.
 
-**Scope:** Hosts manage **Host account** through Clerk **UserButton** plus an in-app **UserProfile** route. **Host profile**, payment collection, friend groups, theme, and Напътствия stay in our UI. Clerk Billing stays off. Host Pro stays Stripe ([ADR 0003](../adr/0003-stripe-billing-beside-clerk.md)).
+**Scope:** Hosts manage **Host account** through Clerk **UserButton** plus an in-app **UserProfile** route. Payment collection, friend groups, theme, and Напътствия stay in our kebab. There is no product **Host profile**. Clerk Billing stays off. Host Pro stays Stripe ([ADR 0003](../adr/0003-stripe-billing-beside-clerk.md)).
+
+**Kebab / naming supersede:** [`kebab-chrome-after-clerk.md`](./kebab-chrome-after-clerk.md) (map [Host kebab chrome after Clerk](https://github.com/HayGrouve/onova-za-smetkata/issues/149)) — no **Профил** sheet, no kebab **Изход**, no viewer label, Auth name else **домакин**.
 
 Research (working tree; commit with the implementation PR if still untracked):
 
@@ -18,19 +20,19 @@ Domain: [`CONTEXT.md`](../../CONTEXT.md). Auth: [ADR 0002](../adr/0002-clerk-aut
 
 ## Locked product decisions
 
-| Decision               | Value                                                                                                                                                    | Ticket                                                            |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Host account surface   | In-app `/user-profile/$` + header UserButton **navigation** mode. Not Account Portal. Not `openUserProfile()` modal.                                     | [#139](https://github.com/HayGrouve/onova-za-smetkata/issues/139) |
-| Page title copy        | **Акаунт** — never **Профил** (that word is Host profile)                                                                                                | #139                                                              |
-| UserProfile pages      | Default **Account** + **Security** only. No custom pages for product settings.                                                                           | #139                                                              |
-| Header placement       | `[back or logo] [title] [UserButton] [kebab]` — avatar-only UserButton immediately left of kebab; same on home, bill, and UserProfile                    | [#142](https://github.com/HayGrouve/onova-za-smetkata/issues/142) |
-| UserButton visibility  | Only when `showHostActions` (signed-in Host, not `/login`, not guest join/claim)                                                                         | #142                                                              |
-| Kebab viewer label     | Keep Convex **Auth name**, else email. Not **Username**.                                                                                                 | #142                                                              |
-| Dual sign-out          | Keep kebab **Изход** (confirm) **and** UserButton Sign out (Clerk, no confirm)                                                                           | charting / #142                                                   |
-| Dashboard              | Google + email stay; enable password; passkeys if plan allows; opt-in TOTP; delete-account. Organizations, phone, Clerk username, Clerk Billing **off**. | [#141](https://github.com/HayGrouve/onova-za-smetkata/issues/141) |
-| Localization           | `ClerkProvider localization={bgBG}` + Host-visible overrides. Not Account Portal.                                                                        | [#140](https://github.com/HayGrouve/onova-za-smetkata/issues/140) |
-| Appearance             | CSS `color-scheme` via existing `next-themes` `.dark`. No `appearance.theme`. No `appearance.variables` in this change.                                  | #140                                                              |
-| Host profile / paywall | Remove Clerk-backed subscription CTAs. Keep usage block and paywall copy. No Stripe portal here.                                                         | #143                                                              |
+| Decision                 | Value                                                                                                                                                    | Ticket                                                            |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Host account surface     | In-app `/user-profile/$` + header UserButton **navigation** mode. Not Account Portal. Not `openUserProfile()` modal.                                     | [#139](https://github.com/HayGrouve/onova-za-smetkata/issues/139) |
+| Page title copy          | **Акаунт** — never **Профил**                                                                                                                            | #139                                                              |
+| UserProfile pages        | Default **Account** + **Security** only. No custom pages for product settings.                                                                           | #139                                                              |
+| Header placement         | `[back or logo] [title] [UserButton] [kebab]` — avatar-only UserButton immediately left of kebab; same on home, bill, and UserProfile                    | [#142](https://github.com/HayGrouve/onova-za-smetkata/issues/142) |
+| UserButton visibility    | Only when `showHostActions` (signed-in Host, not `/login`, not guest join/claim)                                                                         | #142                                                              |
+| Kebab viewer label       | **Dropped** — see [`kebab-chrome-after-clerk.md`](./kebab-chrome-after-clerk.md)                                                                         | #149                                                              |
+| Sign-out                 | UserButton only. No kebab **Изход**.                                                                                                                     | #149                                                              |
+| Dashboard                | Google + email stay; enable password; passkeys if plan allows; opt-in TOTP; delete-account. Organizations, phone, Clerk username, Clerk Billing **off**. | [#141](https://github.com/HayGrouve/onova-za-smetkata/issues/141) |
+| Localization             | `ClerkProvider localization={bgBG}` + Host-visible overrides. Not Account Portal.                                                                        | [#140](https://github.com/HayGrouve/onova-za-smetkata/issues/140) |
+| Appearance               | CSS `color-scheme` via existing `next-themes` `.dark`. No `appearance.theme`. No `appearance.variables` in this change.                                  | #140                                                              |
+| Host Pro usage in chrome | Not in a profile sheet or kebab. Quota paywall copy may remain; no Stripe portal here.                                                                   | #149 / #143                                                       |
 
 ---
 
@@ -40,29 +42,26 @@ Domain: [`CONTEXT.md`](../../CONTEXT.md). Auth: [ADR 0002](../adr/0002-clerk-aut
 flowchart LR
   subgraph Header["App header (showHostActions)"]
     UB["UserButton avatar-only"]
-    Kebab["Kebab: Профил, payment, groups, theme, Напътствия, Изход"]
+    Kebab["Kebab: theme rocker, payment, groups, Напътствия"]
   end
   subgraph Route["/user-profile/$"]
     UP["UserProfile path routing"]
   end
   subgraph Stay["Our UI"]
-    PS["Host profile sheet"]
     Pay["Revolut / IBAN"]
     FG["Friend groups"]
   end
   UB -->|"Manage account"| UP
-  Kebab --> PS
   Kebab --> Pay
   Kebab --> FG
 ```
 
-| Layer                          | Owns                                                                                              |
-| ------------------------------ | ------------------------------------------------------------------------------------------------- |
-| Clerk UserButton / UserProfile | Host account: emails, password/passkeys, MFA, Google, sessions, delete account                    |
-| Clerk Dashboard                | Which of those sections exist; **never** Billing / Plans / Organizations / phone / Clerk username |
-| Convex Host profile sheet      | **Username** + Free/Pro usage readout                                                             |
-| Stripe (later, not this spec)  | Host Pro checkout / Customer Portal                                                               |
-| Kebab                          | Product settings + confirmed **Изход**                                                            |
+| Layer                          | Owns                                                                                                          |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Clerk UserButton / UserProfile | Host account: Auth name, emails, password/passkeys, MFA, Google, sessions, delete account, Sign out           |
+| Clerk Dashboard                | Which of those sections exist; **never** Billing / Plans / Organizations / phone / Clerk username             |
+| Kebab                          | Theme rocker + payment + groups + Напътствия — [`kebab-chrome-after-clerk.md`](./kebab-chrome-after-clerk.md) |
+| Stripe (later, not this spec)  | Host Pro checkout / Customer Portal                                                                           |
 
 ---
 
@@ -127,11 +126,11 @@ Grep after implementation: **zero** `openUserProfile` in `src/`.
 
 | File                                                    | Change                                                                                                                       |
 | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `src/components/profile/profile-sheet.tsx`              | Remove `openUserProfile` and the **Управление на абонамента** button. Keep plan/usage block and **Потребителско име**.       |
+| `src/components/profile/profile-sheet.tsx`              | Remove from product chrome (no **Профил** sheet). See [`kebab-chrome-after-clerk.md`](./kebab-chrome-after-clerk.md).        |
 | `src/components/subscription/subscription-provider.tsx` | Remove `openUserProfile`. Stop passing an upgrade handler that opens Clerk.                                                  |
 | `src/components/subscription/quota-paywall-sheet.tsx`   | Keep title + quota message. Remove **Виж планове и абонамент** (or replace with dismiss-only). No navigation to UserProfile. |
 
-Kebab **Профил** still opens the product sheet — it must **not** navigate to `/user-profile`.
+Kebab must **not** navigate to `/user-profile` and must **not** open a product profile sheet. Host account is UserButton → **Акаунт**.
 
 ---
 
@@ -179,7 +178,7 @@ Reuse existing **Clerk Testing Tokens** (`e2e/helpers/host-auth.ts` / `openHostC
 
 Add a focused host spec (or extend an existing host spec) that asserts:
 
-1. Signed-in Host on `/`: UserButton is in the header (left of **Настройки**); kebab still opens **Профил** / **Изход**.
+1. Signed-in Host on `/`: UserButton is in the header (left of **Настройки**); kebab has payment / groups / Напътствия and **no** **Профил** / **Изход** ([`kebab-chrome-after-clerk.md`](./kebab-chrome-after-clerk.md)).
 2. UserButton “Manage account” (Bulgarian `bgBG` label) navigates to `/user-profile` (and `/user-profile/security` is reachable without 404).
 3. Unsigned `/user-profile` redirects to `/login?redirect=/user-profile`.
 4. Guest `/join` and guest `/claim`: no UserButton.

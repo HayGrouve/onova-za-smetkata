@@ -1,6 +1,7 @@
 export {
   formatUsernameError,
   HOST_PARTICIPANT_FALLBACK_NAME,
+  nextSyncedAuthName,
   parseUsername,
   resolveHostParticipantName,
 } from '../../shared/host-profile'

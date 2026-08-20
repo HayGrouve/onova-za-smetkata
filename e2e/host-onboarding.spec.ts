@@ -39,6 +39,7 @@ test('dev reset welcome sheet can be dismissed', async ({ browser }) => {
   await expect(
     page.getByRole('heading', { name: 'Вече имате сметки' }),
   ).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('textbox')).toHaveCount(0)
 
   await page.getByRole('button', { name: 'Затвори' }).click()
 
