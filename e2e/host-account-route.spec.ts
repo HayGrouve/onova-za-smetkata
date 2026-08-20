@@ -1,4 +1,22 @@
+import type { Locator, Page } from '@playwright/test'
+import { billIdFromUrl, goToBillStep } from './helpers/bill-editor'
 import { expect, openHostContext, test } from './helpers/host-auth'
+
+function userButtonTrigger(page: Page): Locator {
+  return page.locator('.cl-userButtonTrigger')
+}
+
+async function expectUserButtonLeftOfSettings(page: Page) {
+  const userButton = userButtonTrigger(page)
+  const settings = page.getByRole('button', { name: 'Настройки' })
+  await expect(userButton).toBeVisible({ timeout: 30_000 })
+  await expect(settings).toBeVisible()
+  const userBox = await userButton.boundingBox()
+  const settingsBox = await settings.boundingBox()
+  expect(userBox).toBeTruthy()
+  expect(settingsBox).toBeTruthy()
+  expect(userBox!.x + userBox!.width).toBeLessThanOrEqual(settingsBox!.x + 1)
+}
 
 test('unsigned /user-profile redirects to login with redirect', async ({
   page,
@@ -38,4 +56,61 @@ test('signed-in Host can open Акаунт and security without 404', async ({
   await expect(page).toHaveURL(/\/user-profile\/security/)
 
   await context.close()
+})
+
+test('signed-in Host sees UserButton left of kebab; Manage account opens Акаунт', async ({
+  browser,
+}) => {
+  const { context, page } = await openHostContext(browser)
+
+  await expectUserButtonLeftOfSettings(page)
+
+  await page.getByRole('button', { name: 'Настройки' }).click()
+  await expect(page.getByRole('menuitem', { name: 'Профил' })).toBeVisible()
+  await expect(page.getByRole('menuitem', { name: 'Изход' })).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  await userButtonTrigger(page).click()
+  await page.getByText('Управление на акаунта', { exact: true }).click()
+  await expect(page).toHaveURL(/\/user-profile/)
+  await expect(page.getByRole('heading', { name: 'Акаунт' })).toBeVisible({
+    timeout: 30_000,
+  })
+
+  await context.close()
+})
+
+test('guest join and claim have no UserButton', async ({ browser }) => {
+  const { context: hostContext, page: hostPage } =
+    await openHostContext(browser)
+
+  await hostPage.getByRole('button', { name: 'Нова сметка' }).click()
+  await goToBillStep(hostPage, 2)
+  await expect(hostPage.getByPlaceholder('Име на участник')).toBeVisible({
+    timeout: 30_000,
+  })
+  const participantName = `Guest ${Date.now()}`
+  await hostPage.getByPlaceholder('Име на участник').fill(participantName)
+  await hostPage.getByRole('button', { name: 'Добави', exact: true }).click()
+  await expect(hostPage.getByText(participantName)).toBeVisible()
+
+  await goToBillStep(hostPage, 3)
+  const joinUrl = await hostPage.getByTestId('join-url').textContent()
+  expect(joinUrl).toBeTruthy()
+  const billId = billIdFromUrl(hostPage.url())
+  expect(billId).toBeTruthy()
+
+  await hostPage.goto(joinUrl!)
+  await expect(userButtonTrigger(hostPage)).toHaveCount(0)
+
+  const guest = await browser.newContext()
+  const guestPage = await guest.newPage()
+  await guestPage.goto(joinUrl!)
+  await expect(userButtonTrigger(guestPage)).toHaveCount(0)
+  await guestPage.getByRole('button', { name: participantName }).click()
+  await expect(guestPage).toHaveURL(new RegExp(`/bills/${billId}/claim`))
+  await expect(userButtonTrigger(guestPage)).toHaveCount(0)
+
+  await hostContext.close()
+  await guest.close()
 })

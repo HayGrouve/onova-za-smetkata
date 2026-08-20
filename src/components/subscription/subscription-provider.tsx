@@ -1,4 +1,3 @@
-import { useClerk } from '@clerk/tanstack-react-start'
 import {
   createContext,
   useCallback,
@@ -27,8 +26,6 @@ export function SubscriptionProvider({
   const [message, setMessage] = useState<string>(
     SUBSCRIPTION_MESSAGES.QUOTA_BILLS,
   )
-  const { openUserProfile } = useClerk()
-
   const openPaywall = useCallback(
     (code?: QuotaErrorCode, customMessage?: string) => {
       setMessage(
@@ -60,12 +57,7 @@ export function SubscriptionProvider({
   return (
     <SubscriptionContext.Provider value={value}>
       {children}
-      <QuotaPaywallSheet
-        open={open}
-        onOpenChange={setOpen}
-        message={message}
-        onUpgrade={() => openUserProfile()}
-      />
+      <QuotaPaywallSheet open={open} onOpenChange={setOpen} message={message} />
     </SubscriptionContext.Provider>
   )
 }

@@ -1,5 +1,5 @@
-import { useAuth, useClerk } from '@clerk/tanstack-react-start'
-import { SaveIcon, SparklesIcon, UserIcon } from 'lucide-react'
+import { useAuth } from '@clerk/tanstack-react-start'
+import { SaveIcon, UserIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
@@ -30,7 +30,6 @@ function formatUsageLine(used: number, limit: number | null, noun: string) {
 
 export function ProfileSheet({ open, onOpenChange }: ProfileSheetProps) {
   const { isSignedIn } = useAuth()
-  const { openUserProfile } = useClerk()
   const viewerNowMs = useViewerNowMs()
   const viewer = useQuery(
     api.users.viewer,
@@ -106,15 +105,6 @@ export function ProfileSheet({ open, onOpenChange }: ProfileSheetProps) {
                   Групи: {viewer.friendGroupCount}/{viewer.friendGroupLimit}
                 </li>
               </ul>
-              <Button
-                type="button"
-                variant="outline"
-                className="mt-3 h-10 w-full"
-                onClick={() => openUserProfile()}
-              >
-                <SparklesIcon className={ICON.button} aria-hidden />
-                Управление на абонамента
-              </Button>
             </div>
           ) : null}
 

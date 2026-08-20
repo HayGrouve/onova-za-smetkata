@@ -1,5 +1,4 @@
 import { ClerkProvider, useAuth } from '@clerk/tanstack-react-start'
-import { bgBG } from '@clerk/localizations'
 import { useMutation } from 'convex/react'
 import { ConvexQueryClient } from '@convex-dev/react-query'
 import { ConvexProviderWithClerk } from 'convex/react-clerk'
@@ -7,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../../../convex/_generated/api'
 import { assertConvexUrlForBuild } from '#/lib/env.ts'
 import { getClerkPublishableKey } from '#/lib/clerk-env.ts'
+import { clerkBgLocalization } from '#/lib/clerk-bg-localization.ts'
 import { SubscriptionProvider } from '#/components/subscription/subscription-provider.tsx'
 
 const convexUrl = assertConvexUrlForBuild()
@@ -107,7 +107,10 @@ export default function AppConvexProvider({
   const client = convexQueryClient.convexClient
 
   return (
-    <ClerkProvider publishableKey={clerkPublishableKey} localization={bgBG}>
+    <ClerkProvider
+      publishableKey={clerkPublishableKey}
+      localization={clerkBgLocalization}
+    >
       <ConvexProviderWithClerk client={client} useAuth={useAuth}>
         <EnsureConvexUser>
           <SubscriptionProvider>{children}</SubscriptionProvider>

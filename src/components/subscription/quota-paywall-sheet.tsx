@@ -13,14 +13,12 @@ export interface QuotaPaywallSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   message: string
-  onUpgrade: () => void
 }
 
 export function QuotaPaywallSheet({
   open,
   onOpenChange,
   message,
-  onUpgrade,
 }: QuotaPaywallSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -42,12 +40,9 @@ export function QuotaPaywallSheet({
           <Button
             type="button"
             className="h-11 w-full"
-            onClick={() => {
-              onUpgrade()
-              onOpenChange(false)
-            }}
+            onClick={() => onOpenChange(false)}
           >
-            Виж планове и абонамент
+            Затвори
           </Button>
         </SheetFooter>
       </SheetContent>

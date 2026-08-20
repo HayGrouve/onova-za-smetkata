@@ -28,7 +28,7 @@ function HostAccountPage() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="host-account-clerk">
       <UserProfile
         routing="path"
         path="/user-profile"

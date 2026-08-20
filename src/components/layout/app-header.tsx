@@ -1,4 +1,4 @@
-import { useAuth } from '@clerk/tanstack-react-start'
+import { useAuth, UserButton } from '@clerk/tanstack-react-start'
 import { Link, useParams, useRouterState } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
 import { ChevronLeftIcon } from 'lucide-react'
@@ -258,6 +258,18 @@ export function AppHeader() {
             {title}
           </h1>
         </div>
+        {showHostActions ? (
+          <UserButton
+            userProfileMode="navigation"
+            userProfileUrl="/user-profile"
+            showName={false}
+            userProfileProps={{
+              routing: 'path',
+              path: '/user-profile',
+              apiKeysProps: { hide: true },
+            }}
+          />
+        ) : null}
         <AppHeaderMenu
           showHostActions={showHostActions}
           isHomeRoute={pathname === '/'}

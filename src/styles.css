@@ -8,6 +8,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  color-scheme: light;
   /* Slate + Copper — light */
   --background: oklch(0.985 0.003 84); /* #faf9f7 */
   --foreground: oklch(0.3 0.012 286); /* #2b2b33 */
@@ -233,6 +234,17 @@ a {
 
   .page-shell {
     @apply mx-auto max-w-lg px-4;
+  }
+
+  /* Clerk UserProfile two-pane card — center without page-shell / max-w-lg clip */
+  .host-account-clerk {
+    @apply flex min-h-0 w-full flex-1 justify-center px-4 py-4;
+  }
+
+  .host-account-clerk .cl-rootBox {
+    margin-inline: auto;
+    width: fit-content;
+    max-width: 100%;
   }
 
   .page-container {
