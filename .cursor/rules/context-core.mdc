@@ -10,6 +10,8 @@ Use these consistently in code, UI copy, tests, and issues. Full glossary: **`CO
 | Term | Meaning | Avoid |
 | ---- | ------- | ----- |
 | **Host** | Authenticated bill owner | "member"; "guest" for the host's seat |
+| **Host account** | Clerk sign-in identity (UserButton / UserProfile) | Mixing with Host profile or Host Pro |
+| **Host profile** | In-app `Профил`: Username + usage | "user settings" as one blob with Clerk account |
 | **Guest** | Non-host participant; money may be collected from them | Using "guest" for the host's participant seat |
 | **Participant** | Named seat on a bill (claims, tip, payment) | "member" |
 | **Share** | Participant's food + tip total | "owed" for host collection status |
@@ -30,10 +32,10 @@ Use these consistently in code, UI copy, tests, and issues. Full glossary: **`CO
 
 ## Host vs guest (auth)
 
-- **Host** routes: `/bills/$billId`, `/bills/$billId/summary` — `requireAuth` / `requireBillOwner` server-side; `useRequireHostAuth` client-side.
+- **Host** routes: `/bills/$billId`, `/bills/$billId/summary`, `/user-profile` — `requireAuth` / `requireBillOwner` server-side; `useRequireHostAuth` client-side.
 - **Guest** routes: join via `?t={shareToken}` → `/join` → `/claim` — guest session token required for mutations; guest queries must not leak other participants' payment details.
 
 ## Host identity vs money
 
-- **Host sign-in** is **Clerk**. **Host Pro** (SaaS subscription) is **Stripe Billing** — do not enable or extend Clerk Billing. Quotas live in Convex (`hostTier`).
+- **Host sign-in** is **Clerk**. **Host account** management uses Clerk components, not the product Host profile. **Host Pro** (SaaS subscription) is **Stripe Billing** — do not enable or extend Clerk Billing. Quotas live in Convex (`hostTier`).
 - **Guest restaurant payments** (Revolut/IBAN) are how Guests settle Outstanding with the Host. They are not Stripe and not Clerk.

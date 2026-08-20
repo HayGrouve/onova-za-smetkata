@@ -22,9 +22,10 @@ test('signed-in Host can open Акаунт and security without 404', async ({
   ).not.toBeVisible()
 
   await page.getByRole('button', { name: 'Настройки' }).click()
-  await expect(
-    page.getByRole('menuitem', { name: 'Още настройки' }),
-  ).toBeVisible()
+  await page.getByRole('menuitem', { name: 'Още настройки' }).click()
+  await page.getByRole('menuitem', { name: 'Профил' }).click()
+  await expect(page.getByRole('heading', { name: 'Профил' })).toBeVisible()
+  await expect(page).toHaveURL(/\/user-profile/)
   await page.keyboard.press('Escape')
 
   await page.goto('/user-profile/security')

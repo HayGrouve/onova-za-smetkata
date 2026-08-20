@@ -18,9 +18,17 @@ The host also has a participant seat on the bill but is never **Outstanding**.
 The authenticated bill owner who creates and manages the bill.
 _Avoid_: bill creator (except as plain description), owner (except for auth/data ownership)
 
+**Host account**:
+The Host's Clerk sign-in identity — emails, password or passkeys, MFA, connected accounts, sessions, account deletion. Managed in Clerk's UserButton / UserProfile, not in the product Host profile.
+_Avoid_: mixing this with Host profile, Host Pro, or Guest restaurant payments; calling Clerk UserProfile "Профил" in product copy
+
+**Host profile**:
+The in-app product sheet (`Профил`): optional Username and Free/Pro usage. Not Clerk account management and not Host Pro checkout.
+_Avoid_: using "user settings" for this and Host account as one thing; putting Revolut/IBAN or friend groups here
+
 **Username**:
-An optional name the host saves on their profile (`Потребителско име`) for how they appear as a participant on bills they create.
-_Avoid_: display name, hostDisplayName, account username
+An optional name the host saves on their Host profile (`Потребителско име`) for how they appear as a participant on bills they create.
+_Avoid_: display name, hostDisplayName, account username (Clerk's username is Host account, not this field)
 
 **Auth name**:
 The name on the authenticated user from the identity provider (e.g. Google).
