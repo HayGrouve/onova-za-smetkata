@@ -226,7 +226,10 @@ export function AppHeaderMenu({
             <MoreVerticalIcon />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuContent
+          align="end"
+          className="w-52 [&_[data-slot=dropdown-menu-item]]:cursor-pointer"
+        >
           {visibleBillItems.length > 0 && onBillAction ? (
             <>
               <DropdownMenuLabel className="font-normal text-muted-foreground">

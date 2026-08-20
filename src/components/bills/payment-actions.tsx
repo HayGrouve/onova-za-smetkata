@@ -118,7 +118,7 @@ export function PaymentActions({
   return (
     <div className="flex flex-col gap-2 pt-1">
       {participantPayments.length > 0 ? (
-        <div className="flex flex-col gap-1 rounded-md border border-border/80 bg-muted/30 px-3 py-2">
+        <div className="flex flex-col gap-1 border-t pt-2">
           <p className="text-xs font-medium text-muted-foreground">Плащания</p>
           <ul className="flex flex-col gap-1 text-sm">
             {participantPayments.map((payment) => (
