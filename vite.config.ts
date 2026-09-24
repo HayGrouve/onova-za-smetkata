@@ -5,6 +5,8 @@ import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { nitro } from 'nitro/vite'
 
+const isVitest = Boolean(process.env.VITEST)
+
 export default defineConfig(({ command }) => ({
   resolve: { tsconfigPaths: true },
   test: {
@@ -20,19 +22,26 @@ export default defineConfig(({ command }) => ({
     ...(command === 'serve' ? [devtools()] : []),
     tailwindcss(),
     tanstackStart(),
-    nitro({
-      preset: 'vercel',
-      routeRules: {
-        '/**': {
-          headers: {
-            'X-Frame-Options': 'DENY',
-            'X-Content-Type-Options': 'nosniff',
-            'Referrer-Policy': 'strict-origin-when-cross-origin',
-            'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-          },
-        },
-      },
-    }),
+    // Nitro's server runtime is for dev/build only; under Vitest it loads CJS
+    // React in an ESM runner (`module is not defined`) and keeps the process alive.
+    ...(isVitest
+      ? []
+      : [
+          nitro({
+            preset: 'vercel',
+            routeRules: {
+              '/**': {
+                headers: {
+                  'X-Frame-Options': 'DENY',
+                  'X-Content-Type-Options': 'nosniff',
+                  'Referrer-Policy': 'strict-origin-when-cross-origin',
+                  'Permissions-Policy':
+                    'camera=(), microphone=(), geolocation=()',
+                },
+              },
+            },
+          }),
+        ]),
     viteReact(),
   ],
 }))
