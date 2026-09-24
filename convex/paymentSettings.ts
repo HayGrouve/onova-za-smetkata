@@ -2,7 +2,7 @@ import { mutation, query } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
 import { requireAuth } from './lib/auth'
 import { assertShareToken } from './lib/guestAccess'
-import { parsePaymentSettingsInput } from './lib/paymentSettingsSchema'
+import { parsePaymentSettingsInput } from '../shared/payment-settings-schema'
 
 export const get = query({
   args: {},

@@ -2,7 +2,7 @@ import { ConvexError } from 'convex/values'
 import type { Id } from '../_generated/dataModel'
 import type { MutationCtx } from '../_generated/server'
 import { isGuestSessionActive } from './guestSession'
-import { GUEST_FLOW_MESSAGES } from './guestFlowMessages'
+import { GUEST_FLOW_MESSAGES } from '../../shared/guest-flow-messages'
 
 export async function requireGuestSession(
   ctx: MutationCtx,

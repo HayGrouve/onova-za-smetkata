@@ -3,7 +3,7 @@ import type { Id } from '../_generated/dataModel'
 import type { MutationCtx } from '../_generated/server'
 import { assertBillOwnedBy } from './bill_ownership'
 import { getOptionalAuthUserId } from './auth'
-import { GUEST_FLOW_MESSAGES } from './guestFlowMessages'
+import { GUEST_FLOW_MESSAGES } from '../../shared/guest-flow-messages'
 import { requireGuestSession } from './requireGuestSession'
 
 export async function assertCanMutateAssignment(

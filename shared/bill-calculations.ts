@@ -1,4 +1,4 @@
-import { countItemsWithEmptyUnits, itemHasEmptyUnit } from './unit-coverage'
+import { countItemsWithEmptyUnits } from './unit-coverage'
 import {
   hasAtLeastOneParticipant,
   hasItemsWithPositiveLineTotal,
@@ -407,5 +407,3 @@ export function validateBillForFinalize(input: {
 
   return errors
 }
-
-export { itemHasEmptyUnit, countItemsWithEmptyUnits }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ConvexError } from 'convex/values'
 import { assertBillDraft } from './assertBillDraft'
-import { GUEST_FLOW_MESSAGES } from './guestFlowMessages'
+import { GUEST_FLOW_MESSAGES } from '../../shared/guest-flow-messages'
 
 describe('assertBillDraft', () => {
   it('passes when status is draft', () => {

@@ -1,7 +1,7 @@
 import { ConvexError, v } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import { requireAuth, getOptionalAuthUserId } from './lib/auth'
-import { formatUsernameError, parseUsername } from './lib/hostProfile'
+import { formatUsernameError, parseUsername } from '../shared/host-profile'
 import {
   getEffectiveTier,
   getFriendGroupLimit,

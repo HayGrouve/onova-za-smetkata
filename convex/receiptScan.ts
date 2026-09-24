@@ -9,8 +9,8 @@ import {
 import { extractedItemValidator } from './schema'
 import { assertBillDraft } from './lib/assertBillDraft'
 import { requireBillOwner } from './lib/auth'
-import { restaurantNameSchema } from './lib/billMetadataSchema'
-import { validateReceiptImportItems } from './lib/receiptImportSchema'
+import { restaurantNameSchema } from '../shared/validation/fields'
+import { validateReceiptImportItems } from '../shared/receipt-import-schema'
 import { assertRateLimit } from './lib/rateLimit'
 import { touchBill } from './lib/touchBill'
 import {

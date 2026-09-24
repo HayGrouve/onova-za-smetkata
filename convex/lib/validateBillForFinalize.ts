@@ -1,12 +1,12 @@
 import { ConvexError } from 'convex/values'
-import { validateBillForFinalize } from './billCalculations'
+import { validateBillForFinalize } from '../../shared/bill-calculations'
 import type {
   AssignmentInput,
   ItemInput,
   ParticipantInput,
   PaymentInput,
   ValidationError,
-} from './billCalculations'
+} from '../../shared/bill-calculations'
 
 export type FinalizeParticipantInput = ParticipantInput
 export type FinalizeItemInput = ItemInput

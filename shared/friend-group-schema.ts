@@ -1,11 +1,6 @@
 import { z } from 'zod'
-import {
-  FRIEND_GROUP_MAX_GROUPS,
-  FRIEND_GROUP_MAX_MEMBERS,
-} from './validation/constants'
+import { FRIEND_GROUP_MAX_MEMBERS } from './validation/constants'
 import { groupNameSchema, personNameSchema } from './validation/fields'
-
-export { FRIEND_GROUP_MAX_GROUPS, FRIEND_GROUP_MAX_MEMBERS }
 
 const friendGroupFormSchema = z.object({
   name: groupNameSchema(),

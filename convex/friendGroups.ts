@@ -4,14 +4,14 @@ import type { Id } from './_generated/dataModel'
 import type { MutationCtx } from './_generated/server'
 import { requireAuth, requireBillOwner } from './lib/auth'
 import { assertFriendGroupCreateQuota } from './lib/hostTier'
-import { parseFriendGroupInput } from './lib/friendGroupSchema'
+import { parseFriendGroupInput } from '../shared/friend-group-schema'
 import {
   parseParticipantName,
   participantNameKey,
-} from './lib/participantSchema'
-import { BILL_PARTICIPANTS_MAX } from './lib/validation'
+} from '../shared/participant-schema'
+import { BILL_PARTICIPANTS_MAX } from '../shared/validation/constants'
 import { touchBill } from './lib/touchBill'
-import { nextParticipantSortOrder } from './lib/hostBillParticipant'
+import { nextParticipantSortOrder } from '../shared/host-bill-participant'
 
 async function requireFriendGroupOwner(
   ctx: MutationCtx,

@@ -1,8 +1,6 @@
 import type { BillTotals } from './bill-calculations'
 import { COMBINED_PAYMENT_MESSAGES } from './combined-payment-messages'
 
-export { COMBINED_PAYMENT_MESSAGES } from './combined-payment-messages'
-
 export type CoveredPaymentRequest = {
   coveredParticipantIds?: string[]
   coveredParticipantId?: string
@@ -69,9 +67,7 @@ export function getCoveredParticipantIds(
   return []
 }
 
-export function isCombinedPaymentRequest(
-  request: CoveredPaymentRequest,
-): boolean {
+function isCombinedPaymentRequest(request: CoveredPaymentRequest): boolean {
   return getCoveredParticipantIds(request).length > 0
 }
 

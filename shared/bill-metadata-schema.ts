@@ -168,5 +168,3 @@ export function validateBillMetadataField(
     }
   }
 }
-
-export { firstZodIssueMessage } from './validation/errors'

@@ -3,7 +3,7 @@ import type { UserIdentity } from 'convex/server'
 import type { Doc, Id } from '../_generated/dataModel'
 import type { MutationCtx, QueryCtx } from '../_generated/server'
 import { assertBillOwnedBy } from './bill_ownership'
-import { nextSyncedAuthName } from './hostProfile'
+import { nextSyncedAuthName } from '../../shared/host-profile'
 
 export { assertBillOwnedBy } from './bill_ownership'
 

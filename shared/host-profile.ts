@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import { personNameSchema } from './validation/fields'
 
-export const HOST_PARTICIPANT_FALLBACK_NAME = 'домакин'
+const HOST_PARTICIPANT_FALLBACK_NAME = 'домакин'
 
 export type ResolveHostParticipantNameInput = {
   authName?: string | null
