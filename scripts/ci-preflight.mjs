@@ -7,7 +7,7 @@ if (!process.env.VITE_CONVEX_URL) {
   process.env.VITE_CONVEX_URL = DEFAULT_VITE_CONVEX_URL
 }
 
-const steps = ['check', 'lint', 'preflight']
+const steps = ['check', 'lint', 'typecheck', 'preflight']
 
 for (const step of steps) {
   const result = spawnSync('pnpm', ['run', step], {

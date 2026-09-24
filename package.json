@@ -18,6 +18,7 @@
     "test:e2e:install": "playwright install chromium",
     "deploy": "pnpm run preflight && npx convex deploy",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p convex",
     "format": "prettier --write . && eslint --fix",
     "check": "prettier --check .",
     "generate-icons": "node scripts/generate-pwa-icons.mjs",

@@ -116,7 +116,7 @@ export function ReceiptScanReviewSheet({
   const rowErrors = selection.ok === false ? selection.rowErrors : {}
   const hasInvalidCheckedRows = selection.ok === false
 
-  const footerRows = rows.flatMap((row, index) => {
+  const footerRows = rows.flatMap((row) => {
     if (!row.checked) return []
     const validated = validateReceiptImportRow({
       name: row.name,

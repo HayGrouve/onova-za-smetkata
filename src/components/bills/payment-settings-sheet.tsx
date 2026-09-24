@@ -48,7 +48,7 @@ export function PaymentSettingsSheet({
 
     setFieldErrors({})
 
-    if (settings.revolutUsername || settings.iban) {
+    if (settings?.revolutUsername || settings?.iban) {
       setRevolutUsername(settings.revolutUsername ?? '')
       setIban(settings.iban ?? '')
       return

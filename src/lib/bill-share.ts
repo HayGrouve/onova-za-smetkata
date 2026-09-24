@@ -6,12 +6,7 @@ import { formatEur } from './format-currency.ts'
 import {
   buildParticipantShareView,
   formatBillItemsSectionText,
-  formatBreakdownLineLabel,
-  formatBreakdownLineSharedText,
-  formatBreakdownLineSuffix,
-  formatBreakdownLineUnitsText,
   formatParticipantShareSectionText,
-  paymentStatusLabel,
 } from '../../shared/participant-share-view.ts'
 
 export function formatCopyAmount(cents: number): string {

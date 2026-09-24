@@ -34,7 +34,9 @@ import { HOST_ONBOARDING_HOME } from '../../shared/host-onboarding-messages.ts'
 import { api } from '../../convex/_generated/api'
 
 export const Route = createFileRoute('/')({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { status?: HomeBillStatusFilter } => ({
     status: parseHomeBillStatusSearch(search.status),
   }),
   head: () => buildHomeHead(),

@@ -169,7 +169,7 @@ export function AppHeader() {
   const isGuestRoute =
     pathname.endsWith('/join') || (pathname.endsWith('/claim') && !isHostClaim)
   const isLogin = pathname === '/login'
-  const showHostActions = isSignedIn && !isGuestRoute && !isLogin
+  const showHostActions = isSignedIn === true && !isGuestRoute && !isLogin
 
   const billMenuEligibility = useMemo(() => {
     if (!bill || !showHostActions) {
@@ -257,11 +257,6 @@ export function AppHeader() {
             userProfileMode="navigation"
             userProfileUrl="/user-profile"
             showName={false}
-            userProfileProps={{
-              routing: 'path',
-              path: '/user-profile',
-              apiKeysProps: { hide: true },
-            }}
           />
         ) : null}
         <AppHeaderMenu

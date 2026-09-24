@@ -17,7 +17,9 @@ import type { Doc, Id } from '../../../../convex/_generated/dataModel'
 
 export const Route = createFileRoute('/bills/$billId/claim')({
   head: () => buildNoIndexHead('Моят дял'),
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { t?: string; mode?: 'host' } => ({
     t: typeof search.t === 'string' ? search.t : '',
     mode: search.mode === 'host' ? ('host' as const) : undefined,
   }),
@@ -26,7 +28,7 @@ export const Route = createFileRoute('/bills/$billId/claim')({
 
 function BillClaimPage() {
   const { billId: billIdParam } = Route.useParams()
-  const { t: shareTokenFromUrl, mode } = Route.useSearch()
+  const { t: shareTokenFromUrl = '', mode } = Route.useSearch()
   const billId = billIdParam as Id<'bills'>
 
   if (mode === 'host') {
@@ -192,7 +194,7 @@ function HostClaimContent({ billId }: { billId: Id<'bills'> }) {
 
   const redirectToEditor = useCallback(() => {
     void navigate({
-      to: '/bills/$billId/',
+      to: '/bills/$billId',
       params: { billId },
       search: { step: 3 },
     })

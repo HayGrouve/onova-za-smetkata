@@ -56,7 +56,7 @@ export function PaymentCheckpointSheet({
     if (settings === undefined) return
 
     setFieldErrors({})
-    if (settings.revolutUsername || settings.iban) {
+    if (settings?.revolutUsername || settings?.iban) {
       setRevolutUsername(settings.revolutUsername ?? '')
       setIban(settings.iban ?? '')
       return

@@ -3,7 +3,7 @@ export interface PaymentSettings {
   iban?: string
 }
 
-function isPaymentConfigured(settings: PaymentSettings | undefined): boolean {
+function isPaymentConfigured(settings: PaymentSettings | null): boolean {
   if (!settings) return false
   return Boolean(settings.revolutUsername?.trim() || settings.iban?.trim())
 }

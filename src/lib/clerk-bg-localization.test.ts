@@ -42,7 +42,7 @@ describe('clerkBgLocalization', () => {
     expect(clerkBgLocalization.userProfile.billingPage).toEqual(
       bgBG.userProfile?.billingPage,
     )
-    expect(clerkBgLocalization.userProfile.navbar.billing).toEqual(
+    expect(clerkBgLocalization.userProfile.navbar?.billing).toEqual(
       bgBG.userProfile?.navbar?.billing,
     )
   })
