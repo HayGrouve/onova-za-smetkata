@@ -13,10 +13,6 @@ export function usePaymentSettingsStatus() {
   return usePaymentSettings().status
 }
 
-export function usePaymentSettingsConfigured(): boolean {
-  return usePaymentSettings().status === 'configured'
-}
-
 export function PaymentSettingsOpenButton({
   onClick,
   className,

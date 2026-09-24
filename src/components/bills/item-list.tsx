@@ -24,14 +24,16 @@ import { ICON } from '#/lib/app-icons.ts'
 import { getItemDeleteCopy } from '#/lib/destructive-action-copy.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import {
-  itemNameSchema,
   parseItemPriceInput,
-  quantityInputSchema,
   validateItemAddForm,
   validateItemNameInput,
   validateItemPriceInput,
   validateItemQuantityInput,
-} from '#/lib/item-schema.ts'
+} from '../../../shared/item-schema.ts'
+import {
+  itemNameSchema,
+  quantityInputSchema,
+} from '../../../shared/validation/fields.ts'
 import { cn } from '#/lib/utils.ts'
 import { itemHasEmptyUnit } from '../../../shared/unit-coverage'
 import { api } from '../../../convex/_generated/api'

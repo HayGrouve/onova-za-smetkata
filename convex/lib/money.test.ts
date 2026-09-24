@@ -3,7 +3,7 @@ import {
   assertNonNegativeIntCents,
   assertPositiveIntCents,
   assertPositiveQuantity,
-} from '../../convex/lib/money'
+} from './money'
 
 describe('money validators', () => {
   it('accepts valid cents and quantities', () => {

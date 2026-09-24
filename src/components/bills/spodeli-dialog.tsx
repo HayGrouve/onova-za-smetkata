@@ -6,8 +6,8 @@ import {
   getAssigneeIdsOnUnit,
   getOtherClaimantLabelsForUnit,
   isParticipantOnUnit,
-} from '#/lib/guest-claim-items.ts'
-import { previewShareCents } from '#/lib/guest-share-preview.ts'
+} from '../../../shared/guest-claim-items.ts'
+import { previewShareCents } from '../../../shared/guest-share-preview.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { UnitLineSummary } from '#/components/bills/unit-line-summary.tsx'
 import { api } from '../../../convex/_generated/api'

@@ -1,4 +1,4 @@
-import type { PaymentStatus } from '#/lib/bill-calculations.ts'
+import type { PaymentStatus } from '../../shared/bill-calculations.ts'
 
 export function getPaymentRowBorderClass(status: PaymentStatus): string {
   if (status === 'unpaid') return 'border-l-4 border-red-500'

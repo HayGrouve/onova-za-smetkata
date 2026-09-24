@@ -14,7 +14,7 @@ import {
 } from '#/components/ui/sheet.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
-import { summarizeAddMembersToBill } from '#/lib/friend-group-schema.ts'
+import { summarizeAddMembersToBill } from '../../../shared/friend-group-schema.ts'
 import { writeLastFriendGroupId } from '#/lib/last-friend-group-storage.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'

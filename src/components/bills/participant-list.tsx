@@ -20,7 +20,7 @@ import {
   getClearAllGuestsCopy,
   getParticipantRemoveCopy,
 } from '#/lib/destructive-action-copy.ts'
-import { summarizeAddMembersToBill } from '#/lib/friend-group-schema.ts'
+import { summarizeAddMembersToBill } from '../../../shared/friend-group-schema.ts'
 import { isHostParticipant } from '../../../shared/host-bill-participant.ts'
 import {
   readLastFriendGroupId,
@@ -30,7 +30,7 @@ import { sortFriendGroupsWithPinned } from '#/lib/sort-friend-groups-with-pinned
 import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
 import type { GuidanceFocusHandle } from '#/lib/guidance-focus/use-guidance-focus.ts'
 import { cn } from '#/lib/utils.ts'
-import { validateParticipantAdd } from '#/lib/participant-schema.ts'
+import { validateParticipantAdd } from '../../../shared/participant-schema.ts'
 import { Input } from '#/components/ui/input.tsx'
 import { Separator } from '#/components/ui/separator.tsx'
 import { api } from '../../../convex/_generated/api'

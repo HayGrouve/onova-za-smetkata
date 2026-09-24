@@ -16,7 +16,7 @@ export default defineSchema({
     email: v.optional(v.string()),
     /** Optional Host profile Username (`Потребителско име`). */
     username: v.optional(v.string()),
-    /** Billing mirror synced from Clerk webhooks. */
+    /** Host Pro billing mirror (read by `lib/hostTier.ts`; Stripe webhook to write it). */
     clerkPlanSlug: v.optional(v.string()),
     subscriptionStatus: v.optional(v.string()),
     currentPeriodEnd: v.optional(v.number()),

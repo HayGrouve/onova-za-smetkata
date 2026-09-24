@@ -6,7 +6,7 @@ export function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
-export function scrollIntoGuidanceTarget(
+function scrollIntoGuidanceTarget(
   element: HTMLElement,
   block: GuidanceScrollBlock,
 ): void {

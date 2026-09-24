@@ -3,7 +3,7 @@ import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { formatEur } from '#/lib/format-currency.ts'
-import { parseTipInputToCents } from '#/lib/bill-metadata-schema.ts'
+import { parseTipInputToCents } from '../../../shared/bill-metadata-schema.ts'
 import {
   readTipPreference,
   writeTipPreference,

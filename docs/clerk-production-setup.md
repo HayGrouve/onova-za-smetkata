@@ -79,8 +79,6 @@ The app already passes `bgBG` on `ClerkProvider`:
 
 No production dashboard step is required. After deploy, verify sign-in / profile UI strings are in Bulgarian.
 
-Future: when Paraglide i18n lands, sync `localization` with app locale (`bgBG` / `enUS`) per `docs/specs/i18n-implementation.md`.
-
 ### 1.4 JWT template for Convex
 
 **JWT Templates → New template**
@@ -124,8 +122,6 @@ Clerk Dashboard → **Configure → Domains**. After adding the production domai
 ```text
 https://clerk.onova-za-smetkata.com/npm/@clerk/clerk-js@…/dist/clerk.browser.js
 ```
-
-Detail: `research/clerk-production-auth-diagnosis.md`.
 
 ### 1.6 Allowed domains
 
@@ -250,21 +246,11 @@ Removing them avoids confusion; leaving them in place should not break Clerk aut
 
 ---
 
-## Phase 3 — Clerk webhook → Convex (legacy Billing only)
+## Phase 3 — Clerk webhook (removed)
 
-The repo still has `/clerk/webhook` from an earlier Clerk Billing experiment (`convex/http.ts`). **Do not subscribe new Clerk Billing events** and **do not** treat this as Host Pro.
+The leftover Clerk Billing handler (`/clerk/webhook`) has been removed from Convex. If a webhook endpoint still points at `https://coordinated-warbler-782.convex.site/clerk/webhook` in the Clerk Dashboard (**Configure → Webhooks**), delete it and remove `CLERK_WEBHOOK_SIGNING_SECRET` from the Convex Dashboard.
 
-When Host Pro ships, register **Stripe** webhooks on Convex instead ([ADR 0003](./adr/0003-stripe-billing-beside-clerk.md)). Keep `CLERK_JWT_ISSUER_DOMAIN` for auth; `CLERK_WEBHOOK_SIGNING_SECRET` is only needed while the leftover Clerk handler remains deployed.
-
-If you still need the old endpoint for a wipe/migration window:
-
-**Endpoint URL:**
-
-```text
-https://coordinated-warbler-782.convex.site/clerk/webhook
-```
-
-Prefer disabling that Clerk webhook once Stripe mirroring is live.
+Host Pro plan state will be written to `users` by a **Stripe** webhook ([ADR 0003](./adr/0003-stripe-billing-beside-clerk.md)).
 
 ---
 
@@ -430,17 +416,16 @@ Full checklist: [`DEPLOY.md` — Smoke test](./DEPLOY.md#release-steps).
 
 ## Environment matrix (quick reference)
 
-| Variable                       | Convex prod                    | Vercel prod |
-| ------------------------------ | ------------------------------ | ----------- |
-| `CLERK_JWT_ISSUER_DOMAIN`      | ✅                             | —           |
-| `CLERK_WEBHOOK_SIGNING_SECRET` | leftover `/clerk/webhook` only | —           |
-| `GEMINI_API_KEY`               | ✅                             | —           |
-| `DEV_MODE`                     | ❌ never                       | —           |
-| `VITE_CONVEX_URL`              | —                              | ✅          |
-| `VITE_APP_ORIGIN`              | —                              | ✅          |
-| `VITE_CLERK_PUBLISHABLE_KEY`   | —                              | ✅          |
-| `CLERK_PUBLISHABLE_KEY`        | —                              | recommended |
-| `CLERK_SECRET_KEY`             | —                              | ✅          |
+| Variable                     | Convex prod | Vercel prod |
+| ---------------------------- | ----------- | ----------- |
+| `CLERK_JWT_ISSUER_DOMAIN`    | ✅          | —           |
+| `GEMINI_API_KEY`             | ✅          | —           |
+| `DEV_MODE`                   | ❌ never    | —           |
+| `VITE_CONVEX_URL`            | —           | ✅          |
+| `VITE_APP_ORIGIN`            | —           | ✅          |
+| `VITE_CLERK_PUBLISHABLE_KEY` | —           | ✅          |
+| `CLERK_PUBLISHABLE_KEY`      | —           | recommended |
+| `CLERK_SECRET_KEY`           | —           | ✅          |
 
 ---
 
@@ -455,7 +440,7 @@ Full checklist: [`DEPLOY.md` — Smoke test](./DEPLOY.md#release-steps).
 | Sign-in OK, app stuck on „Зареждане…“ **after** Clerk UI                               | JWT issuer mismatch                                                             | Set `CLERK_JWT_ISSUER_DOMAIN` = `https://clerk.onova-za-smetkata.com` on Convex prod                                        |
 | „Липсва конфигурация на входа“                                                         | Missing publishable key in client bundle                                        | Set `VITE_CLERK_PUBLISHABLE_KEY` on Vercel prod; redeploy                                                                   |
 | Host queries throw „Изисква се вход“ right after login                                 | Race before user row exists                                                     | Ensure latest `EnsureConvexUser` + `users.ensureCurrent` are deployed                                                       |
-| Pro upgrade doesn't apply                                                              | Webhook misconfiguration                                                        | Verify webhook URL, signing secret, and Clerk delivery logs                                                                 |
+| Pro upgrade doesn't apply                                                              | Stripe webhook misconfiguration                                                 | Verify Stripe webhook URL, signing secret, and delivery logs                                                                |
 | Google sign-in `redirect_uri_mismatch`                                                 | Domain not allowed in Clerk / Google                                            | Add prod domain in Clerk; Google redirect = §1.8                                                                            |
 | OCR fails                                                                              | Missing Gemini key                                                              | Set `GEMINI_API_KEY` on Convex prod                                                                                         |
 
@@ -463,10 +448,10 @@ Full checklist: [`DEPLOY.md` — Smoke test](./DEPLOY.md#release-steps).
 
 ## Architecture reminder
 
-| Layer           | Owns                                                                                          |
-| --------------- | --------------------------------------------------------------------------------------------- |
-| **Clerk**       | Sign-in UI, checkout, subscription lifecycle, plan/feature claims                             |
-| **Convex**      | `users.clerkSubject`, plan mirror from webhooks, monthly quota counters, mutation enforcement |
-| **Guest flows** | Unchanged — share tokens and `guestSessions`                                                  |
+| Layer           | Owns                                                                                                 |
+| --------------- | ---------------------------------------------------------------------------------------------------- |
+| **Clerk**       | Sign-in UI, checkout, subscription lifecycle, plan/feature claims                                    |
+| **Convex**      | `users.clerkSubject`, plan mirror from Stripe webhooks, monthly quota counters, mutation enforcement |
+| **Guest flows** | Unchanged — share tokens and `guestSessions`                                                         |
 
 Google OAuth for **host** sign-in is configured in the **Clerk Dashboard**, not via Convex `@convex-dev/auth`.

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { PAYMENT_NOTE_MAX } from './validation/constants'
-import { firstZodIssueMessage, formatZodFieldErrors } from './validation/errors'
+import { firstZodIssueMessage } from './validation/errors'
 import { parseEurInputStrict } from './validation/eur'
 import {
   itemNameSchema,
@@ -54,17 +54,6 @@ function prefixIssues(issues: z.ZodIssue[], field: string): z.ZodIssue[] {
     ...issue,
     path: [field, ...issue.path],
   }))
-}
-
-export function formatItemFieldErrors(
-  error: z.ZodError,
-): Partial<Record<ItemField, string>> {
-  return formatZodFieldErrors(error, [
-    'name',
-    'price',
-    'quantity',
-    'note',
-  ] as const)
 }
 
 export function validateItemNameInput(value: string): string | undefined {
@@ -251,5 +240,3 @@ export function validateItemUpdatePatch(
 
   return { ok: true, data: output }
 }
-
-export { firstZodIssueMessage } from './validation/errors'

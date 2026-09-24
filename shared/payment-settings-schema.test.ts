@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   formatPaymentSettingsErrors,
   isValidIbanChecksum,
-  normalizeIban,
   normalizeRevolutUsername,
   parsePaymentSettingsInput,
   validateIban,
@@ -94,7 +93,24 @@ describe('isValidIbanChecksum', () => {
 })
 
 describe('validateIban', () => {
-  it('normalizes spacing', () => {
-    expect(normalizeIban('bg80 bnbg 9661 1020 3456 78')).toBe(VALID_BG_IBAN)
+  it('accepts a spaced lowercase BG IBAN and returns it normalized', () => {
+    expect(validateIban('bg80 bnbg 9661 1020 3456 78')).toEqual({
+      ok: true,
+      value: VALID_BG_IBAN,
+    })
+  })
+
+  it('rejects malformed input', () => {
+    expect(validateIban('not an iban')).toEqual({
+      ok: false,
+      message: 'Невалиден формат на IBAN',
+    })
+  })
+
+  it('rejects a BG IBAN with a bad checksum', () => {
+    expect(validateIban('BG81BNBG96611020345678')).toEqual({
+      ok: false,
+      message: 'Невалиден български IBAN',
+    })
   })
 })

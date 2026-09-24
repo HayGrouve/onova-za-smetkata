@@ -1,32 +1,12 @@
 import type {
   BillBreakdownInput,
   ParticipantTotals,
-} from './bill-calculations.ts'
+} from '../../shared/bill-calculations.ts'
 import { formatEur } from './format-currency.ts'
 import {
   buildParticipantShareView,
   formatBillItemsSectionText,
-  formatBreakdownLineLabel,
-  formatBreakdownLineSharedText,
-  formatBreakdownLineSuffix,
-  formatBreakdownLineUnitsText,
   formatParticipantShareSectionText,
-  paymentStatusLabel,
-} from '../../shared/participant-share-view.ts'
-
-export {
-  buildParticipantShareView,
-  buildParticipantShareViewFromSnapshot,
-  formatBreakdownLineLabel,
-  formatBreakdownLineSharedText,
-  formatBreakdownLineSuffix,
-  formatBreakdownLineUnitsText,
-  paymentStatusLabel,
-} from '../../shared/participant-share-view.ts'
-export type {
-  ParticipantShareLineView,
-  ParticipantShareView,
-  ParticipantShareViewInput,
 } from '../../shared/participant-share-view.ts'
 
 export function formatCopyAmount(cents: number): string {
@@ -35,10 +15,6 @@ export function formatCopyAmount(cents: number): string {
 
 function formatShareAmount(cents: number): string {
   return formatEur(cents)
-}
-
-export function formatRevolutAmount(cents: number): string {
-  return String(cents)
 }
 
 export interface ShareParticipantLine {

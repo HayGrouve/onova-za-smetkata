@@ -12,9 +12,9 @@ import { ICON } from '#/lib/app-icons.ts'
 import type {
   BillBreakdownInput,
   ParticipantTotals,
-} from '#/lib/bill-calculations.ts'
+} from '../../../shared/bill-calculations.ts'
 import { formatCopyAmount } from '#/lib/bill-share.ts'
-import { paymentStatusLabel } from '#/lib/participant-share-view.ts'
+import { paymentStatusLabel } from '../../../shared/participant-share-view.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import {
   buildRevolutPaymentNote,
@@ -22,7 +22,7 @@ import {
 } from '#/lib/payment-settings.ts'
 import { copyToClipboard } from '#/lib/copy-to-clipboard.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
-import { getCoveredParticipantIds } from '#/lib/combined-payment.ts'
+import { getCoveredParticipantIds } from '../../../shared/combined-payment.ts'
 import { launchRevolut } from '#/lib/revolut-launch.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'

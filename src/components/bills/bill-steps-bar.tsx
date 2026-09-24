@@ -1,6 +1,6 @@
 import { CheckIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
-import type { BillStepCompletion } from '#/lib/bill-step-completion.ts'
+import type { BillStepCompletion } from '../../../shared/bill-step-completion.ts'
 import { cn } from '#/lib/utils.ts'
 
 export type BillStep = 1 | 2 | 3 | 4

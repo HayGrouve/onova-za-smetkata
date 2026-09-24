@@ -1,5 +1,5 @@
 import { ConvexError } from 'convex/values'
-import { GUEST_FLOW_MESSAGES } from './guestFlowMessages'
+import { GUEST_FLOW_MESSAGES } from '../../shared/guest-flow-messages'
 
 export function assertBillDraft(bill: { status: 'draft' | 'final' }): void {
   if (bill.status === 'final') {

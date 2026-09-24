@@ -1,7 +1,7 @@
 import type {
   BillBreakdownInput,
   ParticipantTotals,
-} from '#/lib/bill-calculations.ts'
+} from '../../../shared/bill-calculations.ts'
 import {
   Sheet,
   SheetContent,

@@ -1,7 +1,7 @@
 import { ConvexError } from 'convex/values'
 import type { Doc, Id } from '../_generated/dataModel'
 import type { MutationCtx, QueryCtx } from '../_generated/server'
-import { GUEST_FLOW_MESSAGES } from './guestFlowMessages'
+import { GUEST_FLOW_MESSAGES } from '../../shared/guest-flow-messages'
 
 type GuestAccessCtx = QueryCtx | MutationCtx
 

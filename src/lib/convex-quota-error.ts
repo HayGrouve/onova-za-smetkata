@@ -4,7 +4,7 @@ import {
 } from '../../shared/subscription-messages.ts'
 import type { QuotaErrorCode } from '../../shared/subscription-messages.ts'
 
-export function getConvexErrorData(error: unknown): unknown {
+function getConvexErrorData(error: unknown): unknown {
   if (error && typeof error === 'object' && 'data' in error) {
     return Reflect.get(error, 'data')
   }
@@ -24,8 +24,4 @@ export function parseQuotaError(
     return { code, message }
   }
   return { code, message: SUBSCRIPTION_MESSAGES[code] }
-}
-
-export function isQuotaError(error: unknown): boolean {
-  return parseQuotaError(error) !== null
 }

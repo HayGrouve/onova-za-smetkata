@@ -5,8 +5,8 @@ import type { MutationCtx } from './_generated/server'
 import {
   buildClaimActorKey,
   parseGuestClaimInput,
-} from './lib/guestClaimSchema'
-import { GUEST_FLOW_MESSAGES } from './lib/guestFlowMessages'
+} from '../shared/guest-claim-schema'
+import { GUEST_FLOW_MESSAGES } from '../shared/guest-flow-messages'
 import { GUEST_SESSION_TTL_MS, isGuestSessionActive } from './lib/guestSession'
 import { requireGuestSession } from './lib/requireGuestSession'
 import { assertRateLimit } from './lib/rateLimit'

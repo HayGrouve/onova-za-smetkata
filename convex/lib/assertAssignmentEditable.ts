@@ -1,6 +1,6 @@
 import { ConvexError } from 'convex/values'
 import type { Id } from '../_generated/dataModel'
-import { GUEST_FLOW_MESSAGES } from './guestFlowMessages'
+import { GUEST_FLOW_MESSAGES } from '../../shared/guest-flow-messages'
 
 export type AssignmentEditableError = 'bill_final' | 'participant_not_on_bill'
 

@@ -3,8 +3,8 @@ import { mutation, query } from './_generated/server'
 import type { MutationCtx, QueryCtx } from './_generated/server'
 import type { Doc, Id } from './_generated/dataModel'
 import { requireBillOwner } from './lib/auth'
+import { COMBINED_PAYMENT_MESSAGES } from '../shared/combined-payment-messages'
 import {
-  COMBINED_PAYMENT_MESSAGES,
   getCoveredAmountsFromRequest,
   getCoveredParticipantIds,
   isAwaitingHostConfirmation,
@@ -15,16 +15,16 @@ import {
   validateInitiateTransfer,
   validateSoloPaymentCreate,
   validateUpdateCovered,
-} from './lib/combinedPayment'
-import { validatePaymentAdd } from './lib/paymentAmountSchema'
+} from '../shared/combined-payment'
+import { validatePaymentAdd } from '../shared/payment-amount-schema'
 import { touchBill } from './lib/touchBill'
 import { assertShareToken } from './lib/guestAccess'
 import { assertBillDraft } from './lib/assertBillDraft'
-import { GUEST_FLOW_MESSAGES } from './lib/guestFlowMessages'
+import { GUEST_FLOW_MESSAGES } from '../shared/guest-flow-messages'
 import { requireGuestSession } from './lib/requireGuestSession'
-import { calculateBillTotals } from './lib/billCalculations'
-import type { BillTotals } from './lib/billCalculations'
-import { toBillCalculationSnapshot } from './lib/billCalculationSnapshot'
+import { calculateBillTotals } from '../shared/bill-calculations'
+import type { BillTotals } from '../shared/bill-calculations'
+import { toBillCalculationSnapshot } from '../shared/bill-calculation-snapshot'
 import { loadBillRelations } from './lib/billListSummary'
 
 async function loadBillTotalsForCombinedPay(

@@ -13,12 +13,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog.tsx'
-import { calculateBillTotals } from '#/lib/bill-calculations.ts'
-import { toBillCalculationSnapshot } from '#/lib/bill-calculation-snapshot.ts'
+import { calculateBillTotals } from '../../shared/bill-calculations.ts'
+import { toBillCalculationSnapshot } from '../../shared/bill-calculation-snapshot.ts'
 import { buildBillJoinUrl, resolveAppOrigin } from '#/lib/bill-join-url.ts'
 import { formatBillShareText, shareOrCopyText } from '#/lib/bill-share.ts'
 import { getBillDeleteCopy } from '#/lib/destructive-action-copy.ts'
 import { formatEur } from '#/lib/format-currency.ts'
+import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { navigateToFinalBillSummary } from '#/lib/navigate-to-final-bill-summary.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import { shareLink } from '#/lib/share-link.ts'
@@ -105,7 +106,7 @@ export function useBillHeaderMenuActions({
   }, [billSnapshot])
 
   async function handleShareJoinLink() {
-    if (!billData?.bill.shareToken) return
+    if (!billId || !billData?.bill.shareToken) return
     const origin = resolveAppOrigin(window.location.origin)
     const joinUrl = buildBillJoinUrl(billId, origin, billData.bill.shareToken)
     const result = await shareLink({
@@ -122,6 +123,7 @@ export function useBillHeaderMenuActions({
   }
 
   async function handleRotateConfirm() {
+    if (!billId) return
     setIsRotating(true)
     try {
       await rotateShareToken({ billId })
@@ -135,6 +137,7 @@ export function useBillHeaderMenuActions({
   }
 
   async function handleFinalize() {
+    if (!billId) return
     setIsFinalizing(true)
     try {
       await finalizeBill({ billId })
@@ -149,6 +152,7 @@ export function useBillHeaderMenuActions({
   }
 
   async function handleDeleteWithConfirm() {
+    if (!billId) return
     const confirmed = await confirm(getBillDeleteCopy())
     if (!confirmed) return
     setIsDeleting(true)

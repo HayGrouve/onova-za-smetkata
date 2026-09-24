@@ -20,7 +20,7 @@ export function parseParticipantName(name: string) {
   return personNameSchema.safeParse(name)
 }
 
-export function formatParticipantNameError(error: z.ZodError): string {
+function formatParticipantNameError(error: z.ZodError): string {
   return error.issues[0]?.message ?? 'Невалидно име'
 }
 

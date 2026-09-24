@@ -9,7 +9,6 @@ export const EUR_CENTS_MAX = 999_900
 export const BILL_PARTICIPANTS_MAX = 50
 export const DEVICE_ID_MAX = 64
 export const FRIEND_GROUP_MAX_MEMBERS = 20
-export const FRIEND_GROUP_MAX_GROUPS = 50
 
 export const BILL_DATE_MIN_MS = Date.UTC(2000, 0, 1)
 export const BILL_DATE_MAX_FUTURE_MS = 365 * 24 * 60 * 60 * 1000

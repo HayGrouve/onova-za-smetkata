@@ -19,14 +19,12 @@ import {
 import { deleteGuestSessionsForBill } from './guestSessions'
 import { isGuestSessionActive } from './lib/guestSession'
 import { assertShareToken, toGuestVisibleBill } from './lib/guestAccess'
-import {
-  firstZodIssueMessage,
-  parseBillMetadataPatch,
-} from './lib/billMetadataSchema'
+import { firstZodIssueMessage } from '../shared/validation/errors'
+import { parseBillMetadataPatch } from '../shared/bill-metadata-schema'
 import { createShareToken } from './lib/shareToken'
-import { calculateBillTotals } from './lib/billCalculations'
-import { toBillCalculationSnapshot } from './lib/billCalculationSnapshot'
-import { planHostParticipantOnBillCreate } from './lib/hostBillParticipant'
+import { calculateBillTotals } from '../shared/bill-calculations'
+import { toBillCalculationSnapshot } from '../shared/bill-calculation-snapshot'
+import { planHostParticipantOnBillCreate } from '../shared/host-bill-participant'
 import { touchBill } from './lib/touchBill'
 import { clearGuidedBillReference } from './lib/hostOnboardingBillHooks'
 import {

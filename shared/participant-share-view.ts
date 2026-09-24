@@ -6,13 +6,11 @@ import type {
   PaymentStatus,
 } from './bill-calculations'
 import {
-  calculateBillTotals,
   calculateParticipantBreakdown,
   lineTotalCents,
 } from './bill-calculations'
-import type { BillCalculationSnapshot } from './bill-calculation-snapshot'
 
-export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   unpaid: 'неплатено',
   partial: 'частично',
   paid: 'платено',
@@ -161,25 +159,6 @@ export function buildParticipantShareView(
   }
 }
 
-export function buildParticipantShareViewFromSnapshot(
-  snapshot: BillCalculationSnapshot,
-  participantId: string,
-  participantLabels?: Record<string, string>,
-): ParticipantShareView {
-  const billTotals = calculateBillTotals(snapshot.calculationInput)
-  if (!(participantId in billTotals.byParticipant)) {
-    throw new Error(`Unknown participant: ${participantId}`)
-  }
-  const totals = billTotals.byParticipant[participantId]
-
-  return buildParticipantShareView({
-    breakdownInput: snapshot.breakdownInput,
-    totals,
-    participantId,
-    participantLabels,
-  })
-}
-
 function labelForParticipant(
   participantId: string,
   labels: Record<string, string>,
@@ -187,7 +166,7 @@ function labelForParticipant(
   return labels[participantId] ?? 'Участник'
 }
 
-export function formatItemAssigneesText(
+function formatItemAssigneesText(
   item: ItemBreakdownInput,
   breakdown: BillBreakdownInput,
   labels: Record<string, string>,

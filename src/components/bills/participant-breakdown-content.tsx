@@ -2,8 +2,8 @@ import type { ReactNode } from 'react'
 import type {
   BillBreakdownInput,
   ParticipantTotals,
-} from '#/lib/bill-calculations.ts'
-import { buildParticipantShareView } from '#/lib/participant-share-view.ts'
+} from '../../../shared/bill-calculations.ts'
+import { buildParticipantShareView } from '../../../shared/participant-share-view.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Separator } from '#/components/ui/separator.tsx'

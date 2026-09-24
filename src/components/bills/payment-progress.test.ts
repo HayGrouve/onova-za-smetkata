@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ParticipantTotals } from '#/lib/bill-calculations.ts'
+import type { ParticipantTotals } from '../../../shared/bill-calculations.ts'
 
 type ProgressParticipant = { id: string; sortOrder: number }
 

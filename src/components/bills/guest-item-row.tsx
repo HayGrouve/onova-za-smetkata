@@ -7,11 +7,11 @@ import { formatEur } from '#/lib/format-currency.ts'
 import {
   getGuestClaimItemState,
   getOtherClaimantLabels,
-} from '#/lib/guest-claim-items.ts'
+} from '../../../shared/guest-claim-items.ts'
 import {
   formatShareParticipantCount,
   previewShareCents,
-} from '#/lib/guest-share-preview.ts'
+} from '../../../shared/guest-share-preview.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'

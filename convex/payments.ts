@@ -2,10 +2,10 @@ import { mutation } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
 import { assertBillDraft } from './lib/assertBillDraft'
 import { requireBillOwner } from './lib/auth'
-import { calculateBillTotals } from './lib/billCalculations'
-import { toBillCalculationSnapshot } from './lib/billCalculationSnapshot'
+import { calculateBillTotals } from '../shared/bill-calculations'
+import { toBillCalculationSnapshot } from '../shared/bill-calculation-snapshot'
 import { loadBillRelations } from './lib/billListSummary'
-import { validatePaymentAdd } from './lib/paymentAmountSchema'
+import { validatePaymentAdd } from '../shared/payment-amount-schema'
 import { touchBill } from './lib/touchBill'
 
 export const add = mutation({

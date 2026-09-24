@@ -5,7 +5,7 @@ import type { MutationCtx } from './_generated/server'
 import { requireAuth } from './lib/auth'
 import { createShareToken } from './lib/shareToken'
 import { touchBill } from './lib/touchBill'
-import { planHostParticipantOnBillCreate } from './lib/hostBillParticipant'
+import { planHostParticipantOnBillCreate } from '../shared/host-bill-participant'
 import {
   countOwnedBills,
   ensureHostOnboarding,

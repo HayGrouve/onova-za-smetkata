@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { shouldDeleteReplacedReceiptStorage } from '../../convex/lib/receiptStorage'
+import { shouldDeleteReplacedReceiptStorage } from './receiptStorage'
 
 describe('shouldDeleteReplacedReceiptStorage', () => {
   it('returns true when receipt storage id changes', () => {

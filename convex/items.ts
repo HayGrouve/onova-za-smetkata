@@ -2,7 +2,10 @@ import { mutation } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
 import { assertBillDraft } from './lib/assertBillDraft'
 import { requireBillOwner } from './lib/auth'
-import { validateItemAddArgs, validateItemUpdatePatch } from './lib/itemSchema'
+import {
+  validateItemAddArgs,
+  validateItemUpdatePatch,
+} from '../shared/item-schema'
 import { touchBill } from './lib/touchBill'
 
 export const add = mutation({

@@ -18,7 +18,7 @@ These are separate products. Do not collapse them into “Clerk Billing”.
 | Guest join                                                                | Share token + `guestSessions` (no Clerk account)                            |
 | Guest restaurant payment                                                  | Host Revolut / IBAN (not Stripe)                                            |
 
-Do **not** enable Clerk Billing in the Clerk Dashboard. Existing `convex/clerkWebhookAction.ts` / `/clerk/webhook` code is leftover Clerk Billing mirroring; new Host Pro work goes through Stripe, not those APIs.
+Do **not** enable Clerk Billing in the Clerk Dashboard. Host Pro plan state on `users` is written by a Stripe webhook, not Clerk.
 
 ## Architecture map
 
@@ -28,7 +28,7 @@ convex/          Backend: persistence, auth, guest sessions, OCR, rate limits
 convex/lib/      Server helpers reused across Convex modules
 src/routes/      TanStack Router file routes
 src/components/  UI (bills/, layout/, ui/ shadcn)
-src/lib/         Client helpers; often re-exports shared/ + browser-only logic
+src/lib/         Browser-only helpers (storage, PWA, clipboard, share text)
 e2e/             Playwright critical-path specs (3 journeys)
 ```
 
@@ -41,7 +41,7 @@ e2e/             Playwright critical-path specs (3 journeys)
 | Browser storage, PWA, clipboard, Revolut launch    | `src/lib/`                       |
 | Layout and interaction                             | `src/components/`, `src/routes/` |
 
-Before duplicating logic, check whether `shared/` or `convex/lib/` already owns it. Many `src/lib/*.ts` files are thin re-exports.
+Before duplicating logic, check whether `shared/` or `convex/lib/` already owns it. Import `shared/` modules directly from `src/` and `convex/` — do not add re-export shims in `src/lib/` or `convex/lib/`.
 
 ## Host vs guest
 
@@ -57,7 +57,7 @@ Guest-facing queries must not leak other participants' payment details. Respect 
 - **Aliases**: `#/*` and `@/*` map to `src/*`. Use `#/…` with `.ts`/`.tsx` extensions (`verbatimModuleSyntax: true`).
 - **`shared/`**: import with relative paths from `src/` or `convex/` (no alias). Convex tsconfig includes `../shared/**/*`.
 - **Do not edit**: `convex/_generated/*`, `src/routeTree.gen.ts`.
-- **Regenerate routes** after adding/moving route files: `pnpm run generate-routes`.
+- **Route tree**: `pnpm run dev` / `pnpm run build` regenerate `src/routeTree.gen.ts` after adding or moving route files.
 
 ## Convex
 
@@ -89,7 +89,7 @@ pnpm dlx shadcn@latest add <component>
 | --------- | ----------------------- | ----------------------------------------------------------------------- |
 | Unit      | `pnpm run test`         | `*.test.ts` / `*.test.tsx` colocated with source                        |
 | E2E       | `pnpm run test:e2e`     | `e2e/*.spec.ts` — needs `npx convex dev` + `DEV_MODE` on dev deployment |
-| Full gate | `pnpm run ci:preflight` | Prettier + ESLint + Vitest + PWA icons + production build               |
+| Full gate | `pnpm run ci:preflight` | Prettier + ESLint + typecheck + Knip + Vitest + PWA icons + build       |
 
 **Testing priorities**
 
@@ -98,7 +98,9 @@ pnpm dlx shadcn@latest add <component>
 3. **`src/lib/`** — client adapters and browser helpers.
 4. **`e2e/`** — only for critical browser journeys; see `e2e/README.md`.
 
-Vitest excludes `e2e/**` and `.worktrees/**`. Local git worktrees under `.worktrees/` are ignored by git and tooling — do not commit them.
+Vitest excludes `e2e/**`, `.worktrees/**`, and `.claude/worktrees/**`. Local git worktrees there are ignored by git and tooling — do not commit them.
+
+**Knip** (`pnpm run knip`, part of the full gate) fails on unused files, exports, and dependencies. Delete dead code rather than ignoring it; `knip.json` only ignores shadcn `src/components/ui/**` and `public/sw.js`.
 
 When implementing from a spec or ticket, prefer `/tdd` at agreed seams (usually `shared/` or `convex/lib/`).
 
@@ -117,7 +119,7 @@ Copy `.env.example` → `.env.local` and set `VITE_CONVEX_URL` and `VITE_CLERK_P
 
 1. Run `pnpm run ci:preflight` (the pre-commit hook runs this automatically).
 2. If you touched guest/host browser flows, run E2E locally per `e2e/README.md`.
-3. If you changed routes, run `pnpm run generate-routes` and commit `src/routeTree.gen.ts` if it changed.
+3. If you changed routes, run `pnpm run build` (or `dev`) and commit `src/routeTree.gen.ts` if it changed.
 4. If you changed schema shape for existing data, note whether a manual `npx convex run backfill:*` is needed (see `docs/DEPLOY.md`).
 5. Use `/code-review` on substantial changes before opening a PR.
 

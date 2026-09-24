@@ -21,7 +21,7 @@ import {
 import {
   formatPaymentSettingsErrors,
   parsePaymentSettingsInput,
-} from '#/lib/payment-settings-schema.ts'
+} from '../../../shared/payment-settings-schema.ts'
 import { api } from '../../../convex/_generated/api'
 
 export interface PaymentSettingsSheetProps {
@@ -48,7 +48,7 @@ export function PaymentSettingsSheet({
 
     setFieldErrors({})
 
-    if (settings.revolutUsername || settings.iban) {
+    if (settings?.revolutUsername || settings?.iban) {
       setRevolutUsername(settings.revolutUsername ?? '')
       setIban(settings.iban ?? '')
       return

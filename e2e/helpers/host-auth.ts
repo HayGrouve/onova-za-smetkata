@@ -2,7 +2,7 @@ import { clerk, setupClerkTestingToken } from '@clerk/testing/playwright'
 import { expect, test as base } from '@playwright/test'
 import type { Browser, BrowserContext, Page } from '@playwright/test'
 
-export const E2E_HOST_AUTH_MESSAGE = [
+const E2E_HOST_AUTH_MESSAGE = [
   'E2E host auth is not available.',
   '',
   'Prerequisites:',

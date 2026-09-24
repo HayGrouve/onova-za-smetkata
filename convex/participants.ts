@@ -2,13 +2,13 @@ import { mutation, query } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
 import { assertBillDraft } from './lib/assertBillDraft'
 import { requireAuth, requireBillOwner } from './lib/auth'
-import { validateParticipantAdd } from './lib/participantSchema'
+import { validateParticipantAdd } from '../shared/participant-schema'
 import { touchBill } from './lib/touchBill'
 import { deleteGuestSessionsForParticipant } from './guestSessions'
 import {
   nextParticipantSortOrder,
   shouldClearHostParticipantId,
-} from './lib/hostBillParticipant'
+} from '../shared/host-bill-participant'
 import type { Doc, Id } from './_generated/dataModel'
 import type { MutationCtx } from './_generated/server'
 

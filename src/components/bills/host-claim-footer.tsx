@@ -4,7 +4,7 @@ import { Badge } from '#/components/ui/badge.tsx'
 import type {
   BillBreakdownInput,
   ParticipantTotals,
-} from '#/lib/bill-calculations.ts'
+} from '../../../shared/bill-calculations.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import type { Id } from '../../../convex/_generated/dataModel'
 

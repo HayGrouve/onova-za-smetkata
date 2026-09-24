@@ -14,24 +14,23 @@
 
 ## Environment variables
 
-| Variable                       | Where                           | Required                                                                                |
-| ------------------------------ | ------------------------------- | --------------------------------------------------------------------------------------- |
-| `VITE_CONVEX_URL`              | Vercel                          | Yes                                                                                     |
-| `VITE_APP_ORIGIN`              | Vercel                          | Yes for production OG/share URLs (`https://onova-za-smetkata.com`)                      |
-| `VITE_SENTRY_DSN`              | Vercel                          | No (Sentry client errors in production)                                                 |
-| `GEMINI_API_KEY`               | Convex Dashboard                | Yes (for OCR)                                                                           |
-| `GEMINI_MODEL`                 | Convex Dashboard                | No                                                                                      |
-| `CLERK_JWT_ISSUER_DOMAIN`      | Convex Dashboard (dev + prod)   | Yes (Clerk JWT validation)                                                              |
-| `CLERK_WEBHOOK_SIGNING_SECRET` | Convex Dashboard                | Only if leftover `/clerk/webhook` is still deployed; **not** the Host Pro path (Stripe) |
-| `VITE_CLERK_PUBLISHABLE_KEY`   | Vercel / `.env.local`           | Yes (Clerk client — **Vite** prefix, not `NEXT_PUBLIC_*`)                               |
-| `CLERK_PUBLISHABLE_KEY`        | Vercel / `.env.local`           | Recommended (same `pk_live_…`; SSR middleware fallback)                                 |
-| `CLERK_SECRET_KEY`             | Vercel / `.env.local`           | Yes (TanStack Start `clerkMiddleware`)                                                  |
-| `DEV_MODE`                     | Convex Dashboard (**dev only**) | No — dev-only mutations (e.g. onboarding reset); **never production**                   |
-| `CONVEX_DEPLOYMENT`            | Local `.env.local`              | Yes for local `npx convex` CLI                                                          |
-| `CONVEX_DEPLOY_KEY`            | GitHub Actions secret           | Yes — production deploy key (`deployment:deploy`)                                       |
-| `VERCEL_TOKEN`                 | GitHub Actions secret           | Yes — Vercel access token for CLI deploys                                               |
-| `VERCEL_ORG_ID`                | GitHub Actions secret           | Yes                                                                                     |
-| `VERCEL_PROJECT_ID`            | GitHub Actions secret           | Yes                                                                                     |
+| Variable                     | Where                           | Required                                                              |
+| ---------------------------- | ------------------------------- | --------------------------------------------------------------------- |
+| `VITE_CONVEX_URL`            | Vercel                          | Yes                                                                   |
+| `VITE_APP_ORIGIN`            | Vercel                          | Yes for production OG/share URLs (`https://onova-za-smetkata.com`)    |
+| `VITE_SENTRY_DSN`            | Vercel                          | No (Sentry client errors in production)                               |
+| `GEMINI_API_KEY`             | Convex Dashboard                | Yes (for OCR)                                                         |
+| `GEMINI_MODEL`               | Convex Dashboard                | No                                                                    |
+| `CLERK_JWT_ISSUER_DOMAIN`    | Convex Dashboard (dev + prod)   | Yes (Clerk JWT validation)                                            |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Vercel / `.env.local`           | Yes (Clerk client — **Vite** prefix, not `NEXT_PUBLIC_*`)             |
+| `CLERK_PUBLISHABLE_KEY`      | Vercel / `.env.local`           | Recommended (same `pk_live_…`; SSR middleware fallback)               |
+| `CLERK_SECRET_KEY`           | Vercel / `.env.local`           | Yes (TanStack Start `clerkMiddleware`)                                |
+| `DEV_MODE`                   | Convex Dashboard (**dev only**) | No — dev-only mutations (e.g. onboarding reset); **never production** |
+| `CONVEX_DEPLOYMENT`          | Local `.env.local`              | Yes for local `npx convex` CLI                                        |
+| `CONVEX_DEPLOY_KEY`          | GitHub Actions secret           | Yes — production deploy key (`deployment:deploy`)                     |
+| `VERCEL_TOKEN`               | GitHub Actions secret           | Yes — Vercel access token for CLI deploys                             |
+| `VERCEL_ORG_ID`              | GitHub Actions secret           | Yes                                                                   |
+| `VERCEL_PROJECT_ID`          | GitHub Actions secret           | Yes                                                                   |
 
 Never put `GEMINI_API_KEY`, Clerk secrets, `DEV_MODE`, or deploy keys/tokens in the repo.
 
