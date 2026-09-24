@@ -1,5 +1,5 @@
-// gemini-2.0-flash was shut down 2026-06-01; override via GEMINI_MODEL in Convex env if needed.
-const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.5-flash'
+// Override via GEMINI_MODEL in Convex env if needed; the override must support thinkingLevel (Gemini 3+).
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.8-flash'
 
 const RESPONSE_SCHEMA = {
   type: 'object',
@@ -79,6 +79,8 @@ If the printed line is unreadable and a usable price exists, set name to exactly
         generationConfig: {
           responseMimeType: 'application/json',
           responseSchema: RESPONSE_SCHEMA,
+          // Thinking tokens bill as output; receipt extraction does not need deep reasoning.
+          thinkingConfig: { thinkingLevel: 'low' },
         },
       }),
     },
