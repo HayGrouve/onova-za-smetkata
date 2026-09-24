@@ -15,8 +15,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UserProfileSplatRouteImport } from './routes/user-profile.$'
-import { Route as PrototypeHostPaidPresentationRouteImport } from './routes/prototype/host-paid-presentation'
-import { Route as PrototypeGuidanceFocusRouteImport } from './routes/prototype/guidance-focus'
 import { Route as BillsBillIdIndexRouteImport } from './routes/bills/$billId/index'
 import { Route as BillsBillIdSummaryRouteImport } from './routes/bills/$billId/summary'
 import { Route as BillsBillIdJoinRouteImport } from './routes/bills/$billId/join'
@@ -52,17 +50,6 @@ const UserProfileSplatRoute = UserProfileSplatRouteImport.update({
   path: '/user-profile/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PrototypeHostPaidPresentationRoute =
-  PrototypeHostPaidPresentationRouteImport.update({
-    id: '/prototype/host-paid-presentation',
-    path: '/prototype/host-paid-presentation',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const PrototypeGuidanceFocusRoute = PrototypeGuidanceFocusRouteImport.update({
-  id: '/prototype/guidance-focus',
-  path: '/prototype/guidance-focus',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const BillsBillIdIndexRoute = BillsBillIdIndexRouteImport.update({
   id: '/bills/$billId/',
   path: '/bills/$billId/',
@@ -90,8 +77,6 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/prototype/guidance-focus': typeof PrototypeGuidanceFocusRoute
-  '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
   '/user-profile/$': typeof UserProfileSplatRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
@@ -104,8 +89,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/prototype/guidance-focus': typeof PrototypeGuidanceFocusRoute
-  '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
   '/user-profile/$': typeof UserProfileSplatRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
@@ -119,8 +102,6 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/prototype/guidance-focus': typeof PrototypeGuidanceFocusRoute
-  '/prototype/host-paid-presentation': typeof PrototypeHostPaidPresentationRoute
   '/user-profile/$': typeof UserProfileSplatRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
@@ -135,8 +116,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/terms'
-    | '/prototype/guidance-focus'
-    | '/prototype/host-paid-presentation'
     | '/user-profile/$'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
@@ -149,8 +128,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/terms'
-    | '/prototype/guidance-focus'
-    | '/prototype/host-paid-presentation'
     | '/user-profile/$'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
@@ -163,8 +140,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/terms'
-    | '/prototype/guidance-focus'
-    | '/prototype/host-paid-presentation'
     | '/user-profile/$'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
@@ -178,8 +153,6 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
-  PrototypeGuidanceFocusRoute: typeof PrototypeGuidanceFocusRoute
-  PrototypeHostPaidPresentationRoute: typeof PrototypeHostPaidPresentationRoute
   UserProfileSplatRoute: typeof UserProfileSplatRoute
   BillsBillIdClaimRoute: typeof BillsBillIdClaimRoute
   BillsBillIdJoinRoute: typeof BillsBillIdJoinRoute
@@ -231,20 +204,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UserProfileSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/prototype/host-paid-presentation': {
-      id: '/prototype/host-paid-presentation'
-      path: '/prototype/host-paid-presentation'
-      fullPath: '/prototype/host-paid-presentation'
-      preLoaderRoute: typeof PrototypeHostPaidPresentationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/prototype/guidance-focus': {
-      id: '/prototype/guidance-focus'
-      path: '/prototype/guidance-focus'
-      fullPath: '/prototype/guidance-focus'
-      preLoaderRoute: typeof PrototypeGuidanceFocusRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/bills/$billId/': {
       id: '/bills/$billId/'
       path: '/bills/$billId'
@@ -282,8 +241,6 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
-  PrototypeGuidanceFocusRoute: PrototypeGuidanceFocusRoute,
-  PrototypeHostPaidPresentationRoute: PrototypeHostPaidPresentationRoute,
   UserProfileSplatRoute: UserProfileSplatRoute,
   BillsBillIdClaimRoute: BillsBillIdClaimRoute,
   BillsBillIdJoinRoute: BillsBillIdJoinRoute,
@@ -293,13 +250,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
