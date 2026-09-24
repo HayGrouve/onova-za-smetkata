@@ -91,7 +91,7 @@ export function parseBillMetadataPatch(patch: BillMetadataPatchInput) {
   return { success: true as const, data: output }
 }
 
-export function formatBillMetadataErrors(error: z.ZodError) {
+function formatBillMetadataErrors(error: z.ZodError) {
   const mapped = formatZodFieldErrors(error, [
     'restaurantName',
     'note',

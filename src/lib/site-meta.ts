@@ -1,6 +1,6 @@
 export const SITE_NAME = 'Онова за сметката'
 
-export const SITE_DESCRIPTION =
+const SITE_DESCRIPTION =
   'Мобилно приложение за разделяне на ресторантски сметки — добавяй участници, разпределяй артикули и следи плащанията.'
 
 export const JOIN_OG_TITLE = 'Присъедини се към сметката'
@@ -35,7 +35,7 @@ export function absoluteSiteUrl(path: string, origin?: string): string {
   return `${base}${path.startsWith('/') ? path : `/${path}`}`
 }
 
-export function robotsNoIndexMeta(): SiteMetaTag {
+function robotsNoIndexMeta(): SiteMetaTag {
   return { name: 'robots', content: 'noindex, nofollow' }
 }
 

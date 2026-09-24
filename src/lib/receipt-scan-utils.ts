@@ -20,7 +20,3 @@ export function detectTotalsMismatch(
   if (receiptTotalCents === undefined) return false
   return Math.abs(itemsTotalCents - receiptTotalCents) > 1
 }
-
-export function eurToCents(value: number): number {
-  return Math.round(value * 100)
-}

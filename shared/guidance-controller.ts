@@ -9,11 +9,11 @@ import {
 } from './host-onboarding'
 
 /** Steps that show guidance copy only — no scroll+pop target (#68). */
-export const GUIDANCE_STEPS_WITHOUT_SCROLL_POP = new Set(['scan-processing'])
+const GUIDANCE_STEPS_WITHOUT_SCROLL_POP = new Set(['scan-processing'])
 
 export type GuidanceScrollBlock = ScrollLogicalPosition
 
-export const GUIDANCE_SCROLL_BLOCKS: Record<string, GuidanceScrollBlock> = {
+const GUIDANCE_SCROLL_BLOCKS: Record<string, GuidanceScrollBlock> = {
   'content-route': 'center',
   'scan-upload': 'center',
   'scan-run-ocr': 'center',

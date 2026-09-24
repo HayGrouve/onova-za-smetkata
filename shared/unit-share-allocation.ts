@@ -16,7 +16,7 @@ export function splitLineTotal(
   }))
 }
 
-export function sortAssigneesByParticipantOrder(
+function sortAssigneesByParticipantOrder(
   assigneeIds: string[],
   participants: ParticipantOrder[],
 ): string[] {

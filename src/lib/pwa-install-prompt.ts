@@ -28,7 +28,7 @@ export function getDeferredPrompt() {
   return deferredPrompt
 }
 
-export function clearDeferredPrompt() {
+function clearDeferredPrompt() {
   deferredPrompt = null
   notifyListeners()
 }

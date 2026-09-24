@@ -52,7 +52,7 @@ export function validateIban(
   return { ok: true, value: normalized }
 }
 
-export const paymentSettingsFormSchema = z
+const paymentSettingsFormSchema = z
   .object({
     revolutUsername: z.string(),
     iban: z.string(),

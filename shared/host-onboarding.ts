@@ -250,7 +250,7 @@ export function isEditorStepGuidanceComplete(
   )
 }
 
-export function nextGuidanceStep(
+function nextGuidanceStep(
   steps: GuidanceStep[],
   dismissedHintIds: string[],
 ): GuidanceStep | undefined {

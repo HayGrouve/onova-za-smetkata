@@ -22,10 +22,6 @@ function formatShareAmount(cents: number): string {
   return formatEur(cents)
 }
 
-export function formatRevolutAmount(cents: number): string {
-  return String(cents)
-}
-
 export interface ShareParticipantLine {
   id: string
   label: string

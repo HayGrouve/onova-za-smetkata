@@ -25,7 +25,7 @@ export function isRestaurantReady(restaurantName: string): boolean {
   return restaurantName.trim().length > 0
 }
 
-export function countGuests(
+function countGuests(
   participants: ParticipantInput[],
   hostParticipantId?: string,
 ): number {
@@ -37,7 +37,7 @@ export function countGuests(
   ).length
 }
 
-export function hasAtLeastOneGuest(input: {
+function hasAtLeastOneGuest(input: {
   participants: ParticipantInput[]
   hostParticipantId?: string
 }): boolean {
@@ -60,7 +60,7 @@ export function hasItemsWithPositiveLineTotal(items: ItemInput[]): boolean {
   return items.some((item) => lineTotalCents(item) > 0)
 }
 
-export function hasFullUnitCoverageOnAllItems(
+function hasFullUnitCoverageOnAllItems(
   items: ItemInput[],
   assignments: AssignmentInput[],
 ): boolean {
