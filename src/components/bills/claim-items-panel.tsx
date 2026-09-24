@@ -6,7 +6,7 @@ import { cn } from '#/lib/utils.ts'
 import type {
   GuestClaimSessionState,
   GuestClaimTab,
-} from '#/lib/guest-claim-session.ts'
+} from '../../../shared/guest-claim-session.ts'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
 import type { ParticipantInput } from '../../../shared/bill-calculations'
 

@@ -16,11 +16,11 @@ import {
   SheetTitle,
 } from '#/components/ui/sheet.tsx'
 import { formatEur } from '#/lib/format-currency.ts'
-import { validateBillMetadataField } from '#/lib/bill-metadata-schema.ts'
+import { validateBillMetadataField } from '../../../shared/bill-metadata-schema.ts'
 import {
   validateReceiptImportRow,
   validateReceiptImportSelection,
-} from '#/lib/receipt-import-schema.ts'
+} from '../../../shared/receipt-import-schema.ts'
 import {
   detectTotalsMismatch,
   sumItemsCents,

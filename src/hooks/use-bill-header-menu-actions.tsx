@@ -13,8 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog.tsx'
-import { calculateBillTotals } from '#/lib/bill-calculations.ts'
-import { toBillCalculationSnapshot } from '#/lib/bill-calculation-snapshot.ts'
+import { calculateBillTotals } from '../../shared/bill-calculations.ts'
+import { toBillCalculationSnapshot } from '../../shared/bill-calculation-snapshot.ts'
 import { buildBillJoinUrl, resolveAppOrigin } from '#/lib/bill-join-url.ts'
 import { formatBillShareText, shareOrCopyText } from '#/lib/bill-share.ts'
 import { getBillDeleteCopy } from '#/lib/destructive-action-copy.ts'

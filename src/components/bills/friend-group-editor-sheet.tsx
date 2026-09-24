@@ -24,7 +24,7 @@ import { useSubscriptionPaywall } from '#/components/subscription/subscription-p
 import {
   formatFriendGroupErrors,
   parseFriendGroupInput,
-} from '#/lib/friend-group-schema.ts'
+} from '../../../shared/friend-group-schema.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildListSummaryFields } from '../../convex/lib/billListSummary'
+import { buildListSummaryFields } from './billListSummary'
 
 describe('buildListSummaryFields', () => {
   it('computes draft totals from items and tip without outstanding', () => {

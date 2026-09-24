@@ -44,8 +44,8 @@ import {
   clampBillEditorStep,
   fromBillEditorDateInputValue,
   shouldRedirectFinalBillToSummary,
-} from '#/lib/bill-editing-controller.ts'
-import { validateBillMetadataField } from '#/lib/bill-metadata-schema.ts'
+} from '../../../../shared/bill-editing-controller.ts'
+import { validateBillMetadataField } from '../../../../shared/bill-metadata-schema.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { cn } from '#/lib/utils.ts'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'

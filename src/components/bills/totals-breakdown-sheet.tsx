@@ -1,7 +1,7 @@
 import { PieChartIcon } from 'lucide-react'
 import { useMemo } from 'react'
-import type { calculateBillTotals } from '#/lib/bill-calculations.ts'
-import { paymentStatusLabel } from '#/lib/participant-share-view.ts'
+import type { calculateBillTotals } from '../../../shared/bill-calculations.ts'
+import { paymentStatusLabel } from '../../../shared/participant-share-view.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import {

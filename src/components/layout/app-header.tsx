@@ -15,7 +15,7 @@ import {
 } from '../../../shared/app-header-menu-config.ts'
 import { resolveAppHeaderRouteContext } from '../../../shared/app-header-route-context.ts'
 import { getBillFinalizeEligibility } from '../../../shared/bill-finalize-eligibility.ts'
-import { toBillCalculationSnapshot } from '#/lib/bill-calculation-snapshot.ts'
+import { toBillCalculationSnapshot } from '../../../shared/bill-calculation-snapshot.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getAssignmentEditableError } from '../../convex/lib/assertAssignmentEditable'
+import { getAssignmentEditableError } from './assertAssignmentEditable'
 
 describe('getAssignmentEditableError', () => {
   it('returns bill_final when bill is final', () => {

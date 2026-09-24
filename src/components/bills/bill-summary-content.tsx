@@ -43,12 +43,12 @@ import {
 import {
   calculateBillTotals,
   validateBillForFinalize,
-} from '#/lib/bill-calculations.ts'
+} from '../../../shared/bill-calculations.ts'
 import type {
   BillBreakdownInput,
   PaymentStatus,
-} from '#/lib/bill-calculations.ts'
-import { toBillCalculationSnapshot } from '#/lib/bill-calculation-snapshot.ts'
+} from '../../../shared/bill-calculations.ts'
+import { toBillCalculationSnapshot } from '../../../shared/bill-calculation-snapshot.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'

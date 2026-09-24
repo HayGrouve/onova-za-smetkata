@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { formatEur } from '#/lib/format-currency.ts'
-import { formatShareParticipantCount } from '#/lib/guest-share-preview.ts'
+import { formatShareParticipantCount } from '../../../shared/guest-share-preview.ts'
 
 export interface UnitLineSummaryProps {
   unitTitle: string

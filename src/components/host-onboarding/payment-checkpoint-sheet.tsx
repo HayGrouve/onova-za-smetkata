@@ -20,7 +20,7 @@ import {
 import {
   formatPaymentSettingsErrors,
   parsePaymentSettingsInput,
-} from '#/lib/payment-settings-schema.ts'
+} from '../../../shared/payment-settings-schema.ts'
 import { HOST_ONBOARDING_PAYMENT_CHECKPOINT } from '../../../shared/host-onboarding-messages.ts'
 import { api } from '../../../convex/_generated/api'
 

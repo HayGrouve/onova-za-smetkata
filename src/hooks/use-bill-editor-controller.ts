@@ -8,7 +8,7 @@ import { useHostOnboarding } from '#/components/host-onboarding/host-onboarding-
 import type { BillGuidanceInput } from '#/components/host-onboarding/host-onboarding-provider.tsx'
 import { useReceiptScan } from '#/hooks/use-receipt-scan.ts'
 import { useGuidanceFocus } from '#/lib/guidance-focus/use-guidance-focus.ts'
-import type { BillEditorRelations } from '#/lib/bill-editing-controller.ts'
+import type { BillEditorRelations } from '../../shared/bill-editing-controller.ts'
 import {
   buildBillEditorDerivedState,
   buildBillEditorGuidanceInput,
@@ -18,13 +18,13 @@ import {
   resolveOcrRestaurantApply,
   shouldResetBillEditorMetadata,
   shouldShowContentRouteChoice,
-} from '#/lib/bill-editing-controller.ts'
+} from '../../shared/bill-editing-controller.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import {
   parseTipInputToCents,
   validateBillMetadataField,
-} from '#/lib/bill-metadata-schema.ts'
-import type { BillMetadataPatchInput } from '#/lib/bill-metadata-schema.ts'
+} from '../../shared/bill-metadata-schema.ts'
+import type { BillMetadataPatchInput } from '../../shared/bill-metadata-schema.ts'
 import { readDismissedHintIds } from '#/lib/host-onboarding-session.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import {
