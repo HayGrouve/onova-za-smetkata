@@ -21,6 +21,7 @@ export default [
       'convex/_generated/**',
       '.vercel/**',
       '.worktrees/**',
+      '.claude/worktrees/**',
       'public/sw.js',
     ],
   },

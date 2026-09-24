@@ -8,7 +8,13 @@ import { nitro } from 'nitro/vite'
 export default defineConfig(({ command }) => ({
   resolve: { tsconfigPaths: true },
   test: {
-    exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**', '.worktrees/**'],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      'e2e/**',
+      '.worktrees/**',
+      '.claude/worktrees/**',
+    ],
   },
   plugins: [
     ...(command === 'serve' ? [devtools()] : []),

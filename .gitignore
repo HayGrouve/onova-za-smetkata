@@ -28,3 +28,4 @@ playwright-report/
 
 # Local git worktrees
 .worktrees/
+.claude/worktrees/
