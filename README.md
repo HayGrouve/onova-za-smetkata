@@ -18,10 +18,12 @@ Local dev auth requires `DEV_MODE=true` on your **Convex dev deployment** (via D
 ```bash
 pnpm run test          # unit tests (Vitest)
 pnpm run test:e2e      # Playwright — see e2e/README.md (needs convex dev + DEV_MODE)
-pnpm run ci:preflight  # same gate as CI: check + lint + test + icons + build
+pnpm run ci:preflight  # same gate as CI: check + lint + typecheck + knip + test + icons + build
 pnpm run preflight     # test + PWA icons + production build (without check/lint)
 pnpm run check         # Prettier
 pnpm run lint          # ESLint
+pnpm run typecheck     # tsc for the app and convex/
+pnpm run knip          # unused files, exports, dependencies
 ```
 
 ### Git hooks

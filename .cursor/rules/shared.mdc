@@ -12,4 +12,4 @@ Pure TypeScript — no Convex or browser APIs.
 - Prefer **`/tdd`** when adding or changing business logic.
 - Primary home for unit tests (`*.test.ts` colocated with source).
 
-Before adding logic in `src/lib/` or `convex/lib/`, check whether it already belongs in `shared/`.
+Before adding logic in `src/lib/` or `convex/lib/`, check whether it already belongs in `shared/`. Callers import `shared/` directly — no re-export shims.

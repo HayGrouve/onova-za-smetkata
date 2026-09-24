@@ -14,5 +14,3 @@ export const GUEST_FLOW_MESSAGES = {
   invalidJoinLink:
     'Невалиден линк за присъединяване. Попитайте домакина за нов линк.',
 } as const
-
-export type GuestFlowMessageKey = keyof typeof GUEST_FLOW_MESSAGES

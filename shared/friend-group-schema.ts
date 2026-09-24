@@ -27,7 +27,6 @@ const friendGroupFormSchema = z.object({
 })
 
 export type FriendGroupFormInput = z.input<typeof friendGroupFormSchema>
-export type FriendGroupSaveData = z.output<typeof friendGroupFormSchema>
 
 export function parseFriendGroupInput(input: FriendGroupFormInput) {
   return friendGroupFormSchema.safeParse(input)

@@ -95,7 +95,6 @@ const paymentSettingsFormSchema = z
   })
 
 export type PaymentSettingsFormInput = z.input<typeof paymentSettingsFormSchema>
-export type PaymentSettingsSaveData = z.output<typeof paymentSettingsFormSchema>
 
 export function parsePaymentSettingsInput(input: PaymentSettingsFormInput) {
   return paymentSettingsFormSchema.safeParse(input)

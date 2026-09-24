@@ -11,7 +11,7 @@ This repo uses **TanStack Start + TanStack Router**, not Next.js. Do not apply N
 ## File routes
 
 - Routes live in **`src/routes/`** as file-based routes (`createFileRoute`).
-- After adding or moving route files: **`pnpm run generate-routes`** and commit `src/routeTree.gen.ts` if it changed.
+- After adding or moving route files: run **`pnpm run dev`** or **`pnpm run build`** (the Start plugin regenerates the tree) and commit `src/routeTree.gen.ts` if it changed.
 - **Do not edit** `src/routeTree.gen.ts` by hand.
 
 ## Route file shape
