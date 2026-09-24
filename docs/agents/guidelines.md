@@ -18,7 +18,7 @@ These are separate products. Do not collapse them into “Clerk Billing”.
 | Guest join                                                                | Share token + `guestSessions` (no Clerk account)                            |
 | Guest restaurant payment                                                  | Host Revolut / IBAN (not Stripe)                                            |
 
-Do **not** enable Clerk Billing in the Clerk Dashboard. Existing `convex/clerkWebhookAction.ts` / `/clerk/webhook` code is leftover Clerk Billing mirroring; new Host Pro work goes through Stripe, not those APIs.
+Do **not** enable Clerk Billing in the Clerk Dashboard. Host Pro plan state on `users` is written by a Stripe webhook, not Clerk.
 
 ## Architecture map
 
