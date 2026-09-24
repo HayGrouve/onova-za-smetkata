@@ -79,8 +79,6 @@ The app already passes `bgBG` on `ClerkProvider`:
 
 No production dashboard step is required. After deploy, verify sign-in / profile UI strings are in Bulgarian.
 
-Future: when Paraglide i18n lands, sync `localization` with app locale (`bgBG` / `enUS`) per `docs/specs/i18n-implementation.md`.
-
 ### 1.4 JWT template for Convex
 
 **JWT Templates → New template**
@@ -124,8 +122,6 @@ Clerk Dashboard → **Configure → Domains**. After adding the production domai
 ```text
 https://clerk.onova-za-smetkata.com/npm/@clerk/clerk-js@…/dist/clerk.browser.js
 ```
-
-Detail: `research/clerk-production-auth-diagnosis.md`.
 
 ### 1.6 Allowed domains
 

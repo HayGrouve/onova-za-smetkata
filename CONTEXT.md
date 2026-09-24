@@ -118,4 +118,3 @@ _Avoid_: treating quota as a hard lock on the current bill
 - `docs/DEPLOY.md` — production deploy, env vars, security
 - `docs/adr/0002-clerk-auth-billing.md` — Clerk for Host sign-in
 - `docs/adr/0003-stripe-billing-beside-clerk.md` — Stripe Billing for Host Pro
-- `docs/specs/kebab-chrome-after-clerk.md` — kebab chrome and Auth name after Clerk
