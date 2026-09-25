@@ -81,4 +81,16 @@ describe('buildRevolutPaymentNote', () => {
       'сметка за Иван и Мария',
     )
   })
+
+  it('keeps the note within Revolut’s 64 characters', () => {
+    const note = buildRevolutPaymentNote('Механа Крайречна при Бай Иван', [
+      'Иван',
+      'Мария',
+      'Петър',
+      'Ани',
+      'Боби',
+    ])!
+    expect(note.length).toBeLessThanOrEqual(64)
+    expect(note.endsWith('…')).toBe(true)
+  })
 })

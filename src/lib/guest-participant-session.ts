@@ -6,6 +6,8 @@ export type StoredGuestSession = {
   participantId: string
   sessionToken: string
   shareToken: string
+  /** Covered seats picked on the join page — re-sent when resuming. */
+  coveredParticipantIds?: string[]
 }
 
 function canUseLocalStorage(): boolean {
@@ -43,11 +45,17 @@ function readSession(): StoredGuestSession | null {
       typeof parsed.shareToken === 'string' &&
       parsed.shareToken.length > 0
     ) {
+      const covered = Array.isArray(parsed.coveredParticipantIds)
+        ? parsed.coveredParticipantIds.filter(
+            (id): id is string => typeof id === 'string',
+          )
+        : []
       return {
         billId: parsed.billId,
         participantId: parsed.participantId,
         sessionToken: parsed.sessionToken,
         shareToken: parsed.shareToken,
+        ...(covered.length > 0 ? { coveredParticipantIds: covered } : {}),
       }
     }
     return null

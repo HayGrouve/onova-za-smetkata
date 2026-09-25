@@ -1,10 +1,12 @@
 import type { AssignmentInput, ItemInput } from './bill-calculations'
 import {
+  hasPricedItems,
   isAllocationReady,
   isPreparedBill,
   isRestaurantReady,
 } from './bill-readiness'
 import {
+  HOST_ONBOARDING_ITEMS,
   HOST_ONBOARDING_REVIEW,
   HOST_ONBOARDING_SCAN,
   HOST_ONBOARDING_SHARE,
@@ -154,6 +156,17 @@ export function deriveHostOnboardingGuidance(
     done: isRestaurantReady(bill.restaurantName),
   }
 
+  const itemsStep: GuidanceStep = {
+    id: 'items',
+    anchor: 'content',
+    step: 1,
+    title: HOST_ONBOARDING_ITEMS.title,
+    body: bill.items.some((item) => item.unitPriceCents <= 0)
+      ? HOST_ONBOARDING_ITEMS.bodyMissingPrice
+      : HOST_ONBOARDING_ITEMS.body,
+    done: hasPricedItems(bill.items),
+  }
+
   const participants: GuidanceStep = {
     id: 'participants',
     anchor: 'participants',
@@ -167,18 +180,13 @@ export function deriveHostOnboardingGuidance(
     id: 'allocation',
     anchor: 'allocation',
     step: 3,
-    title:
-      bill.items.length === 0
-        ? 'Добавете артикулите'
-        : 'Разпределете артикулите',
+    title: 'Разпределете артикулите',
     body:
       bill.items.length === 0
-        ? 'Наименование и цена са достатъчни — бройката умножава цената.'
-        : bill.items.some((item) => item.unitPriceCents <= 0)
-          ? 'Без цена артикулът не влиза в дяловете.'
-          : hasMultiUnitItem(bill.items)
-            ? 'Всяка бройка отива при някого — изберете повече от един участник, за да я разделите поравно.'
-            : 'Всеки артикул отива при някого — изберете повече от един участник, за да го разделите поравно.',
+        ? 'Първо добавете артикулите на стъпка 1 · Сметка.'
+        : hasMultiUnitItem(bill.items)
+          ? 'Всяка бройка отива при някого — с + и − задайте колко бройки има всеки, или пратете линка и гостите ще си ги отбележат сами.'
+          : 'Всеки артикул отива при някого — изберете повече от един участник, за да го разделите поравно, или пратете линка на гостите.',
     done: isAllocationReady({
       items: bill.items,
       assignments: bill.assignments,
@@ -214,7 +222,7 @@ export function deriveHostOnboardingGuidance(
     done: bill.sharedAt === undefined,
   }
 
-  return [content, details, participants, allocation, share, review]
+  return [content, details, itemsStep, participants, allocation, share, review]
 }
 
 export function currentGuidanceStep(

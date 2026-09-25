@@ -65,8 +65,16 @@ describe('bill readiness predicates', () => {
 })
 
 describe('bill readiness step views', () => {
-  it('aligns step 1 with restaurant predicate', () => {
-    expect(isBillDetailsStepReady('Механа')).toBe(true)
+  it('aligns step 1 with restaurant and priced items', () => {
+    expect(
+      isBillDetailsStepReady({ restaurantName: 'Механа', items: [i1] }),
+    ).toBe(true)
+    expect(
+      isBillDetailsStepReady({ restaurantName: 'Механа', items: [] }),
+    ).toBe(false)
+    expect(isBillDetailsStepReady({ restaurantName: ' ', items: [i1] })).toBe(
+      false,
+    )
   })
 
   it('aligns step 2 with guest count', () => {

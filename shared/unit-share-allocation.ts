@@ -27,21 +27,6 @@ function sortAssigneesByParticipantOrder(
   })
 }
 
-export function resolveEffectiveUnitAssignees(
-  assigneeIds: string[],
-  participantId: string,
-  joining: boolean,
-): string[] {
-  const uniqueAssignees = [...new Set(assigneeIds)]
-  if (joining && !uniqueAssignees.includes(participantId)) {
-    return [...uniqueAssignees, participantId]
-  }
-  if (uniqueAssignees.length > 0) {
-    return uniqueAssignees
-  }
-  return [participantId]
-}
-
 export function splitUnitShareAmongAssignees(
   unitPriceCents: number,
   assigneeIds: string[],
@@ -49,27 +34,4 @@ export function splitUnitShareAmongAssignees(
 ): Array<{ id: string; cents: number }> {
   const sortedIds = sortAssigneesByParticipantOrder(assigneeIds, participants)
   return splitLineTotal(unitPriceCents, sortedIds)
-}
-
-export function unitShareCentsForParticipant(args: {
-  unitPriceCents: number
-  assigneeIds: string[]
-  participants: ParticipantOrder[]
-  participantId: string
-  joining?: boolean
-}): number {
-  const effectiveAssignees = resolveEffectiveUnitAssignees(
-    args.assigneeIds,
-    args.participantId,
-    args.joining ?? false,
-  )
-  const portions = splitUnitShareAmongAssignees(
-    args.unitPriceCents,
-    effectiveAssignees,
-    args.participants,
-  )
-  return (
-    portions.find((p) => p.id === args.participantId)?.cents ??
-    args.unitPriceCents
-  )
 }

@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
-  buildTakenParticipantIds,
+  buildTakenSeats,
   mapGuestBillToClaimSessionInput,
   planIdentitySwitchRecovery,
   planSessionLostRecovery,
   resolveClaimPageGate,
   resolveEffectiveShareToken,
   resolveJoinPageGate,
+  resolveMySeatIds,
   shouldAttemptJoinResume,
 } from './guest-flow-session'
 import type {
@@ -52,41 +53,62 @@ const billData: GuestFlowBillData = {
   myPayments: [{ participantId: 'participant-1', amountCents: 0 }],
 }
 
-describe('buildTakenParticipantIds', () => {
-  it('returns empty set when sessions are undefined', () => {
-    expect(buildTakenParticipantIds(undefined, 'self')).toEqual(new Set())
+describe('buildTakenSeats', () => {
+  it('returns an empty map when sessions are undefined', () => {
+    expect(buildTakenSeats(undefined, 'self')).toEqual(new Map())
   })
 
-  it('returns empty set when no active sessions', () => {
-    expect(buildTakenParticipantIds([], 'self')).toEqual(new Set())
+  it('marks another guest’s own seat as taken', () => {
+    expect(buildTakenSeats([{ participantId: 'alice' }], undefined)).toEqual(
+      new Map([['alice', null]]),
+    )
   })
 
-  it('marks another participant as taken', () => {
+  it('excludes the viewer’s own seat and Covered seats', () => {
     expect(
-      buildTakenParticipantIds([{ participantId: 'alice' }], undefined),
-    ).toEqual(new Set(['alice']))
-  })
-
-  it('excludes the viewer own session', () => {
-    expect(
-      buildTakenParticipantIds(
-        [{ participantId: 'self' }, { participantId: 'bob' }],
+      buildTakenSeats(
+        [
+          { participantId: 'self' },
+          { participantId: 'partner', heldByParticipantId: 'self' },
+          { participantId: 'bob' },
+        ],
         'self',
       ),
-    ).toEqual(new Set(['bob']))
+    ).toEqual(new Map([['bob', null]]))
   })
 
-  it('collects multiple taken seats', () => {
+  it('reports who holds a Covered seat', () => {
     expect(
-      buildTakenParticipantIds(
+      buildTakenSeats(
         [
           { participantId: 'alice' },
-          { participantId: 'bob' },
-          { participantId: 'carol' },
+          { participantId: 'bob', heldByParticipantId: 'alice' },
         ],
-        'alice',
+        'carol',
       ),
-    ).toEqual(new Set(['bob', 'carol']))
+    ).toEqual(
+      new Map([
+        ['alice', null],
+        ['bob', 'alice'],
+      ]),
+    )
+  })
+})
+
+describe('resolveMySeatIds', () => {
+  it('defaults to the stored seat', () => {
+    expect(resolveMySeatIds(billData, 'participant-1')).toEqual([
+      'participant-1',
+    ])
+  })
+
+  it('puts the own seat first and drops seats no longer on the bill', () => {
+    expect(
+      resolveMySeatIds(
+        { ...billData, mySeatIds: ['participant-2', 'gone', 'participant-1'] },
+        'participant-1',
+      ),
+    ).toEqual(['participant-1', 'participant-2'])
   })
 })
 
@@ -219,6 +241,7 @@ describe('mapGuestBillToClaimSessionInput', () => {
           name: 'Salad',
           quantity: 1,
           sortOrder: 0,
+          unitPriceCents: 500,
         },
       ],
       assignments: [
@@ -227,6 +250,10 @@ describe('mapGuestBillToClaimSessionInput', () => {
           participantId: 'participant-1',
           unitIndex: 0,
         },
+      ],
+      participants: [
+        { id: 'participant-1', sortOrder: 0 },
+        { id: 'participant-2', sortOrder: 1 },
       ],
       billRelations: {
         participants: billData.participants,

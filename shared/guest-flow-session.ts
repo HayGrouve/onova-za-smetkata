@@ -4,6 +4,7 @@ import type {
 } from './bill-calculation-snapshot'
 import type { GuestItemAssignment } from './guest-claim-items'
 import type { GuestClaimSessionItem } from './guest-claim-session'
+import type { ParticipantInput } from './bill-calculations'
 import { GUEST_FLOW_MESSAGES } from './guest-flow-messages'
 
 export type StoredGuestSessionRef = {
@@ -11,6 +12,7 @@ export type StoredGuestSessionRef = {
   participantId: string
   sessionToken: string
   shareToken: string
+  coveredParticipantIds?: string[]
 }
 
 export type GuestFlowBillParticipant = {
@@ -50,11 +52,14 @@ export type GuestFlowBillData = {
   items: GuestFlowBillItem[]
   assignments: GuestFlowBillAssignment[]
   myPayments: GuestFlowBillPayment[]
+  /** Seats this phone's guest session handles — own seat first, then Covered seats. */
+  mySeatIds?: string[]
 }
 
 export type GuestClaimSessionInputSlice = {
   items: GuestClaimSessionItem[]
   assignments: GuestItemAssignment[]
+  participants: ParticipantInput[]
   billRelations: LoadedBillRelations
   billContext: BillCalculationContext
 }
@@ -81,17 +86,38 @@ export type FlowRecoveryPlan = {
   redirectShareToken: string
 }
 
-/** Participant ids taken by other active guest sessions (excludes the viewer's own seat). */
-export function buildTakenParticipantIds(
-  activeSessions: { participantId: string }[] | undefined,
+export type ActiveGuestSeat = {
+  participantId: string
+  /** Set when the seat is a Covered seat — the holder's own seat. */
+  heldByParticipantId?: string
+}
+
+/**
+ * Seats held by other active guest sessions (excludes the viewer's own session).
+ * Value is the holder's own seat for Covered seats, `null` for someone's own seat.
+ */
+export function buildTakenSeats(
+  activeSeats: ActiveGuestSeat[] | undefined,
   ownParticipantId: string | undefined,
-): Set<string> {
-  if (!activeSessions) return new Set<string>()
-  return new Set(
-    activeSessions
-      .filter((session) => session.participantId !== ownParticipantId)
-      .map((session) => session.participantId),
-  )
+): Map<string, string | null> {
+  const taken = new Map<string, string | null>()
+  if (!activeSeats) return taken
+  for (const seat of activeSeats) {
+    const holder = seat.heldByParticipantId ?? seat.participantId
+    if (ownParticipantId !== undefined && holder === ownParticipantId) continue
+    taken.set(seat.participantId, seat.heldByParticipantId ?? null)
+  }
+  return taken
+}
+
+/** Seats this phone handles, own seat first; falls back to the stored seat. */
+export function resolveMySeatIds(
+  data: Pick<GuestFlowBillData, 'mySeatIds' | 'participants'>,
+  ownParticipantId: string,
+): string[] {
+  const onBill = new Set(data.participants.map((p) => p._id))
+  const seats = [ownParticipantId, ...(data.mySeatIds ?? [])]
+  return [...new Set(seats)].filter((id) => onBill.has(id))
 }
 
 export function shouldAttemptJoinResume(
@@ -164,11 +190,16 @@ export function mapGuestBillToClaimSessionInput(
       name: item.name,
       quantity: item.quantity,
       sortOrder: item.sortOrder,
+      unitPriceCents: item.unitPriceCents,
     })),
     assignments: data.assignments.map((assignment) => ({
       itemId: assignment.itemId,
       participantId: assignment.participantId,
       unitIndex: assignment.unitIndex,
+    })),
+    participants: data.participants.map((participant) => ({
+      id: participant._id,
+      sortOrder: participant.sortOrder,
     })),
     billRelations: {
       participants: data.participants,

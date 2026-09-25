@@ -3,6 +3,7 @@ import type { Id } from '../_generated/dataModel'
 import type { MutationCtx } from '../_generated/server'
 import { isGuestSessionActive } from './guestSession'
 import { GUEST_FLOW_MESSAGES } from '../../shared/guest-flow-messages'
+import { sessionSeatIds } from '../../shared/guest-seat-selection'
 
 export async function requireGuestSession(
   ctx: MutationCtx,
@@ -27,7 +28,7 @@ export async function requireGuestSession(
   if (
     !session ||
     session.billId !== args.billId ||
-    session.participantId !== args.participantId
+    !sessionSeatIds(session).includes(args.participantId)
   ) {
     throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
   }

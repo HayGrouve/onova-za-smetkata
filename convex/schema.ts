@@ -91,6 +91,8 @@ export default defineSchema({
   guestSessions: defineTable({
     billId: v.id('bills'),
     participantId: v.id('participants'),
+    /** Covered seats: extra Participants this phone claims and pays for. */
+    coveredParticipantIds: v.optional(v.array(v.id('participants'))),
     sessionToken: v.string(),
     lastSeenAt: v.number(),
     createdAt: v.number(),

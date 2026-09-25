@@ -13,4 +13,9 @@ export const GUEST_FLOW_MESSAGES = {
   sessionLostRedirect: 'Сесията изтече или името е заето. Изберете отново.',
   invalidJoinLink:
     'Невалиден линк за присъединяване. Попитайте домакина за нов линк.',
+  coveredSeatTaken: 'Някое от избраните имена вече е заето от друг телефон.',
+  coveredSeatIsOwn: 'Вашето име вече е избрано.',
+  coveredSeatIsHost: 'Домакинът не може да бъде избран.',
+  coveredSeatsLocked:
+    'Не можете да промените хората, за които плащате, след изпращане на плащането.',
 } as const

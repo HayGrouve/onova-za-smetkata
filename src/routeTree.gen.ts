@@ -17,6 +17,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as UserProfileSplatRouteImport } from './routes/user-profile.$'
 import { Route as BillsBillIdIndexRouteImport } from './routes/bills/$billId/index'
 import { Route as BillsBillIdSummaryRouteImport } from './routes/bills/$billId/summary'
+import { Route as BillsBillIdPayRouteImport } from './routes/bills/$billId/pay'
 import { Route as BillsBillIdJoinRouteImport } from './routes/bills/$billId/join'
 import { Route as BillsBillIdClaimRouteImport } from './routes/bills/$billId/claim'
 
@@ -60,6 +61,11 @@ const BillsBillIdSummaryRoute = BillsBillIdSummaryRouteImport.update({
   path: '/bills/$billId/summary',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BillsBillIdPayRoute = BillsBillIdPayRouteImport.update({
+  id: '/bills/$billId/pay',
+  path: '/bills/$billId/pay',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BillsBillIdJoinRoute = BillsBillIdJoinRouteImport.update({
   id: '/bills/$billId/join',
   path: '/bills/$billId/join',
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/user-profile/$': typeof UserProfileSplatRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
+  '/bills/$billId/pay': typeof BillsBillIdPayRoute
   '/bills/$billId/summary': typeof BillsBillIdSummaryRoute
   '/bills/$billId/': typeof BillsBillIdIndexRoute
 }
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/user-profile/$': typeof UserProfileSplatRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
+  '/bills/$billId/pay': typeof BillsBillIdPayRoute
   '/bills/$billId/summary': typeof BillsBillIdSummaryRoute
   '/bills/$billId': typeof BillsBillIdIndexRoute
 }
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/user-profile/$': typeof UserProfileSplatRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
+  '/bills/$billId/pay': typeof BillsBillIdPayRoute
   '/bills/$billId/summary': typeof BillsBillIdSummaryRoute
   '/bills/$billId/': typeof BillsBillIdIndexRoute
 }
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/user-profile/$'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
+    | '/bills/$billId/pay'
     | '/bills/$billId/summary'
     | '/bills/$billId/'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/user-profile/$'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
+    | '/bills/$billId/pay'
     | '/bills/$billId/summary'
     | '/bills/$billId'
   id:
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/user-profile/$'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
+    | '/bills/$billId/pay'
     | '/bills/$billId/summary'
     | '/bills/$billId/'
   fileRoutesById: FileRoutesById
@@ -156,6 +168,7 @@ export interface RootRouteChildren {
   UserProfileSplatRoute: typeof UserProfileSplatRoute
   BillsBillIdClaimRoute: typeof BillsBillIdClaimRoute
   BillsBillIdJoinRoute: typeof BillsBillIdJoinRoute
+  BillsBillIdPayRoute: typeof BillsBillIdPayRoute
   BillsBillIdSummaryRoute: typeof BillsBillIdSummaryRoute
   BillsBillIdIndexRoute: typeof BillsBillIdIndexRoute
 }
@@ -218,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BillsBillIdSummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bills/$billId/pay': {
+      id: '/bills/$billId/pay'
+      path: '/bills/$billId/pay'
+      fullPath: '/bills/$billId/pay'
+      preLoaderRoute: typeof BillsBillIdPayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bills/$billId/join': {
       id: '/bills/$billId/join'
       path: '/bills/$billId/join'
@@ -244,6 +264,7 @@ const rootRouteChildren: RootRouteChildren = {
   UserProfileSplatRoute: UserProfileSplatRoute,
   BillsBillIdClaimRoute: BillsBillIdClaimRoute,
   BillsBillIdJoinRoute: BillsBillIdJoinRoute,
+  BillsBillIdPayRoute: BillsBillIdPayRoute,
   BillsBillIdSummaryRoute: BillsBillIdSummaryRoute,
   BillsBillIdIndexRoute: BillsBillIdIndexRoute,
 }

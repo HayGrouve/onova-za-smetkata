@@ -105,9 +105,12 @@ export function isAllocationReady(input: {
   )
 }
 
-/** Step 1 — restaurant name present. */
-export function isBillDetailsStepReady(restaurantName: string): boolean {
-  return isRestaurantReady(restaurantName)
+/** Step 1 — restaurant name present and every item priced. */
+export function isBillDetailsStepReady(input: {
+  restaurantName: string
+  items: ItemInput[]
+}): boolean {
+  return isRestaurantReady(input.restaurantName) && hasPricedItems(input.items)
 }
 
 /** Step 2 — at least one Guest (host seat excluded when known). */

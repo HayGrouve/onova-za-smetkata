@@ -3,73 +3,67 @@ import type {
   LoadedBillRelations,
 } from './bill-calculation-snapshot'
 import { toBillCalculationSnapshot } from './bill-calculation-snapshot'
-import type { BillBreakdownInput, ParticipantTotals } from './bill-calculations'
-import { calculateBillTotals } from './bill-calculations'
-import {
-  filterClaimedGuestClaimItems,
-  filterGuestClaimItemsBySearch,
-  filterUnclaimedGuestClaimItems,
-  getGuestClaimItemState,
-  sortGuestClaimItems,
-} from './guest-claim-items'
 import type {
-  GuestClaimItemState,
-  GuestItemAssignment,
-} from './guest-claim-items'
-import { buildParticipantShareView } from './participant-share-view'
-import type { ParticipantShareView } from './participant-share-view'
+  BillBreakdownInput,
+  ParticipantInput,
+  ParticipantTotals,
+} from './bill-calculations'
+import { calculateBillTotals } from './bill-calculations'
+import { buildClaimGroupSeatView, groupClaimItems } from './claim-groups'
+import type { ClaimGroup, ClaimGroupSeatView } from './claim-groups'
+import { filterGuestClaimItemsBySearch } from './guest-claim-items'
+import type { GuestItemAssignment } from './guest-claim-items'
 
-export type GuestClaimTab = 'remaining' | 'mine'
+export type GuestClaimTab = 'all' | 'free' | 'mine'
 
 export interface GuestClaimSessionItem {
   id: string
   name: string
   quantity: number
   sortOrder: number
+  unitPriceCents: number
 }
 
 export interface GuestClaimSessionInput {
   items: GuestClaimSessionItem[]
   assignments: GuestItemAssignment[]
-  participantId: string
+  participants: ParticipantInput[]
+  /** Seat the claim actions act for. */
+  seatId: string
+  /** Every seat this phone handles (own + Covered seats). Defaults to `seatId`. */
+  mySeatIds?: string[]
   activeTab: GuestClaimTab
   search: string
   billRelations?: LoadedBillRelations
   billContext?: BillCalculationContext
-  participantLabels?: Record<string, string>
 }
 
-export interface GuestClaimSessionItemView {
-  item: GuestClaimSessionItem
-  claimState: GuestClaimItemState
-  assignments: GuestItemAssignment[]
+export interface GuestClaimGroupView {
+  group: ClaimGroup
+  seat: ClaimGroupSeatView
 }
 
-export interface GuestClaimShareDrawerInput {
+export interface GuestClaimSeatShare {
+  seatId: string
   breakdownInput: BillBreakdownInput
-  participantTotals: ParticipantTotals
-  shareView: ParticipantShareView
+  totals: ParticipantTotals
 }
 
 export interface GuestClaimSessionState {
-  visibleItems: GuestClaimSessionItemView[]
-  remainingCount: number
-  claimedCount: number
+  visibleGroups: GuestClaimGroupView[]
+  tabCounts: Record<GuestClaimTab, number>
+  tableProgress: { claimedUnits: number; totalUnits: number; freeUnits: number }
   hasItems: boolean
   hasSearchQuery: boolean
-  hasUnclaimedItems: boolean
-  showSearch: boolean
   emptyMessage: string | null
-  hidePrices: boolean
-  assignmentsByItemId: Record<string, GuestItemAssignment[]>
-  shareDrawer?: GuestClaimShareDrawerInput
+  seatShares: GuestClaimSeatShare[]
 }
 
 export const GUEST_CLAIM_EMPTY_MESSAGES = {
   noItems: 'Все още няма артикули.',
   noSearchResults: 'Няма артикули, съответстващи на търсенето.',
-  noClaimed: 'Все още няма отбелязани артикули.',
-  allClaimed: 'Всички артикули са отбелязани.',
+  noClaimed: 'Все още не сте отбелязали нищо.',
+  allClaimed: 'Всички бройки са отбелязани.',
 } as const
 
 export function resolveGuestClaimEmptyMessage(
@@ -82,100 +76,91 @@ export function resolveGuestClaimEmptyMessage(
   if (visibleCount > 0) return null
   if (hasSearchQuery) return GUEST_CLAIM_EMPTY_MESSAGES.noSearchResults
   if (activeTab === 'mine') return GUEST_CLAIM_EMPTY_MESSAGES.noClaimed
-  return GUEST_CLAIM_EMPTY_MESSAGES.allClaimed
+  if (activeTab === 'free') return GUEST_CLAIM_EMPTY_MESSAGES.allClaimed
+  return null
 }
 
-function indexAssignmentsByItemId(
-  assignments: GuestItemAssignment[],
-): Record<string, GuestItemAssignment[]> {
-  const map: Record<string, GuestItemAssignment[]> = {}
-  for (const assignment of assignments) {
-    const list = map[assignment.itemId] ?? []
-    list.push(assignment)
-    map[assignment.itemId] = list
-  }
-  return map
+function matchesTab(view: GuestClaimGroupView, tab: GuestClaimTab): boolean {
+  if (tab === 'free') return view.seat.freeUnits.length > 0
+  if (tab === 'mine') return view.seat.myUnitCount > 0
+  return true
 }
 
-function buildShareDrawerInput(
-  input: GuestClaimSessionInput,
-): GuestClaimShareDrawerInput | undefined {
-  const { billRelations, billContext, participantId, participantLabels } = input
-  if (!billRelations) return undefined
+function buildSeatShares(input: GuestClaimSessionInput): GuestClaimSeatShare[] {
+  const { billRelations, billContext } = input
+  if (!billRelations) return []
 
   const snapshot = toBillCalculationSnapshot(billRelations, billContext ?? {})
   const totals = calculateBillTotals(snapshot.calculationInput)
-  if (!(participantId in totals.byParticipant)) return undefined
+  const seatIds = input.mySeatIds ?? [input.seatId]
 
-  const participantTotals = totals.byParticipant[participantId]
-  const shareView = buildParticipantShareView({
-    breakdownInput: snapshot.breakdownInput,
-    totals: participantTotals,
-    participantId,
-    participantLabels,
-  })
-
-  return {
-    breakdownInput: snapshot.breakdownInput,
-    participantTotals,
-    shareView,
-  }
+  return seatIds
+    .filter((seatId) => seatId in totals.byParticipant)
+    .map((seatId) => ({
+      seatId,
+      breakdownInput: snapshot.breakdownInput,
+      totals: totals.byParticipant[seatId],
+    }))
 }
 
 export function buildGuestClaimSessionState(
   input: GuestClaimSessionInput,
 ): GuestClaimSessionState {
-  const { items, assignments, participantId, activeTab, search } = input
-  const assignmentsByItemId = indexAssignmentsByItemId(assignments)
-  const sorted = sortGuestClaimItems(items)
+  const { assignments, participants, seatId, activeTab, search } = input
 
-  const tabFiltered =
-    activeTab === 'mine'
-      ? filterClaimedGuestClaimItems(sorted, assignments, participantId)
-      : filterUnclaimedGuestClaimItems(sorted, assignments, participantId)
+  const allGroups: GuestClaimGroupView[] = groupClaimItems(input.items).map(
+    (group) => ({
+      group,
+      seat: buildClaimGroupSeatView({
+        group,
+        assignments,
+        seatId,
+        participants,
+      }),
+    }),
+  )
 
-  const filtered = filterGuestClaimItemsBySearch(tabFiltered, search)
-  const hidePrices = activeTab === 'mine'
-  const hasItems = items.length > 0
+  const tabCounts: Record<GuestClaimTab, number> = {
+    all: allGroups.length,
+    free: allGroups.filter((view) => matchesTab(view, 'free')).length,
+    mine: allGroups.filter((view) => matchesTab(view, 'mine')).length,
+  }
+
+  const tableProgress = allGroups.reduce(
+    (progress, view) => ({
+      claimedUnits: progress.claimedUnits + view.seat.claimedUnitCount,
+      totalUnits: progress.totalUnits + view.seat.totalUnits,
+      freeUnits: progress.freeUnits + view.seat.freeUnits.length,
+    }),
+    { claimedUnits: 0, totalUnits: 0, freeUnits: 0 },
+  )
+
+  const tabFiltered = allGroups.filter((view) => matchesTab(view, activeTab))
+  const searchMatches = new Set(
+    filterGuestClaimItemsBySearch(
+      tabFiltered.map((view) => view.group),
+      search,
+    ),
+  )
+  const visibleGroups = tabFiltered.filter((view) =>
+    searchMatches.has(view.group),
+  )
+
+  const hasItems = input.items.length > 0
   const hasSearchQuery = search.trim().length > 0
 
-  const remainingCount = filterUnclaimedGuestClaimItems(
-    items,
-    assignments,
-    participantId,
-  ).length
-  const claimedCount = filterClaimedGuestClaimItems(
-    items,
-    assignments,
-    participantId,
-  ).length
-
-  const visibleItems: GuestClaimSessionItemView[] = filtered.map((item) => ({
-    item,
-    assignments: assignmentsByItemId[item.id] ?? [],
-    claimState: getGuestClaimItemState(
-      item,
-      assignmentsByItemId[item.id] ?? [],
-      participantId,
-    ),
-  }))
-
   return {
-    visibleItems,
-    remainingCount,
-    claimedCount,
+    visibleGroups,
+    tabCounts,
+    tableProgress,
     hasItems,
     hasSearchQuery,
-    hasUnclaimedItems: remainingCount > 0,
-    showSearch: remainingCount > 0 || activeTab === 'mine',
     emptyMessage: resolveGuestClaimEmptyMessage(
       hasItems,
-      visibleItems.length,
+      visibleGroups.length,
       hasSearchQuery,
       activeTab,
     ),
-    hidePrices,
-    assignmentsByItemId,
-    shareDrawer: buildShareDrawerInput(input),
+    seatShares: buildSeatShares(input),
   }
 }

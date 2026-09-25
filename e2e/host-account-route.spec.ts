@@ -61,7 +61,7 @@ test('signed-in Host can open Акаунт and security without 404', async ({
   await expect(page.getByRole('heading', { name: 'Акаунт' })).toBeVisible({
     timeout: 30_000,
   })
-  await expect(page.getByRole('button', { name: 'Назад' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Назад' })).toBeVisible()
   await expect(
     page.getByRole('heading', { name: 'Страницата не е намерена' }),
   ).not.toBeVisible()
@@ -132,8 +132,11 @@ test('guest join and claim have no UserButton; theme stays in the kebab', async 
   const guestPage = await guest.newPage()
   await guestPage.goto(joinUrl!)
   await expect(userButtonTrigger(guestPage)).toHaveCount(0)
-  await guestPage.getByRole('button', { name: 'Настройки' }).click()
-  await expectThemeRocker(guestPage)
+  // Retry until hydration settles; an early click can land before React owns the menu.
+  await expect(async () => {
+    await guestPage.getByRole('button', { name: 'Настройки' }).click()
+    await expectThemeRocker(guestPage)
+  }).toPass({ timeout: 20_000 })
   await expect(
     guestPage.getByRole('menuitem', { name: 'Настройки за плащане' }),
   ).toHaveCount(0)

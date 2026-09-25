@@ -171,24 +171,19 @@ function validateCoveredParticipantIds(
   return { ok: true, coveredAmountsByParticipant }
 }
 
-export function validateCombinedPaymentCreate(
+/**
+ * Payer's remaining share plus each covered seat's remaining share. The payer may
+ * owe nothing themselves (e.g. already paid) while still covering others.
+ */
+function buildCombinedAmounts(
   input: CombinedPaymentCreateInput,
-  ctx: CombinedPaymentCreateContext,
+  ctx: Pick<
+    CombinedPaymentCreateContext,
+    'payerParticipantId' | 'coveredPendingIds' | 'totals'
+  >,
 ):
   | ({ ok: true } & CombinedPaymentCreateResult)
   | { ok: false; message: string } {
-  if (ctx.hasPendingForSession) {
-    return { ok: false, message: COMBINED_PAYMENT_MESSAGES.pendingExists }
-  }
-
-  const payerAmountCents = participantRemainingCents(
-    ctx.totals,
-    ctx.payerParticipantId,
-  )
-  if (payerAmountCents <= 0) {
-    return { ok: false, message: COMBINED_PAYMENT_MESSAGES.payerNothingOwed }
-  }
-
   const coveredValidated = validateCoveredParticipantIds(
     input.coveredParticipantIds,
     ctx.payerParticipantId,
@@ -199,6 +194,10 @@ export function validateCombinedPaymentCreate(
     return coveredValidated
   }
 
+  const payerAmountCents = participantRemainingCents(
+    ctx.totals,
+    ctx.payerParticipantId,
+  )
   const coveredAmountCents = Object.values(
     coveredValidated.coveredAmountsByParticipant,
   ).reduce((sum, amount) => sum + amount, 0)
@@ -210,6 +209,18 @@ export function validateCombinedPaymentCreate(
     coveredAmountCents,
     totalCents: payerAmountCents + coveredAmountCents,
   }
+}
+
+export function validateCombinedPaymentCreate(
+  input: CombinedPaymentCreateInput,
+  ctx: CombinedPaymentCreateContext,
+):
+  | ({ ok: true } & CombinedPaymentCreateResult)
+  | { ok: false; message: string } {
+  if (ctx.hasPendingForSession) {
+    return { ok: false, message: COMBINED_PAYMENT_MESSAGES.pendingExists }
+  }
+  return buildCombinedAmounts(input, ctx)
 }
 
 export function validateUpdateCovered(
@@ -224,36 +235,7 @@ export function validateUpdateCovered(
       message: COMBINED_PAYMENT_MESSAGES.selectionLockedAfterTransfer,
     }
   }
-
-  const payerAmountCents = participantRemainingCents(
-    ctx.totals,
-    ctx.payerParticipantId,
-  )
-  if (payerAmountCents <= 0) {
-    return { ok: false, message: COMBINED_PAYMENT_MESSAGES.payerNothingOwed }
-  }
-
-  const coveredValidated = validateCoveredParticipantIds(
-    input.coveredParticipantIds,
-    ctx.payerParticipantId,
-    ctx.coveredPendingIds,
-    ctx.totals,
-  )
-  if (!coveredValidated.ok) {
-    return coveredValidated
-  }
-
-  const coveredAmountCents = Object.values(
-    coveredValidated.coveredAmountsByParticipant,
-  ).reduce((sum, amount) => sum + amount, 0)
-
-  return {
-    ok: true,
-    payerAmountCents,
-    coveredAmountsByParticipant: coveredValidated.coveredAmountsByParticipant,
-    coveredAmountCents,
-    totalCents: payerAmountCents + coveredAmountCents,
-  }
+  return buildCombinedAmounts(input, ctx)
 }
 
 export function validateCombinedPaymentConfirm(

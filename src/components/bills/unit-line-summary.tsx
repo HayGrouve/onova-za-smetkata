@@ -1,30 +1,18 @@
-import type { ReactNode } from 'react'
 import { formatEur } from '#/lib/format-currency.ts'
 import { formatShareParticipantCount } from '../../../shared/guest-share-preview.ts'
 
 export interface UnitLineSummaryProps {
   unitTitle: string
   unitPriceCents: number
-  isEmpty: boolean
-  otherClaimantLabels: string[]
-  /** Guest self-claim: whether the current participant joined this Unit. */
-  joined?: boolean
-  shareCents?: number
-  showSharePreview?: boolean
-  actionHint?: ReactNode
-  children?: ReactNode
+  /** Everyone on the Unit, as display labels. */
+  assigneeLabels: string[]
 }
 
+/** One Unit in the Host's per-unit dialog: title, price, and who has it. */
 export function UnitLineSummary({
   unitTitle,
   unitPriceCents,
-  isEmpty,
-  otherClaimantLabels,
-  joined = false,
-  shareCents,
-  showSharePreview = true,
-  actionHint,
-  children,
+  assigneeLabels,
 }: UnitLineSummaryProps) {
   return (
     <div className="flex flex-col gap-1">
@@ -34,43 +22,13 @@ export function UnitLineSummary({
           {formatEur(unitPriceCents)}
         </p>
       </div>
-      {joined ? (
-        <>
-          <p className="text-xs font-medium text-primary">✓ Ваше</p>
-          {otherClaimantLabels.length > 0 ? (
-            <p className="text-xs text-muted-foreground">
-              Споделено с {otherClaimantLabels.join(', ')} (
-              {formatShareParticipantCount(otherClaimantLabels.length)})
-            </p>
-          ) : null}
-          {showSharePreview && shareCents !== undefined ? (
-            <p className="text-xs text-muted-foreground">
-              Вашият дял: {formatEur(shareCents)}
-            </p>
-          ) : null}
-          {actionHint}
-        </>
-      ) : (
-        <>
-          {isEmpty ? (
-            <p className="text-xs text-muted-foreground">Празна бройка</p>
-          ) : (
-            <>
-              <p className="text-xs text-muted-foreground">
-                Споделено с {otherClaimantLabels.join(', ')} (
-                {formatShareParticipantCount(otherClaimantLabels.length)})
-              </p>
-              {showSharePreview && shareCents !== undefined ? (
-                <p className="text-xs text-muted-foreground">
-                  Вашият дял: {formatEur(shareCents)}
-                </p>
-              ) : null}
-            </>
-          )}
-          {actionHint}
-        </>
-      )}
-      {children}
+      <p className="text-xs text-muted-foreground">
+        {assigneeLabels.length === 0
+          ? 'Празна бройка'
+          : assigneeLabels.length === 1
+            ? assigneeLabels[0]
+            : `Споделено от ${assigneeLabels.join(', ')} (${formatShareParticipantCount(assigneeLabels.length)})`}
+      </p>
     </div>
   )
 }

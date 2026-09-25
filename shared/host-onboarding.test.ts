@@ -151,6 +151,7 @@ describe('stepBarGuidanceLabel', () => {
         ...baseBill,
         contentRoute: 'manual',
         restaurantName: 'Механа',
+        items: [{ id: 'i1', unitPriceCents: 500, quantity: 1 }],
         guestCount: 0,
       },
       dismissedHintIds: [],
@@ -159,7 +160,7 @@ describe('stepBarGuidanceLabel', () => {
       steps,
       currentStep: 1,
       dismissedHintIds: [],
-      stepLabels: ['Бележка', 'Участници', 'Разпределение', 'Преглед'],
+      stepLabels: ['Сметка', 'Участници', 'Разпределение', 'Плащания'],
     })
     expect(label).toEqual({
       kind: 'pointer',
@@ -170,7 +171,7 @@ describe('stepBarGuidanceLabel', () => {
 })
 
 describe('isEditorStepGuidanceComplete', () => {
-  it('is false for step 1 until content route and restaurant are done', () => {
+  it('is false for step 1 until content route, restaurant, and items are done', () => {
     const dismissed: string[] = []
     const beforeRoute = deriveHostOnboardingGuidance({
       bill: baseBill,
@@ -184,7 +185,7 @@ describe('isEditorStepGuidanceComplete', () => {
     })
     expect(isEditorStepGuidanceComplete(manual, 1, dismissed)).toBe(false)
 
-    const ready = deriveHostOnboardingGuidance({
+    const named = deriveHostOnboardingGuidance({
       bill: {
         ...baseBill,
         contentRoute: 'manual',
@@ -192,6 +193,46 @@ describe('isEditorStepGuidanceComplete', () => {
       },
       dismissedHintIds: dismissed,
     })
+    expect(isEditorStepGuidanceComplete(named, 1, dismissed)).toBe(false)
+
+    const ready = deriveHostOnboardingGuidance({
+      bill: {
+        ...baseBill,
+        contentRoute: 'manual',
+        restaurantName: 'Механа',
+        items: [{ id: 'i1', unitPriceCents: 500, quantity: 1 }],
+      },
+      dismissedHintIds: dismissed,
+    })
     expect(isEditorStepGuidanceComplete(ready, 1, dismissed)).toBe(true)
+  })
+})
+
+describe('items guidance', () => {
+  it('asks for items on step 1 after the restaurant', () => {
+    const steps = deriveHostOnboardingGuidance({
+      bill: { ...baseBill, contentRoute: 'manual', restaurantName: 'Механа' },
+      dismissedHintIds: [],
+    })
+    expect(guidanceForEditorStep(steps, 1, [])).toMatchObject({
+      id: 'items',
+      step: 1,
+    })
+  })
+
+  it('flags items without a price', () => {
+    const steps = deriveHostOnboardingGuidance({
+      bill: {
+        ...baseBill,
+        contentRoute: 'manual',
+        restaurantName: 'Механа',
+        items: [{ id: 'i1', unitPriceCents: 0, quantity: 1 }],
+      },
+      dismissedHintIds: [],
+    })
+    expect(steps.find((step) => step.id === 'items')).toMatchObject({
+      done: false,
+      body: 'Без цена артикулът не влиза в дяловете.',
+    })
   })
 })

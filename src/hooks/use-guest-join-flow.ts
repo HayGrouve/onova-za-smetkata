@@ -3,7 +3,7 @@ import { useMutation, useQuery } from 'convex/react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import {
-  buildTakenParticipantIds,
+  buildTakenSeats,
   resolveJoinPageGate,
   shouldAttemptJoinResume,
 } from '../../shared/guest-flow-session'
@@ -21,35 +21,42 @@ import {
 export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
   const navigate = useNavigate()
   const data = useQuery(api.bills.getForGuest, { billId, shareToken })
-  const activeSessions = useQuery(api.guestSessions.listActiveForBill, {
+  const activeSeats = useQuery(api.guestSessions.listActiveForBill, {
     billId,
     shareToken,
   })
   const claimSession = useMutation(api.guestSessions.claim)
-  const [claimingId, setClaimingId] = useState<Id<'participants'> | null>(null)
+  const [joining, setJoining] = useState(false)
   const [resuming, setResuming] = useState(() =>
     shouldAttemptJoinResume(getStoredGuestSession(billId), shareToken),
   )
 
   const storedSession = useMemo(
     () => getStoredGuestSession(billId),
-    [billId, activeSessions],
+    [billId, activeSeats],
   )
 
-  const takenParticipantIds = useMemo(
-    () =>
-      buildTakenParticipantIds(activeSessions, storedSession?.participantId),
-    [activeSessions, storedSession?.participantId],
+  const takenSeats = useMemo(
+    () => buildTakenSeats(activeSeats, storedSession?.participantId),
+    [activeSeats, storedSession?.participantId],
   )
 
   const gate = resolveJoinPageGate({
     billData: data,
-    activeSessions,
+    activeSessions: activeSeats,
     resuming,
   })
 
+  function goToClaim() {
+    void navigate({
+      to: '/bills/$billId/claim',
+      params: { billId },
+      search: { t: shareToken },
+    })
+  }
+
   useEffect(() => {
-    if (data === undefined || activeSessions === undefined) return
+    if (data === undefined || activeSeats === undefined) return
     if (!shouldAttemptJoinResume(getStoredGuestSession(billId), shareToken)) {
       setResuming(false)
       return
@@ -70,13 +77,11 @@ export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
           participantId: stored.participantId as Id<'participants'>,
           sessionToken: stored.sessionToken,
           deviceId: getOrCreateGuestDeviceId(),
+          coveredParticipantIds: stored.coveredParticipantIds as
+            Id<'participants'>[] | undefined,
         })
         if (cancelledRef.current) return
-        void navigate({
-          to: '/bills/$billId/claim',
-          params: { billId },
-          search: { t: shareToken },
-        })
+        goToClaim()
       } catch {
         clearStoredGuestParticipant(billId)
         if (!cancelledRef.current) setResuming(false)
@@ -86,13 +91,17 @@ export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
     return () => {
       cancelledRef.current = true
     }
-  }, [billId, claimSession, data, activeSessions, navigate, shareToken])
+  }, [billId, claimSession, data, activeSeats, navigate, shareToken])
 
-  async function handlePick(participantId: Id<'participants'>) {
-    if (takenParticipantIds.has(participantId)) return
+  /** Claim the guest's own seat plus any Covered seats, then open the claim page. */
+  async function join(
+    participantId: Id<'participants'>,
+    coveredParticipantIds: Id<'participants'>[] = [],
+  ) {
+    if (takenSeats.has(participantId)) return
 
     const sessionToken = createGuestSessionToken()
-    setClaimingId(participantId)
+    setJoining(true)
     try {
       await claimSession({
         billId,
@@ -100,30 +109,28 @@ export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
         participantId,
         sessionToken,
         deviceId: getOrCreateGuestDeviceId(),
+        coveredParticipantIds,
       })
       setStoredGuestSession({
         billId,
         participantId,
         sessionToken,
         shareToken,
+        ...(coveredParticipantIds.length > 0 ? { coveredParticipantIds } : {}),
       })
-      void navigate({
-        to: '/bills/$billId/claim',
-        params: { billId },
-        search: { t: shareToken },
-      })
+      goToClaim()
     } catch (error) {
       toast.error(getConvexErrorMessage(error))
     } finally {
-      setClaimingId(null)
+      setJoining(false)
     }
   }
 
   return {
     gate,
     data,
-    takenParticipantIds,
-    claimingId,
-    handlePick,
+    takenSeats,
+    joining,
+    join,
   }
 }

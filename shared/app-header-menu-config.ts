@@ -7,6 +7,7 @@ export type AppHeaderRouteContext =
   | 'hostClaim'
   | 'guestJoin'
   | 'guestClaim'
+  | 'guestPay'
 
 export type AppHeaderMenuBillActionId =
   | 'shareJoinLink'
@@ -128,6 +129,7 @@ export function buildAppHeaderMenuConfig(
     case 'hostAccount':
     case 'guestJoin':
     case 'guestClaim':
+    case 'guestPay':
       return []
     case 'editor':
       if (input.billStatus === 'final') {

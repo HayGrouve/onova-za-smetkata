@@ -70,6 +70,26 @@ describe('validateCombinedPaymentCreate', () => {
     })
   })
 
+  it('lets a payer who owes nothing cover someone else', () => {
+    const result = validateCombinedPaymentCreate(
+      { coveredParticipantIds: ['p2'] },
+      {
+        ...baseCtx,
+        totals: totals({
+          p1: { owedCents: 1250, paidCents: 1250 },
+          p2: { owedCents: 920, paidCents: 0 },
+        }),
+      },
+    )
+    expect(result).toEqual({
+      ok: true,
+      payerAmountCents: 0,
+      coveredAmountsByParticipant: { p2: 920 },
+      coveredAmountCents: 920,
+      totalCents: 920,
+    })
+  })
+
   it('rejects covered same as payer', () => {
     const result = validateCombinedPaymentCreate(
       { coveredParticipantIds: ['p1'] },

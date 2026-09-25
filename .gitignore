@@ -29,3 +29,6 @@ playwright-report/
 # Local git worktrees
 .worktrees/
 .claude/worktrees/
+
+# clerk configuration (can include secrets)
+/.clerk/

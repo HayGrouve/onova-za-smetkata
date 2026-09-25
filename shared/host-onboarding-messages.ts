@@ -78,3 +78,9 @@ export const HOST_ONBOARDING_SCAN = {
   reviewBody:
     'Оставете само редовете от вашата маса, а тези с „?" сверете с бележката.',
 } as const
+
+export const HOST_ONBOARDING_ITEMS = {
+  title: 'Добавете артикулите',
+  body: 'Наименование и цена са достатъчни — бройката умножава цената.',
+  bodyMissingPrice: 'Без цена артикулът не влиза в дяловете.',
+} as const

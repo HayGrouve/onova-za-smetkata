@@ -3,27 +3,23 @@ import type {
   BillCalculationContext,
   LoadedBillRelations,
 } from '../../shared/bill-calculation-snapshot'
+import type { ParticipantInput } from '../../shared/bill-calculations'
 import { buildGuestClaimSessionState } from '../../shared/guest-claim-session'
 import type {
+  GuestClaimSessionItem,
   GuestClaimSessionState,
   GuestClaimTab,
 } from '../../shared/guest-claim-session'
 import type { GuestItemAssignment } from '../../shared/guest-claim-items'
 
-export interface GuestClaimSessionItemInput {
-  id: string
-  name: string
-  quantity: number
-  sortOrder: number
-}
-
 export interface UseGuestClaimSessionOptions {
-  items: GuestClaimSessionItemInput[]
+  items: GuestClaimSessionItem[]
   assignments: GuestItemAssignment[]
-  participantId: string | null
+  participants: ParticipantInput[]
+  seatId: string | null
+  mySeatIds?: string[]
   billRelations?: LoadedBillRelations
   billContext?: BillCalculationContext
-  participantLabels?: Record<string, string>
 }
 
 export interface UseGuestClaimSessionResult {
@@ -38,25 +34,27 @@ export interface UseGuestClaimSessionResult {
 export function useGuestClaimSession({
   items,
   assignments,
-  participantId,
+  participants,
+  seatId,
+  mySeatIds,
   billRelations,
   billContext,
-  participantLabels,
 }: UseGuestClaimSessionOptions): UseGuestClaimSessionResult {
-  const [itemTab, setItemTab] = useState<GuestClaimTab>('remaining')
+  const [itemTab, setItemTab] = useState<GuestClaimTab>('all')
   const [search, setSearch] = useState('')
 
   const session = useMemo(() => {
-    if (!participantId) return null
+    if (!seatId) return null
     return buildGuestClaimSessionState({
       items,
       assignments,
-      participantId,
+      participants,
+      seatId,
+      mySeatIds,
       activeTab: itemTab,
       search,
       billRelations,
       billContext,
-      participantLabels,
     })
   }, [
     assignments,
@@ -64,9 +62,10 @@ export function useGuestClaimSession({
     billRelations,
     itemTab,
     items,
-    participantId,
-    participantLabels,
+    mySeatIds,
+    participants,
     search,
+    seatId,
   ])
 
   return {
