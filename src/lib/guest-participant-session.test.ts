@@ -93,6 +93,19 @@ describe('guest-participant-session', () => {
     expect(getStoredGuestParticipant('bill_a')).toBe('participant_1')
   })
 
+  it('keeps Covered seats for resume', () => {
+    setStoredGuestSession({
+      billId: 'bill_a',
+      participantId: 'participant_1',
+      sessionToken: 'token-1',
+      shareToken: 'share-1',
+      coveredParticipantIds: ['participant_2'],
+    })
+    expect(getStoredGuestSession('bill_a')?.coveredParticipantIds).toEqual([
+      'participant_2',
+    ])
+  })
+
   it('setStoredGuestParticipant creates a session token', () => {
     setStoredGuestParticipant('bill_a', 'participant_1', 'share-1', 'token-abc')
     expect(getStoredGuestSession('bill_a')?.sessionToken).toBe('token-abc')

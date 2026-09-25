@@ -28,7 +28,6 @@ export interface BillInviteCardProps {
   /** When set, handles guest-link sharing (e.g. onboarding payment checkpoint). */
   onShareLink?: (joinUrl: string) => Promise<boolean>
   shareGuidance?: GuidanceFocusHandle
-  allocationGuidance?: GuidanceFocusHandle
 }
 
 export function BillInviteCard({
@@ -38,7 +37,6 @@ export function BillInviteCard({
   readOnly = false,
   onShareLink,
   shareGuidance,
-  allocationGuidance,
 }: BillInviteCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [joinUrl, setJoinUrl] = useState('')
@@ -173,13 +171,7 @@ export function BillInviteCard({
 
   return (
     <>
-      {allocationGuidance ? (
-        <GuidanceTarget stepId="allocation" focus={allocationGuidance}>
-          {inviteCard}
-        </GuidanceTarget>
-      ) : (
-        inviteCard
-      )}
+      {inviteCard}
 
       <Dialog open={rotateOpen} onOpenChange={setRotateOpen}>
         <DialogContent>

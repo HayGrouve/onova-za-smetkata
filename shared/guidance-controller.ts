@@ -19,6 +19,7 @@ const GUIDANCE_SCROLL_BLOCKS: Record<string, GuidanceScrollBlock> = {
   'scan-run-ocr': 'center',
   'scan-review': 'center',
   restaurant: 'start',
+  items: 'center',
   participants: 'center',
   allocation: 'center',
   share: 'center',

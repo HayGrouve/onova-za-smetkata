@@ -33,7 +33,7 @@ async function deleteParticipantWithRelations(
     await ctx.db.delete(p._id)
   }
 
-  await deleteGuestSessionsForParticipant(ctx, participantId)
+  await deleteGuestSessionsForParticipant(ctx, bill._id, participantId)
   await ctx.db.delete(participantId)
 
   if (shouldClearHostParticipantId(participantId, bill.hostParticipantId)) {

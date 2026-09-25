@@ -6,10 +6,18 @@ const i1 = { id: 'i1', unitPriceCents: 1000, quantity: 1 }
 const a1 = { itemId: 'i1', participantId: 'p1', unitIndex: 0 }
 
 describe('getBillStepCompletion', () => {
-  it('marks step 1 done only when restaurant name is non-empty after trim', () => {
+  it('marks step 1 done once the restaurant is named and items are priced', () => {
     expect(
       getBillStepCompletion({
         restaurantName: '   ',
+        participants: [],
+        items: [i1],
+        assignments: [],
+      })[1],
+    ).toBe(false)
+    expect(
+      getBillStepCompletion({
+        restaurantName: '  Механа  ',
         participants: [],
         items: [],
         assignments: [],
@@ -19,7 +27,7 @@ describe('getBillStepCompletion', () => {
       getBillStepCompletion({
         restaurantName: '  Механа  ',
         participants: [],
-        items: [],
+        items: [i1],
         assignments: [],
       })[1],
     ).toBe(true)

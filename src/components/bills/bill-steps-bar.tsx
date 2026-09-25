@@ -6,10 +6,10 @@ import { cn } from '#/lib/utils.ts'
 export type BillStep = 1 | 2 | 3 | 4
 
 export const BILL_STEP_LABELS = [
-  'Бележка',
+  'Сметка',
   'Участници',
   'Разпределение',
-  'Преглед',
+  'Плащания',
 ] as const
 
 export interface BillStepsBarProps {

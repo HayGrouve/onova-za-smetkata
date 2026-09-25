@@ -1,17 +1,28 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
-import { useCallback, useEffect, useMemo } from 'react'
+import { UserPlusIcon } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { ClaimHint } from '#/components/bills/claim-hint.tsx'
 import { ClaimItemsPanel } from '#/components/bills/claim-items-panel.tsx'
-import { GuestClaimFooter } from '#/components/bills/guest-claim-footer.tsx'
-import { HostClaimFooter } from '#/components/bills/host-claim-footer.tsx'
+import { ClaimPayBar } from '#/components/bills/claim-pay-bar.tsx'
 import { CombinedCoverNotice } from '#/components/bills/combined-cover-notice.tsx'
+import { CoveredSeatsSheet } from '#/components/bills/covered-seats-sheet.tsx'
+import { GuestStepsBar } from '#/components/bills/guest-steps-bar.tsx'
+import { SeatSwitcher } from '#/components/bills/seat-switcher.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { QueryErrorBoundary } from '#/components/ui/query-error-boundary.tsx'
-import { useGuestClaimFlow } from '#/hooks/use-guest-claim-flow.ts'
+import { useGuestBillSession } from '#/hooks/use-guest-bill-session.ts'
 import { useGuestClaimSession } from '#/hooks/use-guest-claim-session.ts'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
-import { buildParticipantLabels } from '#/lib/participant-labels.ts'
+import { ICON } from '#/lib/app-icons.ts'
+import { buildCoveredSeatCandidates } from '#/lib/covered-seat-candidates.ts'
+import { buildParticipantLabels, joinLabels } from '#/lib/participant-labels.ts'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
+import {
+  buildTakenSeats,
+  mapGuestBillToClaimSessionInput,
+} from '../../../../shared/guest-flow-session.ts'
+import type { GuestClaimSeatShare } from '../../../../shared/guest-claim-session.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Doc, Id } from '../../../../convex/_generated/dataModel'
 
@@ -25,6 +36,8 @@ export const Route = createFileRoute('/bills/$billId/claim')({
   }),
   component: BillClaimPage,
 })
+
+const EMPTY_ITEMS: never[] = []
 
 function BillClaimPage() {
   const { billId: billIdParam } = Route.useParams()
@@ -49,21 +62,38 @@ function BillClaimPage() {
   )
 }
 
-function mapClaimItems(items: Doc<'items'>[]) {
-  return items.map((item) => ({
-    id: item._id,
-    name: item.name,
-    quantity: item.quantity,
-    sortOrder: item.sortOrder,
-  }))
+/** What the seats still have to pay: share before any payment, then the rest. */
+function payableCents(shares: GuestClaimSeatShare[]): number {
+  return shares.reduce(
+    (sum, share) =>
+      sum +
+      (share.totals.paidCents > 0
+        ? Math.max(0, share.totals.balanceCents)
+        : share.totals.owedCents),
+    0,
+  )
 }
 
-function mapClaimAssignments(assignments: Doc<'itemAssignments'>[]) {
-  return assignments.map((assignment) => ({
-    itemId: assignment.itemId,
-    participantId: assignment.participantId,
-    unitIndex: assignment.unitIndex,
-  }))
+function sortedShareCandidates(
+  participants: Doc<'participants'>[],
+  seatId: string,
+  labels: Record<string, string>,
+) {
+  return [...participants]
+    .filter((participant) => participant._id !== seatId)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((participant) => ({
+      id: participant._id,
+      label: labels[participant._id] ?? participant.name,
+    }))
+}
+
+function LoadingState() {
+  return (
+    <div className="page-container py-10 text-center text-muted-foreground">
+      Зареждане...
+    </div>
+  )
 }
 
 function GuestClaimContent({
@@ -73,6 +103,7 @@ function GuestClaimContent({
   billId: Id<'bills'>
   shareTokenFromUrl: string
 }) {
+  const navigate = useNavigate()
   const {
     gate,
     data,
@@ -80,47 +111,89 @@ function GuestClaimContent({
     shareToken,
     storedSession,
     participantId,
-    participantLabel,
+    mySeatIds,
     readOnly,
     labels,
-    itemDocsById,
     handleSwitchIdentity,
-    itemTab,
-    setItemTab,
-    search,
-    setSearch,
-    clearSearch,
-    session,
-  } = useGuestClaimFlow(billId, shareTokenFromUrl)
+  } = useGuestBillSession(billId, shareTokenFromUrl)
+  const activeSeats = useQuery(
+    api.guestSessions.listActiveForBill,
+    shareToken ? { billId, shareToken } : 'skip',
+  )
+  const [activeSeatId, setActiveSeatId] = useState<string | null>(null)
+  const [coveredSheetOpen, setCoveredSheetOpen] = useState(false)
+
+  const seatId =
+    activeSeatId && mySeatIds.includes(activeSeatId as Id<'participants'>)
+      ? (activeSeatId as Id<'participants'>)
+      : participantId
+
+  const claimInput = useMemo(
+    () => (data ? mapGuestBillToClaimSessionInput(data) : null),
+    [data],
+  )
+
+  const { itemTab, setItemTab, search, setSearch, session } =
+    useGuestClaimSession({
+      items: claimInput?.items ?? EMPTY_ITEMS,
+      assignments: claimInput?.assignments ?? EMPTY_ITEMS,
+      participants: claimInput?.participants ?? EMPTY_ITEMS,
+      seatId,
+      mySeatIds,
+      billRelations: claimInput?.billRelations,
+      billContext: claimInput?.billContext,
+    })
 
   if (
     gate.status !== 'ready' ||
     !data ||
+    !claimInput ||
     !storedSession ||
     !participantId ||
-    !participantLabel ||
+    !seatId ||
     !session
   ) {
-    return (
-      <div className="page-container py-10 text-center text-muted-foreground">
-        Зареждане...
-      </div>
-    )
+    return <LoadingState />
   }
 
-  const shareDrawer = session.shareDrawer
+  const participantLabel = labels[participantId] ?? 'Участник'
+  const seats = mySeatIds.map((id) => ({
+    id,
+    label: labels[id] ?? 'Участник',
+  }))
+  const coveredIds = mySeatIds.filter((id) => id !== participantId)
+  const coveredCandidates = buildCoveredSeatCandidates({
+    participants: data.participants,
+    hostParticipantId: data.hostParticipantId,
+    ownParticipantId: participantId,
+    takenSeats: buildTakenSeats(activeSeats, participantId),
+    labels,
+  })
+
+  const amountCents = payableCents(session.seatShares)
+  const anyPaid = session.seatShares.some((share) => share.totals.paidCents > 0)
+  const payLabel =
+    seats.length > 1
+      ? `Общо за ${joinLabels(seats.map((seat) => seat.label))}`
+      : anyPaid
+        ? 'Остатък'
+        : 'Вашият дял'
+  const freeUnits = session.tableProgress.freeUnits
 
   return (
     <div className="page-container">
-      <div className="flex flex-col gap-4 py-4 pb-6">
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4 py-4">
+        <GuestStepsBar step={2} />
+
+        <div className="flex flex-col gap-1">
           <p className="text-sm text-muted-foreground">
             {data.bill.restaurantName.trim() || 'Сметка'}
           </p>
+          <h2 className="text-lg font-semibold">Какво консумирахте?</h2>
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold">
-              Вие сте: {participantLabel}
-            </h2>
+            <p className="text-sm">
+              Вие сте: <span className="font-medium">{participantLabel}</span>
+            </p>
             <Button
               type="button"
               variant="ghost"
@@ -130,11 +203,11 @@ function GuestClaimContent({
               Не съм {participantLabel}
             </Button>
           </div>
-          {readOnly && (
+          {readOnly ? (
             <p className="text-sm text-muted-foreground">
               Сметката е приключена — само преглед.
             </p>
-          )}
+          ) : null}
         </div>
 
         {pendingCover ? (
@@ -144,6 +217,30 @@ function GuestClaimContent({
           />
         ) : null}
 
+        {seats.length > 1 ? (
+          <SeatSwitcher
+            seats={seats}
+            activeSeatId={seatId}
+            onChange={setActiveSeatId}
+          />
+        ) : null}
+
+        {!readOnly && coveredCandidates.length > 0 ? (
+          <Button
+            type="button"
+            variant="ghost"
+            className="-ml-2 h-10 w-fit justify-start text-primary"
+            onClick={() => setCoveredSheetOpen(true)}
+          >
+            <UserPlusIcon className={ICON.button} aria-hidden />
+            {coveredIds.length > 0
+              ? 'Промени за кого плащате'
+              : 'Плащате и за някого?'}
+          </Button>
+        ) : null}
+
+        {!readOnly ? <ClaimHint /> : null}
+
         <ClaimItemsPanel
           session={session}
           itemTab={itemTab}
@@ -151,35 +248,46 @@ function GuestClaimContent({
           search={search}
           onSearchChange={setSearch}
           searchInputId="claim-item-search"
-          participantId={participantId}
-          participants={data.participants.map((entry) => ({
-            id: entry._id,
-            sortOrder: entry.sortOrder,
-          }))}
-          sessionToken={storedSession.sessionToken}
+          seatId={seatId}
+          participants={claimInput.participants}
           participantLabels={labels}
+          shareCandidates={sortedShareCandidates(
+            data.participants,
+            seatId,
+            labels,
+          )}
+          sessionToken={storedSession.sessionToken}
           readOnly={readOnly}
-          onItemSelected={clearSearch}
-          itemDocsById={itemDocsById}
         />
       </div>
 
-      {shareDrawer ? (
-        <GuestClaimFooter
-          billId={billId}
-          shareToken={shareToken}
-          participantId={participantId}
-          sessionToken={storedSession.sessionToken}
-          label={participantLabel}
-          breakdownInput={shareDrawer.breakdownInput}
-          totals={shareDrawer.participantTotals}
-          participantBalances={data.participantBalances}
-          participantLabels={labels}
-          pendingCover={pendingCover ?? undefined}
-          restaurantName={data.bill.restaurantName}
-          readOnly={readOnly}
-        />
-      ) : null}
+      <ClaimPayBar
+        label={payLabel}
+        amountCents={amountCents}
+        actionLabel={readOnly ? 'Разбивка' : 'Към плащане'}
+        onAction={() =>
+          void navigate({
+            to: '/bills/$billId/pay',
+            params: { billId },
+            search: { t: shareToken },
+          })
+        }
+        note={
+          !readOnly && freeUnits > 0
+            ? `${freeUnits} ${freeUnits === 1 ? 'бройка още не е отбелязана' : 'бройки още не са отбелязани'} от никого.`
+            : undefined
+        }
+      />
+
+      <CoveredSeatsSheet
+        open={coveredSheetOpen}
+        onOpenChange={setCoveredSheetOpen}
+        billId={billId}
+        shareToken={shareToken}
+        sessionToken={storedSession.sessionToken}
+        candidates={coveredCandidates}
+        coveredIds={coveredIds}
+      />
     </div>
   )
 }
@@ -214,51 +322,40 @@ function HostClaimContent({ billId }: { billId: Id<'bills'> }) {
     [data],
   )
 
-  const { itemTab, setItemTab, search, setSearch, clearSearch, session } =
-    useGuestClaimSession({
-      items: data ? mapClaimItems(data.items) : [],
-      assignments: data ? mapClaimAssignments(data.assignments) : [],
-      participantId: hostParticipantId,
-      billRelations:
-        data && hostParticipantId
-          ? {
-              participants: data.participants,
-              items: data.items,
-              assignments: data.assignments,
-              payments: data.payments,
-            }
-          : undefined,
-      billContext:
-        data && hostParticipantId
-          ? {
-              tipCents: data.bill.tipCents ?? 0,
-              hostParticipantId,
-            }
-          : undefined,
-      participantLabels: labels,
-    })
+  const claimInput = useMemo(
+    () =>
+      data
+        ? mapGuestBillToClaimSessionInput({
+            bill: data.bill,
+            hostParticipantId: data.bill.hostParticipantId,
+            participants: data.participants,
+            items: data.items,
+            assignments: data.assignments,
+            myPayments: data.payments,
+          })
+        : null,
+    [data],
+  )
 
-  const itemDocsById = useMemo(() => {
-    const map = new Map<string, Doc<'items'>>()
-    if (!data) return map
-    for (const item of data.items) {
-      map.set(item._id, item)
-    }
-    return map
-  }, [data?.items])
+  const { itemTab, setItemTab, search, setSearch, session } =
+    useGuestClaimSession({
+      items: claimInput?.items ?? EMPTY_ITEMS,
+      assignments: claimInput?.assignments ?? EMPTY_ITEMS,
+      participants: claimInput?.participants ?? EMPTY_ITEMS,
+      seatId: hostParticipantId,
+      billRelations: claimInput?.billRelations,
+      billContext: claimInput?.billContext,
+    })
 
   if (
     authLoading ||
     !isAuthenticated ||
     data === undefined ||
+    !claimInput ||
     !hostParticipantId ||
     !session
   ) {
-    return (
-      <div className="page-container py-10 text-center text-muted-foreground">
-        Зареждане...
-      </div>
-    )
+    return <LoadingState />
   }
 
   const participant = data.participants.find((p) => p._id === hostParticipantId)
@@ -269,22 +366,22 @@ function HostClaimContent({ billId }: { billId: Id<'bills'> }) {
 
   const label = labels[participant._id] ?? participant.name
   const readOnly = data.bill.status === 'final'
-  const shareDrawer = session.shareDrawer
+  const owedCents = session.seatShares[0]?.totals.owedCents ?? 0
 
   return (
     <div className="page-container">
-      <div className="flex flex-col gap-4 py-4 pb-6">
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4 py-4">
+        <div className="flex flex-col gap-1">
           <p className="text-sm text-muted-foreground">
             {data.bill.restaurantName.trim() || 'Сметка'}
           </p>
           <h2 className="text-lg font-semibold">Моите артикули</h2>
           <p className="text-sm text-muted-foreground">{label}</p>
-          {readOnly && (
+          {readOnly ? (
             <p className="text-sm text-muted-foreground">
               Сметката е приключена — само преглед.
             </p>
-          )}
+          ) : null}
         </div>
 
         <ClaimItemsPanel
@@ -294,29 +391,25 @@ function HostClaimContent({ billId }: { billId: Id<'bills'> }) {
           search={search}
           onSearchChange={setSearch}
           searchInputId="host-claim-item-search"
-          participantId={hostParticipantId}
-          participants={data.participants.map((entry) => ({
-            id: entry._id,
-            sortOrder: entry.sortOrder,
-          }))}
+          seatId={hostParticipantId}
+          participants={claimInput.participants}
           participantLabels={labels}
+          shareCandidates={sortedShareCandidates(
+            data.participants,
+            hostParticipantId,
+            labels,
+          )}
           readOnly={readOnly}
-          onItemSelected={clearSearch}
-          itemDocsById={itemDocsById}
         />
       </div>
 
-      {shareDrawer ? (
-        <HostClaimFooter
-          billId={billId}
-          participantId={hostParticipantId}
-          label={label}
-          breakdownInput={shareDrawer.breakdownInput}
-          totals={shareDrawer.participantTotals}
-          participantLabels={labels}
-          readOnly={readOnly}
-        />
-      ) : null}
+      <ClaimPayBar
+        label="Вашият дял"
+        amountCents={owedCents}
+        actionLabel="Към сметката"
+        onAction={redirectToEditor}
+        note="Покрито като домакин — не плащате на себе си."
+      />
     </div>
   )
 }

@@ -31,7 +31,10 @@ export interface BillStepCompletionInput {
 export function getBillStepCompletion(
   input: BillStepCompletionInput,
 ): BillStepCompletion {
-  const step1 = isBillDetailsStepReady(input.restaurantName)
+  const step1 = isBillDetailsStepReady({
+    restaurantName: input.restaurantName,
+    items: input.items,
+  })
   const step2 = isParticipantsStepReady({
     participants: input.participants,
     hostParticipantId: input.hostParticipantId,

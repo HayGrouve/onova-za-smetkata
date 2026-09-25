@@ -13,7 +13,10 @@ import {
   buildAppHeaderMenuConfig,
   shouldShowBillMenuGroup,
 } from '../../../shared/app-header-menu-config.ts'
-import { resolveAppHeaderRouteContext } from '../../../shared/app-header-route-context.ts'
+import {
+  isGuestRouteContext,
+  resolveAppHeaderRouteContext,
+} from '../../../shared/app-header-route-context.ts'
 import { getBillFinalizeEligibility } from '../../../shared/bill-finalize-eligibility.ts'
 import { toBillCalculationSnapshot } from '../../../shared/bill-calculation-snapshot.ts'
 import { api } from '../../../convex/_generated/api'
@@ -94,6 +97,18 @@ function useHeaderConfig() {
     }
   }
 
+  if (routeContext === 'guestPay' && billId) {
+    return {
+      title: 'Плащане',
+      backTo: null,
+      backParams: undefined,
+      backSearch: undefined,
+      routeContext,
+      billId,
+      bill,
+    }
+  }
+
   if (isJoin && billId) {
     return {
       title: 'Присъедини се',
@@ -158,16 +173,11 @@ function useHeaderConfig() {
 
 export function AppHeader() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const searchStr = useRouterState({ select: (s) => s.location.searchStr })
   const { title, backTo, backParams, backSearch, routeContext, billId, bill } =
     useHeaderConfig()
   const { isSignedIn } = useAuth()
 
-  const isHostClaim =
-    pathname.endsWith('/claim') &&
-    new URLSearchParams(searchStr).get('mode') === 'host'
-  const isGuestRoute =
-    pathname.endsWith('/join') || (pathname.endsWith('/claim') && !isHostClaim)
+  const isGuestRoute = isGuestRouteContext(routeContext)
   const isLogin = pathname === '/login'
   const showHostActions = isSignedIn === true && !isGuestRoute && !isLogin
 

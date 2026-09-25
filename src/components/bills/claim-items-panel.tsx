@@ -1,5 +1,6 @@
 import { SearchIcon } from 'lucide-react'
-import { GuestItemRow } from '#/components/bills/guest-item-row.tsx'
+import { ClaimGroupRow } from '#/components/bills/claim-group-row.tsx'
+import type { ShareCandidate } from '#/components/bills/share-unit-sheet.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { Label } from '#/components/ui/label.tsx'
 import { cn } from '#/lib/utils.ts'
@@ -7,8 +8,19 @@ import type {
   GuestClaimSessionState,
   GuestClaimTab,
 } from '../../../shared/guest-claim-session.ts'
-import type { Doc, Id } from '../../../convex/_generated/dataModel'
 import type { ParticipantInput } from '../../../shared/bill-calculations'
+import type { Id } from '../../../convex/_generated/dataModel'
+
+const TAB_LABELS: Record<GuestClaimTab, string> = {
+  all: 'Всички',
+  free: 'Свободни',
+  mine: 'Мои',
+}
+
+const TABS: GuestClaimTab[] = ['all', 'free', 'mine']
+
+/** Show search once the list is long enough to need it. */
+const SEARCH_MIN_GROUPS = 6
 
 export interface ClaimItemsPanelProps {
   session: GuestClaimSessionState
@@ -17,14 +29,12 @@ export interface ClaimItemsPanelProps {
   search: string
   onSearchChange: (search: string) => void
   searchInputId: string
-  participantId: Id<'participants'>
+  seatId: Id<'participants'>
   participants: ParticipantInput[]
   participantLabels: Record<string, string>
+  shareCandidates: ShareCandidate[]
   readOnly: boolean
   sessionToken?: string
-  onItemSelected: () => void
-  /** Map Convex item docs by id for row rendering. */
-  itemDocsById: Map<string, Doc<'items'>>
 }
 
 export function ClaimItemsPanel({
@@ -34,55 +44,78 @@ export function ClaimItemsPanel({
   search,
   onSearchChange,
   searchInputId,
-  participantId,
+  seatId,
   participants,
   participantLabels,
+  shareCandidates,
   readOnly,
   sessionToken,
-  onItemSelected,
-  itemDocsById,
 }: ClaimItemsPanelProps) {
+  const { tableProgress, tabCounts } = session
+  const progressPercent =
+    tableProgress.totalUnits > 0
+      ? Math.round(
+          (tableProgress.claimedUnits / tableProgress.totalUnits) * 100,
+        )
+      : 0
+
   return (
     <>
       {session.hasItems ? (
-        <div
-          className="grid grid-cols-2 gap-2 rounded-lg border bg-muted/40 p-1"
-          role="tablist"
-          aria-label="Филтър на артикули"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={itemTab === 'remaining'}
-            className={cn(
-              'h-11 rounded-md text-sm font-medium transition-colors',
-              itemTab === 'remaining'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground',
-            )}
-            onClick={() => onItemTabChange('remaining')}
+        <div className="flex flex-col gap-1.5" data-testid="table-progress">
+          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+            <span>
+              На масата: {tableProgress.claimedUnits} от{' '}
+              {tableProgress.totalUnits} бройки са отбелязани
+            </span>
+            {tableProgress.freeUnits === 0 ? (
+              <span className="font-medium text-success">Готово</span>
+            ) : null}
+          </div>
+          <div
+            className="h-1.5 overflow-hidden rounded-full bg-border"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={tableProgress.totalUnits}
+            aria-valuenow={tableProgress.claimedUnits}
+            aria-label="Отбелязани бройки на масата"
           >
-            Остават ({session.remainingCount})
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={itemTab === 'mine'}
-            className={cn(
-              'h-11 rounded-md text-sm font-medium transition-colors',
-              itemTab === 'mine'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground',
-            )}
-            onClick={() => onItemTabChange('mine')}
-          >
-            Мои ({session.claimedCount})
-          </button>
+            <div
+              className="h-full rounded-full bg-primary transition-[width]"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
         </div>
       ) : null}
 
-      {session.showSearch ? (
-        <div className="relative z-10">
+      {session.hasItems ? (
+        <div
+          className="grid grid-cols-3 gap-1 rounded-lg border bg-muted/40 p-1"
+          role="tablist"
+          aria-label="Филтър на артикули"
+        >
+          {TABS.map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={itemTab === tab}
+              className={cn(
+                'h-11 rounded-md text-sm font-medium transition-colors',
+                itemTab === tab
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground',
+              )}
+              onClick={() => onItemTabChange(tab)}
+            >
+              {TAB_LABELS[tab]} ({tabCounts[tab]})
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {tabCounts.all >= SEARCH_MIN_GROUPS || session.hasSearchQuery ? (
+        <div className="relative">
           <Label htmlFor={searchInputId} className="sr-only">
             Търсене по артикул
           </Label>
@@ -103,24 +136,18 @@ export function ClaimItemsPanel({
             {session.emptyMessage}
           </p>
         ) : (
-          session.visibleItems.map(({ item, assignments }) => {
-            const itemDoc = itemDocsById.get(item.id)
-            if (!itemDoc) return null
-            return (
-              <GuestItemRow
-                key={item.id}
-                item={itemDoc}
-                participantId={participantId}
-                participants={participants}
-                sessionToken={sessionToken}
-                itemAssignments={assignments as Doc<'itemAssignments'>[]}
-                participantLabels={participantLabels}
-                readOnly={readOnly}
-                hidePrices={session.hidePrices}
-                onItemSelected={onItemSelected}
-              />
-            )
-          })
+          session.visibleGroups.map((view) => (
+            <ClaimGroupRow
+              key={view.group.key}
+              view={view}
+              seatId={seatId}
+              participants={participants}
+              participantLabels={participantLabels}
+              shareCandidates={shareCandidates}
+              readOnly={readOnly}
+              sessionToken={sessionToken}
+            />
+          ))
         )}
       </div>
     </>

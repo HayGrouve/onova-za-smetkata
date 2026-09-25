@@ -2,12 +2,9 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
 import type { FunctionReturnType } from 'convex/server'
 import {
-  CameraIcon,
-  ImageIcon,
-  Loader2Icon,
   ReceiptIcon,
-  ScanLineIcon,
   ShoppingBagIcon,
+  StoreIcon,
   UsersIcon,
 } from 'lucide-react'
 import { useEffect } from 'react'
@@ -16,6 +13,7 @@ import { OcrActivityBar } from '#/components/bills/ocr-activity-bar.tsx'
 import { TipField } from '#/components/bills/tip-field.tsx'
 import { ItemList } from '#/components/bills/item-list.tsx'
 import { BillInviteCard } from '#/components/bills/bill-invite-card.tsx'
+import { BillItemsCard } from '#/components/bills/bill-items-card.tsx'
 import { ParticipantList } from '#/components/bills/participant-list.tsx'
 import { ReceiptScanReviewSheet } from '#/components/bills/receipt-scan-review-sheet.tsx'
 import { BillStepsBar } from '#/components/bills/bill-steps-bar.tsx'
@@ -53,7 +51,6 @@ import { useBillEditorController } from '#/hooks/use-bill-editor-controller.ts'
 import { BillHeaderTitleSync } from '#/components/layout/bill-header-title.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
 import { ContentRouteChoice } from '#/components/host-onboarding/content-route-choice.tsx'
-import { ReceiptTapToFullscreen } from '#/components/bills/receipt-tap-to-fullscreen.tsx'
 import { StickyGuidanceBar } from '#/components/host-onboarding/sticky-guidance-bar.tsx'
 import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
 import { HOST_ONBOARDING_STEP_BAR } from '../../../../shared/host-onboarding-messages.ts'
@@ -226,202 +223,109 @@ function BillEditorContent({
                   />
                 </GuidanceTarget>
               ) : null}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ReceiptIcon className={ICON.section} aria-hidden />
-                    Касова бележка
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3">
-                  {!receiptUploaded ? (
-                    <GuidanceTarget stepId="scan-upload" focus={guidanceFocus}>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          receiptScan.galleryInputRef.current?.click()
-                        }
-                        disabled={receiptScan.isOcrBusy}
-                        className={cn(
-                          'tap-feedback flex w-full flex-col items-center gap-3 rounded-lg border border-dashed p-4 text-left',
-                          'cursor-pointer transition-colors hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-50',
-                        )}
-                      >
-                        <p className="self-start text-sm text-muted-foreground">
-                          Качете снимка на бележката, за да разпознаете
-                          артикулите автоматично.
-                        </p>
-                      </button>
-                    </GuidanceTarget>
-                  ) : receiptUrl ? (
-                    <div
-                      className={cn(
-                        'overflow-hidden rounded-lg border border-dashed',
-                        receiptScan.isScanning && 'receipt-scan-image-active',
-                      )}
-                    >
-                      <ReceiptTapToFullscreen
-                        receiptUrl={receiptUrl}
-                        thumbnailClassName="block w-full border-0"
-                      />
-                    </div>
-                  ) : (
-                    <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                      Зареждане на снимката...
-                    </p>
-                  )}
-                  <input
-                    ref={receiptScan.galleryInputRef}
-                    type="file"
-                    accept="image/*,.heic,.heif"
-                    className="hidden"
-                    onChange={receiptScan.handleReceiptChange}
-                  />
-                  <input
-                    ref={receiptScan.cameraInputRef}
-                    type="file"
-                    accept="image/*,.heic,.heif"
-                    capture="environment"
-                    className="hidden"
-                    onChange={receiptScan.handleReceiptChange}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        receiptScan.galleryInputRef.current?.click()
-                      }
-                      disabled={receiptScan.isOcrBusy}
-                      className="tap-feedback flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed text-sm text-muted-foreground disabled:opacity-50"
-                    >
-                      <ImageIcon className="size-4" aria-hidden />
-                      {receiptScan.isUploading ? 'Качване...' : 'От галерията'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        receiptScan.cameraInputRef.current?.click()
-                      }
-                      disabled={receiptScan.isOcrBusy}
-                      className="tap-feedback flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed text-sm text-muted-foreground disabled:opacity-50"
-                    >
-                      <CameraIcon className="size-4" aria-hidden />
-                      {receiptScan.isUploading ? 'Качване...' : 'Снимай'}
-                    </button>
-                  </div>
-                  {receiptUploaded ? (
-                    <GuidanceTarget stepId="scan-run-ocr" focus={guidanceFocus}>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-11 w-full"
-                        disabled={receiptScan.isOcrBusy}
-                        aria-busy={receiptScan.isOcrBusy}
-                        onClick={receiptScan.handleScanButtonClick}
-                      >
-                        {receiptScan.isScanning ? (
-                          <Loader2Icon
-                            className={cn(
-                              ICON.button,
-                              'animate-spin motion-reduce:animate-none',
-                            )}
-                            aria-hidden
-                          />
-                        ) : (
-                          <ScanLineIcon className={ICON.button} aria-hidden />
-                        )}
-                        {receiptScan.isScanning
-                          ? 'Разпознаване…'
-                          : 'Разпознай артикули'}
-                      </Button>
-                    </GuidanceTarget>
-                  ) : null}
-                </CardContent>
-              </Card>
 
               <GuidanceTarget stepId="restaurant" focus={guidanceFocus}>
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <ReceiptIcon className={ICON.section} aria-hidden />
-                      Данни за сметката
+                      <StoreIcon className={ICON.section} aria-hidden />
+                      Ресторант
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="flex flex-col gap-3">
-                    <TipField
-                      key={bill._id}
-                      itemsSubtotalCents={derived.itemsSubtotalCents}
-                      value={metadata.tip}
-                      onValueChange={(value) => {
-                        setMetadata((prev) => ({ ...prev, tip: value }))
-                        if (fieldErrors.tip) clearFieldError('tip')
-                        const validated = validateBillMetadataField(
-                          'tip',
-                          value,
-                        )
-                        if (!validated.ok) {
-                          setFieldErrors((prev) => ({
-                            ...prev,
-                            tip: validated.message,
-                          }))
-                          return
-                        }
-                        clearFieldError('tip')
+                  <CardContent className="flex flex-col gap-1.5">
+                    <Label htmlFor="restaurantName" className="sr-only">
+                      Ресторант
+                    </Label>
+                    <Input
+                      id="restaurantName"
+                      value={metadata.restaurantName}
+                      onChange={(event) => {
+                        const value = event.target.value
+                        setMetadata((prev) => ({
+                          ...prev,
+                          restaurantName: value,
+                        }))
+                        if (fieldErrors.restaurantName)
+                          clearFieldError('restaurantName')
+                        scheduleValidatedSave('restaurantName', value)
                       }}
-                      onValidCents={handleTipValidCents}
-                      error={fieldErrors.tip}
-                      onClearError={() => clearFieldError('tip')}
+                      placeholder="Напр. Механа Крайречна"
+                      className="h-11"
+                      aria-invalid={Boolean(fieldErrors.restaurantName)}
                     />
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="restaurantName">Ресторант</Label>
-                      <Input
-                        id="restaurantName"
-                        value={metadata.restaurantName}
-                        onChange={(event) => {
-                          const value = event.target.value
-                          setMetadata((prev) => ({
-                            ...prev,
-                            restaurantName: value,
-                          }))
-                          if (fieldErrors.restaurantName)
-                            clearFieldError('restaurantName')
-                          scheduleValidatedSave('restaurantName', value)
-                        }}
-                        placeholder="Напр. Механа Крайречна"
-                        className="h-11"
-                        aria-invalid={Boolean(fieldErrors.restaurantName)}
-                      />
-                      {fieldErrors.restaurantName ? (
-                        <p className="text-xs text-destructive">
-                          {fieldErrors.restaurantName}
-                        </p>
-                      ) : null}
-                      <p className="text-xs text-muted-foreground">
-                        Попълва се автоматично при разпознаване на бележката,
-                        ако името е видимо на снимката.
+                    {fieldErrors.restaurantName ? (
+                      <p className="text-xs text-destructive">
+                        {fieldErrors.restaurantName}
                       </p>
-                    </div>
-                    <BillAdvancedSettings
-                      note={metadata.note}
-                      date={metadata.date}
-                      noteError={fieldErrors.note}
-                      dateError={fieldErrors.date}
-                      onNoteChange={(value) => {
-                        setMetadata((prev) => ({ ...prev, note: value }))
-                        if (fieldErrors.note) clearFieldError('note')
-                        scheduleValidatedSave('note', value)
-                      }}
-                      onDateChange={(value) => {
-                        setMetadata((prev) => ({ ...prev, date: value }))
-                        if (fieldErrors.date) clearFieldError('date')
-                        scheduleValidatedSave('date', value, {
-                          dateMs: fromBillEditorDateInputValue(value),
-                        })
-                      }}
-                    />
+                    ) : null}
+                    <p className="text-xs text-muted-foreground">
+                      Гостите го виждат, когато отворят линка. Попълва се
+                      автоматично от снимката на бележката.
+                    </p>
                   </CardContent>
                 </Card>
               </GuidanceTarget>
+
+              <BillItemsCard
+                billId={billId}
+                items={items}
+                readOnly={bill.status === 'final'}
+                receiptScan={receiptScan}
+                receiptUploaded={receiptUploaded}
+                receiptUrl={receiptUrl}
+                itemsSubtotalCents={derived.itemsSubtotalCents}
+                guidanceFocus={guidanceFocus}
+              />
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ReceiptIcon className={ICON.section} aria-hidden />
+                    Бакшиш и детайли
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3">
+                  <TipField
+                    key={bill._id}
+                    itemsSubtotalCents={derived.itemsSubtotalCents}
+                    value={metadata.tip}
+                    onValueChange={(value) => {
+                      setMetadata((prev) => ({ ...prev, tip: value }))
+                      if (fieldErrors.tip) clearFieldError('tip')
+                      const validated = validateBillMetadataField('tip', value)
+                      if (!validated.ok) {
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          tip: validated.message,
+                        }))
+                        return
+                      }
+                      clearFieldError('tip')
+                    }}
+                    onValidCents={handleTipValidCents}
+                    error={fieldErrors.tip}
+                    onClearError={() => clearFieldError('tip')}
+                  />
+                  <BillAdvancedSettings
+                    note={metadata.note}
+                    date={metadata.date}
+                    noteError={fieldErrors.note}
+                    dateError={fieldErrors.date}
+                    onNoteChange={(value) => {
+                      setMetadata((prev) => ({ ...prev, note: value }))
+                      if (fieldErrors.note) clearFieldError('note')
+                      scheduleValidatedSave('note', value)
+                    }}
+                    onDateChange={(value) => {
+                      setMetadata((prev) => ({ ...prev, date: value }))
+                      if (fieldErrors.date) clearFieldError('date')
+                      scheduleValidatedSave('date', value, {
+                        dateMs: fromBillEditorDateInputValue(value),
+                      })
+                    }}
+                  />
+                </CardContent>
+              </Card>
             </>
           )}
 
@@ -473,61 +377,61 @@ function BillEditorContent({
                   </CardContent>
                 </Card>
               )}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between gap-3">
-                    <CardTitle className="flex items-center gap-2">
-                      <ShoppingBagIcon className={ICON.section} aria-hidden />
-                      Артикули
-                    </CardTitle>
-                    {bill.hostParticipantId ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-9 shrink-0"
-                        onClick={() =>
-                          void navigate({
-                            to: '/bills/$billId/claim',
-                            params: { billId },
-                            search: { mode: 'host' },
-                          })
-                        }
-                      >
-                        Моите артикули
-                      </Button>
-                    ) : null}
-                  </div>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3">
-                  <BillInviteCard
-                    billId={billId}
-                    shareToken={bill.shareToken}
-                    disabled={participants.length === 0}
-                    readOnly={bill.status === 'final'}
-                    onShareLink={
-                      onboardingActive
-                        ? (joinUrl) => interceptGuestShare(billId, joinUrl)
-                        : undefined
-                    }
-                    shareGuidance={onboardingActive ? guidanceFocus : undefined}
-                    allocationGuidance={
-                      onboardingActive ? guidanceFocus : undefined
-                    }
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Добавете данък като отделен артикул. Бакшишът се въвежда на
-                    стъпка 1.
-                  </p>
-                  <ItemList
-                    billId={billId}
-                    items={items}
-                    participants={participants}
-                    assignments={assignments}
-                    labels={labels}
-                    readOnly={bill.status === 'final'}
-                  />
-                </CardContent>
-              </Card>
+              <BillInviteCard
+                billId={billId}
+                shareToken={bill.shareToken}
+                disabled={participants.length === 0}
+                readOnly={bill.status === 'final'}
+                onShareLink={
+                  onboardingActive
+                    ? (joinUrl) => interceptGuestShare(billId, joinUrl)
+                    : undefined
+                }
+                shareGuidance={onboardingActive ? guidanceFocus : undefined}
+              />
+              <GuidanceTarget stepId="allocation" focus={guidanceFocus}>
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between gap-3">
+                      <CardTitle className="flex items-center gap-2">
+                        <ShoppingBagIcon className={ICON.section} aria-hidden />
+                        Кой какво консумира
+                      </CardTitle>
+                      {bill.hostParticipantId ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-9 shrink-0"
+                          onClick={() =>
+                            void navigate({
+                              to: '/bills/$billId/claim',
+                              params: { billId },
+                              search: { mode: 'host' },
+                            })
+                          }
+                        >
+                          Моите артикули
+                        </Button>
+                      ) : null}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-3">
+                    <p className="text-xs text-muted-foreground">
+                      Гостите могат сами да си отбележат артикулите от линка
+                      по-горе. Тук разпределяте вместо тях.
+                    </p>
+                    <ItemList
+                      billId={billId}
+                      items={items}
+                      participants={participants}
+                      assignments={assignments}
+                      labels={labels}
+                      readOnly={bill.status === 'final'}
+                      onAddItems={() => goToStep(1)}
+                    />
+                  </CardContent>
+                </Card>
+              </GuidanceTarget>
             </>
           )}
 

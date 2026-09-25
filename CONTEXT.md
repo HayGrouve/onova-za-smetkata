@@ -8,7 +8,9 @@ Bulgarian mobile web PWA: a **Host** creates a bill from a restaurant receipt, a
 
 **Host journey** — sign in → create/open bill → add participants and items (manual or receipt OCR) → assign units → share join link → track guest payments → finalize bill (locks editing).
 
-**Guest journey** — open share link → pick participant seat on join page → claim units on claim page → pay share (e.g. Revolut) → host sees payment status.
+**Guest journey** — open share link → pick own participant seat on join page (optionally also Covered seats) → take Units on the claim page (share explicitly) → review and pay on the Pay step (e.g. Revolut) → host confirms the payment.
+
+**Host editor steps** — 1 **Сметка** (restaurant, items from receipt scan or by hand, tip) → 2 **Участници** → 3 **Разпределение** (invite link, who had what) → 4 **Плащания** (confirm payments, finalize).
 
 The host also has a participant seat on the bill but is never **Outstanding**.
 
@@ -51,8 +53,28 @@ One countable piece of a line item (`quantity` stacks units). Each unit can be c
 _Avoid_: treating quantity > 1 as a single indivisible claim pool
 
 **Unit membership**:
-Which Participants are assigned to which Unit on an item line. Stored as rows linking `(itemId, unitIndex, participantId)`. Mutations are `joinUnit` / `leaveUnit`; bulk “everyone on every Unit” is `assignEven`.
+Which Participants are assigned to which Unit on an item line. Stored as rows linking `(itemId, unitIndex, participantId)`. Claim-page mutations are `takeUnit` / `releaseUnit` (whole Units) and `shareUnit` (explicit split); `joinUnit` / `leaveUnit` edit one specific Unit; bulk “everyone on every Unit” is `assignEven`.
 _Avoid_: separate host vs guest assignment models; `toggle` (removed)
+
+**Take a Unit**:
+Put a seat alone on the first free Unit of a Claim group (`takeUnit`; the server picks the Unit, so two phones pressing „+“ at once never land on the same Unit). The default claim action — „Мое“ / „+“. Releasing (`releaseUnit`, „−“) only removes a Unit the seat holds alone.
+_Avoid_: tapping an item to join whoever already has it; client-picked unit indexes for the default action
+
+**Shared Unit**:
+A Unit with two or more members. Created only on purpose: „Сподели“ (`shareUnit`, pick who you shared with — counts for them right away) or „Споделихме я“ (`joinUnit` on a Unit someone else has, after a confirm showing the new price). Anyone on a Shared Unit may change who else is on it; a member can always remove themselves.
+_Avoid_: implicit splits from repeated taps
+
+**Claim group**:
+Item lines with the same normalized name and unit price, shown as one row on the claim page with Units spanning every line (e.g. „Бира“ printed ten times on the receipt). View-only — stored items stay as entered. Module: `shared/claim-groups.ts`.
+_Avoid_: merging or rewriting stored items; fuzzy name matching
+
+**Covered seat**:
+A Participant seat a Guest's phone handles in addition to its own — they take Units for it and pay for it (e.g. „плащам и за половинката си“). Chosen on the join page („Плащате ли и за някого?“) or later from the claim page; locked to that phone like the Guest's own seat (others see „Заето · с Иван“). Stored on `guestSessions.coveredParticipantIds`; rules in `shared/guest-seat-selection.ts`.
+_Avoid_: member, companion; confusing with paying for someone who claims from their own phone (that stays a combined payment chosen on the Pay step)
+
+**Pay step**:
+The guest's review-and-pay screen (`/bills/$billId/pay`): a Share breakdown per seat, „За кого плащате“ (own seat and Covered seats always; other Guests optional), then Revolut / IBAN. Warns when Units are still unclaimed on the bill.
+_Avoid_: the old pull-up claim drawer
 
 **Unit index**:
 Zero-based position of a unit on an item line (`0 … quantity−1`). Item membership rows reference `(itemId, participantId, unitIndex)`.
@@ -95,11 +117,11 @@ Orchestration for the host bill editor — step clamp/redirect, metadata draft s
 _Avoid_: wiring OCR, guidance, and step completion ad hoc in the route file
 
 **Guest claim session**:
-Orchestration for the guest/host claim page — tab filter (`Остават` / `Мои`), search, per-item claim state, share drawer inputs. Pure module: `shared/guest-claim-session.ts` (item filters in `shared/guest-claim-items.ts`); React seam: `useGuestClaimSession`.
-_Avoid_: wiring tab semantics, item filters, and share breakdown separately in the claim route
+Orchestration for the guest/host claim page — Claim groups, tab filter (`Всички` / `Свободни` / `Мои`), search, table progress, per-seat Shares. Pure module: `shared/guest-claim-session.ts` (Claim groups in `shared/claim-groups.ts`); React seam: `useGuestClaimSession`.
+_Avoid_: wiring tab semantics, item filters, and share breakdown separately in the claim route; „Остават“ meaning “items I have not claimed”
 
 **Guest flow session**:
-Orchestration for the Guest journey — join resume, seat pick, claim redirects, session-lost recovery, doc mapping to Guest claim session input. Pure module: `shared/guest-flow-session.ts`; React seams: `useGuestJoinFlow`, `useGuestClaimFlow` (the latter composes `useGuestClaimSession`).
+Orchestration for the Guest journey — join resume, seat pick (own + Covered seats), claim/pay redirects, session-lost recovery, doc mapping to Guest claim session input. Pure module: `shared/guest-flow-session.ts`; React seams: `useGuestJoinFlow`, `useGuestBillSession` (shared by the claim and pay pages).
 _Avoid_: duplicating redirect/resume logic in routes; conflating with Guest claim session
 
 **Host Pro**:

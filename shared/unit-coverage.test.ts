@@ -2,12 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   countCoveredUnits,
   countItemsWithEmptyUnits,
-  countUnitsJoinedByParticipant,
   formatUnitTitle,
   isParticipantOnUnit,
   itemHasEmptyUnit,
   itemHasFullUnitCoverage,
-  otherParticipantLabelsOnUnit,
   participantIdsOnUnit,
 } from './unit-coverage'
 
@@ -39,7 +37,7 @@ describe('unit coverage', () => {
     expect(countCoveredUnits(item, [])).toBe(0)
   })
 
-  it('lists participants on a unit and counts multi-unit membership', () => {
+  it('lists participants on a unit', () => {
     const assignments = [
       { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
       { itemId: 'i1', participantId: 'p2', unitIndex: 0 },
@@ -49,21 +47,15 @@ describe('unit coverage', () => {
       'p1',
       'p2',
     ])
-    expect(countUnitsJoinedByParticipant('i1', 'p1', assignments)).toBe(2)
   })
 
-  it('detects membership and labels other participants on a unit', () => {
+  it('detects membership on a unit', () => {
     const assignments = [
       { itemId: 'i1', participantId: 'p1', unitIndex: 1 },
       { itemId: 'i1', participantId: 'p2', unitIndex: 0 },
     ]
     expect(isParticipantOnUnit('i1', 1, 'p1', assignments)).toBe(true)
     expect(isParticipantOnUnit('i1', 0, 'p1', assignments)).toBe(false)
-    expect(
-      otherParticipantLabelsOnUnit('i1', 0, 'p1', assignments, {
-        p2: 'Мария',
-      }),
-    ).toEqual(['Мария'])
   })
 
   it('formats 1-based unit titles', () => {

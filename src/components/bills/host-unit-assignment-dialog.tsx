@@ -93,9 +93,7 @@ export function HostUnitAssignmentDialog({
                 <UnitLineSummary
                   unitTitle={formatUnitTitle(item.name, unitIndex)}
                   unitPriceCents={item.unitPriceCents}
-                  isEmpty={assigneeIds.length === 0}
-                  otherClaimantLabels={assigneeLabels}
-                  showSharePreview={false}
+                  assigneeLabels={assigneeLabels}
                 />
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {participants.map((participant) => {

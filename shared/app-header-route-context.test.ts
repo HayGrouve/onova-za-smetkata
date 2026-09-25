@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { resolveAppHeaderRouteContext } from './app-header-route-context'
+import {
+  isGuestRouteContext,
+  resolveAppHeaderRouteContext,
+} from './app-header-route-context'
 
 describe('resolveAppHeaderRouteContext', () => {
   it('treats /user-profile as Host account, not home', () => {
@@ -25,6 +28,9 @@ describe('resolveAppHeaderRouteContext', () => {
       resolveAppHeaderRouteContext('/bills/bill_1/claim', '', 'bill_1'),
     ).toBe('guestClaim')
     expect(
+      resolveAppHeaderRouteContext('/bills/bill_1/pay', '?t=abc', 'bill_1'),
+    ).toBe('guestPay')
+    expect(
       resolveAppHeaderRouteContext(
         '/bills/bill_1/claim',
         '?mode=host',
@@ -37,5 +43,15 @@ describe('resolveAppHeaderRouteContext', () => {
     expect(resolveAppHeaderRouteContext('/bills/bill_1', '', 'bill_1')).toBe(
       'editor',
     )
+  })
+})
+
+describe('isGuestRouteContext', () => {
+  it('covers the guest join, claim, and pay pages only', () => {
+    expect(isGuestRouteContext('guestJoin')).toBe(true)
+    expect(isGuestRouteContext('guestClaim')).toBe(true)
+    expect(isGuestRouteContext('guestPay')).toBe(true)
+    expect(isGuestRouteContext('hostClaim')).toBe(false)
+    expect(isGuestRouteContext('editor')).toBe(false)
   })
 })

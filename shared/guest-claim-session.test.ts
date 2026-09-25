@@ -8,159 +8,151 @@ import {
 const participantA = 'p-a'
 const participantB = 'p-b'
 
+const participants = [
+  { id: participantA, sortOrder: 0 },
+  { id: participantB, sortOrder: 1 },
+]
+
 const items = [
-  { id: 'open', name: 'Бира', quantity: 1, sortOrder: 0 },
-  { id: 'multi', name: 'Пици', quantity: 3, sortOrder: 1 },
-  { id: 'claimed', name: 'Салата', quantity: 1, sortOrder: 2 },
+  {
+    id: 'beer-1',
+    name: 'Бира',
+    quantity: 1,
+    sortOrder: 0,
+    unitPriceCents: 300,
+  },
+  { id: 'pizza', name: 'Пица', quantity: 3, sortOrder: 1, unitPriceCents: 900 },
+  {
+    id: 'salad',
+    name: 'Салата',
+    quantity: 1,
+    sortOrder: 2,
+    unitPriceCents: 500,
+  },
+  {
+    id: 'beer-2',
+    name: 'бира',
+    quantity: 1,
+    sortOrder: 3,
+    unitPriceCents: 300,
+  },
 ]
 
 const assignments = [
-  { itemId: 'claimed', participantId: participantA, unitIndex: 0 },
-  { itemId: 'multi', participantId: participantA, unitIndex: 0 },
-  { itemId: 'multi', participantId: participantB, unitIndex: 1 },
+  { itemId: 'salad', participantId: participantA, unitIndex: 0 },
+  { itemId: 'pizza', participantId: participantA, unitIndex: 0 },
+  { itemId: 'pizza', participantId: participantB, unitIndex: 1 },
+  { itemId: 'beer-1', participantId: participantB, unitIndex: 0 },
 ]
 
+function build(
+  overrides: Partial<Parameters<typeof buildGuestClaimSessionState>[0]> = {},
+) {
+  return buildGuestClaimSessionState({
+    items,
+    assignments,
+    participants,
+    seatId: participantA,
+    activeTab: 'all',
+    search: '',
+    ...overrides,
+  })
+}
+
 describe('buildGuestClaimSessionState', () => {
-  it('filters remaining tab items and counts tabs', () => {
-    const session = buildGuestClaimSessionState({
-      items,
-      assignments,
-      participantId: participantA,
-      activeTab: 'remaining',
-      search: '',
-    })
-
-    expect(session.remainingCount).toBe(2)
-    expect(session.claimedCount).toBe(2)
-    expect(session.visibleItems.map((entry) => entry.item.id)).toEqual([
-      'open',
-      'multi',
+  it('shows identical lines as one Claim group', () => {
+    const session = build()
+    expect(session.visibleGroups.map((entry) => entry.group.itemIds)).toEqual([
+      ['beer-1', 'beer-2'],
+      ['pizza'],
+      ['salad'],
     ])
-    expect(session.hidePrices).toBe(false)
-    expect(session.showSearch).toBe(true)
   })
 
-  it('filters mine tab items and hides prices', () => {
-    const session = buildGuestClaimSessionState({
-      items,
-      assignments,
-      participantId: participantA,
-      activeTab: 'mine',
-      search: '',
-    })
-
-    expect(session.visibleItems.map((entry) => entry.item.id)).toEqual([
-      'multi',
-      'claimed',
-    ])
-    expect(session.hidePrices).toBe(true)
-    expect(session.showSearch).toBe(true)
+  it('counts tabs over Claim groups', () => {
+    expect(build().tabCounts).toEqual({ all: 3, free: 2, mine: 2 })
   })
 
-  it('applies search on top of tab filter', () => {
-    const session = buildGuestClaimSessionState({
-      items,
-      assignments,
-      participantId: participantA,
-      activeTab: 'remaining',
-      search: 'пиц',
-    })
+  it('filters the free tab to groups with a Unit nobody has', () => {
+    const session = build({ activeTab: 'free' })
+    expect(session.visibleGroups.map((entry) => entry.group.name)).toEqual([
+      'Бира',
+      'Пица',
+    ])
+  })
 
-    expect(session.visibleItems.map((entry) => entry.item.id)).toEqual([
-      'multi',
+  it('filters the mine tab to groups where the seat holds a Unit', () => {
+    const session = build({ activeTab: 'mine' })
+    expect(session.visibleGroups.map((entry) => entry.group.name)).toEqual([
+      'Пица',
+      'Салата',
+    ])
+  })
+
+  it('applies search on top of the tab filter', () => {
+    const session = build({ activeTab: 'free', search: 'пиц' })
+    expect(session.visibleGroups.map((entry) => entry.group.name)).toEqual([
+      'Пица',
     ])
     expect(session.hasSearchQuery).toBe(true)
   })
 
-  it('includes claim state per visible item', () => {
-    const session = buildGuestClaimSessionState({
-      items,
-      assignments,
-      participantId: participantA,
-      activeTab: 'mine',
-      search: '',
+  it('reports table progress in Units', () => {
+    expect(build().tableProgress).toEqual({
+      claimedUnits: 4,
+      totalUnits: 6,
+      freeUnits: 2,
     })
-
-    const multi = session.visibleItems.find(
-      (entry) => entry.item.id === 'multi',
-    )
-    expect(multi?.claimState.myUnits).toBe(1)
-    expect(multi?.claimState.isSelectedByMe).toBe(true)
   })
 
-  it('indexes assignments by item id', () => {
-    const session = buildGuestClaimSessionState({
-      items,
-      assignments,
-      participantId: participantA,
-      activeTab: 'remaining',
-      search: '',
-    })
-
-    expect(session.assignmentsByItemId.multi).toHaveLength(2)
-    expect(session.assignmentsByItemId.open).toBeUndefined()
-  })
-
-  it('builds share drawer input when bill relations are provided', () => {
-    const session = buildGuestClaimSessionState({
-      items: [
-        {
-          id: 'i1',
-          name: 'Салата',
-          quantity: 1,
-          sortOrder: 0,
-        },
-      ],
-      assignments: [
-        { itemId: 'i1', participantId: participantA, unitIndex: 0 },
-      ],
-      participantId: participantA,
-      activeTab: 'mine',
-      search: '',
+  it('builds a share for each of the phone’s seats', () => {
+    const session = build({
+      mySeatIds: [participantA, participantB],
       billRelations: {
         participants: [
           { _id: participantA, sortOrder: 0 },
           { _id: participantB, sortOrder: 1 },
         ],
-        items: [
-          {
-            _id: 'i1',
-            name: 'Салата',
-            unitPriceCents: 1200,
-            quantity: 1,
-          },
-        ],
-        assignments: [
-          { itemId: 'i1', participantId: participantA, unitIndex: 0 },
-        ],
+        items: items.map((item) => ({ ...item, _id: item.id })),
+        assignments,
         payments: [],
       },
-      billContext: { tipCents: 0, hostParticipantId: participantB },
-      participantLabels: { [participantA]: 'Иван' },
     })
-
-    expect(session.shareDrawer?.participantTotals.owedCents).toBe(1200)
-    expect(session.shareDrawer?.shareView.statusLabel).toBe('неплатено')
-    expect(session.shareDrawer?.shareView.lines).toHaveLength(1)
+    expect(session.seatShares.map((share) => share.seatId)).toEqual([
+      participantA,
+      participantB,
+    ])
+    expect(session.seatShares[0].totals.owedCents).toBe(1400)
+    expect(session.seatShares[1].totals.owedCents).toBe(1200)
   })
 })
 
 describe('resolveGuestClaimEmptyMessage', () => {
-  it('returns tab-specific empty copy', () => {
+  it('prefers the no-items message', () => {
+    expect(resolveGuestClaimEmptyMessage(false, 0, false, 'all')).toBe(
+      GUEST_CLAIM_EMPTY_MESSAGES.noItems,
+    )
+  })
+
+  it('returns null when groups are visible', () => {
+    expect(resolveGuestClaimEmptyMessage(true, 2, false, 'mine')).toBeNull()
+  })
+
+  it('explains empty search results', () => {
+    expect(resolveGuestClaimEmptyMessage(true, 0, true, 'all')).toBe(
+      GUEST_CLAIM_EMPTY_MESSAGES.noSearchResults,
+    )
+  })
+
+  it('explains an empty mine tab', () => {
     expect(resolveGuestClaimEmptyMessage(true, 0, false, 'mine')).toBe(
       GUEST_CLAIM_EMPTY_MESSAGES.noClaimed,
     )
-    expect(resolveGuestClaimEmptyMessage(true, 0, false, 'remaining')).toBe(
+  })
+
+  it('explains an empty free tab', () => {
+    expect(resolveGuestClaimEmptyMessage(true, 0, false, 'free')).toBe(
       GUEST_CLAIM_EMPTY_MESSAGES.allClaimed,
-    )
-    expect(resolveGuestClaimEmptyMessage(true, 0, true, 'remaining')).toBe(
-      GUEST_CLAIM_EMPTY_MESSAGES.noSearchResults,
-    )
-    expect(resolveGuestClaimEmptyMessage(false, 0, false, 'remaining')).toBe(
-      GUEST_CLAIM_EMPTY_MESSAGES.noItems,
-    )
-    expect(resolveGuestClaimEmptyMessage(true, 2, false, 'remaining')).toBe(
-      null,
     )
   })
 })

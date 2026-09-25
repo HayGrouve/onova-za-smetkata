@@ -1,6 +1,7 @@
 import { paginationOptsValidator } from 'convex/server'
 import { filter } from 'convex-helpers/server/filter'
 import { mutation, query } from './_generated/server'
+import type { Id } from './_generated/dataModel'
 import { ConvexError, v } from 'convex/values'
 import { assertBillDraft } from './lib/assertBillDraft'
 import { requireAuth, requireBillOwner } from './lib/auth'
@@ -22,6 +23,7 @@ import { assertShareToken, toGuestVisibleBill } from './lib/guestAccess'
 import { firstZodIssueMessage } from '../shared/validation/errors'
 import { parseBillMetadataPatch } from '../shared/bill-metadata-schema'
 import { createShareToken } from './lib/shareToken'
+import { sessionSeatIds } from '../shared/guest-seat-selection'
 import { calculateBillTotals } from '../shared/bill-calculations'
 import { toBillCalculationSnapshot } from '../shared/bill-calculation-snapshot'
 import { planHostParticipantOnBillCreate } from '../shared/host-bill-participant'
@@ -111,6 +113,7 @@ export const getForGuest = query({
       await loadBillRelations(ctx, args.billId)
 
     let myPayments: typeof payments = []
+    let mySeatIds: Id<'participants'>[] = []
     if (args.sessionToken) {
       const session = await ctx.db
         .query('guestSessions')
@@ -123,8 +126,10 @@ export const getForGuest = query({
         session.billId === args.billId &&
         isGuestSessionActive(session.lastSeenAt)
       ) {
-        myPayments = payments.filter(
-          (payment) => payment.participantId === session.participantId,
+        mySeatIds = sessionSeatIds(session) as Id<'participants'>[]
+        const seats = new Set<string>(mySeatIds)
+        myPayments = payments.filter((payment) =>
+          seats.has(payment.participantId),
         )
       }
     }
@@ -150,6 +155,7 @@ export const getForGuest = query({
       items,
       assignments,
       myPayments,
+      mySeatIds,
       participantBalances,
     }
   },

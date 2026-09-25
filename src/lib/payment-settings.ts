@@ -1,3 +1,5 @@
+import { joinLabels } from '#/lib/participant-labels.ts'
+
 export interface PaymentSettings {
   revolutUsername?: string
   iban?: string
@@ -36,11 +38,8 @@ export function clearLegacyPaymentSettings(): void {
   localStorage.removeItem(LEGACY_STORAGE_KEY)
 }
 
-function joinBulgarianNames(names: string[]): string {
-  if (names.length <= 1) return names[0] ?? ''
-  if (names.length === 2) return `${names[0]} и ${names[1]}`
-  return `${names.slice(0, -1).join(', ')} и ${names[names.length - 1]}`
-}
+/** Revolut caps the payment note at 64 characters. */
+const REVOLUT_NOTE_MAX = 64
 
 /** Revolut transfer note: restaurant + "сметка за" + participant name(s). */
 export function buildRevolutPaymentNote(
@@ -49,12 +48,14 @@ export function buildRevolutPaymentNote(
 ): string | undefined {
   const names = participantNames.map((name) => name.trim()).filter(Boolean)
   if (names.length === 0) return undefined
-  const joinedNames = joinBulgarianNames(names)
+  const joinedNames = joinLabels(names)
   const restaurant = restaurantName.trim()
-  if (restaurant) {
-    return `${restaurant} сметка за ${joinedNames}`
-  }
-  return `сметка за ${joinedNames}`
+  const note = restaurant
+    ? `${restaurant} сметка за ${joinedNames}`
+    : `сметка за ${joinedNames}`
+  return note.length <= REVOLUT_NOTE_MAX
+    ? note
+    : `${note.slice(0, REVOLUT_NOTE_MAX - 1).trimEnd()}…`
 }
 
 export function buildRevolutUrl(

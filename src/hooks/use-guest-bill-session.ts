@@ -3,16 +3,15 @@ import { useMutation, useQuery } from 'convex/react'
 import { useCallback, useEffect, useMemo } from 'react'
 import { toast } from 'sonner'
 import {
-  mapGuestBillToClaimSessionInput,
   planIdentitySwitchRecovery,
   planSessionLostRecovery,
   resolveClaimPageGate,
   resolveEffectiveShareToken,
+  resolveMySeatIds,
 } from '../../shared/guest-flow-session'
 import type { FlowRecoveryPlan } from '../../shared/guest-flow-session'
 import { api } from '../../convex/_generated/api'
-import type { Doc, Id } from '../../convex/_generated/dataModel'
-import { useGuestClaimSession } from '#/hooks/use-guest-claim-session.ts'
+import type { Id } from '../../convex/_generated/dataModel'
 import { useGuestSessionHeartbeat } from '#/hooks/use-guest-session-heartbeat.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
 import {
@@ -20,7 +19,11 @@ import {
   getStoredGuestSession,
 } from '#/lib/guest-participant-session.ts'
 
-export function useGuestClaimFlow(
+/**
+ * Guest flow session for the claim and pay pages: loads the bill for the stored
+ * guest session, keeps it alive, and sends the guest back to join when it is lost.
+ */
+export function useGuestBillSession(
   billId: Id<'bills'>,
   shareTokenFromUrl: string,
 ) {
@@ -122,36 +125,21 @@ export function useGuestClaimFlow(
     }
   }, [billId, gate, redirectToJoin, shareToken])
 
-  const claimInput = useMemo(
-    () => (data ? mapGuestBillToClaimSessionInput(data) : null),
-    [data],
-  )
-
   const labels = useMemo(
     () => (data ? buildParticipantLabels(data.participants) : {}),
     [data],
   )
 
-  const claimSession = useGuestClaimSession({
-    items: claimInput?.items ?? [],
-    assignments: claimInput?.assignments ?? [],
-    participantId:
-      gate.status === 'ready'
-        ? gate.participantId
-        : (storedSession?.participantId ?? null),
-    billRelations: claimInput?.billRelations,
-    billContext: claimInput?.billContext,
-    participantLabels: labels,
-  })
+  const participantId =
+    gate.status === 'ready' ? (gate.participantId as Id<'participants'>) : null
 
-  const itemDocsById = useMemo(() => {
-    const map = new Map<string, Doc<'items'>>()
-    if (!data) return map
-    for (const item of data.items) {
-      map.set(item._id, item)
-    }
-    return map
-  }, [data?.items])
+  const mySeatIds = useMemo(
+    () =>
+      data && participantId
+        ? (resolveMySeatIds(data, participantId) as Id<'participants'>[])
+        : [],
+    [data, participantId],
+  )
 
   function handleSwitchIdentity() {
     if (gate.status !== 'ready') return
@@ -161,28 +149,16 @@ export function useGuestClaimFlow(
     )
   }
 
-  const readyParticipant =
-    gate.status === 'ready' && data
-      ? data.participants.find((entry) => entry._id === gate.participantId)
-      : undefined
-
   return {
     gate,
     data,
     pendingCover,
     shareToken,
     storedSession: gate.status === 'ready' ? gate.storedSession : storedSession,
-    participantId:
-      gate.status === 'ready'
-        ? (gate.participantId as Id<'participants'>)
-        : null,
-    participantLabel: readyParticipant
-      ? (labels[readyParticipant._id] ?? readyParticipant.name)
-      : null,
+    participantId,
+    mySeatIds,
     readOnly: data?.bill.status === 'final',
     labels,
-    itemDocsById,
     handleSwitchIdentity,
-    ...claimSession,
   }
 }

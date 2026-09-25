@@ -576,6 +576,8 @@ export const confirm = mutation({
         ]
 
     for (const entry of entries) {
+      // A payer who already paid their own share may still cover others.
+      if (entry.amountCents <= 0) continue
       const owedCents = totals.byParticipant[entry.participantId].owedCents
       const paidCents = payments
         .filter((payment) => payment.participantId === entry.participantId)

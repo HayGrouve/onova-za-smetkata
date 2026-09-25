@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildParticipantLabels } from './participant-labels'
+import { buildParticipantLabels, joinLabels } from './participant-labels'
 
 describe('buildParticipantLabels', () => {
   it('uses plain names when there are no duplicates', () => {
@@ -38,5 +38,14 @@ describe('buildParticipantLabels', () => {
 
   it('returns an empty object for no participants', () => {
     expect(buildParticipantLabels([])).toEqual({})
+  })
+})
+
+describe('joinLabels', () => {
+  it('joins names the Bulgarian way', () => {
+    expect(joinLabels([])).toBe('')
+    expect(joinLabels(['Ани'])).toBe('Ани')
+    expect(joinLabels(['Ани', 'Петър'])).toBe('Ани и Петър')
+    expect(joinLabels(['Ани', 'Петър', 'Мария'])).toBe('Ани, Петър и Мария')
   })
 })

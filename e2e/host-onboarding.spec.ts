@@ -14,9 +14,10 @@ test('replay shows content-route guidance on a new bill', async ({
   await page.getByRole('menuitem', { name: 'Помощ и напътствия' }).click()
   await page.getByRole('button', { name: 'Нова сметка' }).click()
 
-  await expect(page.getByText('Изберете как да въведете сметката')).toBeVisible(
-    { timeout: 30_000 },
-  )
+  // Shown both in the sticky guidance bar and on the content-route card.
+  await expect(
+    page.getByText('Изберете как да въведете сметката').first(),
+  ).toBeVisible({ timeout: 30_000 })
 
   await context.close()
 })
@@ -41,7 +42,8 @@ test('dev reset welcome sheet can be dismissed', async ({ browser }) => {
   ).toBeVisible({ timeout: 15_000 })
   await expect(page.getByRole('textbox')).toHaveCount(0)
 
-  await page.getByRole('button', { name: 'Затвори' }).click()
+  // The sheet also has an icon-only „Затвори“ in its corner.
+  await page.getByRole('button', { name: 'Затвори' }).first().click()
 
   await expect(
     page.getByRole('heading', { name: 'Вече имате сметки' }),

@@ -9,16 +9,10 @@ import { formatEur } from '#/lib/format-currency.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { getCoveredParticipantIds } from '../../../shared/combined-payment.ts'
 import { ICON } from '#/lib/app-icons.ts'
-import { buildParticipantLabels } from '#/lib/participant-labels.ts'
+import { buildParticipantLabels, joinLabels } from '#/lib/participant-labels.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { COMBINED_PAYMENT_MESSAGES } from '../../../shared/combined-payment-messages'
-
-function joinParticipantNames(names: string[]): string {
-  if (names.length <= 1) return names[0] ?? ''
-  if (names.length === 2) return `${names[0]} и ${names[1]}`
-  return `${names.slice(0, -1).join(', ')} и ${names.at(-1)}`
-}
 
 function formatCombinedCopy(
   payerName: string,
@@ -26,7 +20,7 @@ function formatCombinedCopy(
   totalCents: number,
 ): { banner: string; confirmPrompt: string; toast: string } {
   const allNames = [payerName, ...coveredNames]
-  const joined = joinParticipantNames(allNames)
+  const joined = joinLabels(allNames)
 
   if (coveredNames.length === 0) {
     return {

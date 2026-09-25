@@ -97,7 +97,7 @@ describe('computeGuidanceState', () => {
       },
       dismissedHintIds: [],
       editorStep: 1,
-      stepLabels: ['Бележка', 'Участници', 'Разпределение', 'Преглед'],
+      stepLabels: ['Сметка', 'Участници', 'Разпределение', 'Плащания'],
     })
 
     expect(state.activeStep?.id).toBe('restaurant')
@@ -112,7 +112,7 @@ describe('computeGuidanceState', () => {
         restaurantFromOcr: false,
         hostParticipantName: 'Аз',
         guestCount: 0,
-        items: [],
+        items: [{ id: 'i1', unitPriceCents: 500, quantity: 1 }],
         assignments: [],
         contentRoute: 'manual',
         receiptUploaded: false,
@@ -121,7 +121,7 @@ describe('computeGuidanceState', () => {
       },
       dismissedHintIds: [],
       editorStep: 1,
-      stepLabels: ['Бележка', 'Участници', 'Разпределение', 'Преглед'],
+      stepLabels: ['Сметка', 'Участници', 'Разпределение', 'Плащания'],
     })
 
     expect(state.editorStepGuidanceComplete).toBe(true)

@@ -27,11 +27,14 @@ export async function openHostContext(
   }
 
   try {
-    await expect(page.getByRole('button', { name: 'Нова сметка' })).toBeVisible(
-      {
-        timeout: 45_000,
-      },
-    )
+    const newBill = page.getByRole('button', { name: 'Нова сметка' })
+    // A fresh test user gets the first-run welcome sheet; skip Напътствия.
+    const skipWelcome = page.getByRole('button', { name: 'Не сега' })
+    await expect(newBill.or(skipWelcome)).toBeVisible({ timeout: 45_000 })
+    if (await skipWelcome.isVisible()) {
+      await skipWelcome.click()
+    }
+    await expect(newBill).toBeVisible({ timeout: 15_000 })
   } catch {
     await context.close()
     throw new Error(E2E_HOST_AUTH_MESSAGE)
