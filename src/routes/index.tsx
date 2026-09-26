@@ -215,14 +215,22 @@ function CollectionOverview() {
 
   if (overview.openBills.length === 0) return null
 
+  // Unfinished drafts have no settled Shares yet — the money card only makes
+  // sense once at least one bill is collecting or ready to close.
+  const hasPreparedBill = overview.openBills.some(
+    (bill) => bill.nextAction !== 'finish',
+  )
+
   return (
     <>
-      <OwedSummaryCard
-        owedCents={overview.owedCents}
-        collectedCents={overview.collectedCents}
-        debtorCount={overview.debtors.length}
-        owingBillCount={overview.owingBillCount}
-      />
+      {hasPreparedBill ? (
+        <OwedSummaryCard
+          owedCents={overview.owedCents}
+          collectedCents={overview.collectedCents}
+          debtorCount={overview.debtors.length}
+          owingBillCount={overview.owingBillCount}
+        />
+      ) : null}
       <DebtorsList debtors={overview.debtors} />
       <OpenBillsList
         bills={overview.openBills}
