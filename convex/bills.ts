@@ -10,7 +10,17 @@ import {
   billMatchesHomeSearch,
   normalizeHomeBillSearch,
 } from './lib/billListSearch'
-import { loadBillRelations } from './lib/billListSummary'
+import {
+  buildListSummaryFields,
+  loadBillRelations,
+} from './lib/billListSummary'
+import {
+  buildHomeOverview,
+  HOME_OVERVIEW_DRAFT_LIMIT,
+  homeOverviewValidator,
+  readStoredCollectionSummary,
+} from './lib/homeOverview'
+import type { HomeOverviewDraft } from './lib/homeOverview'
 import {
   cleanupBillReceiptStorage,
   deleteReceiptScansForBill,
@@ -88,6 +98,35 @@ export const listWithSummary = query({
           bill.status === 'draft' ? null : (bill.listOutstandingCents ?? 0),
       })),
     }
+  },
+})
+
+/**
+ * Collection-first home: what Guests still owe across open (draft) bills,
+ * who owes it, and each draft's next action. Host-only; nothing beyond `get`.
+ */
+export const homeOverview = query({
+  args: {},
+  returns: homeOverviewValidator,
+  handler: async (ctx) => {
+    const userId = await requireAuth(ctx)
+    const recent = await ctx.db
+      .query('bills')
+      .withIndex('by_ownerId_status_updatedAt', (q) =>
+        q.eq('ownerId', userId).eq('status', 'draft'),
+      )
+      .order('desc')
+      .take(HOME_OVERVIEW_DRAFT_LIMIT + 1)
+
+    const drafts: HomeOverviewDraft[] = []
+    for (const bill of recent.slice(0, HOME_OVERVIEW_DRAFT_LIMIT)) {
+      const summary =
+        readStoredCollectionSummary(bill) ??
+        buildListSummaryFields(bill, await loadBillRelations(ctx, bill._id))
+      drafts.push({ bill, summary })
+    }
+
+    return buildHomeOverview(drafts, recent.length > HOME_OVERVIEW_DRAFT_LIMIT)
   },
 })
 
@@ -262,6 +301,7 @@ export const update = mutation({
     if (oldReceiptStorageId) {
       await cleanupBillReceiptStorage(ctx, billId, oldReceiptStorageId)
     }
+    await touchBill(ctx, billId)
   },
 })
 
@@ -290,6 +330,7 @@ export const finalize = mutation({
       status: 'final',
       updatedAt: Date.now(),
     })
+    await touchBill(ctx, args.billId)
     await deleteGuestSessionsForBill(ctx, args.billId)
   },
 })

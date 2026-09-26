@@ -214,6 +214,7 @@ export function ParticipantList({
             if (nameError) setNameError(undefined)
           }}
           placeholder="Име на участник"
+          aria-label="Име на участник"
           className="h-11 flex-1"
           autoComplete="off"
           aria-invalid={Boolean(nameError)}

@@ -3,7 +3,10 @@ import type { Id } from './_generated/dataModel'
 import { computeBillListSummary } from './lib/billListSummary'
 import { createShareToken } from './lib/shareToken'
 
-/** Run once after Area E: npx convex run backfill:refreshBillListSummaries */
+/**
+ * Recomputes every `bills.list*` summary field (list + home collection).
+ * Run after deploying a change to those fields: npx convex run backfill:refreshBillListSummaries
+ */
 export const refreshBillListSummaries = internalMutation({
   args: {},
   handler: async (ctx) => {
@@ -12,11 +15,7 @@ export const refreshBillListSummaries = internalMutation({
     for (const bill of bills) {
       const summary = await computeBillListSummary(ctx, bill._id)
       if (!summary) continue
-      await ctx.db.patch(bill._id, {
-        listBillTotalCents: summary.listBillTotalCents,
-        listOutstandingCents: summary.listOutstandingCents,
-        listParticipantNames: summary.listParticipantNames,
-      })
+      await ctx.db.patch(bill._id, summary)
       patched++
     }
     return { patched }

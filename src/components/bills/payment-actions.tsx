@@ -164,6 +164,7 @@ export function PaymentActions({
                 }}
                 inputMode="decimal"
                 placeholder="Частична сума"
+                aria-label="Частична сума (€)"
                 className="h-11 min-w-0 flex-1"
                 aria-invalid={Boolean(amountError)}
               />

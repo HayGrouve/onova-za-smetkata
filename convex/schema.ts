@@ -42,6 +42,25 @@ export default defineSchema({
     listBillTotalCents: v.optional(v.number()),
     listOutstandingCents: v.optional(v.number()),
     listParticipantNames: v.optional(v.array(v.string())),
+    /**
+     * Collection summary for the home screen (`shared/bill-collection.ts`).
+     * Written by `touchBill`; `backfill:refreshBillListSummaries` fills old bills.
+     */
+    listCollectedCents: v.optional(v.number()),
+    listGuestBalances: v.optional(
+      v.array(
+        v.object({
+          participantId: v.id('participants'),
+          name: v.string(),
+          owedCents: v.number(),
+          paidCents: v.number(),
+        }),
+      ),
+    ),
+    listPrepared: v.optional(v.boolean()),
+    listFirstIncompleteStep: v.optional(v.number()),
+    listUnassignedItemCount: v.optional(v.number()),
+    listHasPricedItems: v.optional(v.boolean()),
     /** Participant seat for the Host; set at bill create. */
     hostParticipantId: v.optional(v.id('participants')),
     createdAt: v.number(),
