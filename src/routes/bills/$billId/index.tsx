@@ -428,6 +428,7 @@ function BillEditorContent({
                       labels={labels}
                       readOnly={bill.status === 'final'}
                       onAddItems={() => goToStep(1)}
+                      onAllAssigned={() => goToStep(4)}
                     />
                   </CardContent>
                 </Card>

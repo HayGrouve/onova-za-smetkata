@@ -298,6 +298,7 @@ export function ReceiptScanReviewSheet({
                     updateRow(index, { checked: v === true })
                   }
                   className="mt-3"
+                  aria-label={`Включи ${row.name.trim() || `ред ${index + 1}`}`}
                 />
                 <div className="flex flex-1 flex-col gap-2">
                   <div className="flex items-center gap-2">
@@ -307,6 +308,7 @@ export function ReceiptScanReviewSheet({
                         updateRow(index, { name: e.target.value })
                       }
                       placeholder="Наименование"
+                      aria-label={`Наименование, ред ${index + 1}`}
                       className="h-10 flex-1"
                       aria-invalid={Boolean(errors?.name)}
                     />
@@ -330,6 +332,7 @@ export function ReceiptScanReviewSheet({
                       }
                       inputMode="decimal"
                       placeholder="Цена (€)"
+                      aria-label={`Цена (€), ред ${index + 1}`}
                       className="h-10 flex-1"
                       aria-invalid={Boolean(errors?.price)}
                     />
@@ -341,6 +344,7 @@ export function ReceiptScanReviewSheet({
                       }
                       inputMode="numeric"
                       placeholder="Бр."
+                      aria-label={`Бройки, ред ${index + 1}`}
                       className="h-10 w-16"
                       aria-invalid={Boolean(errors?.quantity)}
                     />

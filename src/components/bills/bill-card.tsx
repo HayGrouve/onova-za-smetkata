@@ -16,6 +16,8 @@ import {
 import { formatEur } from '#/lib/format-currency.ts'
 import { getBillDeleteCopy } from '#/lib/destructive-action-copy.ts'
 import { ICON } from '#/lib/app-icons.ts'
+import { cn } from '#/lib/utils.ts'
+import { deriveBillNextAction } from '../../../shared/bill-collection.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc } from '../../../convex/_generated/dataModel'
 
@@ -41,6 +43,7 @@ export function BillCard({
   const { confirm } = useConfirmAction()
   const [isDeleting, setIsDeleting] = useState(false)
   const isDraft = bill.status === 'draft'
+  const draftStatus = isDraft ? draftStatusLabel(bill) : null
   const to = isDraft ? '/bills/$billId' : '/bills/$billId/summary'
 
   async function handleDeleteWithConfirm() {
@@ -70,7 +73,19 @@ export function BillCard({
               <span className="truncate font-semibold">
                 {bill.restaurantName.trim() || 'Без име'}
               </span>
-              {isDraft && <Badge variant="secondary">Чернова</Badge>}
+              {draftStatus ? (
+                <Badge
+                  variant="secondary"
+                  className={cn(
+                    draftStatus.tone === 'collect' &&
+                      'bg-accent text-accent-foreground',
+                    draftStatus.tone === 'close' &&
+                      'bg-success/15 text-success',
+                  )}
+                >
+                  {draftStatus.label}
+                </Badge>
+              ) : null}
             </div>
             <p className="text-sm text-muted-foreground">
               {dateFormatter.format(new Date(bill.date))}
@@ -78,6 +93,11 @@ export function BillCard({
           </div>
           <div className="shrink-0 text-right">
             <p className="money font-semibold">{formatEur(billTotalCents)}</p>
+            {draftStatus?.tone === 'collect' ? (
+              <p className="money text-sm text-muted-foreground">
+                Остава {formatEur(bill.listOutstandingCents ?? 0)}
+              </p>
+            ) : null}
             {!isDraft && (
               <p className="money text-sm text-muted-foreground">
                 {totalOutstandingCents && totalOutstandingCents > 0
@@ -120,4 +140,21 @@ export function BillCard({
       </CardContent>
     </Card>
   )
+}
+
+/** Draft bills split into „Чернова“ vs money still being collected. */
+function draftStatusLabel(bill: Doc<'bills'>): {
+  label: string
+  tone: 'finish' | 'collect' | 'close'
+} {
+  if (bill.listPrepared === undefined)
+    return { label: 'Чернова', tone: 'finish' }
+  const action = deriveBillNextAction({
+    status: 'draft',
+    prepared: bill.listPrepared,
+    outstandingCents: bill.listOutstandingCents ?? 0,
+  })
+  if (action === 'collect') return { label: 'Чака плащания', tone: 'collect' }
+  if (action === 'close') return { label: 'За приключване', tone: 'close' }
+  return { label: 'Чернова', tone: 'finish' }
 }

@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link2OffIcon, QrCodeIcon, Share2Icon } from 'lucide-react'
+import {
+  ChevronDownIcon,
+  Link2OffIcon,
+  QrCodeIcon,
+  Share2Icon,
+} from 'lucide-react'
 import { useMutation } from 'convex/react'
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button.tsx'
@@ -14,6 +19,7 @@ import {
 import { ICON } from '#/lib/app-icons.ts'
 import { buildBillJoinUrl, resolveAppOrigin } from '#/lib/bill-join-url.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { cn } from '#/lib/utils.ts'
 import { shareLink } from '#/lib/share-link.ts'
 import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
 import type { GuidanceFocusHandle } from '#/lib/guidance-focus/use-guidance-focus.ts'
@@ -42,6 +48,7 @@ export function BillInviteCard({
   const [joinUrl, setJoinUrl] = useState('')
   const [rotateOpen, setRotateOpen] = useState(false)
   const [isRotating, setIsRotating] = useState(false)
+  const [qrOpen, setQrOpen] = useState(false)
   const rotateShareToken = useMutation(api.bills.rotateShareToken)
 
   useEffect(() => {
@@ -52,7 +59,7 @@ export function BillInviteCard({
     const origin = resolveAppOrigin(window.location.origin)
     const url = buildBillJoinUrl(billId, origin, shareToken)
     setJoinUrl(url)
-    if (!canvasRef.current || disabled || !origin) return
+    if (!qrOpen || !canvasRef.current || disabled || !origin) return
 
     void import('qrcode').then(({ default: QRCode }) =>
       QRCode.toCanvas(canvasRef.current!, url, {
@@ -61,7 +68,7 @@ export function BillInviteCard({
         color: { dark: '#173a40', light: '#ffffff' },
       }),
     )
-  }, [billId, disabled, shareToken])
+  }, [billId, disabled, shareToken, qrOpen])
 
   async function handleShareLink() {
     if (!joinUrl) return
@@ -96,18 +103,35 @@ export function BillInviteCard({
     }
   }
 
+  const shareButton = (
+    <Button
+      type="button"
+      className="h-11 w-full"
+      disabled={!joinUrl}
+      onClick={() => void handleShareLink()}
+    >
+      <Share2Icon className={ICON.button} aria-hidden />
+      Сподели линк
+    </Button>
+  )
+
   const inviteCard = (
-    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-4">
-      <div className="flex items-center gap-2 self-start text-sm font-medium">
-        <QrCodeIcon className={ICON.section} aria-hidden />
-        Покани приятели
+    <div className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+      <div className="flex items-start gap-3">
+        <QrCodeIcon className={cn(ICON.section, 'mt-0.5')} aria-hidden />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium">Покани приятели</p>
+          <p className="text-xs text-muted-foreground">
+            Отварят линка, избират името си и отбелязват какво са консумирали.
+          </p>
+        </div>
       </div>
       {disabled ? (
-        <p className="self-start text-sm text-muted-foreground">
-          Добавете поне един участник, за да покажете QR код.
+        <p className="text-sm text-muted-foreground">
+          Добавете поне един участник, за да поканите гостите.
         </p>
       ) : !shareToken ? (
-        <p className="self-start text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Линкът за покана се подготвя...
         </p>
       ) : (
@@ -115,54 +139,62 @@ export function BillInviteCard({
           <span data-testid="join-url" className="sr-only">
             {joinUrl}
           </span>
-          <canvas
-            ref={canvasRef}
-            className="rounded-md border bg-white p-2"
-            aria-label="QR код за присъединяване към сметката"
-          />
-          <p className="text-center text-xs text-muted-foreground">
-            Приятелите сканират QR кода, избират името си и отбелязват какво са
-            консумирали. Използвайте само с хора на масата.
-          </p>
-          {shareGuidance ? (
-            <GuidanceTarget
-              stepId="share"
-              focus={shareGuidance}
-              className="w-full"
-            >
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 w-full"
-                disabled={!joinUrl}
-                onClick={() => void handleShareLink()}
+          <div className="flex gap-2">
+            {shareGuidance ? (
+              <GuidanceTarget
+                stepId="share"
+                focus={shareGuidance}
+                className="flex-1"
               >
-                <Share2Icon className={ICON.button} aria-hidden />
-                Сподели линк
-              </Button>
-            </GuidanceTarget>
-          ) : (
+                {shareButton}
+              </GuidanceTarget>
+            ) : (
+              <div className="flex-1">{shareButton}</div>
+            )}
             <Button
               type="button"
               variant="outline"
-              className="h-11 w-full"
-              disabled={!joinUrl}
-              onClick={() => void handleShareLink()}
+              className="h-11 shrink-0"
+              aria-expanded={qrOpen}
+              aria-controls="bill-invite-qr"
+              onClick={() => setQrOpen((open) => !open)}
             >
-              <Share2Icon className={ICON.button} aria-hidden />
-              Сподели линк
+              QR код
+              <ChevronDownIcon
+                className={cn(
+                  ICON.button,
+                  'transition-transform duration-200 motion-reduce:transition-none',
+                  qrOpen && 'rotate-180',
+                )}
+                aria-hidden
+              />
             </Button>
-          )}
-          {!readOnly ? (
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-10 w-full text-muted-foreground"
-              onClick={() => setRotateOpen(true)}
+          </div>
+          {qrOpen ? (
+            <div
+              id="bill-invite-qr"
+              className="flex flex-col items-center gap-2 pt-1"
             >
-              <Link2OffIcon className={ICON.button} aria-hidden />
-              Обнови линка
-            </Button>
+              <canvas
+                ref={canvasRef}
+                className="rounded-md border bg-white p-2"
+                aria-label="QR код за присъединяване към сметката"
+              />
+              <p className="text-center text-xs text-muted-foreground">
+                Покажете кода на хората на масата. Използвайте само с тях.
+              </p>
+              {!readOnly ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-10 w-full text-muted-foreground"
+                  onClick={() => setRotateOpen(true)}
+                >
+                  <Link2OffIcon className={ICON.button} aria-hidden />
+                  Обнови линка
+                </Button>
+              ) : null}
+            </div>
           ) : null}
         </>
       )}

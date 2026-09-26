@@ -1,55 +1,35 @@
-import { Component, useEffect, useState } from 'react'
+import { Component, useState } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useMutation, usePaginatedQuery, useQuery } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
-import { Loader2Icon, PlusIcon, SearchIcon } from 'lucide-react'
-import { BillCard } from '#/components/bills/bill-card.tsx'
+import { PlusIcon } from 'lucide-react'
 import {
   PaymentSettingsOpenButton,
   usePaymentSettingsStatus,
 } from '#/components/bills/payment-settings-open-button.tsx'
 import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
+import { BillHistory } from '#/components/home/bill-history.tsx'
+import { DebtorsList } from '#/components/home/debtors-list.tsx'
+import { OpenBillsList } from '#/components/home/open-bills-list.tsx'
+import { OwedSummaryCard } from '#/components/home/owed-summary-card.tsx'
 import { Button } from '#/components/ui/button.tsx'
-import { Input } from '#/components/ui/input.tsx'
-import { Label } from '#/components/ui/label.tsx'
 import { QueryErrorPanel } from '#/components/ui/query-error-panel.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
 import { useSubscriptionPaywall } from '#/components/subscription/subscription-provider.tsx'
 import { PwaInstallBanner } from '#/components/pwa-install-banner.tsx'
-import { ICON } from '#/lib/app-icons.ts'
-import {
-  HOME_BILL_PAGE_SIZE,
-  HOME_BILL_SEARCH_DEBOUNCE_MS,
-  homeBillListEmptyMessage,
-  homeBillStatusSearchParam,
-  parseHomeBillStatusSearch,
-} from '#/lib/home-bill-list.ts'
-import type { HomeBillStatusFilter } from '#/lib/home-bill-list.ts'
 import { buildHomeHead } from '#/lib/site-meta.ts'
-import { cn } from '#/lib/utils.ts'
 import { useHostOnboarding } from '#/components/host-onboarding/host-onboarding-provider.tsx'
 import { HOST_ONBOARDING_HOME } from '../../shared/host-onboarding-messages.ts'
 import { api } from '../../convex/_generated/api'
 
 export const Route = createFileRoute('/')({
-  validateSearch: (
-    search: Record<string, unknown>,
-  ): { status?: HomeBillStatusFilter } => ({
-    status: parseHomeBillStatusSearch(search.status),
-  }),
   head: () => buildHomeHead(),
   component: Home,
 })
 
-const STATUS_CHIPS = [
-  { value: undefined, label: 'Всички' },
-  { value: 'draft' as const, label: 'Чернови' },
-  { value: 'final' as const, label: 'Приключени' },
-] as const
-
-class HomeBillListErrorBoundary extends Component<
+class HomeSectionErrorBoundary extends Component<
   {
     resetKey: number
     onRetry: () => void
@@ -64,7 +44,7 @@ class HomeBillListErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('Home bill list failed', error, info)
+    console.error('Home failed to load', error, info)
     toast.error('Неуспешно зареждане на сметките')
   }
 
@@ -89,13 +69,10 @@ class HomeBillListErrorBoundary extends Component<
 
 function Home() {
   const navigate = useNavigate()
-  const { status: statusFilter } = Route.useSearch()
   const { isAuthenticated, isLoading } = useRequireHostAuth('/')
   const { handleMutationError } = useSubscriptionPaywall()
   const createBill = useMutation(api.bills.create)
-  const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [listResetKey, setListResetKey] = useState(0)
+  const [resetKey, setResetKey] = useState(0)
   const [isCreating, setIsCreating] = useState(false)
   const paymentSettingsStatus = usePaymentSettingsStatus()
   const { openPaymentSettings } = usePaymentSettingsSheet()
@@ -107,26 +84,6 @@ function Home() {
   const onboarding = useQuery(
     api.hostOnboarding.getForViewer,
     isAuthenticated ? {} : 'skip',
-  )
-
-  useEffect(() => {
-    const handle = window.setTimeout(() => {
-      setDebouncedSearch(search.trim())
-    }, HOME_BILL_SEARCH_DEBOUNCE_MS)
-    return () => window.clearTimeout(handle)
-  }, [search])
-
-  const listArgs = isAuthenticated
-    ? {
-        ...(statusFilter ? { status: statusFilter } : {}),
-        ...(debouncedSearch ? { search: debouncedSearch } : {}),
-      }
-    : 'skip'
-
-  const { results, status, loadMore } = usePaginatedQuery(
-    api.bills.listWithSummary,
-    listArgs,
-    { initialNumItems: HOME_BILL_PAGE_SIZE },
   )
 
   if (isLoading || !isAuthenticated) {
@@ -155,14 +112,6 @@ function Home() {
     }
   }
 
-  function selectStatus(next: HomeBillStatusFilter | undefined) {
-    void navigate({
-      to: '/',
-      search: homeBillStatusSearchParam(next),
-      replace: true,
-    })
-  }
-
   async function handleResumeGuidedBill() {
     if (!resumeGuidedBillId) return
     await navigate({
@@ -188,146 +137,97 @@ function Home() {
     }
   }
 
-  const showFirstPageSkeletons = status === 'LoadingFirstPage'
   const showResumeGuidedBill =
     onboarding?.lifecycle === 'active' && resumeGuidedBillId !== undefined
 
   return (
-    <div className="page-container">
-      <PwaInstallBanner />
-      {paymentSettingsStatus === 'unconfigured' ? (
-        <div className="mb-2">
+    <div className="page-container flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <PwaInstallBanner />
+        {paymentSettingsStatus === 'unconfigured' ? (
           <PaymentSettingsOpenButton onClick={openPaymentSettings} />
-        </div>
-      ) : null}
+        ) : null}
 
-      {showResumeGuidedBill ? (
-        <Button
-          className="mb-2 h-11 w-full"
-          onClick={() => void handleResumeGuidedBill()}
-        >
-          {HOST_ONBOARDING_HOME.resumeGuidedBill}
-        </Button>
-      ) : null}
+        {showResumeGuidedBill ? (
+          <Button
+            className="h-11 w-full"
+            onClick={() => void handleResumeGuidedBill()}
+          >
+            {HOST_ONBOARDING_HOME.resumeGuidedBill}
+          </Button>
+        ) : null}
 
-      {needsAnotherGuidedBill ? (
+        {needsAnotherGuidedBill ? (
+          <Button
+            className="h-11 w-full"
+            disabled={isCreating}
+            onClick={() => void handleStartAnotherGuidedBill()}
+          >
+            {HOST_ONBOARDING_HOME.startNewGuidedBill}
+          </Button>
+        ) : null}
+
+        {onboarding?.lifecycle === 'active' ? (
+          <Button
+            variant="ghost"
+            className="h-10 w-full text-muted-foreground"
+            onClick={() => void stopGuidance()}
+          >
+            {HOST_ONBOARDING_HOME.stopGuidance}
+          </Button>
+        ) : null}
+
         <Button
-          className="mb-2 h-11 w-full"
+          className="h-11 w-full"
+          onClick={handleCreateBill}
           disabled={isCreating}
-          onClick={() => void handleStartAnotherGuidedBill()}
         >
-          {HOST_ONBOARDING_HOME.startNewGuidedBill}
+          <PlusIcon /> Нова сметка
         </Button>
-      ) : null}
-
-      {onboarding?.lifecycle === 'active' ? (
-        <Button
-          variant="ghost"
-          className="mb-2 h-10 w-full text-muted-foreground"
-          onClick={() => void stopGuidance()}
-        >
-          {HOST_ONBOARDING_HOME.stopGuidance}
-        </Button>
-      ) : null}
-
-      <Button
-        className="mb-4 h-11 w-full"
-        onClick={handleCreateBill}
-        disabled={isCreating}
-      >
-        <PlusIcon /> Нова сметка
-      </Button>
-
-      <div className="relative mb-4">
-        <Label htmlFor="home-bill-search" className="sr-only">
-          Търсене по ресторант или участник
-        </Label>
-        <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          id="home-bill-search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Търсене по ресторант или участник"
-          className="h-11 pl-9"
-        />
       </div>
 
-      <div
-        className="mb-4 flex flex-wrap gap-2"
-        role="group"
-        aria-label="Филтър по статус"
+      <HomeSectionErrorBoundary
+        resetKey={resetKey}
+        onRetry={() => setResetKey((n) => n + 1)}
       >
-        {STATUS_CHIPS.map((chip) => {
-          const selected = statusFilter === chip.value
-          return (
-            <Button
-              key={chip.label}
-              type="button"
-              size="sm"
-              variant={selected ? 'default' : 'outline'}
-              className="h-9 px-3"
-              aria-pressed={selected}
-              onClick={() => selectStatus(chip.value)}
-            >
-              {chip.label}
-            </Button>
-          )
-        })}
-      </div>
-
-      <HomeBillListErrorBoundary
-        resetKey={listResetKey}
-        onRetry={() => setListResetKey((n) => n + 1)}
-      >
-        <div key={listResetKey} className="flex flex-col gap-3">
-          {showFirstPageSkeletons &&
-            Array.from({ length: 3 }).map((_, index) => (
-              <Skeleton key={index} className="h-20 w-full rounded-xl" />
-            ))}
-
-          {!showFirstPageSkeletons && results.length === 0 && (
-            <p className="py-8 text-center text-muted-foreground">
-              {homeBillListEmptyMessage({
-                status: statusFilter,
-                search: debouncedSearch,
-              })}
-            </p>
-          )}
-
-          {!showFirstPageSkeletons &&
-            results.map((summary) => (
-              <BillCard key={summary.bill._id} {...summary} />
-            ))}
-
-          {status === 'CanLoadMore' && (
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11 w-full"
-              onClick={() => loadMore(HOME_BILL_PAGE_SIZE)}
-            >
-              Зареди още
-            </Button>
-          )}
-
-          {status === 'LoadingMore' && (
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11 w-full"
-              disabled
-            >
-              <Loader2Icon
-                className={cn(
-                  ICON.button,
-                  'animate-spin motion-reduce:animate-none',
-                )}
-              />
-              Зареди още
-            </Button>
-          )}
+        <div key={resetKey} className="flex flex-col gap-6">
+          <CollectionOverview />
+          <BillHistory />
         </div>
-      </HomeBillListErrorBoundary>
+      </HomeSectionErrorBoundary>
     </div>
+  )
+}
+
+/** Money still owed across open bills, who owes it, and what to do next. */
+function CollectionOverview() {
+  const overview = useQuery(api.bills.homeOverview, {})
+
+  if (overview === undefined) {
+    return (
+      <div className="flex flex-col gap-3" aria-busy>
+        <Skeleton className="h-36 w-full rounded-xl" />
+        <Skeleton className="h-16 w-full rounded-xl" />
+        <Skeleton className="h-16 w-full rounded-xl" />
+      </div>
+    )
+  }
+
+  if (overview.openBills.length === 0) return null
+
+  return (
+    <>
+      <OwedSummaryCard
+        owedCents={overview.owedCents}
+        collectedCents={overview.collectedCents}
+        debtorCount={overview.debtors.length}
+        owingBillCount={overview.owingBillCount}
+      />
+      <DebtorsList debtors={overview.debtors} />
+      <OpenBillsList
+        bills={overview.openBills}
+        truncated={overview.truncated}
+      />
+    </>
   )
 }

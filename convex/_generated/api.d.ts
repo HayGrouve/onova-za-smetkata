@@ -30,6 +30,7 @@ import type * as lib_devMode from "../lib/devMode.js";
 import type * as lib_geminiReceipt from "../lib/geminiReceipt.js";
 import type * as lib_guestAccess from "../lib/guestAccess.js";
 import type * as lib_guestSession from "../lib/guestSession.js";
+import type * as lib_homeOverview from "../lib/homeOverview.js";
 import type * as lib_hostOnboarding from "../lib/hostOnboarding.js";
 import type * as lib_hostOnboardingBillHooks from "../lib/hostOnboardingBillHooks.js";
 import type * as lib_hostTier from "../lib/hostTier.js";
@@ -76,6 +77,7 @@ declare const fullApi: ApiFromModules<{
   "lib/geminiReceipt": typeof lib_geminiReceipt;
   "lib/guestAccess": typeof lib_guestAccess;
   "lib/guestSession": typeof lib_guestSession;
+  "lib/homeOverview": typeof lib_homeOverview;
   "lib/hostOnboarding": typeof lib_hostOnboarding;
   "lib/hostOnboardingBillHooks": typeof lib_hostOnboardingBillHooks;
   "lib/hostTier": typeof lib_hostTier;

@@ -258,6 +258,7 @@ export function FriendGroupEditorSheet({
                 value={memberInput}
                 onChange={(e) => setMemberInput(e.target.value)}
                 placeholder="Име на участник"
+                aria-label="Име на участник в групата"
                 className="h-11 flex-1"
                 autoComplete="off"
               />

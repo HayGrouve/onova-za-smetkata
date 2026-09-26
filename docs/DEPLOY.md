@@ -126,7 +126,7 @@ Canonical production path: **merge (or push) to `main` → GitHub Actions `prefl
    npx convex run backfill:normalizeAssignmentModes
    ```
 
-   After deploying Area E list-summary fields (required once per environment):
+   After deploying Area E list-summary fields, and again after the home collection fields (`listCollectedCents`, `listGuestBalances`, `listPrepared`, …) — required once per environment; `bills.homeOverview` recomputes old drafts on the fly until then:
 
    ```bash
    npx convex run backfill:refreshBillListSummaries
