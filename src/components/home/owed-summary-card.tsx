@@ -33,7 +33,7 @@ export function OwedSummaryCard({
           <div>
             <p className="font-medium">Никой не ви дължи нищо</p>
             <p className="text-sm text-muted-foreground">
-              Тук ще видите кой колко ви дължи, щом споделите сметка.
+              Всички гости са платили. Приключете сметките по-долу.
             </p>
           </div>
         </CardContent>
