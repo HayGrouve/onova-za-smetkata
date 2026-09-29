@@ -6,6 +6,7 @@ import {
   validateCombinedPaymentConfirm,
   validateUpdateCovered,
   isAwaitingHostConfirmation,
+  holdsCoveredSeats,
   isSoloPaymentRequest,
   validateInitiateTransfer,
   validateSoloPaymentCreate,
@@ -350,6 +351,28 @@ describe('isAwaitingHostConfirmation', () => {
         status: 'pending',
         transferInitiatedAt: undefined,
       }),
+    ).toBe(false)
+  })
+})
+
+describe('holdsCoveredSeats', () => {
+  it('keeps a reservation while the payer phone is still on the bill', () => {
+    expect(holdsCoveredSeats({ status: 'pending' }, true)).toBe(true)
+  })
+
+  it('drops a reservation once the payer session is gone', () => {
+    expect(holdsCoveredSeats({ status: 'pending' }, false)).toBe(false)
+  })
+
+  it('keeps a started transfer until the Host resolves it', () => {
+    expect(
+      holdsCoveredSeats({ status: 'pending', transferInitiatedAt: 5 }, false),
+    ).toBe(true)
+  })
+
+  it('never holds seats once resolved', () => {
+    expect(
+      holdsCoveredSeats({ status: 'cancelled', transferInitiatedAt: 5 }, true),
     ).toBe(false)
   })
 })

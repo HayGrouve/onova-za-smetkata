@@ -14,6 +14,7 @@ import {
 import { assertBillDraft } from './lib/assertBillDraft'
 import { GUEST_SESSION_TTL_MS, isGuestSessionActive } from './lib/guestSession'
 import { requireGuestSession } from './lib/requireGuestSession'
+import { cancelReservationsForSession } from './lib/paymentReservations'
 import { assertRateLimit } from './lib/rateLimit'
 import { assertShareToken } from './lib/guestAccess'
 
@@ -331,6 +332,7 @@ export const release = mutation({
       )
       .first()
     if (session && session.billId === args.billId) {
+      await cancelReservationsForSession(ctx, session._id)
       await ctx.db.delete(session._id)
     }
   },

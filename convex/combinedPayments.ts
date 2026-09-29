@@ -26,6 +26,7 @@ import { calculateBillTotals } from '../shared/bill-calculations'
 import type { BillTotals } from '../shared/bill-calculations'
 import { toBillCalculationSnapshot } from '../shared/bill-calculation-snapshot'
 import { loadBillRelations } from './lib/billListSummary'
+import { loadSeatHoldingRequests } from './lib/paymentReservations'
 
 async function loadBillTotalsForCombinedPay(
   ctx: QueryCtx | MutationCtx,
@@ -133,12 +134,7 @@ export const getPendingCoverForGuest = query({
       .first()
     if (!session || session.billId !== args.billId) return null
 
-    const pending = await ctx.db
-      .query('combinedPaymentRequests')
-      .withIndex('by_billId_status', (q) =>
-        q.eq('billId', args.billId).eq('status', 'pending'),
-      )
-      .collect()
+    const pending = await loadSeatHoldingRequests(ctx, args.billId)
 
     const cover = pending.find((request) =>
       getCoveredParticipantIds(request).includes(session.participantId),
@@ -206,12 +202,7 @@ export const create = mutation({
       (r) => r.billId === args.billId && r.status === 'pending',
     )
 
-    const billPending = await ctx.db
-      .query('combinedPaymentRequests')
-      .withIndex('by_billId_status', (q) =>
-        q.eq('billId', args.billId).eq('status', 'pending'),
-      )
-      .collect()
+    const billPending = await loadSeatHoldingRequests(ctx, args.billId)
     const coveredPendingIds = buildCoveredPendingIds(billPending)
 
     const validated = validateCombinedPaymentCreate(
@@ -295,12 +286,7 @@ export const updateCovered = mutation({
     )
 
     const totals = await loadBillTotalsForCombinedPay(ctx, args.billId)
-    const billPending = await ctx.db
-      .query('combinedPaymentRequests')
-      .withIndex('by_billId_status', (q) =>
-        q.eq('billId', args.billId).eq('status', 'pending'),
-      )
-      .collect()
+    const billPending = await loadSeatHoldingRequests(ctx, args.billId)
     const coveredPendingIds = buildCoveredPendingIds(billPending, request._id)
 
     const validated = validateUpdateCovered(

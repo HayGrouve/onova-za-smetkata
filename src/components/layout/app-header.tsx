@@ -1,6 +1,6 @@
 import { useAuth, UserButton } from '@clerk/tanstack-react-start'
 import { Link, useParams, useRouterState } from '@tanstack/react-router'
-import { useQuery } from 'convex/react'
+import { useConvexAuth, useQuery } from 'convex/react'
 import { ChevronLeftIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { AppHeaderMenu } from '#/components/layout/app-header-menu.tsx'
@@ -43,9 +43,12 @@ function useHeaderConfig() {
     routeContext === 'summary' ||
     routeContext === 'hostClaim'
 
+  // `bills.get` is Host-only: a signed-out visitor on a bill route that is not
+  // a known guest page must not crash the whole shell.
+  const { isAuthenticated } = useConvexAuth()
   const bill = useQuery(
     api.bills.get,
-    isHostBillRoute && billId ? { billId } : 'skip',
+    isAuthenticated && isHostBillRoute && billId ? { billId } : 'skip',
   )
 
   if (isHome) {

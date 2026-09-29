@@ -1,7 +1,7 @@
 import { ConvexError } from 'convex/values'
 import type { Id } from '../_generated/dataModel'
 import type { MutationCtx } from '../_generated/server'
-import { assertBillOwnedBy } from './bill_ownership'
+import { isBillOwner } from './bill_ownership'
 import { getOptionalAuthUserId } from './auth'
 import { GUEST_FLOW_MESSAGES } from '../../shared/guest-flow-messages'
 import { requireGuestSession } from './requireGuestSession'
@@ -14,13 +14,11 @@ export async function assertCanMutateAssignment(
     sessionToken?: string
   },
 ): Promise<void> {
+  // The Host edits directly. Anyone else — including a signed-in user who is a
+  // Guest on a friend's bill — must hold a guest session for the seat.
   const userId = await getOptionalAuthUserId(ctx)
-  if (userId !== null) {
-    const bill = await ctx.db.get(args.billId)
-    if (bill?.ownerId) {
-      assertBillOwnedBy(bill, userId)
-      return
-    }
+  if (userId !== null && isBillOwner(await ctx.db.get(args.billId), userId)) {
+    return
   }
 
   if (!args.sessionToken) {

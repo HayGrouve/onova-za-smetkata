@@ -1,5 +1,6 @@
 import { internalMutation } from './_generated/server'
 import { GUEST_SESSION_TTL_MS } from './lib/guestSession'
+import { cancelReservationsForSession } from './lib/paymentReservations'
 
 /** Buckets older than this are stale (longest app rate-limit window is 1 hour). */
 const RATE_LIMIT_MAX_AGE_MS = 2 * 60 * 60 * 1000
@@ -20,6 +21,7 @@ export const run = internalMutation({
     const sessions = await ctx.db.query('guestSessions').collect()
     for (const session of sessions) {
       if (!isGuestSessionExpired(session.lastSeenAt, now)) continue
+      await cancelReservationsForSession(ctx, session._id)
       await ctx.db.delete(session._id)
       purgedSessions++
       if (purgedSessions >= BATCH_SIZE) break

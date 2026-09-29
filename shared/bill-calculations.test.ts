@@ -28,6 +28,26 @@ function assertBillReconciles(input: BillCalculationInput) {
   return totals
 }
 
+describe('payment status for a zero Share', () => {
+  it('counts a Participant who owes nothing as paid', () => {
+    const totals = calculateBillTotals({
+      participants: [
+        { id: 'p1', sortOrder: 0 },
+        { id: 'p2', sortOrder: 1 },
+      ],
+      items: [{ id: 'i1', unitPriceCents: 1000, quantity: 1 }],
+      assignments: [{ itemId: 'i1', participantId: 'p1', unitIndex: 0 }],
+      payments: [],
+    })
+    expect(totals.byParticipant.p2).toMatchObject({
+      owedCents: 0,
+      balanceCents: 0,
+      status: 'paid',
+    })
+    expect(totals.byParticipant.p1.status).toBe('unpaid')
+  })
+})
+
 describe('splitLineTotal', () => {
   it('assigns full amount to one person', () => {
     expect(splitLineTotal(1000, ['a'])).toEqual([{ id: 'a', cents: 1000 }])
@@ -196,6 +216,20 @@ describe('validateBillForFinalize', () => {
     const errors = validateBillForFinalize({
       restaurantName: 'Механа',
       participants: [{ id: 'p1', sortOrder: 0 }],
+      items: [{ id: 'i1', unitPriceCents: 1000, quantity: 1 }],
+      assignments: [{ itemId: 'i1', participantId: 'p1', unitIndex: 0 }],
+      payments: [{ participantId: 'p1', amountCents: 1000 }],
+    })
+    expect(errors.some((e) => e.code === 'unpaid_participants')).toBe(false)
+  })
+
+  it('does not wait on a Guest with no Share (nothing to collect)', () => {
+    const errors = validateBillForFinalize({
+      restaurantName: 'Механа',
+      participants: [
+        { id: 'p1', sortOrder: 0 },
+        { id: 'p2', sortOrder: 1 },
+      ],
       items: [{ id: 'i1', unitPriceCents: 1000, quantity: 1 }],
       assignments: [{ itemId: 'i1', participantId: 'p1', unitIndex: 0 }],
       payments: [{ participantId: 'p1', amountCents: 1000 }],
