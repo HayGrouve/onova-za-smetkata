@@ -83,6 +83,8 @@ function sortParticipantIds(
 }
 
 function paymentStatus(owedCents: number, paidCents: number): PaymentStatus {
+  // Nothing to collect: a Participant with no Share never blocks finalize.
+  if (owedCents <= 0) return 'paid'
   if (paidCents <= 0) return 'unpaid'
   if (paidCents >= owedCents) return 'paid'
   return 'partial'

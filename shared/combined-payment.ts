@@ -82,6 +82,20 @@ export function isAwaitingHostConfirmation(request: {
   return request.status === 'pending' && request.transferInitiatedAt != null
 }
 
+/**
+ * Whether a pay-for-others request still locks its Covered seats. A
+ * reservation (transfer not started yet) only holds while the payer's guest
+ * session is alive; a started transfer holds until the Host confirms or
+ * rejects it.
+ */
+export function holdsCoveredSeats(
+  request: { status: string; transferInitiatedAt?: number },
+  payerSessionAlive: boolean,
+): boolean {
+  if (request.status !== 'pending') return false
+  return isAwaitingHostConfirmation(request) || payerSessionAlive
+}
+
 export function validateSoloPaymentCreate(
   ctx: SoloPaymentCreateContext,
 ):

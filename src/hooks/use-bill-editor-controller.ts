@@ -122,6 +122,10 @@ export function useBillEditorController({
   const initializedBillId = useRef(bill._id)
   const appliedRestaurantFromScanRef = useRef<Id<'receiptScans'> | null>(null)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingSaveRef = useRef<{
+    billId: Id<'bills'>
+    patch: BillMetadataPatchInput
+  } | null>(null)
 
   useEffect(() => {
     if (bill.receiptStorageId) {
@@ -137,13 +141,32 @@ export function useBillEditorController({
     }
   }, [bill])
 
-  function scheduleSave(patch: BillMetadataPatchInput) {
+  /** Send every field edited since the last save in one update. */
+  function flushSave() {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    saveTimeoutRef.current = setTimeout(() => {
-      void updateBill({ billId, ...patch }).catch((error) => {
+    saveTimeoutRef.current = null
+    const pending = pendingSaveRef.current
+    pendingSaveRef.current = null
+    if (!pending) return
+    void updateBill({ billId: pending.billId, ...pending.patch }).catch(
+      (error: unknown) => {
         toast.error(getConvexErrorMessage(error))
-      })
-    }, 500)
+      },
+    )
+  }
+
+  function scheduleSave(patch: BillMetadataPatchInput) {
+    // Edits to different fields within the debounce window are merged, never
+    // dropped; a pending save for another bill goes out first.
+    if (pendingSaveRef.current && pendingSaveRef.current.billId !== billId) {
+      flushSave()
+    }
+    pendingSaveRef.current = {
+      billId,
+      patch: { ...pendingSaveRef.current?.patch, ...patch },
+    }
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    saveTimeoutRef.current = setTimeout(flushSave, 500)
   }
 
   function clearFieldError(field: keyof typeof fieldErrors) {
@@ -169,10 +192,11 @@ export function useBillEditorController({
     scheduleSave(validated.patch)
   }
 
+  // Leaving the editor inside the debounce window still saves the last edit.
+  const flushSaveRef = useRef(flushSave)
+  flushSaveRef.current = flushSave
   useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    }
+    return () => flushSaveRef.current()
   }, [])
 
   useEffect(() => {

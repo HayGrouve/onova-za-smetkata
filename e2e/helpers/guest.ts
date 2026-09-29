@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 import type { Browser, Page } from '@playwright/test'
 
-/** Open the join link in a fresh guest browser and pick a name (plus Covered seats). */
+/** Open the join link in a fresh guest browser, pick a name, then add any Covered seats from the claim page. */
 export async function joinAsGuest(
   browser: Browser,
   joinUrl: string,
@@ -16,20 +16,21 @@ export async function joinAsGuest(
   )
   await page.getByRole('button', { name, exact: true }).click()
 
-  const onlyMe = page.getByRole('button', { name: 'Продължи само за мен' })
   const claimHeading = page.getByRole('heading', {
     name: 'Какво консумирахте?',
   })
-  await expect(onlyMe.or(claimHeading)).toBeVisible({ timeout: 30_000 })
+  await expect(claimHeading).toBeVisible({ timeout: 30_000 })
 
-  if (await onlyMe.isVisible()) {
+  if (coveredNames.length > 0) {
+    await page.getByRole('button', { name: 'Плащате и за някого?' }).click()
+    const sheet = page.getByRole('dialog', { name: 'За кого още отбелязвате?' })
     for (const covered of coveredNames) {
-      await page.getByRole('button', { name: covered, exact: true }).click()
+      await sheet.getByRole('button', { name: covered, exact: true }).click()
     }
-    await page.getByRole('button', { name: /^Продължи/ }).click()
+    await sheet.getByRole('button', { name: 'Запази' }).click()
+    await expect(sheet).toBeHidden()
   }
 
-  await expect(claimHeading).toBeVisible({ timeout: 30_000 })
   return { context, page }
 }
 

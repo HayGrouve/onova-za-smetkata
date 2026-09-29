@@ -35,6 +35,7 @@ import type * as lib_hostOnboarding from "../lib/hostOnboarding.js";
 import type * as lib_hostOnboardingBillHooks from "../lib/hostOnboardingBillHooks.js";
 import type * as lib_hostTier from "../lib/hostTier.js";
 import type * as lib_money from "../lib/money.js";
+import type * as lib_paymentReservations from "../lib/paymentReservations.js";
 import type * as lib_rateLimit from "../lib/rateLimit.js";
 import type * as lib_receiptStorage from "../lib/receiptStorage.js";
 import type * as lib_requireGuestSession from "../lib/requireGuestSession.js";
@@ -82,6 +83,7 @@ declare const fullApi: ApiFromModules<{
   "lib/hostOnboardingBillHooks": typeof lib_hostOnboardingBillHooks;
   "lib/hostTier": typeof lib_hostTier;
   "lib/money": typeof lib_money;
+  "lib/paymentReservations": typeof lib_paymentReservations;
   "lib/rateLimit": typeof lib_rateLimit;
   "lib/receiptStorage": typeof lib_receiptStorage;
   "lib/requireGuestSession": typeof lib_requireGuestSession;

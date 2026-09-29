@@ -93,11 +93,11 @@ export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
     }
   }, [billId, claimSession, data, activeSeats, navigate, shareToken])
 
-  /** Claim the guest's own seat plus any Covered seats, then open the claim page. */
-  async function join(
-    participantId: Id<'participants'>,
-    coveredParticipantIds: Id<'participants'>[] = [],
-  ) {
+  /**
+   * Claim the guest's own seat and open the claim page straight away. Covered
+   * seats are added later from the claim page („Плащате и за някого?“).
+   */
+  async function join(participantId: Id<'participants'>) {
     if (takenSeats.has(participantId)) return
 
     const sessionToken = createGuestSessionToken()
@@ -109,15 +109,9 @@ export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
         participantId,
         sessionToken,
         deviceId: getOrCreateGuestDeviceId(),
-        coveredParticipantIds,
+        coveredParticipantIds: [],
       })
-      setStoredGuestSession({
-        billId,
-        participantId,
-        sessionToken,
-        shareToken,
-        ...(coveredParticipantIds.length > 0 ? { coveredParticipantIds } : {}),
-      })
+      setStoredGuestSession({ billId, participantId, sessionToken, shareToken })
       goToClaim()
     } catch (error) {
       toast.error(getConvexErrorMessage(error))

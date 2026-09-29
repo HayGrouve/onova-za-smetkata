@@ -41,6 +41,14 @@ export function PaymentRow({
   onOpenDetail,
 }: PaymentRowProps) {
   const remainingCents = Math.max(0, totals.balanceCents)
+  const statusLabel =
+    !isHost && totals.owedCents === 0
+      ? 'няма дял'
+      : paymentStatusLabel(totals.status)
+  const statusVariant =
+    !isHost && totals.owedCents === 0
+      ? 'outline'
+      : statusVariants[totals.status]
 
   return (
     <div
@@ -56,16 +64,12 @@ export function PaymentRow({
           className="tap-feedback flex items-center justify-between gap-2 text-left"
         >
           <p className="font-medium">{label}</p>
-          <Badge variant={statusVariants[totals.status]}>
-            {paymentStatusLabel(totals.status)}
-          </Badge>
+          <Badge variant={statusVariant}>{statusLabel}</Badge>
         </button>
       ) : (
         <div className="flex items-center justify-between gap-2">
           <p className="font-medium">{label}</p>
-          <Badge variant={statusVariants[totals.status]}>
-            {paymentStatusLabel(totals.status)}
-          </Badge>
+          <Badge variant={statusVariant}>{statusLabel}</Badge>
         </div>
       )}
       <div className="grid grid-cols-3 gap-2 text-sm text-muted-foreground">

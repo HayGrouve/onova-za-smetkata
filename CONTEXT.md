@@ -8,7 +8,7 @@ Bulgarian mobile web PWA: a **Host** creates a bill from a restaurant receipt, a
 
 **Host journey** — sign in → create/open bill → add participants and items (manual or receipt OCR) → assign units → share join link → track guest payments → finalize bill (locks editing).
 
-**Guest journey** — open share link → pick own participant seat on join page (optionally also Covered seats) → take Units on the claim page (share explicitly) → review and pay on the Pay step (e.g. Revolut) → host confirms the payment.
+**Guest journey** — open share link → pick own participant seat on join page (one tap, straight to claiming) → optionally add Covered seats from the claim page → take Units on the claim page (share explicitly) → review and pay on the Pay step (e.g. Revolut) → host confirms the payment.
 
 **Host editor steps** — 1 **Сметка** (restaurant, items from receipt scan or by hand, tip) → 2 **Участници** → 3 **Разпределение** (invite link, who had what) → 4 **Плащания** (confirm payments, finalize).
 
@@ -69,7 +69,7 @@ Item lines with the same normalized name and unit price, shown as one row on the
 _Avoid_: merging or rewriting stored items; fuzzy name matching
 
 **Covered seat**:
-A Participant seat a Guest's phone handles in addition to its own — they take Units for it and pay for it (e.g. „плащам и за половинката си“). Chosen on the join page („Плащате ли и за някого?“) or later from the claim page; locked to that phone like the Guest's own seat (others see „Заето · с Иван“). Stored on `guestSessions.coveredParticipantIds`; rules in `shared/guest-seat-selection.ts`.
+A Participant seat a Guest's phone handles in addition to its own — they take Units for it and pay for it (e.g. „плащам и за половинката си“). Added from the claim page („Плащате и за някого?“) — the join page only picks the Guest's own seat and goes straight to claiming; locked to that phone like the Guest's own seat (others see „Заето · с Иван“). Stored on `guestSessions.coveredParticipantIds`; rules in `shared/guest-seat-selection.ts`.
 _Avoid_: member, companion; confusing with paying for someone who claims from their own phone (that stays a combined payment chosen on the Pay step)
 
 **Pay step**:
