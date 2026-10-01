@@ -5,6 +5,7 @@ import {
   Outlet,
   Scripts,
   createRootRoute,
+  useRouterState,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
@@ -105,6 +106,9 @@ export const Route = createRootRoute({
 })
 
 function RootLayout() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  // PROTOTYPE: design-exploration routes render full-screen, without the app shell.
+  if (pathname.startsWith('/prototype/')) return <Outlet />
   return (
     <AppShell>
       <Outlet />

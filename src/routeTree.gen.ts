@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UserProfileSplatRouteImport } from './routes/user-profile.$'
+import { Route as PrototypeDirectionsRouteImport } from './routes/prototype/directions'
 import { Route as BillsBillIdIndexRouteImport } from './routes/bills/$billId/index'
 import { Route as BillsBillIdSummaryRouteImport } from './routes/bills/$billId/summary'
 import { Route as BillsBillIdPayRouteImport } from './routes/bills/$billId/pay'
@@ -51,6 +52,11 @@ const UserProfileSplatRoute = UserProfileSplatRouteImport.update({
   path: '/user-profile/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrototypeDirectionsRoute = PrototypeDirectionsRouteImport.update({
+  id: '/prototype/directions',
+  path: '/prototype/directions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BillsBillIdIndexRoute = BillsBillIdIndexRouteImport.update({
   id: '/bills/$billId/',
   path: '/bills/$billId/',
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/prototype/directions': typeof PrototypeDirectionsRoute
   '/user-profile/$': typeof UserProfileSplatRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/prototype/directions': typeof PrototypeDirectionsRoute
   '/user-profile/$': typeof UserProfileSplatRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/prototype/directions': typeof PrototypeDirectionsRoute
   '/user-profile/$': typeof UserProfileSplatRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
   '/bills/$billId/join': typeof BillsBillIdJoinRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/terms'
+    | '/prototype/directions'
     | '/user-profile/$'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/terms'
+    | '/prototype/directions'
     | '/user-profile/$'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/terms'
+    | '/prototype/directions'
     | '/user-profile/$'
     | '/bills/$billId/claim'
     | '/bills/$billId/join'
@@ -165,6 +177,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
+  PrototypeDirectionsRoute: typeof PrototypeDirectionsRoute
   UserProfileSplatRoute: typeof UserProfileSplatRoute
   BillsBillIdClaimRoute: typeof BillsBillIdClaimRoute
   BillsBillIdJoinRoute: typeof BillsBillIdJoinRoute
@@ -217,6 +230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UserProfileSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/prototype/directions': {
+      id: '/prototype/directions'
+      path: '/prototype/directions'
+      fullPath: '/prototype/directions'
+      preLoaderRoute: typeof PrototypeDirectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bills/$billId/': {
       id: '/bills/$billId/'
       path: '/bills/$billId'
@@ -261,6 +281,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
+  PrototypeDirectionsRoute: PrototypeDirectionsRoute,
   UserProfileSplatRoute: UserProfileSplatRoute,
   BillsBillIdClaimRoute: BillsBillIdClaimRoute,
   BillsBillIdJoinRoute: BillsBillIdJoinRoute,
