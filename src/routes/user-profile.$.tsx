@@ -34,6 +34,7 @@ function HostAccountPage() {
         path="/user-profile"
         apiKeysProps={{ hide: true }}
         fallback={<HostAccountFallback />}
+        appearance={{ elements: { rootBox: 'mx-auto w-fit max-w-full' } }}
       />
     </div>
   )
