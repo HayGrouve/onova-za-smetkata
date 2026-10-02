@@ -1,6 +1,3 @@
-import type { z } from 'zod'
-import { personNameSchema } from './validation/fields'
-
 const HOST_PARTICIPANT_FALLBACK_NAME = 'домакин'
 
 export type ResolveHostParticipantNameInput = {
@@ -16,18 +13,6 @@ export function nextSyncedAuthName(
   if (!next) return undefined
   if (storedName?.trim() === next) return undefined
   return next
-}
-
-export function parseUsername(input: string) {
-  const trimmed = input.trim()
-  if (!trimmed) {
-    return { success: true as const, data: undefined }
-  }
-  return personNameSchema.safeParse(trimmed)
-}
-
-export function formatUsernameError(error: z.ZodError): string {
-  return error.issues[0]?.message ?? 'Невалидно потребителско име'
 }
 
 export function resolveHostParticipantName(

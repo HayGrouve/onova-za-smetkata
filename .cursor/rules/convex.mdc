@@ -28,6 +28,11 @@ When Convex plugin skills suggest generic auth setup (WorkOS, Auth0, custom JWT)
 - Use explicit table names: `ctx.db.get("table", id)`, `patch`, `delete`.
 - Secrets and `DEV_MODE` live in the **Convex Dashboard**, not Vercel.
 
+## Tests
+
+- Server rules are tested through the real functions on **`convex-test`**: `convex/<module>.test.ts` with `// @vitest-environment edge-runtime`, seeded via `seedBill` / `joinAsGuest` from **`convex/test.setup.ts`**.
+- When you add or change a guard (auth, share token, draft lock, seat lock), add a scenario there.
+
 ## Dev vs deploy
 
 Use **`npx convex dev`** during development. **`npx convex deploy`** is production/CI only.

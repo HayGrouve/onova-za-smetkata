@@ -21,58 +21,9 @@ export function countItemsWithEmptyUnits(
   return items.filter((item) => itemHasEmptyUnit(item, assignments)).length
 }
 
-export function countCoveredUnits(
-  item: ItemInput,
-  assignments: AssignmentInput[],
-): number {
-  let covered = 0
-  for (let unitIndex = 0; unitIndex < item.quantity; unitIndex++) {
-    if (
-      assignments.some(
-        (assignment) =>
-          assignment.itemId === item.id && assignment.unitIndex === unitIndex,
-      )
-    ) {
-      covered++
-    }
-  }
-  return covered
-}
-
 export function itemHasFullUnitCoverage(
   item: ItemInput,
   assignments: AssignmentInput[],
 ): boolean {
   return !itemHasEmptyUnit(item, assignments)
-}
-
-export function participantIdsOnUnit(
-  itemId: string,
-  unitIndex: number,
-  assignments: AssignmentInput[],
-): string[] {
-  return assignments
-    .filter(
-      (assignment) =>
-        assignment.itemId === itemId && assignment.unitIndex === unitIndex,
-    )
-    .map((assignment) => assignment.participantId)
-}
-
-export function isParticipantOnUnit(
-  itemId: string,
-  unitIndex: number,
-  participantId: string,
-  assignments: AssignmentInput[],
-): boolean {
-  return assignments.some(
-    (assignment) =>
-      assignment.itemId === itemId &&
-      assignment.unitIndex === unitIndex &&
-      assignment.participantId === participantId,
-  )
-}
-
-export function formatUnitTitle(itemName: string, unitIndex: number): string {
-  return `${itemName} · бройка ${unitIndex + 1}`
 }

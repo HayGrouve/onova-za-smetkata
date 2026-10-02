@@ -88,28 +88,9 @@ export function getStoredGuestSession(
   return session
 }
 
-/** @deprecated Use getStoredGuestSession */
-export function getStoredGuestParticipant(billId: string): string | null {
-  return getStoredGuestSession(billId)?.participantId ?? null
-}
-
 export function setStoredGuestSession(session: StoredGuestSession): void {
   if (!canUseLocalStorage()) return
   localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
-}
-
-export function setStoredGuestParticipant(
-  billId: string,
-  participantId: string,
-  shareToken: string,
-  sessionToken?: string,
-): void {
-  setStoredGuestSession({
-    billId,
-    participantId,
-    shareToken,
-    sessionToken: sessionToken ?? createGuestSessionToken(),
-  })
 }
 
 export function clearStoredGuestParticipant(billId: string): void {

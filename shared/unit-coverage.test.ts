@@ -1,12 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  countCoveredUnits,
   countItemsWithEmptyUnits,
-  formatUnitTitle,
-  isParticipantOnUnit,
   itemHasEmptyUnit,
   itemHasFullUnitCoverage,
-  participantIdsOnUnit,
 } from './unit-coverage'
 
 const item = { id: 'i1', unitPriceCents: 100, quantity: 3 }
@@ -18,7 +14,6 @@ describe('unit coverage', () => {
       { itemId: 'i1', participantId: 'p2', unitIndex: 2 },
     ]
     expect(itemHasEmptyUnit(item, assignments)).toBe(true)
-    expect(countCoveredUnits(item, assignments)).toBe(2)
     expect(countItemsWithEmptyUnits([item], assignments)).toBe(1)
   })
 
@@ -34,32 +29,13 @@ describe('unit coverage', () => {
 
   it('treats an item with no rows as fully empty', () => {
     expect(itemHasEmptyUnit(item, [])).toBe(true)
-    expect(countCoveredUnits(item, [])).toBe(0)
   })
 
-  it('lists participants on a unit', () => {
-    const assignments = [
-      { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
-      { itemId: 'i1', participantId: 'p2', unitIndex: 0 },
-      { itemId: 'i1', participantId: 'p1', unitIndex: 2 },
-    ]
-    expect(participantIdsOnUnit('i1', 0, assignments).sort()).toEqual([
-      'p1',
-      'p2',
-    ])
-  })
-
-  it('detects membership on a unit', () => {
-    const assignments = [
-      { itemId: 'i1', participantId: 'p1', unitIndex: 1 },
-      { itemId: 'i1', participantId: 'p2', unitIndex: 0 },
-    ]
-    expect(isParticipantOnUnit('i1', 1, 'p1', assignments)).toBe(true)
-    expect(isParticipantOnUnit('i1', 0, 'p1', assignments)).toBe(false)
-  })
-
-  it('formats 1-based unit titles', () => {
-    expect(formatUnitTitle('Вода', 0)).toBe('Вода · бройка 1')
-    expect(formatUnitTitle('Вода', 2)).toBe('Вода · бройка 3')
+  it('ignores rows for other items', () => {
+    expect(
+      itemHasEmptyUnit({ ...item, quantity: 1 }, [
+        { itemId: 'other', participantId: 'p1', unitIndex: 0 },
+      ]),
+    ).toBe(true)
   })
 })

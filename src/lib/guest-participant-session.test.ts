@@ -5,9 +5,7 @@ import {
   getConvexErrorMessage,
   getOrCreateGuestDeviceId,
   getStoredGuestSession,
-  getStoredGuestParticipant,
   setStoredGuestSession,
-  setStoredGuestParticipant,
 } from './guest-participant-session.ts'
 
 const STORAGE_KEY = 'onova-guest-participant'
@@ -74,7 +72,6 @@ describe('guest-participant-session', () => {
 
   it('returns null when nothing stored', () => {
     expect(getStoredGuestSession('bill_a')).toBeNull()
-    expect(getStoredGuestParticipant('bill_a')).toBeNull()
   })
 
   it('stores and reads session for bill', () => {
@@ -90,7 +87,6 @@ describe('guest-participant-session', () => {
       sessionToken: 'token-1',
       shareToken: 'share-1',
     })
-    expect(getStoredGuestParticipant('bill_a')).toBe('participant_1')
   })
 
   it('keeps Covered seats for resume', () => {
@@ -104,12 +100,6 @@ describe('guest-participant-session', () => {
     expect(getStoredGuestSession('bill_a')?.coveredParticipantIds).toEqual([
       'participant_2',
     ])
-  })
-
-  it('setStoredGuestParticipant creates a session token', () => {
-    setStoredGuestParticipant('bill_a', 'participant_1', 'share-1', 'token-abc')
-    expect(getStoredGuestSession('bill_a')?.sessionToken).toBe('token-abc')
-    expect(getStoredGuestSession('bill_a')?.shareToken).toBe('share-1')
   })
 
   it('createGuestSessionToken returns non-empty string', () => {
@@ -130,6 +120,8 @@ describe('guest-participant-session', () => {
       sessionToken: 'token-1',
       shareToken: 'share-1',
     })
+    clearStoredGuestParticipant('bill_b')
+    expect(getStoredGuestSession('bill_a')).not.toBeNull()
     clearStoredGuestParticipant('bill_a')
     expect(getStoredGuestSession('bill_a')).toBeNull()
   })

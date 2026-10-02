@@ -9,8 +9,6 @@ import {
   splitUnitShareAmongAssignees,
 } from './unit-share-allocation'
 
-export { splitLineTotal } from './unit-share-allocation'
-
 export type PaymentStatus = 'unpaid' | 'partial' | 'paid'
 
 export interface ParticipantInput {
@@ -59,16 +57,6 @@ export interface BillTotals {
 
 export function lineTotalCents(item: ItemInput): number {
   return item.unitPriceCents * item.quantity
-}
-
-export function splitUnits(quantity: number, count: number): number[] {
-  if (count <= 0) return []
-  const base = Math.floor(quantity / count)
-  const remainder = quantity % count
-  return Array.from(
-    { length: count },
-    (_, index) => base + (index < remainder ? 1 : 0),
-  )
 }
 
 function sortParticipantIds(
@@ -199,13 +187,6 @@ export function calculateBillTotals(input: BillCalculationInput): BillTotals {
   return applyAlwaysPaidHostCollection(
     { billTotalCents, byParticipant },
     input.hostParticipantId,
-  )
-}
-
-export function totalOutstandingCents(totals: BillTotals): number {
-  return Object.values(totals.byParticipant).reduce(
-    (sum, participant) => sum + Math.max(0, participant.balanceCents),
-    0,
   )
 }
 

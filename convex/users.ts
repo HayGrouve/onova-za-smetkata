@@ -1,7 +1,6 @@
-import { ConvexError, v } from 'convex/values'
+import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import { requireAuth, getOptionalAuthUserId } from './lib/auth'
-import { formatUsernameError, parseUsername } from '../shared/host-profile'
 import {
   getEffectiveTier,
   getFriendGroupLimit,
@@ -69,20 +68,5 @@ export const ensureCurrent = mutation({
   args: {},
   handler: async (ctx) => {
     return await requireAuth(ctx)
-  },
-})
-
-export const saveUsername = mutation({
-  args: {
-    username: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
-    const parsed = parseUsername(args.username ?? '')
-    if (!parsed.success) {
-      throw new ConvexError(formatUsernameError(parsed.error))
-    }
-
-    await ctx.db.patch(userId, { username: parsed.data })
   },
 })

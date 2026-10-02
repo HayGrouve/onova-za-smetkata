@@ -1,32 +1,14 @@
 import { describe, expect, it } from 'vitest'
+import fc from 'fast-check'
 import {
-  splitLineTotal,
-  splitUnits,
   calculateBillTotals,
   calculateParticipantBreakdown,
   validateBillForFinalize,
-  totalOutstandingCents,
 } from './bill-calculations'
 import type {
   BillBreakdownInput,
   BillCalculationInput,
 } from './bill-calculations'
-
-function assertBillReconciles(input: BillCalculationInput) {
-  const totals = calculateBillTotals(input)
-  const itemsTotal =
-    input.items.reduce(
-      (sum, item) => sum + item.unitPriceCents * item.quantity,
-      0,
-    ) + (input.tipCents ?? 0)
-  expect(totals.billTotalCents).toBe(itemsTotal)
-  const sumOwed = Object.values(totals.byParticipant).reduce(
-    (sum, participant) => sum + participant.owedCents,
-    0,
-  )
-  expect(sumOwed).toBe(totals.billTotalCents)
-  return totals
-}
 
 describe('payment status for a zero Share', () => {
   it('counts a Participant who owes nothing as paid', () => {
@@ -45,31 +27,6 @@ describe('payment status for a zero Share', () => {
       status: 'paid',
     })
     expect(totals.byParticipant.p1.status).toBe('unpaid')
-  })
-})
-
-describe('splitLineTotal', () => {
-  it('assigns full amount to one person', () => {
-    expect(splitLineTotal(1000, ['a'])).toEqual([{ id: 'a', cents: 1000 }])
-  })
-
-  it('splits evenly with remainder to first participants', () => {
-    const result = splitLineTotal(100, ['a', 'b', 'c'])
-    expect(result).toEqual([
-      { id: 'a', cents: 34 },
-      { id: 'b', cents: 33 },
-      { id: 'c', cents: 33 },
-    ])
-  })
-})
-
-describe('splitUnits', () => {
-  it('splits 4 units among 3 people as 2,1,1', () => {
-    expect(splitUnits(4, 3)).toEqual([2, 1, 1])
-  })
-
-  it('splits 2 units among 2 people as 1,1', () => {
-    expect(splitUnits(2, 2)).toEqual([1, 1])
   })
 })
 
@@ -238,33 +195,9 @@ describe('validateBillForFinalize', () => {
   })
 })
 
-describe('bill reconciliation', () => {
-  it('sum(owed) equals bill total for mixed unit and cent splits', () => {
-    assertBillReconciles({
-      participants: [
-        { id: 'p1', sortOrder: 0 },
-        { id: 'p2', sortOrder: 1 },
-        { id: 'p3', sortOrder: 2 },
-      ],
-      items: [
-        { id: 'i1', unitPriceCents: 1200, quantity: 1 },
-        { id: 'i2', unitPriceCents: 229, quantity: 4 },
-      ],
-      assignments: [
-        { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
-        { itemId: 'i1', participantId: 'p2', unitIndex: 0 },
-        { itemId: 'i2', participantId: 'p1', unitIndex: 0 },
-        { itemId: 'i2', participantId: 'p1', unitIndex: 1 },
-        { itemId: 'i2', participantId: 'p2', unitIndex: 2 },
-        { itemId: 'i2', participantId: 'p3', unitIndex: 3 },
-      ],
-      payments: [{ participantId: 'p1', amountCents: 500 }],
-      tipCents: 300,
-    })
-  })
-
+describe('cent remainders', () => {
   it('splits €10.00 evenly among 3 participants (remainder cents)', () => {
-    const totals = assertBillReconciles({
+    const totals = calculateBillTotals({
       participants: [
         { id: 'p1', sortOrder: 0 },
         { id: 'p2', sortOrder: 1 },
@@ -284,7 +217,7 @@ describe('bill reconciliation', () => {
   })
 
   it('splits €10.01 evenly among 3 participants', () => {
-    const totals = assertBillReconciles({
+    const totals = calculateBillTotals({
       participants: [
         { id: 'p1', sortOrder: 0 },
         { id: 'p2', sortOrder: 1 },
@@ -301,25 +234,6 @@ describe('bill reconciliation', () => {
     expect(totals.byParticipant.p1.owedCents).toBe(334)
     expect(totals.byParticipant.p2.owedCents).toBe(334)
     expect(totals.byParticipant.p3.owedCents).toBe(333)
-  })
-
-  it('totalOutstandingCents sums positive balances only', () => {
-    const totals = calculateBillTotals({
-      participants: [
-        { id: 'p1', sortOrder: 0 },
-        { id: 'p2', sortOrder: 1 },
-      ],
-      items: [
-        { id: 'i1', unitPriceCents: 1000, quantity: 1 },
-        { id: 'i2', unitPriceCents: 2000, quantity: 1 },
-      ],
-      assignments: [
-        { itemId: 'i1', participantId: 'p1', unitIndex: 0 },
-        { itemId: 'i2', participantId: 'p2', unitIndex: 0 },
-      ],
-      payments: [{ participantId: 'p1', amountCents: 1000 }],
-    })
-    expect(totalOutstandingCents(totals)).toBe(2000)
   })
 })
 
@@ -351,7 +265,6 @@ describe('always-paid Host collection rule', () => {
       balanceCents: 500,
       status: 'unpaid',
     })
-    expect(totalOutstandingCents(totals)).toBe(500)
   })
 
   it('still splits tip across all Participants including Host with no claimed items', () => {
@@ -413,8 +326,9 @@ describe('always-paid Host collection rule', () => {
       balanceCents: 0,
       status: 'paid',
     })
-    expect(totalOutstandingCents(after)).toBe(500)
+    expect(after.byParticipant.guest.balanceCents).toBe(500)
   })
+
   it('splits a single unit evenly among multiple participants on that unit', () => {
     const totals = calculateBillTotals({
       participants: [
@@ -483,20 +397,6 @@ describe('calculateParticipantBreakdown', () => {
     )
   })
 
-  it('matches calculateBillTotals owedCents for every participant', () => {
-    const totals = calculateBillTotals({
-      ...baseInput,
-      payments: [],
-    })
-    for (const p of baseInput.participants) {
-      const breakdown = calculateParticipantBreakdown(baseInput, p.id)
-      expect(breakdown.owedCents).toBe(totals.byParticipant[p.id].owedCents)
-      expect(
-        breakdown.lines.reduce((sum, line) => sum + line.amountCents, 0),
-      ).toBe(breakdown.owedCents)
-    }
-  })
-
   it('includes shared-with metadata on multi-qty items when a unit is co-claimed', () => {
     const input: BillBreakdownInput = {
       participants: [
@@ -524,5 +424,175 @@ describe('calculateParticipantBreakdown', () => {
         sharedWithParticipantIds: ['p2'],
       }),
     ])
+  })
+})
+
+/** Any bill: seats, lines, Unit memberships (empty Units allowed), tip, payments, maybe a Host. */
+const arbitraryBill: fc.Arbitrary<BillCalculationInput> = fc
+  .record({
+    seatCount: fc.integer({ min: 1, max: 6 }),
+    items: fc.array(
+      fc.record({
+        unitPriceCents: fc.integer({ min: 0, max: 20_000 }),
+        quantity: fc.integer({ min: 1, max: 5 }),
+      }),
+      { maxLength: 6 },
+    ),
+  })
+  .chain(({ seatCount, items }) => {
+    const seatIds = Array.from({ length: seatCount }, (_, index) => `p${index}`)
+    const unitCount = items.reduce((sum, item) => sum + item.quantity, 0)
+    return fc
+      .record({
+        sortOrders: fc.shuffledSubarray(
+          seatIds.map((_, index) => index),
+          { minLength: seatCount, maxLength: seatCount },
+        ),
+        unitMembers: fc.array(fc.subarray(seatIds), {
+          minLength: unitCount,
+          maxLength: unitCount,
+        }),
+        tipCents: fc.integer({ min: 0, max: 5_000 }),
+        payments: fc.array(
+          fc.record({
+            participantId: fc.constantFrom(...seatIds),
+            amountCents: fc.integer({ min: 1, max: 30_000 }),
+          }),
+          { maxLength: 4 },
+        ),
+        hostParticipantId: fc.option(fc.constantFrom(...seatIds), {
+          nil: undefined,
+        }),
+      })
+      .map(({ sortOrders, unitMembers, ...rest }) => {
+        const units = items.flatMap((item, itemIndex) =>
+          Array.from({ length: item.quantity }, (_, unitIndex) => ({
+            itemId: `i${itemIndex}`,
+            unitIndex,
+          })),
+        )
+        return {
+          ...rest,
+          participants: seatIds.map((id, index) => ({
+            id,
+            sortOrder: sortOrders[index],
+          })),
+          items: items.map((item, index) => ({ id: `i${index}`, ...item })),
+          assignments: units.flatMap((unit, index) =>
+            unitMembers[index].map((participantId) => ({
+              ...unit,
+              participantId,
+            })),
+          ),
+        }
+      })
+  })
+
+function sumOwed(input: BillCalculationInput) {
+  const totals = calculateBillTotals(input)
+  return Object.values(totals.byParticipant).reduce(
+    (sum, participant) => sum + participant.owedCents,
+    0,
+  )
+}
+
+function claimedCents(input: BillCalculationInput) {
+  return input.items.reduce((sum, item) => {
+    const claimedUnits = new Set(
+      input.assignments
+        .filter((assignment) => assignment.itemId === item.id)
+        .map((assignment) => assignment.unitIndex),
+    ).size
+    return sum + claimedUnits * item.unitPriceCents
+  }, 0)
+}
+
+describe('bill invariants', () => {
+  it('bill total is every line plus the tip', () => {
+    fc.assert(
+      fc.property(arbitraryBill, (input) => {
+        const lines = input.items.reduce(
+          (sum, item) => sum + item.unitPriceCents * item.quantity,
+          0,
+        )
+        expect(calculateBillTotals(input).billTotalCents).toBe(
+          lines + (input.tipCents ?? 0),
+        )
+      }),
+    )
+  })
+
+  it('Shares add up to the claimed Units plus the tip, to the cent', () => {
+    fc.assert(
+      fc.property(arbitraryBill, (input) => {
+        expect(sumOwed(input)).toBe(claimedCents(input) + (input.tipCents ?? 0))
+      }),
+    )
+  })
+
+  it('a fully claimed bill is fully shared out', () => {
+    fc.assert(
+      fc.property(arbitraryBill, (input) => {
+        const fullyClaimed = {
+          ...input,
+          assignments: input.items.flatMap((item) =>
+            Array.from({ length: item.quantity }, (_, unitIndex) => ({
+              itemId: item.id,
+              unitIndex,
+              participantId:
+                input.assignments.find(
+                  (a) => a.itemId === item.id && a.unitIndex === unitIndex,
+                )?.participantId ?? input.participants[0].id,
+            })),
+          ),
+        }
+        expect(sumOwed(fullyClaimed)).toBe(
+          calculateBillTotals(fullyClaimed).billTotalCents,
+        )
+      }),
+    )
+  })
+
+  it('balance is Share minus payments, and the Host is never Outstanding', () => {
+    fc.assert(
+      fc.property(arbitraryBill, (input) => {
+        const totals = calculateBillTotals(input)
+        for (const { id } of input.participants) {
+          const seat = totals.byParticipant[id]
+          expect(seat.owedCents).toBeGreaterThanOrEqual(0)
+          if (id === input.hostParticipantId) {
+            expect(seat).toMatchObject({ balanceCents: 0, status: 'paid' })
+            continue
+          }
+          const paid = input.payments
+            .filter((payment) => payment.participantId === id)
+            .reduce((sum, payment) => sum + payment.amountCents, 0)
+          expect(seat.paidCents).toBe(paid)
+          expect(seat.balanceCents).toBe(seat.owedCents - paid)
+          expect(seat.status === 'paid').toBe(
+            seat.owedCents <= 0 || paid >= seat.owedCents,
+          )
+        }
+      }),
+    )
+  })
+
+  it('a Participant Share breakdown always matches the bill totals', () => {
+    fc.assert(
+      fc.property(arbitraryBill, (input) => {
+        const totals = calculateBillTotals(input)
+        const breakdownInput: BillBreakdownInput = {
+          ...input,
+          items: input.items.map((item) => ({ ...item, name: item.id })),
+        }
+        for (const { id } of input.participants) {
+          const breakdown = calculateParticipantBreakdown(breakdownInput, id)
+          expect(breakdown.owedCents).toBe(totals.byParticipant[id].owedCents)
+          expect(
+            breakdown.lines.reduce((sum, line) => sum + line.amountCents, 0),
+          ).toBe(breakdown.owedCents)
+        }
+      }),
+    )
   })
 })

@@ -14,7 +14,7 @@ export default defineSchema({
     name: v.optional(v.string()),
     image: v.optional(v.string()),
     email: v.optional(v.string()),
-    /** Optional Host profile Username (`Потребителско име`). */
+    /** Retired Username (`Потребителско име`); kept so existing rows validate. */
     username: v.optional(v.string()),
     /** Host Pro billing mirror (read by `lib/hostTier.ts`; Stripe webhook to write it). */
     clerkPlanSlug: v.optional(v.string()),

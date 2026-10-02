@@ -56,28 +56,6 @@ function prefixIssues(issues: z.ZodIssue[], field: string): z.ZodIssue[] {
   }))
 }
 
-export function validateItemNameInput(value: string): string | undefined {
-  const parsed = itemNameSchema.safeParse(value)
-  if (!parsed.success) {
-    return parsed.error.issues[0]?.message ?? 'Невалидно наименование'
-  }
-  return undefined
-}
-
-export function validateItemPriceInput(value: string): string | undefined {
-  const result = parseItemPriceInput(value)
-  if (!result.ok) return result.message
-  return undefined
-}
-
-export function validateItemQuantityInput(value: string): string | undefined {
-  const parsed = quantityInputSchema.safeParse(value)
-  if (!parsed.success) {
-    return parsed.error.issues[0]?.message ?? 'Невалидно количество'
-  }
-  return undefined
-}
-
 export function validateItemAddForm(
   input: ItemAddFormInput,
 ):

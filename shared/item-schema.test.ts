@@ -3,12 +3,9 @@ import {
   parseItemPriceInput,
   validateItemAddArgs,
   validateItemAddForm,
-  validateItemNameInput,
-  validateItemPriceInput,
-  validateItemQuantityInput,
   validateItemUpdatePatch,
 } from './item-schema'
-import { ITEM_NAME_MAX, PAYMENT_NOTE_MAX } from './validation/constants'
+import { PAYMENT_NOTE_MAX } from './validation/constants'
 
 describe('parseItemPriceInput', () => {
   it('parses comma decimal', () => {
@@ -103,24 +100,5 @@ describe('validateItemUpdatePatch', () => {
     const result = validateItemUpdatePatch({ note: '   ' })
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.data.note).toBeUndefined()
-  })
-})
-
-describe('single-field validators', () => {
-  it('validateItemNameInput', () => {
-    expect(validateItemNameInput('')).toBeTruthy()
-    expect(validateItemNameInput('x'.repeat(ITEM_NAME_MAX + 1))).toBeTruthy()
-    expect(validateItemNameInput('Ок')).toBeUndefined()
-  })
-
-  it('validateItemPriceInput', () => {
-    expect(validateItemPriceInput('abc')).toBeTruthy()
-    expect(validateItemPriceInput('2,00')).toBeUndefined()
-  })
-
-  it('validateItemQuantityInput', () => {
-    expect(validateItemQuantityInput('0')).toBeTruthy()
-    expect(validateItemQuantityInput('1000')).toBeTruthy()
-    expect(validateItemQuantityInput('2')).toBeUndefined()
   })
 })

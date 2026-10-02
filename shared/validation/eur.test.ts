@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseEurInputStrict, eurInputSchema } from './eur'
+import { parseEurInputStrict } from './eur'
 import { EUR_CENTS_MAX } from './constants'
 
 describe('parseEurInputStrict', () => {
@@ -38,20 +38,5 @@ describe('parseEurInputStrict', () => {
       ok: false,
       message: 'Невалидна сума.',
     })
-  })
-})
-
-describe('eurInputSchema', () => {
-  it('transforms valid input to cents', () => {
-    const result = eurInputSchema().safeParse('3,20')
-    expect(result.success).toBe(true)
-    if (result.success) {
-      expect(result.data).toBe(320)
-    }
-  })
-
-  it('fails on invalid input', () => {
-    const result = eurInputSchema().safeParse('')
-    expect(result.success).toBe(false)
   })
 })
