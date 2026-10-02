@@ -14,6 +14,7 @@ import { CombinedPaymentBanner } from '#/components/bills/combined-payment-banne
 import { ParticipantDetailSheet } from '#/components/bills/participant-detail-sheet.tsx'
 import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
 import { BillHeaderSlot } from '#/components/layout/bill-header-title.tsx'
+import { DockHandle } from '#/components/layout/dock-handle.tsx'
 import {
   HostSlip,
   SlipStack,
@@ -155,6 +156,7 @@ function HostBillTable({
   const errorTimer = useRef<number | undefined>(undefined)
   const [undo, pushUndo, clearUndo] = useUndo()
   const [detailId, setDetailId] = useState<string | null>(null)
+  const [dockCollapsed, setDockCollapsed] = useState(false)
   const activePhase: Phase | 'final' = final ? 'final' : phase
   const assembling = activePhase === 'assemble' && assemble !== undefined
 
@@ -505,7 +507,7 @@ function HostBillTable({
         className={cn(
           'mx-auto grid w-full max-w-[1180px] items-start gap-6 px-3 pt-3 sm:px-6',
           'md:grid-cols-[minmax(0,1fr)_300px] lg:grid-cols-[240px_minmax(0,460px)_300px] lg:justify-center lg:gap-10 lg:pt-8',
-          'pb-[240px] md:pb-24',
+          dockCollapsed ? 'pb-24' : 'pb-[240px] md:pb-24',
         )}
       >
         <aside className="sticky top-20 hidden space-y-6 lg:block">
@@ -540,9 +542,14 @@ function HostBillTable({
             />
           </div>
           <div className="fixed inset-x-0 bottom-0 z-40 after:absolute after:inset-x-0 after:top-full after:h-16 after:bg-table-2 md:static md:z-auto md:after:hidden">
-            <div className="space-y-2 rounded-t-[26px] bg-table-2 px-3 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] shadow-[0_-16px_40px_-20px_var(--paper-shadow)] md:rounded-none md:bg-transparent md:p-0 md:shadow-none">
+            <div className="space-y-2 rounded-t-[26px] bg-table-2 px-3 pt-1 pb-[max(12px,env(safe-area-inset-bottom))] shadow-[0_-16px_40px_-20px_var(--paper-shadow)] md:rounded-none md:bg-transparent md:p-0 md:shadow-none">
+              <DockHandle
+                collapsed={dockCollapsed}
+                onToggle={() => setDockCollapsed((c) => !c)}
+                label="Действия"
+              />
               {activePhase === 'table' || activePhase === 'assemble' ? (
-                <div className="md:hidden">
+                <div className={cn('md:hidden', dockCollapsed && 'hidden')}>
                   <SeatsRail
                     seats={railSeats}
                     meId={bill.hostParticipantId}
@@ -564,7 +571,9 @@ function HostBillTable({
                   />
                 </div>
               ) : null}
-              {actions}
+              <div className={cn(dockCollapsed && 'max-md:hidden')}>
+                {actions}
+              </div>
             </div>
           </div>
           {!assembling ? (

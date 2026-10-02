@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { CombinedCoverNotice } from '#/components/bills/combined-cover-notice.tsx'
 import { CoveredSeatsSheet } from '#/components/bills/covered-seats-sheet.tsx'
 import { BillHeaderSlot } from '#/components/layout/bill-header-title.tsx'
+import { DockHandle } from '#/components/layout/dock-handle.tsx'
 import { ClaimLine } from '#/components/receipt/claim-line.tsx'
 import { FlightLayer, useFly } from '#/components/receipt/flight.tsx'
 import { ClaimLineDrawer } from '#/components/receipt/line-drawer.tsx'
@@ -128,6 +129,7 @@ function GuestClaimTable({
   const errorTimer = useRef<number | undefined>(undefined)
   const [undo, pushUndo, clearUndo] = useUndo()
   const [coveredOpen, setCoveredOpen] = useState(false)
+  const [dockCollapsed, setDockCollapsed] = useState(false)
   const actions = useClaimActions({ seatId: actorId, sessionToken })
   const leaveUnit = useMutation(api.assignments.leaveUnit)
   const pending = useQuery(api.combinedPayments.getPendingForGuest, {
@@ -370,7 +372,12 @@ function GuestClaimTable({
         </div>
       </BillHeaderSlot>
 
-      <div className="mx-auto grid w-full max-w-[1180px] items-start gap-6 px-3 pt-2 pb-[250px] sm:px-6 md:grid-cols-[minmax(0,1fr)_320px] md:pb-24 lg:grid-cols-[240px_minmax(0,460px)_320px] lg:justify-center lg:gap-10 lg:pt-8">
+      <div
+        className={cn(
+          'mx-auto grid w-full max-w-[1180px] items-start gap-6 px-3 pt-2 sm:px-6 md:grid-cols-[minmax(0,1fr)_320px] md:pb-24 lg:grid-cols-[240px_minmax(0,460px)_320px] lg:justify-center lg:gap-10 lg:pt-8',
+          dockCollapsed ? 'pb-24' : 'pb-[250px]',
+        )}
+      >
         <aside className="sticky top-20 hidden space-y-6 lg:block">
           <section className="space-y-3" aria-label="Масата">
             <h2 className="text-[14px] font-bold">Масата</h2>
@@ -488,8 +495,16 @@ function GuestClaimTable({
 
         {/* One slip: pinned to the bottom on phones, a column beside the receipt wider up. */}
         <aside className="space-y-5 md:sticky md:top-20">
-          <div className="fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-background from-60% to-transparent pt-4 after:absolute after:inset-x-0 after:top-full after:h-16 after:bg-background md:static md:z-auto md:bg-none md:pt-0 md:after:hidden">
-            {slip}
+          <div className="fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-background from-60% to-transparent pt-2 after:absolute after:inset-x-0 after:top-full after:h-16 after:bg-background md:static md:z-auto md:bg-none md:pt-0 md:after:hidden">
+            <DockHandle
+              collapsed={dockCollapsed}
+              onToggle={() => setDockCollapsed((c) => !c)}
+              label="Моята сметка"
+              className={cn(
+                dockCollapsed && 'pb-[max(10px,env(safe-area-inset-bottom))]',
+              )}
+            />
+            <div className={cn(dockCollapsed && 'max-md:hidden')}>{slip}</div>
           </div>
           <div className="hidden md:block lg:hidden">
             <ActivityFeed events={events} limit={5} />
