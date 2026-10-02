@@ -9,31 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SplatRouteImport } from './routes/$'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as UserProfileSplatRouteImport } from './routes/user-profile.$'
 import { Route as BillsBillIdIndexRouteImport } from './routes/bills/$billId/index'
-import { Route as BillsBillIdSummaryRouteImport } from './routes/bills/$billId/summary'
-import { Route as BillsBillIdPayRouteImport } from './routes/bills/$billId/pay'
-import { Route as BillsBillIdJoinRouteImport } from './routes/bills/$billId/join'
 import { Route as BillsBillIdClaimRouteImport } from './routes/bills/$billId/claim'
+import { Route as BillsBillIdJoinRouteImport } from './routes/bills/$billId/join'
+import { Route as BillsBillIdPayRouteImport } from './routes/bills/$billId/pay'
+import { Route as BillsBillIdSummaryRouteImport } from './routes/bills/$billId/summary'
 
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SplatRoute = SplatRouteImport.update({
@@ -41,9 +31,19 @@ const SplatRoute = SplatRouteImport.update({
   path: '/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UserProfileSplatRoute = UserProfileSplatRouteImport.update({
@@ -56,14 +56,9 @@ const BillsBillIdIndexRoute = BillsBillIdIndexRouteImport.update({
   path: '/bills/$billId/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BillsBillIdSummaryRoute = BillsBillIdSummaryRouteImport.update({
-  id: '/bills/$billId/summary',
-  path: '/bills/$billId/summary',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BillsBillIdPayRoute = BillsBillIdPayRouteImport.update({
-  id: '/bills/$billId/pay',
-  path: '/bills/$billId/pay',
+const BillsBillIdClaimRoute = BillsBillIdClaimRouteImport.update({
+  id: '/bills/$billId/claim',
+  path: '/bills/$billId/claim',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BillsBillIdJoinRoute = BillsBillIdJoinRouteImport.update({
@@ -71,9 +66,14 @@ const BillsBillIdJoinRoute = BillsBillIdJoinRouteImport.update({
   path: '/bills/$billId/join',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BillsBillIdClaimRoute = BillsBillIdClaimRouteImport.update({
-  id: '/bills/$billId/claim',
-  path: '/bills/$billId/claim',
+const BillsBillIdPayRoute = BillsBillIdPayRouteImport.update({
+  id: '/bills/$billId/pay',
+  path: '/bills/$billId/pay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BillsBillIdSummaryRoute = BillsBillIdSummaryRouteImport.update({
+  id: '/bills/$billId/summary',
+  path: '/bills/$billId/summary',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -175,25 +175,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$': {
@@ -203,11 +189,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/user-profile/$': {
@@ -224,18 +224,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BillsBillIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/bills/$billId/summary': {
-      id: '/bills/$billId/summary'
-      path: '/bills/$billId/summary'
-      fullPath: '/bills/$billId/summary'
-      preLoaderRoute: typeof BillsBillIdSummaryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bills/$billId/pay': {
-      id: '/bills/$billId/pay'
-      path: '/bills/$billId/pay'
-      fullPath: '/bills/$billId/pay'
-      preLoaderRoute: typeof BillsBillIdPayRouteImport
+    '/bills/$billId/claim': {
+      id: '/bills/$billId/claim'
+      path: '/bills/$billId/claim'
+      fullPath: '/bills/$billId/claim'
+      preLoaderRoute: typeof BillsBillIdClaimRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bills/$billId/join': {
@@ -245,11 +238,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BillsBillIdJoinRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/bills/$billId/claim': {
-      id: '/bills/$billId/claim'
-      path: '/bills/$billId/claim'
-      fullPath: '/bills/$billId/claim'
-      preLoaderRoute: typeof BillsBillIdClaimRouteImport
+    '/bills/$billId/pay': {
+      id: '/bills/$billId/pay'
+      path: '/bills/$billId/pay'
+      fullPath: '/bills/$billId/pay'
+      preLoaderRoute: typeof BillsBillIdPayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bills/$billId/summary': {
+      id: '/bills/$billId/summary'
+      path: '/bills/$billId/summary'
+      fullPath: '/bills/$billId/summary'
+      preLoaderRoute: typeof BillsBillIdSummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
