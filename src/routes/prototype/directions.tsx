@@ -9,17 +9,20 @@ import { DirectionSwitcher } from '#/components/prototype/directions/switcher.ts
 import type { ProtoView } from '#/components/prototype/directions/types.ts'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
 
+// Search validation must not reference the direction components, or the
+// route splitter keeps the whole prototype in the main client bundle.
+const VARIANT_KEYS = ['A', 'B', 'C'] as const
+type VariantKey = (typeof VARIANT_KEYS)[number]
+
+function isVariant(v: unknown): v is VariantKey {
+  return VARIANT_KEYS.some((key) => key === v)
+}
+
 const VARIANTS = [
   { key: 'A', label: 'A · Познато и бързо', Component: DirectionA },
   { key: 'B', label: 'B · Фокус', Component: DirectionB },
   { key: 'C', label: 'C · Живата сметка', Component: DirectionC },
 ] as const
-
-type VariantKey = (typeof VARIANTS)[number]['key']
-
-function isVariant(v: unknown): v is VariantKey {
-  return VARIANTS.some(({ key }) => key === v)
-}
 
 export const Route = createFileRoute('/prototype/directions')({
   head: () => buildNoIndexHead('Прототип: три посоки'),
