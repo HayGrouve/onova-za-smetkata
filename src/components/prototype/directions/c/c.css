@@ -1,0 +1,333 @@
+/*
+ * PROTOTYPE Direction C "Живата сметка". Tokens and receipt objects.
+ * Everything is scoped under .proto-c (also put on portal content).
+ * The paper stays light in dark mode: it is a physical object on the table.
+ */
+.proto-c {
+  --c-table: oklch(0.9 0.008 250);
+  --c-table-2: oklch(0.86 0.01 250);
+  --c-table-3: oklch(0.82 0.012 250);
+  --c-on-table: oklch(0.25 0.02 255);
+  --c-on-table-muted: oklch(0.44 0.02 255);
+  --c-paper: oklch(0.985 0.003 95);
+  --c-paper-2: oklch(0.955 0.004 95);
+  --c-ink: oklch(0.22 0.015 255);
+  --c-ink-muted: oklch(0.5 0.015 255);
+  --c-ink-faint: oklch(0.72 0.01 255);
+  --c-rule: oklch(0.82 0.008 255);
+  --c-accent: oklch(0.6 0.2 33);
+  /* Filled vermilion actions: one step deeper so paper-colored text passes AA. */
+  --c-btn: oklch(0.55 0.19 33);
+  --c-btn-ink: oklch(0.985 0.003 95);
+  --c-accent-soft: oklch(0.93 0.04 40);
+  --c-shadow: oklch(0.2 0.02 255 / 0.4);
+
+  --c-display: 'Unbounded', ui-sans-serif, system-ui, sans-serif;
+  --c-mono: 'Martian Mono', ui-monospace, monospace;
+
+  background: var(--c-table);
+  color: var(--c-on-table);
+  font-family: var(--c-mono);
+  font-stretch: 87.5%;
+  font-size: 13px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dark .proto-c {
+  --c-table: oklch(0.2 0.02 255);
+  --c-table-2: oklch(0.24 0.022 255);
+  --c-table-3: oklch(0.3 0.024 255);
+  --c-on-table: oklch(0.92 0.01 250);
+  --c-on-table-muted: oklch(0.74 0.015 250);
+  --c-paper: oklch(0.94 0.006 95);
+  --c-paper-2: oklch(0.905 0.007 95);
+  --c-rule: oklch(0.78 0.008 255);
+  --c-accent: oklch(0.68 0.19 35);
+  --c-btn: oklch(0.68 0.19 35);
+  --c-btn-ink: oklch(0.2 0.02 255);
+  --c-accent-soft: oklch(0.88 0.05 40);
+  --c-shadow: oklch(0.08 0.02 255 / 0.7);
+}
+
+/* Table surface: a faint woven texture so the paper reads as an object. */
+.proto-c .c-table {
+  background-color: var(--c-table);
+  background-image: radial-gradient(
+    oklch(0.5 0.02 255 / 0.07) 1px,
+    transparent 1.4px
+  );
+  background-size: 14px 14px;
+}
+
+.proto-c .c-display {
+  font-family: var(--c-display);
+  font-stretch: normal;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* ------------------------------------------------------------- the paper */
+
+.proto-c .c-paper-shadow {
+  filter: drop-shadow(0 22px 26px var(--c-shadow));
+}
+
+.proto-c .c-paper {
+  --zz: 9px;
+  --_g: #0000, #000 1deg 89deg, #0000 90deg;
+  background: var(--c-paper);
+  color: var(--c-ink);
+  mask:
+    conic-gradient(from -45deg at bottom, var(--_g)) bottom /
+      calc(2 * var(--zz)) 51% repeat-x,
+    conic-gradient(from 135deg at top, var(--_g)) top / calc(2 * var(--zz)) 51%
+      repeat-x;
+  padding-block: calc(var(--zz) + 14px);
+}
+
+.proto-c .c-paper-top {
+  --zz: 9px;
+  --_g: #0000, #000 1deg 89deg, #0000 90deg;
+  background: var(--c-paper);
+  color: var(--c-ink);
+  mask:
+    linear-gradient(#000 0 0) bottom / 100% 51% no-repeat,
+    conic-gradient(from 135deg at top, var(--_g)) top / calc(2 * var(--zz)) 51%
+      repeat-x;
+  padding-top: calc(var(--zz) + 14px);
+}
+
+/* Thermal-print texture: very faint horizontal banding. */
+.proto-c .c-thermal {
+  background-image: repeating-linear-gradient(
+    180deg,
+    oklch(0.5 0.01 255 / 0.025) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+/* Dotted leader between a line's name and its price. */
+.proto-c .c-leader {
+  flex: 1 1 auto;
+  min-width: 12px;
+  margin-inline: 6px;
+  translate: 0 -4px;
+  border-bottom: 2px dotted var(--c-ink-faint);
+}
+
+/* Perforated tear line with half-circle notches on both edges. */
+.proto-c .c-perf {
+  position: relative;
+  height: 18px;
+}
+.proto-c .c-perf::before {
+  content: '';
+  position: absolute;
+  inset: 8px 14px auto;
+  border-top: 2px dashed var(--c-rule);
+}
+
+.proto-c .c-slip {
+  background: var(--c-paper);
+  color: var(--c-ink);
+  mask:
+    radial-gradient(circle 9px at 0 0, #0000 98%, #000) top left / 51% 100%
+      no-repeat,
+    radial-gradient(circle 9px at 100% 0, #0000 98%, #000) top right / 51% 100%
+      no-repeat;
+}
+
+/* Stand-alone stub (desktop slip column, home shelf): notched on all corners. */
+.proto-c .c-stub {
+  background: var(--c-paper);
+  color: var(--c-ink);
+  mask:
+    radial-gradient(circle 8px at 0 0, #0000 98%, #000) top left / 51% 51%
+      no-repeat,
+    radial-gradient(circle 8px at 100% 0, #0000 98%, #000) top right / 51% 51%
+      no-repeat,
+    radial-gradient(circle 8px at 0 100%, #0000 98%, #000) bottom left / 51% 51%
+      no-repeat,
+    radial-gradient(circle 8px at 100% 100%, #0000 98%, #000) bottom right / 51%
+      51% no-repeat;
+}
+
+/* ----------------------------------------------------------------- stamps */
+
+.proto-c .c-stamp {
+  font-family: var(--c-display);
+  font-weight: 800;
+  font-stretch: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: var(--c-accent);
+  border: 4px double currentColor;
+  padding: 0.35em 0.55em 0.3em;
+  border-radius: 3px;
+  rotate: -8deg;
+  white-space: nowrap;
+  /* Ink grit: a few lighter specks so it reads as rubber, not CSS. */
+  mask:
+    radial-gradient(circle at 18% 30%, #0006 0 2px, #000 3px),
+    radial-gradient(circle at 70% 70%, #0008 0 1.5px, #000 2.5px);
+  mask-size:
+    23px 19px,
+    31px 17px;
+  mask-composite: intersect;
+}
+.proto-c .c-stamp-wait {
+  color: var(--c-ink);
+  border: 2px dashed currentColor;
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------- controls */
+
+.proto-c .c-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding-inline: 20px;
+  border-radius: 999px;
+  background: var(--c-btn);
+  color: var(--c-btn-ink);
+  font-family: var(--c-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0;
+  white-space: nowrap;
+  transition:
+    transform 120ms,
+    filter 120ms;
+}
+.proto-c .c-btn:hover {
+  filter: brightness(1.05);
+}
+.proto-c .c-btn:active,
+.proto-c .c-ghost:active,
+.proto-c .c-ink-btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+.proto-c .c-btn:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* Ink button: used on the paper for secondary actions with weight. */
+.proto-c .c-ink-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding-inline: 16px;
+  border-radius: 999px;
+  background: var(--c-ink);
+  color: var(--c-paper);
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+  transition: transform 120ms;
+}
+
+.proto-c .c-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding-inline: 14px;
+  border-radius: 999px;
+  border: 1.5px solid currentColor;
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+  transition:
+    transform 120ms,
+    background-color 120ms;
+}
+.proto-c .c-ghost:hover {
+  background: oklch(0.5 0.02 255 / 0.08);
+}
+
+.proto-c .c-input {
+  min-height: 44px;
+  width: 100%;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 2px solid var(--c-ink);
+  background: transparent;
+  color: var(--c-ink);
+  padding: 6px 2px;
+  font: inherit;
+  outline: none;
+}
+.proto-c .c-input::placeholder {
+  color: var(--c-ink-muted);
+}
+.proto-c .c-input:focus-visible {
+  border-bottom-color: var(--c-accent);
+  box-shadow: 0 2px 0 0 var(--c-accent);
+}
+.proto-c .c-input[aria-invalid='true'] {
+  border-bottom-style: dashed;
+}
+
+.proto-c :focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+/* Skeleton rows that "print" while the receipt is being read. */
+.proto-c .c-skel {
+  background: linear-gradient(
+    90deg,
+    var(--c-paper-2) 0%,
+    oklch(0.9 0.006 95) 50%,
+    var(--c-paper-2) 100%
+  );
+  background-size: 200% 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .proto-c .c-skel {
+    animation: c-shimmer 1.2s linear infinite;
+  }
+  .proto-c .c-live-ring {
+    animation: c-pulse 1.6s ease-out infinite;
+  }
+}
+@keyframes c-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes c-pulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--ring, var(--c-accent));
+  }
+  100% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+
+.proto-c .c-scroll-x {
+  scrollbar-width: none;
+}
+.proto-c .c-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+/* Bottom zig-zag that closes a receipt whose slips continue below the paper. */
+.proto-c .c-paper-end {
+  --zz: 9px;
+  --_g: #0000, #000 1deg 89deg, #0000 90deg;
+  height: 26px;
+  background: var(--c-paper);
+  mask: conic-gradient(from -45deg at bottom, var(--_g)) bottom /
+    calc(2 * var(--zz)) 100% repeat-x;
+}

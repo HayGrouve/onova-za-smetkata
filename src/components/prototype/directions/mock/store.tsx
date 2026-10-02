@@ -36,7 +36,12 @@ import {
   createEmptyBill,
   createSeedBill,
 } from './data.ts'
-import type { MockActivity, MockAssignment, MockBill, MockItem } from './data.ts'
+import type {
+  MockActivity,
+  MockAssignment,
+  MockBill,
+  MockItem,
+} from './data.ts'
 
 export { formatEur }
 
@@ -59,7 +64,11 @@ type Action =
   | { type: 'setRestaurant'; name: string }
   | { type: 'setTipPercent'; percent: number }
   | { type: 'addItem'; item: Omit<MockItem, '_id' | 'sortOrder'> }
-  | { type: 'updateItem'; itemId: string; patch: Partial<Omit<MockItem, '_id'>> }
+  | {
+      type: 'updateItem'
+      itemId: string
+      patch: Partial<Omit<MockItem, '_id'>>
+    }
   | { type: 'removeItem'; itemId: string }
   | { type: 'scanStart' }
   | { type: 'scanDone' }
@@ -205,8 +214,9 @@ function snapshotOf(bill: MockBill): BillCalculationSnapshot {
 
 function owedOf(bill: MockBill, participantId: string): number {
   const totals = calculateBillTotals(snapshotOf(bill).calculationInput)
+  if (!(participantId in totals.byParticipant)) return 0
   const t = totals.byParticipant[participantId]
-  return t ? Math.max(0, t.owedCents - t.paidCents) : 0
+  return Math.max(0, t.owedCents - t.paidCents)
 }
 
 function reducer(state: ProtoState, action: Action): ProtoState {
@@ -215,7 +225,13 @@ function reducer(state: ProtoState, action: Action): ProtoState {
     case 'reset':
       return initialState()
     case 'newBill':
-      return { ...state, bill: createEmptyBill(), guestSeatId: null, coveredSeatIds: [], activity: [] }
+      return {
+        ...state,
+        bill: createEmptyBill(),
+        guestSeatId: null,
+        coveredSeatIds: [],
+        activity: [],
+      }
     case 'setRestaurant':
       return { ...state, bill: { ...bill, restaurantName: action.name } }
     case 'setTipPercent':
@@ -315,12 +331,19 @@ function reducer(state: ProtoState, action: Action): ProtoState {
     case 'takeUnit': {
       const group = groupsOf(bill).find((g) => g.key === action.groupKey)
       if (!group) return state
-      const plan = planTakeUnit({ units: group.units, assignments: bill.assignments })
+      const plan = planTakeUnit({
+        units: group.units,
+        assignments: bill.assignments,
+      })
       if (!plan.ok) return state
       return withAssignments(
         state,
         addMember(bill.assignments, plan.unit, action.participantId),
-        activity(action.participantId, 'took', `${nameOf(bill, action.participantId)} взе ${group.name}`),
+        activity(
+          action.participantId,
+          'took',
+          `${nameOf(bill, action.participantId)} взе ${group.name}`,
+        ),
       )
     }
     case 'releaseUnit': {
@@ -335,7 +358,11 @@ function reducer(state: ProtoState, action: Action): ProtoState {
       return withAssignments(
         state,
         removeMember(bill.assignments, plan.unit, action.participantId),
-        activity(action.participantId, 'released', `${nameOf(bill, action.participantId)} върна ${group.name}`),
+        activity(
+          action.participantId,
+          'released',
+          `${nameOf(bill, action.participantId)} върна ${group.name}`,
+        ),
       )
     }
     case 'shareUnit': {
@@ -352,11 +379,17 @@ function reducer(state: ProtoState, action: Action): ProtoState {
       let next = addMember(bill.assignments, plan.unit, action.actorId)
       for (const id of plan.add) next = addMember(next, plan.unit, id)
       for (const id of plan.remove) next = removeMember(next, plan.unit, id)
-      const names = action.withParticipantIds.map((id) => nameOf(bill, id)).join(', ')
+      const names = action.withParticipantIds
+        .map((id) => nameOf(bill, id))
+        .join(', ')
       return withAssignments(
         state,
         next,
-        activity(action.actorId, 'shared', `${nameOf(bill, action.actorId)} сподели ${group.name} с ${names}`),
+        activity(
+          action.actorId,
+          'shared',
+          `${nameOf(bill, action.actorId)} сподели ${group.name} с ${names}`,
+        ),
       )
     }
     case 'joinUnit':
@@ -372,11 +405,17 @@ function reducer(state: ProtoState, action: Action): ProtoState {
     case 'setUnitMembers': {
       const rest = bill.assignments.filter(
         (a) =>
-          !(a.itemId === action.unit.itemId && a.unitIndex === action.unit.unitIndex),
+          !(
+            a.itemId === action.unit.itemId &&
+            a.unitIndex === action.unit.unitIndex
+          ),
       )
       return withAssignments(state, [
         ...rest,
-        ...action.participantIds.map((participantId) => ({ ...action.unit, participantId })),
+        ...action.participantIds.map((participantId) => ({
+          ...action.unit,
+          participantId,
+        })),
       ])
     }
     case 'splitRestEvenly': {
@@ -386,7 +425,8 @@ function reducer(state: ProtoState, action: Action): ProtoState {
         for (let u = 0; u < item.quantity; u++) {
           const unit = { itemId: item._id, unitIndex: u }
           if (taken.has(unitKey(unit))) continue
-          for (const p of bill.participants) extra.push({ ...unit, participantId: p._id })
+          for (const p of bill.participants)
+            extra.push({ ...unit, participantId: p._id })
         }
       }
       return withAssignments(state, [...bill.assignments, ...extra])
@@ -397,17 +437,25 @@ function reducer(state: ProtoState, action: Action): ProtoState {
         guestSeatId: action.participantId,
         bill: {
           ...bill,
-          seatPhones: { ...bill.seatPhones, [action.participantId]: action.participantId },
+          seatPhones: {
+            ...bill.seatPhones,
+            [action.participantId]: action.participantId,
+          },
         },
         activity: [
-          activity(action.participantId, 'joined', `${nameOf(bill, action.participantId)} отвори линка`),
+          activity(
+            action.participantId,
+            'joined',
+            `${nameOf(bill, action.participantId)} отвори линка`,
+          ),
           ...state.activity,
         ],
       }
     case 'joinAsNew': {
       const name = action.name.trim()
       if (!name) return state
-      const sortOrder = Math.max(0, ...bill.participants.map((p) => p.sortOrder)) + 1
+      const sortOrder =
+        Math.max(0, ...bill.participants.map((p) => p.sortOrder)) + 1
       const id = `p-guest-${Date.now()}`
       return {
         ...state,
@@ -417,7 +465,10 @@ function reducer(state: ProtoState, action: Action): ProtoState {
           participants: [...bill.participants, { _id: id, name, sortOrder }],
           seatPhones: { ...bill.seatPhones, [id]: id },
         },
-        activity: [activity(id, 'joined', `${name} се добави към сметката`), ...state.activity],
+        activity: [
+          activity(id, 'joined', `${name} се добави към сметката`),
+          ...state.activity,
+        ],
       }
     }
     case 'leaveSeat': {
@@ -426,19 +477,30 @@ function reducer(state: ProtoState, action: Action): ProtoState {
       for (const [seat, phone] of Object.entries(seatPhones)) {
         if (phone === state.guestSeatId) delete seatPhones[seat]
       }
-      return { ...state, guestSeatId: null, coveredSeatIds: [], bill: { ...bill, seatPhones } }
+      return {
+        ...state,
+        guestSeatId: null,
+        coveredSeatIds: [],
+        bill: { ...bill, seatPhones },
+      }
     }
     case 'setCovered': {
       if (!state.guestSeatId) return state
       const seatPhones = { ...bill.seatPhones }
       for (const id of state.coveredSeatIds) delete seatPhones[id]
       for (const id of action.participantIds) seatPhones[id] = state.guestSeatId
-      return { ...state, coveredSeatIds: action.participantIds, bill: { ...bill, seatPhones } }
+      return {
+        ...state,
+        coveredSeatIds: action.participantIds,
+        bill: { ...bill, seatPhones },
+      }
     }
     case 'reportPaid': {
       const by = action.by ?? state.guestSeatId ?? action.participantIds[0]
       const pending = [
-        ...bill.pending.filter((p) => !action.participantIds.includes(p.participantId)),
+        ...bill.pending.filter(
+          (p) => !action.participantIds.includes(p.participantId),
+        ),
         ...action.participantIds.map((participantId) => ({
           participantId,
           amountCents: owedOf(bill, participantId),
@@ -453,7 +515,11 @@ function reducer(state: ProtoState, action: Action): ProtoState {
         ...state,
         bill: { ...bill, pending },
         activity: [
-          activity(by, 'paid', `${nameOf(bill, by)} преведе ${formatEur(total)}`),
+          activity(
+            by,
+            'paid',
+            `${nameOf(bill, by)} преведе ${formatEur(total)}`,
+          ),
           ...state.activity,
         ],
       }
@@ -463,24 +529,38 @@ function reducer(state: ProtoState, action: Action): ProtoState {
         ...state,
         bill: {
           ...bill,
-          pending: bill.pending.filter((p) => !action.participantIds.includes(p.participantId)),
+          pending: bill.pending.filter(
+            (p) => !action.participantIds.includes(p.participantId),
+          ),
         },
       }
     case 'confirmPayment': {
-      const p = bill.pending.find((x) => x.participantId === action.participantId)
+      const p = bill.pending.find(
+        (x) => x.participantId === action.participantId,
+      )
       if (!p) return state
       return {
         ...state,
         bill: {
           ...bill,
-          pending: bill.pending.filter((x) => x.participantId !== action.participantId),
+          pending: bill.pending.filter(
+            (x) => x.participantId !== action.participantId,
+          ),
           payments: [
             ...bill.payments,
-            { participantId: p.participantId, amountCents: p.amountCents, paidAt: Date.now() },
+            {
+              participantId: p.participantId,
+              amountCents: p.amountCents,
+              paidAt: Date.now(),
+            },
           ],
         },
         activity: [
-          activity(HOST_ID, 'confirmed', `Потвърдихте ${formatEur(p.amountCents)} от ${nameOf(bill, p.participantId)}`),
+          activity(
+            HOST_ID,
+            'confirmed',
+            `Потвърдихте ${formatEur(p.amountCents)} от ${nameOf(bill, p.participantId)}`,
+          ),
           ...state.activity,
         ],
       }
@@ -492,14 +572,24 @@ function reducer(state: ProtoState, action: Action): ProtoState {
         ...state,
         bill: {
           ...bill,
-          pending: bill.pending.filter((x) => x.participantId !== action.participantId),
+          pending: bill.pending.filter(
+            (x) => x.participantId !== action.participantId,
+          ),
           payments: [
             ...bill.payments,
-            { participantId: action.participantId, amountCents: amount, paidAt: Date.now() },
+            {
+              participantId: action.participantId,
+              amountCents: amount,
+              paidAt: Date.now(),
+            },
           ],
         },
         activity: [
-          activity(HOST_ID, 'confirmed', `Отбелязахте ${formatEur(amount)} от ${nameOf(bill, action.participantId)}`),
+          activity(
+            HOST_ID,
+            'confirmed',
+            `Отбелязахте ${formatEur(amount)} от ${nameOf(bill, action.participantId)}`,
+          ),
           ...state.activity,
         ],
       }
@@ -509,7 +599,9 @@ function reducer(state: ProtoState, action: Action): ProtoState {
         ...state,
         bill: {
           ...bill,
-          payments: bill.payments.filter((p) => p.participantId !== action.participantId),
+          payments: bill.payments.filter(
+            (p) => p.participantId !== action.participantId,
+          ),
         },
       }
     case 'finalize':
@@ -521,10 +613,17 @@ function reducer(state: ProtoState, action: Action): ProtoState {
         ...state,
         bill: {
           ...bill,
-          seatPhones: { ...bill.seatPhones, [action.participantId]: action.participantId },
+          seatPhones: {
+            ...bill.seatPhones,
+            [action.participantId]: action.participantId,
+          },
         },
         activity: [
-          activity(action.participantId, 'joined', `${nameOf(bill, action.participantId)} отвори линка`),
+          activity(
+            action.participantId,
+            'joined',
+            `${nameOf(bill, action.participantId)} отвори линка`,
+          ),
           ...state.activity,
         ],
       }
@@ -580,7 +679,9 @@ function deriveBill(bill: MockBill): DerivedBill {
   const groups = groupsOf(bill)
   const subtotalCents = subtotalOf(bill)
   const tipCents = tipCentsOf(bill)
-  const labels = Object.fromEntries(bill.participants.map((p) => [p._id, p.name]))
+  const labels = Object.fromEntries(
+    bill.participants.map((p) => [p._id, p.name]),
+  )
   const participantsInput = snapshot.calculationInput.participants
 
   const membersByUnit = new Map<string, string[]>()
@@ -600,7 +701,10 @@ function deriveBill(bill: MockBill): DerivedBill {
   for (const item of bill.items) {
     for (let u = 0; u < item.quantity; u++) {
       totalUnits += 1
-      if ((membersByUnit.get(unitKey({ itemId: item._id, unitIndex: u })) ?? []).length > 0) {
+      if (
+        (membersByUnit.get(unitKey({ itemId: item._id, unitIndex: u })) ?? [])
+          .length > 0
+      ) {
         claimedUnits += 1
       } else {
         unclaimedCents += item.unitPriceCents
@@ -630,7 +734,8 @@ function deriveBill(bill: MockBill): DerivedBill {
         totals: t,
         remainingCents: isHost ? 0 : Math.max(0, t.owedCents - t.paidCents),
         pendingCents: pending?.amountCents ?? 0,
-        claimedUnits: bill.assignments.filter((a) => a.participantId === p._id).length,
+        claimedUnits: bill.assignments.filter((a) => a.participantId === p._id)
+          .length,
       }
     })
   const guests = seats.filter((s) => !s.isHost)
@@ -654,7 +759,8 @@ function deriveBill(bill: MockBill): DerivedBill {
     seats,
     guests,
     labels,
-    settled: totalUnits > 0 && claimedUnits === totalUnits && outstandingCents === 0,
+    settled:
+      totalUnits > 0 && claimedUnits === totalUnits && outstandingCents === 0,
     seatView: (groupKey, seatId) => {
       const group = groups.find((g) => g.key === groupKey) ?? groups[0]
       return buildClaimGroupSeatView({
@@ -702,7 +808,9 @@ export function MockBillProvider({ children }: { children: ReactNode }) {
       state,
       derived,
       dispatch,
-      mySeatIds: state.guestSeatId ? [state.guestSeatId, ...state.coveredSeatIds] : [],
+      mySeatIds: state.guestSeatId
+        ? [state.guestSeatId, ...state.coveredSeatIds]
+        : [],
       scanReceipt: () => {
         dispatch({ type: 'scanStart' })
         window.setTimeout(() => dispatch({ type: 'scanDone' }), 1800)

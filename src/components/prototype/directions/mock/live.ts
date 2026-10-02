@@ -31,19 +31,29 @@ export function useLiveTable(enabled: boolean, intervalMs = 5200) {
       if (joined.length === 0) return
       const actor = joined[tick % joined.length]
       const freeGroups = derived.groups.filter(
-        (g) => derived.seatView(g.key, actor.participantId).freeUnits.length > 0,
+        (g) =>
+          derived.seatView(g.key, actor.participantId).freeUnits.length > 0,
       )
       // Leave some Units for the viewer: only claim while > 4 are free.
       if (freeGroups.length > 0 && derived.unclaimedUnits > 4) {
         const group = freeGroups[(tick * 7) % freeGroups.length]
-        dispatch({ type: 'takeUnit', groupKey: group.key, participantId: actor.participantId })
+        dispatch({
+          type: 'takeUnit',
+          groupKey: group.key,
+          participantId: actor.participantId,
+        })
         return
       }
       const payer = joined.find(
-        (g) => g.remainingCents > 0 && g.pendingCents === 0 && g.claimedUnits > 0,
+        (g) =>
+          g.remainingCents > 0 && g.pendingCents === 0 && g.claimedUnits > 0,
       )
       if (payer && tick % 3 === 0) {
-        dispatch({ type: 'reportPaid', participantIds: [payer.participantId], by: payer.participantId })
+        dispatch({
+          type: 'reportPaid',
+          participantIds: [payer.participantId],
+          by: payer.participantId,
+        })
       }
     }, intervalMs)
     return () => window.clearInterval(id)

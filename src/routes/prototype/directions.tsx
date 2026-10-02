@@ -23,9 +23,11 @@ function isVariant(v: unknown): v is VariantKey {
 
 export const Route = createFileRoute('/prototype/directions')({
   head: () => buildNoIndexHead('Прототип: три посоки'),
-  validateSearch: (s: Record<string, unknown>) => ({
-    variant: isVariant(s.variant) ? s.variant : ('A' as VariantKey),
-    view: (s.view === 'guest' ? 'guest' : 'host') as ProtoView,
+  validateSearch: (
+    s: Record<string, unknown>,
+  ): { variant: VariantKey; view: ProtoView } => ({
+    variant: isVariant(s.variant) ? s.variant : 'A',
+    view: s.view === 'guest' ? 'guest' : 'host',
   }),
   component: DirectionsPrototypePage,
 })
@@ -38,12 +40,17 @@ function DirectionsPrototypePage() {
   const Component = active.Component
 
   const setView = useCallback(
-    (next: ProtoView) => void navigate({ search: (p) => ({ ...p, view: next }), replace: true }),
+    (next: ProtoView) =>
+      void navigate({ search: (p) => ({ ...p, view: next }), replace: true }),
     [navigate],
   )
   const setVariant = useCallback(
     (next: string) =>
-      isVariant(next) && void navigate({ search: (p) => ({ ...p, variant: next }), replace: true }),
+      isVariant(next) &&
+      void navigate({
+        search: (p) => ({ ...p, variant: next }),
+        replace: true,
+      }),
     [navigate],
   )
 

@@ -7,10 +7,12 @@ Prototype branch: `prototype/three-directions`. Route: `/prototype/directions?va
 Reading this as: **a mobile-first transactional product UI for Bulgarian friend groups splitting a restaurant bill at the table**. The language should be fast, trustworthy and warm. The foundation is the existing Tailwind v4 + shadcn stack, with direction-scoped tokens and a much stronger typographic treatment of money.
 
 Mode: **redesign, overhaul (exploratory)**.
+
 - **Keep:** product name, Bulgarian copy voice, domain vocabulary (CONTEXT.md), core flows and the rules in `shared/`.
 - **Free to change:** visuals, information architecture and interaction model.
 
 Taste is a landing-page skill (§13 says dense multi-step product UI is out of scope). We apply the parts that transfer:
+
 - brief inference, dials and anti-default discipline
 - typography, color and shape locks
 - full interactive states and motivated motion
@@ -104,15 +106,18 @@ Dials: VARIANCE 3 · MOTION 3 · DENSITY 6.
 **IA: tabs, not a wizard.** The bill is one screen with a segmented control: **Артикули · Хора · Плащания**. A persistent summary header shows Общо, Остават € and claimed progress. Any tab is reachable at any time; there are no Назад/Напред steps.
 
 **Host**
+
 - **Home:** a Revolut/Splitwise-style balance header ("Дължат ви 25,60 €" with an avatar strip and Напомни), then one list of bills with status chips (Чернова · Събиране · Приключена). Drafts are collapsed when there are many.
 - **Assignment:** the same Claim-group rows the guests see, with seat avatars. Tapping a row opens a bottom sheet with per-person steppers ("who had how many") and a „Сподели бройка“ secondary action. This gives the host one assignment model, identical to the guest's.
 - **Payments:** compact rows (name, remaining €, status pill). Pending transfers appear first as „Чака потвърждение“ with an inline ✓ Потвърди. „Отбележи платено“ lives in a row menu.
 - **Finish:** blockers are listed inline, and „Приключи с остатък“ is available.
 
 **Guest**
+
 - **Flow:** Sunday/HungryPay checkout. The list of items has steppers, a sticky bottom bar shows "Вашият дял 14,20 € · Плати", and pay is a full screen with the total first and the Revolut button pinned.
 
 **Desktop and visuals**
+
 - **Desktop:** a two-pane master/detail layout. The bill list sits on the left, the bill workspace on the right, and Плащания becomes a right rail at 1280 px or wider.
 - **Visuals:** light-first, a neutral system feel and a single confident accent. Dense, calm lists divided by hairlines, not cards.
 
@@ -125,15 +130,18 @@ Dials: VARIANCE 5 · MOTION 5 · DENSITY 3.
 **IA: the bill has one current task**, and the screen is that task. Everything else is one tap away in a quiet „Детайли“ drawer.
 
 **Host**
+
 - **Home:** a single "next thing" card in large type ("Деси каза, че е превела 11,40 €. Потвърди?"). Below it sits a quiet list.
 - **Setup:** creating a bill is a focused sequence of full-screen questions: Снимай бележката → Провери (review) → Кой беше? → Сподели. One big primary action each, progress as a thin line.
 - **After the link is shared**, the bill becomes a calm live **status screen**. It shows one huge number (Остават 47,30 €) and a short list of people with one state word each, and it surfaces only the action that matters now (confirm, remind, close). Assignment is person-first: pick a person, then tap their items.
 
 **Guest**
+
 - **Flow:** the guest is guided one decision at a time. A huge "Кой сте вие?" with big name tiles. Then claiming as a focused list with progressive disclosure: the row is just name, price and a big round +. "Сподели" appears only after you have taken a unit.
 - **Pay:** a single full-bleed screen with one enormous amount and one button.
 
 **Desktop and visuals**
+
 - **Desktop:** a centred focus column with generous margins. On wide screens a quiet context panel (receipt or people) can sit beside it, dimmed.
 - **Visuals:** huge display numerals, lots of air, almost no borders, strong type contrast, restrained motion that animates state changes (number roll, sheet morph).
 
@@ -146,15 +154,18 @@ Dials: VARIANCE 8 · MOTION 7 · DENSITY 4.
 **IA: one shared, living receipt is the whole product.** There are no host editor steps and no separate guest pages. Host and guests look at the same receipt object with different permissions. It moves through three phases on a timeline: **Сглобяване → На масата → Разплащане**.
 
 **The table**
+
 - The people are **seats around the table**: an avatar dock/rail with presence (joined, claiming, paid).
 - The host **paints**: select a seat avatar as the brush, then tap receipt lines to give Units to that person. Long-press a line for a unit-level split.
 - Guests tap lines to claim. Other phones' claims appear **live**: an avatar flies onto the line, and a live activity ticker runs (`useLiveTable`).
 
 **Payments**
+
 - Payments are **stamps on the receipt**: a rotated „ПЛАТЕНО“ stamp on that person's tear-off slip. Pending shows as „ЧАКА“.
 - Each person's share is a perforated tear-off slip at the bottom of the receipt. The guest "tears" their slip off to pay (a drag or button), and the slip becomes the payment screen.
 
 **Desktop and visuals**
+
 - **Desktop:** the receipt sits centred like an object on a table surface, with seats around it, the activity feed on one side and the payment slips on the other.
 - **Visuals:** a paper receipt on a tinted table surface, dotted leaders, perforated edges via CSS masks, a mono receipt face for line items paired with an expressive display sans for totals, and one saturated accent. Motion carries meaning: claims fly to lines, stamps thud, slips tear.
 

@@ -90,16 +90,76 @@ export const PARTICIPANTS: MockParticipant[] = [
 ]
 
 export const ITEMS: MockItem[] = [
-  { _id: 'i-shopska', name: 'Шопска салата', unitPriceCents: 690, quantity: 2, sortOrder: 0 },
-  { _id: 'i-tarator', name: 'Таратор', unitPriceCents: 380, quantity: 1, sortOrder: 1 },
-  { _id: 'i-kebapche', name: 'Кебапчета (3 бр.)', unitPriceCents: 540, quantity: 2, sortOrder: 2 },
-  { _id: 'i-svinsko', name: 'Свинско по селски', unitPriceCents: 1190, quantity: 1, sortOrder: 3 },
-  { _id: 'i-pileshko', name: 'Пилешка пържола', unitPriceCents: 980, quantity: 1, sortOrder: 4 },
-  { _id: 'i-kartofi', name: 'Картофи със сирене', unitPriceCents: 460, quantity: 2, sortOrder: 5 },
-  { _id: 'i-bira', name: 'Бира Загорка 0,5', unitPriceCents: 290, quantity: 6, sortOrder: 6 },
-  { _id: 'i-rakia', name: 'Ракия Бургаска', unitPriceCents: 350, quantity: 3, sortOrder: 7 },
-  { _id: 'i-voda', name: 'Минерална вода', unitPriceCents: 190, quantity: 2, sortOrder: 8 },
-  { _id: 'i-palachinka', name: 'Палачинка с шоколад', unitPriceCents: 420, quantity: 1, sortOrder: 9 },
+  {
+    _id: 'i-shopska',
+    name: 'Шопска салата',
+    unitPriceCents: 690,
+    quantity: 2,
+    sortOrder: 0,
+  },
+  {
+    _id: 'i-tarator',
+    name: 'Таратор',
+    unitPriceCents: 380,
+    quantity: 1,
+    sortOrder: 1,
+  },
+  {
+    _id: 'i-kebapche',
+    name: 'Кебапчета (3 бр.)',
+    unitPriceCents: 540,
+    quantity: 2,
+    sortOrder: 2,
+  },
+  {
+    _id: 'i-svinsko',
+    name: 'Свинско по селски',
+    unitPriceCents: 1190,
+    quantity: 1,
+    sortOrder: 3,
+  },
+  {
+    _id: 'i-pileshko',
+    name: 'Пилешка пържола',
+    unitPriceCents: 980,
+    quantity: 1,
+    sortOrder: 4,
+  },
+  {
+    _id: 'i-kartofi',
+    name: 'Картофи със сирене',
+    unitPriceCents: 460,
+    quantity: 2,
+    sortOrder: 5,
+  },
+  {
+    _id: 'i-bira',
+    name: 'Бира Загорка 0,5',
+    unitPriceCents: 290,
+    quantity: 6,
+    sortOrder: 6,
+  },
+  {
+    _id: 'i-rakia',
+    name: 'Ракия Бургаска',
+    unitPriceCents: 350,
+    quantity: 3,
+    sortOrder: 7,
+  },
+  {
+    _id: 'i-voda',
+    name: 'Минерална вода',
+    unitPriceCents: 190,
+    quantity: 2,
+    sortOrder: 8,
+  },
+  {
+    _id: 'i-palachinka',
+    name: 'Палачинка с шоколад',
+    unitPriceCents: 420,
+    quantity: 1,
+    sortOrder: 9,
+  },
 ]
 
 /** Mid-dinner: link shared, Явор and Деси joined and claimed some things. */
@@ -153,7 +213,10 @@ export function createEmptyBill(): MockBill {
 }
 
 /** What the simulated receipt OCR returns (a different restaurant). */
-export const SCANNED_RECEIPT: { restaurantName: string; items: Omit<MockItem, '_id' | 'sortOrder'>[] } = {
+export const SCANNED_RECEIPT: {
+  restaurantName: string
+  items: Omit<MockItem, '_id' | 'sortOrder'>[]
+} = {
   restaurantName: 'Хаджидраганови къщи',
   items: [
     { name: 'Снежанка', unitPriceCents: 420, quantity: 2 },
@@ -166,7 +229,15 @@ export const SCANNED_RECEIPT: { restaurantName: string; items: Omit<MockItem, '_
 }
 
 /** Friends the host has split with before (for quick-add chips). */
-export const RECENT_FRIENDS = ['Мила', 'Явор', 'Деси', 'Боби', 'Краси', 'Ния', 'Огнян']
+export const RECENT_FRIENDS = [
+  'Мила',
+  'Явор',
+  'Деси',
+  'Боби',
+  'Краси',
+  'Ния',
+  'Огнян',
+]
 
 export const HOME_BILLS: MockHomeBill[] = [
   {
