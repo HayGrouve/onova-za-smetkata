@@ -18,6 +18,12 @@ export type LineMode = 'paint' | 'inspect' | 'claim' | 'readonly'
 
 const LONG_PRESS_MS = 480
 
+/** „Ани, Боби и още 3“: a whole table in one hint would push the line wide. */
+function sharedLabel(names: string[]) {
+  if (names.length <= 2) return names.join(', ')
+  return `${names.slice(0, 2).join(', ')} и още ${names.length - 2}`
+}
+
 /**
  * One receipt line (a Claim group). The whole line is the tap target; one
  * slot per Unit shows who has it: dashed when free, seat avatars when taken.
@@ -94,7 +100,7 @@ export function ClaimLine({
     mode === 'claim' && mine > 0 ? (
       <>
         ваши <span data-testid={`claim-count-${group.itemIds[0]}`}>{mine}</span>
-        {sharedWith.length > 0 ? `, делите с ${sharedWith.join(', ')}` : null}
+        {sharedWith.length > 0 ? `, делите с ${sharedLabel(sharedWith)}` : null}
       </>
     ) : untouched && mode !== 'readonly' ? (
       'никой още'
@@ -152,8 +158,8 @@ export function ClaimLine({
                 {formatEur(group.unitPriceCents * count)}
               </span>
             </span>
-            <span className="mt-1.5 flex items-center justify-between gap-2">
-              <span className="shrink-0 text-[11px] text-ink-muted">
+            <span className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
+              <span className="min-w-0 text-[11px] text-ink-muted">
                 {count > 1
                   ? `${count} × ${formatEur(group.unitPriceCents)}`
                   : '1 бр.'}
@@ -239,7 +245,7 @@ function Slots({
   return (
     <span
       data-slots
-      className="flex min-w-0 flex-wrap items-center justify-end gap-1.5"
+      className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1.5"
     >
       {group.units.map((unit, unitIdx) => {
         const ids = members[unitIdx] ?? []

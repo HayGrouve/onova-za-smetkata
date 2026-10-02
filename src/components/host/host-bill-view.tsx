@@ -525,6 +525,8 @@ function HostBillTable({
         {/*
           One copy of the actions: a dock pinned to the bottom on phones (with
           the seats as the brush picker), a column beside the receipt wider up.
+          The dock's colour bleeds below its edge: edge-to-edge Android can
+          scroll the page behind the gesture bar, under a bottom-0 element.
         */}
         <aside className="space-y-5 md:sticky md:top-20">
           <div className="hidden md:block lg:hidden">
@@ -537,7 +539,7 @@ function HostBillTable({
               hint={brushable}
             />
           </div>
-          <div className="fixed inset-x-0 bottom-0 z-40 md:static md:z-auto">
+          <div className="fixed inset-x-0 bottom-0 z-40 after:absolute after:inset-x-0 after:top-full after:h-16 after:bg-table-2 md:static md:z-auto md:after:hidden">
             <div className="space-y-2 rounded-t-[26px] bg-table-2 px-3 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] shadow-[0_-16px_40px_-20px_var(--paper-shadow)] md:rounded-none md:bg-transparent md:p-0 md:shadow-none">
               {activePhase === 'table' || activePhase === 'assemble' ? (
                 <div className="md:hidden">
