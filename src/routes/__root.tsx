@@ -64,12 +64,12 @@ export const Route = createRootRoute({
       },
       {
         name: 'theme-color',
-        content: '#faf9f7',
+        content: '#dadee3',
         media: '(prefers-color-scheme: light)',
       },
       {
         name: 'theme-color',
-        content: '#121214',
+        content: '#10171f',
         media: '(prefers-color-scheme: dark)',
       },
     ],
