@@ -10,15 +10,15 @@ Project-specific conventions for agents working in this repo. Read this after `C
 
 These are separate products. Do not collapse them into “Clerk Billing”.
 
-| Concern                                                                   | Owner                                                                       |
-| ------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| Host sign-in (Google + email)                                             | **Clerk** — [ADR 0002](../adr/0002-clerk-auth-billing.md)                   |
-| Host Pro subscription (€2.99/mo EUR, Checkout + Customer Portal, SCA/3DS) | **Stripe Billing** — [ADR 0003](../adr/0003-stripe-billing-beside-clerk.md) |
-| Free/Pro quota enforcement                                                | **Convex** (`convex/lib/hostTier.ts`)                                       |
-| Guest join                                                                | Share token + `guestSessions` (no Clerk account)                            |
-| Guest restaurant payment                                                  | Host Revolut / IBAN (not Stripe)                                            |
+| Concern                                                                | Owner                                                                                                      |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Host sign-in (Google + email)                                          | **Clerk** — [ADR 0002](../adr/0002-clerk-auth-billing.md)                                                  |
+| Host Pro subscription (€2.99/mo or €29/yr, Checkout + Customer Portal) | **Stripe Managed Payments** — [ADR 0004](../adr/0004-stripe-managed-payments.md), behind `BILLING_ENABLED` |
+| Free/Pro quota enforcement                                             | **Convex** (`convex/lib/hostTier.ts`)                                                                      |
+| Guest join                                                             | Share token + `guestSessions` (no Clerk account)                                                           |
+| Guest restaurant payment                                               | Host Revolut / IBAN (not Stripe)                                                                           |
 
-Do **not** enable Clerk Billing in the Clerk Dashboard. Host Pro plan state on `users` is written by a Stripe webhook, not Clerk.
+Do **not** enable Clerk Billing in the Clerk Dashboard. Host Pro plan state on `users` is written by the Stripe sync (`convex/billing.ts`, `convex/billingStripe.ts`, webhook in `convex/http.ts`), not Clerk. While the billing switch (`BILLING_ENABLED`) is off, `getEntitledTier` gives every Host Pro limits.
 
 ## Architecture map
 
@@ -141,6 +141,7 @@ Copy `.env.example` → `.env.local` and set `VITE_CONVEX_URL` and `VITE_CLERK_P
 - `CONTEXT.md` — domain glossary (required reading)
 - `docs/adr/0002-clerk-auth-billing.md` — Clerk for Host auth
 - `docs/adr/0003-stripe-billing-beside-clerk.md` — Stripe Billing for Host Pro
+- `docs/adr/0004-stripe-managed-payments.md` — Stripe Managed Payments, billing switch
 - `README.md` — setup and scripts
 - `docs/DEPLOY.md` — env matrix, deploy path, security notes, backfills
 - `e2e/README.md` — Playwright prerequisites and failure modes

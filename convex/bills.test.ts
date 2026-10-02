@@ -1,5 +1,5 @@
 // @vitest-environment edge-runtime
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { api } from './_generated/api'
 import { GUEST_FLOW_MESSAGES } from '../shared/guest-flow-messages'
 import { SUBSCRIPTION_MESSAGES } from '../shared/subscription-messages'
@@ -63,6 +63,10 @@ async function rowsOnBill(t: TestConvex, billId: SeededBill['billId']) {
 }
 
 describe('creating a bill', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
   it('seats the Host under their Auth name and makes a share link', async () => {
     const t = setupConvex()
     const bill = await seedBill(t, { guests: [] })
@@ -81,6 +85,7 @@ describe('creating a bill', () => {
   })
 
   it('a Free Host gets five bills a month', async () => {
+    vi.stubEnv('BILLING_ENABLED', 'true')
     const t = setupConvex()
     const host = t.withIdentity(HOST_IDENTITY)
     for (let index = 0; index < 5; index++) {
@@ -93,6 +98,16 @@ describe('creating a bill', () => {
         message: SUBSCRIPTION_MESSAGES.QUOTA_BILLS,
       },
     })
+  })
+
+  it('while Host Pro billing is off, a Host has no monthly cap', async () => {
+    const t = setupConvex()
+    const host = t.withIdentity(HOST_IDENTITY)
+    for (let index = 0; index < 5; index++) {
+      await host.mutation(api.bills.create, {})
+    }
+
+    await expect(host.mutation(api.bills.create, {})).resolves.toBeTruthy()
   })
 })
 

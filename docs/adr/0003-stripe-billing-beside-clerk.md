@@ -1,6 +1,6 @@
 # ADR 0003: Stripe Billing for Host Pro
 
-**Status:** Accepted.
+**Status:** Accepted; seller-of-record and VAT stance superseded by [ADR 0004](./0004-stripe-managed-payments.md) (Stripe Managed Payments).
 
 Host Pro is charged with **Stripe Billing** (EUR, Checkout + Customer Portal, SCA/3DS). **Clerk stays for Host auth only** — not Clerk Billing. Convex remains the quota source of truth (`hostTier`). We are the **seller** (not a merchant of record): VAT and invoices stay our obligation.
 

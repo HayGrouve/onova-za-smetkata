@@ -2,7 +2,7 @@ import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import { requireAuth, getOptionalAuthUserId } from './lib/auth'
 import {
-  getEffectiveTier,
+  getEntitledTier,
   getFriendGroupLimit,
   getMonthlyBillLimit,
   getMonthlyOcrLimit,
@@ -23,7 +23,7 @@ export const viewer = query({
     if (!user) return null
 
     const now = args.nowMs
-    const tier = getEffectiveTier(user, now)
+    const tier = getEntitledTier(user, now)
     const monthKey = formatUsageMonthKey(now)
 
     const billsUsedThisMonth = await getUsageCount(

@@ -1,6 +1,8 @@
 import { UserProfile } from '@clerk/tanstack-react-start'
 import { createFileRoute } from '@tanstack/react-router'
-import { Loader2Icon } from 'lucide-react'
+import { Loader2Icon, SparklesIcon } from 'lucide-react'
+import { HostProSubscriptionPanel } from '#/components/subscription/host-pro-subscription-panel.tsx'
+import { useHostProStatus } from '#/hooks/use-host-pro.ts'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
 import { ICON } from '#/lib/app-icons.ts'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
@@ -22,8 +24,11 @@ function HostAccountFallback() {
 function HostAccountPage() {
   const { isAuthenticated, isLoading: authLoading } =
     useRequireHostAuth('/user-profile')
+  const hostPro = useHostProStatus()
 
-  if (authLoading || !isAuthenticated) {
+  // Wait for the billing switch: Clerk only routes to custom pages it was
+  // rendered with, and Checkout returns to /user-profile/subscription.
+  if (authLoading || !isAuthenticated || hostPro === undefined) {
     return <HostAccountFallback />
   }
 
@@ -35,7 +40,17 @@ function HostAccountPage() {
         apiKeysProps={{ hide: true }}
         fallback={<HostAccountFallback />}
         appearance={{ elements: { rootBox: 'mx-auto w-fit max-w-full' } }}
-      />
+      >
+        {hostPro?.enabled ? (
+          <UserProfile.Page
+            label="Абонамент"
+            url="subscription"
+            labelIcon={<SparklesIcon className="size-4" aria-hidden />}
+          >
+            <HostProSubscriptionPanel />
+          </UserProfile.Page>
+        ) : null}
+      </UserProfile>
     </div>
   )
 }

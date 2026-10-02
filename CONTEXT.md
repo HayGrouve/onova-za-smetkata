@@ -137,12 +137,16 @@ Orchestration for the Guest journey — join resume, seat pick (own + Covered se
 _Avoid_: duplicating redirect/resume logic in routes; conflating with Guest claim session
 
 **Host Pro**:
-The paid SaaS tier that lifts Free-tier limits (bills per month, OCR scans, friend groups). The Host pays the product, not the restaurant.
+The paid SaaS tier that lifts Free-tier limits (bills per month, OCR scans, friend groups). The Host pays the product, not the restaurant: €2.99/month or €29/year through Stripe Managed Payments (Link is the seller).
 _Avoid_: mixing this with Outstanding / Guest restaurant payments; calling Guest Revolut “billing”
 
 **Free tier**:
 The default Host SaaS level with monthly bill and OCR limits. Existing bills stay editable at quota; only new creates/scans are blocked.
 _Avoid_: treating quota as a hard lock on the current bill
+
+**Billing switch**:
+Convex env `BILLING_ENABLED`. Off (the default): every Host gets Pro limits for free and no paywall or „Абонамент“ page exists. On: Free-tier limits apply and Hosts can buy Host Pro.
+_Avoid_: hiding billing UI with a client-only flag; the server decides both quotas and visibility
 
 ## Related docs
 
@@ -152,3 +156,4 @@ _Avoid_: treating quota as a hard lock on the current bill
 - `docs/DEPLOY.md` — production deploy, env vars, security
 - `docs/adr/0002-clerk-auth-billing.md` — Clerk for Host sign-in
 - `docs/adr/0003-stripe-billing-beside-clerk.md` — Stripe Billing for Host Pro
+- `docs/adr/0004-stripe-managed-payments.md` — Stripe Managed Payments and the billing switch
