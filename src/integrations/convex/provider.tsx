@@ -14,16 +14,18 @@ const convexUrl = assertConvexUrlForBuild()
 /**
  * Clerk's sign-in and account screens are printed paper too: ink on thermal
  * white with a vermilion action. Paper stays light in dark mode, so these are
- * fixed values (the paper tokens from styles.css).
+ * fixed values (the paper tokens from styles.css). Every text colour is set:
+ * whatever is left to Clerk follows the page's dark color-scheme and turns
+ * white on the paper card.
  */
 const CLERK_APPEARANCE = {
   variables: {
     colorPrimary: '#c83314',
     colorBackground: '#fbfaf8',
-    colorText: '#161b22',
-    colorTextSecondary: '#5e646c',
-    colorInputBackground: '#fbfaf8',
-    colorInputText: '#161b22',
+    colorForeground: '#161b22',
+    colorMutedForeground: '#5e646c',
+    colorInput: '#fbfaf8',
+    colorInputForeground: '#161b22',
     colorNeutral: '#161b22',
     colorDanger: '#b7162d',
     borderRadius: '2px',
