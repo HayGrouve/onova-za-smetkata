@@ -16,6 +16,7 @@ import { AppShell } from '../components/layout/app-shell.tsx'
 import { ConfirmActionProvider } from '../components/confirm-action-provider.tsx'
 import { TooltipProvider } from '../components/ui/tooltip.tsx'
 import { ThemeProvider } from '../components/theme-provider.tsx'
+import { ThemeColorMeta } from '../components/theme-color-meta.tsx'
 import { Toaster } from '../components/ui/sonner'
 import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
@@ -61,16 +62,6 @@ export const Route = createRootRoute({
       {
         name: 'viewport',
         content: 'width=device-width, initial-scale=1, viewport-fit=cover',
-      },
-      {
-        name: 'theme-color',
-        content: '#dadee3',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        name: 'theme-color',
-        content: '#10171f',
-        media: '(prefers-color-scheme: dark)',
       },
     ],
     links: [
@@ -126,6 +117,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           storageKey="onova-theme"
           disableTransitionOnChange
         >
+          <ThemeColorMeta />
           <ConfirmActionProvider>
             <TooltipProvider>
               <ConvexProvider>
