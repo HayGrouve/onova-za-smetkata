@@ -1,4 +1,8 @@
-import { billIdFromUrl } from './helpers/bill-editor'
+import {
+  billIdFromUrl,
+  expectParticipantAdded,
+  goToBillStep,
+} from './helpers/bill-editor'
 import { expect, openHostContext, test } from './helpers/host-auth'
 import type { Page } from '@playwright/test'
 
@@ -14,7 +18,7 @@ test('second guest sees taken participant name', async ({ browser }) => {
 
   await hostPage.getByRole('button', { name: 'Нова сметка' }).click()
 
-  await hostPage.getByLabel('Стъпка 2: Участници').click()
+  await goToBillStep(hostPage, 2)
   await expect(hostPage.getByPlaceholder('Име на участник')).toBeVisible({
     timeout: 30_000,
   })
@@ -22,9 +26,9 @@ test('second guest sees taken participant name', async ({ browser }) => {
   const participantName = `Taken ${Date.now()}`
   await hostPage.getByPlaceholder('Име на участник').fill(participantName)
   await hostPage.getByRole('button', { name: 'Добави', exact: true }).click()
-  await expect(hostPage.getByText(participantName)).toBeVisible()
+  await expectParticipantAdded(hostPage, participantName)
 
-  await hostPage.getByLabel('Стъпка 3: Разпределение').click()
+  await goToBillStep(hostPage, 3)
   const joinUrl = await getJoinUrl(hostPage)
 
   const billId = billIdFromUrl(hostPage.url())

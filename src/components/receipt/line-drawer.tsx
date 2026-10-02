@@ -32,6 +32,8 @@ export function LinePanel({
       exit={{ height: 0, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 380, damping: 36 }}
       className="-mx-2 overflow-hidden bg-paper-2"
+      role="region"
+      aria-label={title}
     >
       <div className="border-l-[3px] border-ink px-3 pt-1 pb-3">
         <div className="flex items-center justify-between">

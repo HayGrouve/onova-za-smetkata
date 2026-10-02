@@ -31,7 +31,7 @@ export function SeatsRail({
   liveIds,
   onSeat,
   onAdd,
-  addLabel = 'Добави',
+  addLabel = 'Добави хора',
   label,
   onTable = true,
 }: {

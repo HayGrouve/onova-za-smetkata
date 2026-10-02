@@ -452,7 +452,7 @@ function HostBillTable({
     </motion.div>
   )
 
-  const actions = (compact: boolean) => (
+  const actions = (
     <PhaseActions
       billId={billId}
       phase={activePhase}
@@ -477,7 +477,6 @@ function HostBillTable({
         // Unpaid people are listed one by one below instead.
         .filter((error) => error.code !== 'unpaid_participants')
         .map((error) => error.message)}
-      compact={compact}
     />
   )
 
@@ -522,8 +521,12 @@ function HostBillTable({
 
         <main className="min-w-0">{receipt}</main>
 
-        <aside className="sticky top-20 hidden space-y-5 md:block">
-          <div className="lg:hidden">
+        {/*
+          One copy of the actions: a dock pinned to the bottom on phones (with
+          the seats as the brush picker), a column beside the receipt wider up.
+        */}
+        <aside className="space-y-5 md:sticky md:top-20">
+          <div className="hidden md:block lg:hidden">
             <TableColumn
               seats={railSeats}
               hostId={bill.hostParticipantId}
@@ -533,9 +536,36 @@ function HostBillTable({
               hint={brushable}
             />
           </div>
-          {actions(false)}
+          <div className="fixed inset-x-0 bottom-0 z-40 md:static md:z-auto">
+            <div className="space-y-2 rounded-t-[26px] bg-table-2 px-3 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] shadow-[0_-16px_40px_-20px_var(--paper-shadow)] md:rounded-none md:bg-transparent md:p-0 md:shadow-none">
+              {activePhase === 'table' || activePhase === 'assemble' ? (
+                <div className="md:hidden">
+                  <SeatsRail
+                    seats={railSeats}
+                    meId={bill.hostParticipantId}
+                    liveIds={liveIds}
+                    brushId={brushable ? brushId : null}
+                    onSeat={brushable ? toggleBrush : undefined}
+                    onAdd={
+                      activePhase === 'assemble'
+                        ? () =>
+                            document
+                              .getElementById('bill-people')
+                              ?.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start',
+                              })
+                        : undefined
+                    }
+                    label={brushable ? 'Изберете четка' : 'Хората на масата'}
+                  />
+                </div>
+              ) : null}
+              {actions}
+            </div>
+          </div>
           {!assembling ? (
-            <div className="space-y-3">
+            <div className="hidden space-y-3 md:block">
               {sortSlips(slips).map((slip) => (
                 <div key={slip.seat.id} className="paper-lift">
                   <div className="paper stub px-4">
@@ -553,37 +583,12 @@ function HostBillTable({
               ))}
             </div>
           ) : null}
-          <div className="lg:hidden">
-            {activePhase !== 'assemble' ? (
+          {activePhase !== 'assemble' ? (
+            <div className="hidden md:block lg:hidden">
               <ActivityFeed events={events} limit={5} />
-            ) : null}
-          </div>
-        </aside>
-      </div>
-
-      {/* Phone dock: the seats (brush picker on На масата) and the phase action. */}
-      <div className="fixed inset-x-0 bottom-0 z-40 md:hidden">
-        <div className="space-y-2 rounded-t-[26px] bg-table-2 px-3 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] shadow-[0_-16px_40px_-20px_var(--paper-shadow)]">
-          {activePhase === 'table' || activePhase === 'assemble' ? (
-            <SeatsRail
-              seats={railSeats}
-              meId={bill.hostParticipantId}
-              liveIds={liveIds}
-              brushId={brushable ? brushId : null}
-              onSeat={brushable ? toggleBrush : undefined}
-              onAdd={
-                activePhase === 'assemble'
-                  ? () =>
-                      document
-                        .getElementById('bill-people')
-                        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                  : undefined
-              }
-              label={brushable ? 'Изберете четка' : 'Хората на масата'}
-            />
+            </div>
           ) : null}
-          {actions(true)}
-        </div>
+        </aside>
       </div>
 
       {detailId ? (
@@ -777,7 +782,6 @@ function PhaseActions({
   outstandingCents,
   unpaid,
   finalizeErrors,
-  compact,
 }: {
   billId: Id<'bills'>
   phase: Phase | 'final'
@@ -791,7 +795,6 @@ function PhaseActions({
   outstandingCents: number
   unpaid: HostSlipModel[]
   finalizeErrors: string[]
-  compact: boolean
 }) {
   const navigate = useNavigate()
   const assignAll = useMutation(api.assignments.assignAll)
@@ -945,11 +948,9 @@ function PhaseActions({
               </Button>
             </div>
           )}
-          {compact ? null : (
-            <p className="mt-1 pb-1 text-[11px] leading-snug text-on-table-muted">
-              Гостите отбелязват сами от линка. Вие довършвате с четката.
-            </p>
-          )}
+          <p className="mt-1 hidden pb-1 text-[11px] leading-snug text-on-table-muted md:block">
+            Гостите отбелязват сами от линка. Вие довършвате с четката.
+          </p>
         </Box>
       ) : null}
 

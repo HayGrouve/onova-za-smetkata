@@ -8,9 +8,9 @@ Bulgarian mobile web PWA: a **Host** creates a bill from a restaurant receipt, a
 
 **Host journey** — sign in → create/open bill → add participants and items (manual or receipt OCR) → assign units → share join link → track guest payments → finalize bill (locks editing).
 
-**Guest journey** — open share link → pick own participant seat on join page (one tap, straight to claiming) → optionally add Covered seats from the claim page → take Units on the claim page (share explicitly) → review and pay on the Pay step (e.g. Revolut) → host confirms the payment.
+**Guest journey** — open share link → pick own participant seat on join page („Кой сте вие?“, one tap, straight to claiming) → tap lines on the Live receipt to take Units (share explicitly from the line's Units) → optionally add Covered seats from the Slip („Плащам и за...“) → tear the Slip off into the Pay step (e.g. Revolut) → host confirms the payment.
 
-**Host editor steps** — 1 **Сметка** (restaurant, items from receipt scan or by hand, tip) → 2 **Участници** → 3 **Разпределение** (invite link, who had what) → 4 **Плащания** (confirm payments, finalize).
+**Host bill phases** — the Host's bill is one Live receipt moving through three phases: **Сглобяване** (restaurant, lines from receipt scan or by hand, tip, who was at the table) → **На масата** (join link, guests claim live, the Host paints the rest with a Brush) → **Разплащане** (Slips, confirm payments, finalize). The `?step=1..4` editor steps remain underneath (steps 1 and 2 are both Сглобяване) because Напътствия count steps.
 
 The host also has a participant seat on the bill but is never **Outstanding**.
 
@@ -69,12 +69,24 @@ Item lines with the same normalized name and unit price, shown as one row on the
 _Avoid_: merging or rewriting stored items; fuzzy name matching
 
 **Covered seat**:
-A Participant seat a Guest's phone handles in addition to its own — they take Units for it and pay for it (e.g. „плащам и за половинката си“). Added from the claim page („Плащате и за някого?“) — the join page only picks the Guest's own seat and goes straight to claiming; locked to that phone like the Guest's own seat (others see „Заето · с Иван“). Stored on `guestSessions.coveredParticipantIds`; rules in `shared/guest-seat-selection.ts`.
+A Participant seat a Guest's phone handles in addition to its own — they take Units for it and pay for it (e.g. „плащам и за половинката си“). Added from the Slip on the claim page („Плащам и за...“) — the join page only picks the Guest's own seat and goes straight to claiming; locked to that phone like the Guest's own seat (others see „Заето · с Иван“). Stored on `guestSessions.coveredParticipantIds`; rules in `shared/guest-seat-selection.ts`.
 _Avoid_: member, companion; confusing with paying for someone who claims from their own phone (that stays a combined payment chosen on the Pay step)
 
 **Pay step**:
-The guest's review-and-pay screen (`/bills/$billId/pay`): a Share breakdown per seat, „За кого плащате“ (own seat and Covered seats always; other Guests optional), then Revolut / IBAN. Warns when Units are still unclaimed on the bill.
+The guest's torn-off Slip (`/bills/$billId/pay`): the amount first, „Какво плащате“ (Share lines per seat), „За кого плащате“ (own seat and Covered seats always; other Guests optional), then Revolut / IBAN. Opening Revolut or copying the IBAN records the transfer; the slip shows „Чака“ until the Host confirms and „Платено“ after. Warns when Units are still unclaimed on the bill.
 _Avoid_: the old pull-up claim drawer
+
+**Live receipt**:
+The bill as one shared paper that Host and Guests see with different permissions: one line per Claim group, one slot per Unit (dashed when free, seat avatars when taken), totals at the foot. Guests tap a line to take a Unit; the Host paints. Other phones' claims appear live, and a ticker derived on the client (`src/lib/bill-activity.ts`) says who took what. Design: `docs/design/live-receipt.md`.
+_Avoid_: claim list, editor steps (as product language)
+
+**Brush**:
+On На масата the Host picks a seat in the seats rail as the brush; each tap on a line then takes one free Unit for that seat (`takeUnit`). Without a brush a tap opens the line's Units („Кой какво от този ред“) for per-Unit edits.
+_Avoid_: assign mode
+
+**Slip**:
+One person's tear-off part of the Live receipt: their running Share, and on the Host side a stamp — „Чака“ (transfer awaiting confirmation) or „Платено“. The Guest's own Slip is pinned to the bottom of the claim page and tears off into the Pay step.
+_Avoid_: card, row (for a person's payment state)
 
 **Unit index**:
 Zero-based position of a unit on an item line (`0 … quantity−1`). Item membership rows reference `(itemId, participantId, unitIndex)`.
@@ -117,7 +129,7 @@ Orchestration for the host bill editor — step clamp/redirect, metadata draft s
 _Avoid_: wiring OCR, guidance, and step completion ad hoc in the route file
 
 **Guest claim session**:
-Orchestration for the guest/host claim page — Claim groups, tab filter (`Всички` / `Свободни` / `Мои`), search, table progress, per-seat Shares. Pure module: `shared/guest-claim-session.ts` (Claim groups in `shared/claim-groups.ts`); React seam: `useGuestClaimSession`.
+Orchestration for the guest claim page — Claim groups, per-seat Shares (the receipt reads Claim groups and seat views from it; the tab filter and search remain in the module but the Live receipt shows every line). Pure module: `shared/guest-claim-session.ts` (Claim groups in `shared/claim-groups.ts`); React seam: `useGuestClaimSession`.
 _Avoid_: wiring tab semantics, item filters, and share breakdown separately in the claim route; „Остават“ meaning “items I have not claimed”
 
 **Guest flow session**:

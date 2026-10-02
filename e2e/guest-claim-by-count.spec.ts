@@ -3,7 +3,7 @@ import {
   addBillParticipants,
   getJoinUrl,
 } from './helpers/bill-editor'
-import { claimGroup, joinAsGuest } from './helpers/guest'
+import { claimGroup, joinAsGuest, takeUnit } from './helpers/guest'
 import { expect, openHostContext, test } from './helpers/host-auth'
 
 test('guests taking the same drink by count never split a unit', async ({
@@ -23,16 +23,12 @@ test('guests taking the same drink by count never split a unit', async ({
   const guestA = await joinAsGuest(browser, joinUrl, ani)
   const guestB = await joinAsGuest(browser, joinUrl, bobi)
 
-  const plusA = claimGroup(guestA.page, 'Бира').getByRole('button', {
-    name: 'Още една Бира',
-  })
-  const plusB = claimGroup(guestB.page, 'Бира').getByRole('button', {
-    name: 'Още една Бира',
-  })
-
-  // Both phones press „+“ at the same moment, twice.
+  // Both phones tap the line at the same moment, twice.
   for (const expected of ['1', '2']) {
-    await Promise.all([plusA.click(), plusB.click()])
+    await Promise.all([
+      takeUnit(guestA.page, 'Бира'),
+      takeUnit(guestB.page, 'Бира'),
+    ])
     for (const page of [guestA.page, guestB.page]) {
       await expect(
         claimGroup(page, 'Бира').locator('[data-testid^="claim-count-"]'),
@@ -42,12 +38,11 @@ test('guests taking the same drink by count never split a unit', async ({
 
   for (const page of [guestA.page, guestB.page]) {
     const row = claimGroup(page, 'Бира')
-    await expect(row.getByText('Всички са отбелязани')).toBeVisible()
-    await expect(row.getByText(/1 бройка с/)).toHaveCount(0)
+    // Every Unit taken, none of them split between the two phones.
+    await expect(row.locator('[data-free]')).toHaveCount(0)
+    await expect(row.getByText(/делите с/)).toHaveCount(0)
     await expect(page.getByTestId('claim-pay-bar-amount')).toHaveText(/6,00/)
-    await expect(page.getByTestId('table-progress')).toContainText(
-      '4 от 4 бройки',
-    )
+    await expect(page.getByText('Неотбелязани от никого')).toHaveCount(0)
   }
 
   await guestA.context.close()

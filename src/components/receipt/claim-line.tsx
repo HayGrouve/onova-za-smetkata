@@ -26,6 +26,7 @@ export function ClaimLine({
   membersOf,
   mode,
   highlightIds = [],
+  countIds = highlightIds,
   open = false,
   error,
   disabled = false,
@@ -41,6 +42,8 @@ export function ClaimLine({
   mode: LineMode
   /** Seats to emphasise: the guest's own seats, or the host's brush. */
   highlightIds?: string[]
+  /** Seats counted in „ваши N“ (the seat being marked for). */
+  countIds?: string[]
   open?: boolean
   error?: string | null
   disabled?: boolean
@@ -60,8 +63,19 @@ export function ClaimLine({
   const free = count - claimed
   const untouched = claimed === 0
   const mine = members.filter((ids) =>
-    ids.some((id) => highlightIds.includes(id)),
+    ids.some((id) => countIds.includes(id)),
   ).length
+  const seatOf = useSeatLookup()
+  const sharedWith = [
+    ...new Set(
+      members
+        .filter(
+          (ids) => ids.length > 1 && ids.some((id) => countIds.includes(id)),
+        )
+        .flat()
+        .filter((id) => !countIds.includes(id)),
+    ),
+  ].map((id) => seatOf(id)?.label ?? 'друг')
   const press = useRef<{ timer?: number; fired: boolean }>({ fired: false })
   const interactive = mode !== 'readonly' && !!onTap && !disabled
 
@@ -78,11 +92,14 @@ export function ClaimLine({
   }
 
   const hint =
-    mode === 'claim' && mine > 0
-      ? `ваши ${mine}`
-      : untouched && mode !== 'readonly'
-        ? 'никой още'
-        : null
+    mode === 'claim' && mine > 0 ? (
+      <>
+        ваши <span data-testid={`claim-count-${group.itemIds[0]}`}>{mine}</span>
+        {sharedWith.length > 0 ? `, делите с ${sharedWith.join(', ')}` : null}
+      </>
+    ) : untouched && mode !== 'readonly' ? (
+      'никой още'
+    ) : null
 
   return (
     <motion.li
@@ -153,10 +170,7 @@ export function ClaimLine({
                 {hint ? (
                   <>
                     <span aria-hidden> / </span>
-                    <span
-                      className={cn(mine > 0 && 'font-semibold text-ink')}
-                      data-testid={`claim-count-${group.itemIds[0]}`}
-                    >
+                    <span className={cn(mine > 0 && 'font-semibold text-ink')}>
                       {hint}
                     </span>
                   </>
@@ -243,6 +257,7 @@ function Slots({
           return (
             <span
               key={key}
+              data-free
               className={cn(
                 'inline-block rounded-full border-[1.5px] border-dashed border-ink-faint',
                 many ? 'size-4' : 'size-[22px]',

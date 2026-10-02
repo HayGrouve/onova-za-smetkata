@@ -7,9 +7,9 @@ import { ICON } from '#/lib/app-icons.ts'
 import { usePwaInstall } from '#/components/pwa-install-provider.tsx'
 
 const VALUE_PROPS = [
-  'Снимка на бележка → артикули автоматично',
-  'QR линк за гостите на масата',
-  'Revolut и IBAN за плащане',
+  'Снимате бележката и редовете се попълват сами.',
+  'Линк и QR код за хората на масата.',
+  'Плащане с Revolut или по IBAN.',
 ] as const
 
 const IOS_INSTALL_STEPS = [
@@ -49,18 +49,13 @@ export function AppFooter() {
   }
 
   return (
-    <footer className="page-shell border-t border-border/60 py-6 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)]">
-      <div className="flex flex-col gap-4">
+    <footer className="mx-auto w-full max-w-[1180px] px-4 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] sm:px-6">
+      <div className="flex flex-col gap-4 border-t-2 border-dashed border-table-3 pt-6">
         <div>
-          <p className="text-sm font-semibold">Предимства на приложението</p>
-          <ul className="mt-2 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+          <p className="text-[13px] font-bold">Какво може приложението</p>
+          <ul className="mt-2 space-y-1 text-[11px] leading-relaxed text-on-table-muted">
             {VALUE_PROPS.map((item) => (
-              <li key={item} className="flex gap-2">
-                <span className="text-primary" aria-hidden>
-                  •
-                </span>
-                <span>{item}</span>
-              </li>
+              <li key={item}>{item}</li>
             ))}
           </ul>
         </div>
@@ -73,7 +68,7 @@ export function AppFooter() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-9 w-fit"
+                  className="w-fit"
                   onClick={() => setIosExpanded((open) => !open)}
                 >
                   <DownloadIcon className={ICON.button} aria-hidden />
@@ -82,7 +77,7 @@ export function AppFooter() {
                     : 'Добави на началния екран'}
                 </Button>
                 {iosExpanded ? (
-                  <ol className="list-decimal space-y-1.5 pl-4 text-xs leading-relaxed text-muted-foreground">
+                  <ol className="list-decimal space-y-1.5 pl-4 text-[11px] leading-relaxed text-on-table-muted">
                     <li>
                       <span className="inline-flex flex-wrap items-center gap-1">
                         Докоснете бутона Сподели
@@ -101,7 +96,7 @@ export function AppFooter() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-9 w-fit"
+                className="w-fit"
                 onClick={() => void install()}
               >
                 <DownloadIcon className={ICON.button} aria-hidden />

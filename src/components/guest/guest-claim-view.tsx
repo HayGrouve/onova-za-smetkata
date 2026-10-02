@@ -39,6 +39,7 @@ import { useBillActivity } from '#/hooks/use-bill-activity.ts'
 import { useClaimActions } from '#/hooks/use-claim-actions.ts'
 import { buildCoveredSeatCandidates } from '#/lib/covered-seat-candidates.ts'
 import { formatEur } from '#/lib/format-currency.ts'
+import { joinLabels } from '#/lib/participant-labels.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { cn } from '#/lib/utils.ts'
 import { calculateBillTotals } from '../../../shared/bill-calculations.ts'
@@ -426,6 +427,7 @@ function GuestClaimTable({
                       membersOf={membersOf}
                       mode={readOnly ? 'readonly' : 'claim'}
                       highlightIds={mySeatIds}
+                      countIds={[actorId]}
                       open={openKey === group.key}
                       error={
                         lineError?.key === group.key ? lineError.text : null
@@ -476,16 +478,15 @@ function GuestClaimTable({
           </Receipt>
         </main>
 
-        <aside className="sticky top-20 hidden space-y-5 md:block">
-          {slip}
-          <div className="lg:hidden">
+        {/* One slip: pinned to the bottom on phones, a column beside the receipt wider up. */}
+        <aside className="space-y-5 md:sticky md:top-20">
+          <div className="fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-background from-60% to-transparent pt-4 md:static md:z-auto md:bg-none md:pt-0">
+            {slip}
+          </div>
+          <div className="hidden md:block lg:hidden">
             <ActivityFeed events={events} limit={5} />
           </div>
         </aside>
-      </div>
-
-      <div className="fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-background from-60% to-transparent pt-4 md:hidden">
-        {slip}
       </div>
 
       <CoveredSeatsSheet
@@ -624,7 +625,7 @@ function MySlip({
             <div className="min-w-0 flex-1 leading-tight">
               <span className="block text-[11px] text-ink-muted">
                 {mySeatIds.length > 1
-                  ? `Общо за ${mySeatIds.length} души`
+                  ? `Общо за ${joinLabels(mySeatIds.map((id) => seatOf(id)?.label ?? 'друг'))}`
                   : anyPaid
                     ? 'Остатък'
                     : 'Вашият дял'}
