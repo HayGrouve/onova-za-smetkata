@@ -673,7 +673,7 @@ function MySlip({
                 <Button
                   type="button"
                   variant="outline"
-                  className="size-12 shrink-0 px-0 md:size-auto md:px-3"
+                  className="size-12 shrink-0 px-0"
                   onClick={onCover}
                   aria-label={
                     hasCovered
@@ -686,9 +686,6 @@ function MySlip({
                     strokeWidth={1.75}
                     aria-hidden
                   />
-                  <span className="hidden md:inline">
-                    {hasCovered ? 'За кого плащам' : 'Плащам и за...'}
-                  </span>
                 </Button>
               ) : null}
               <Button
