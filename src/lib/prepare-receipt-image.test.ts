@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  needsHeicConversion,
-  resolveUploadContentType,
-} from './prepare-receipt-image'
+import { needsHeicConversion } from './prepare-receipt-image'
 
 describe('needsHeicConversion', () => {
   it('detects HEIC mime type', () => {
@@ -18,17 +15,5 @@ describe('needsHeicConversion', () => {
   it('does not convert JPEG', () => {
     const file = new File(['x'], 'photo.jpg', { type: 'image/jpeg' })
     expect(needsHeicConversion(file)).toBe(false)
-  })
-})
-
-describe('resolveUploadContentType', () => {
-  it('falls back to extension for empty mime', () => {
-    const file = new File(['x'], 'photo.heic', { type: '' })
-    expect(resolveUploadContentType(file)).toBe('image/heic')
-  })
-
-  it('uses file mime when present', () => {
-    const file = new File(['x'], 'photo.jpg', { type: 'image/jpeg' })
-    expect(resolveUploadContentType(file)).toBe('image/jpeg')
   })
 })

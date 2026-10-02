@@ -1,5 +1,4 @@
 import { EUR_CENTS_MAX } from './constants'
-import { z } from 'zod'
 
 const INVALID_AMOUNT_MESSAGE = 'Невалидна сума.'
 
@@ -23,25 +22,4 @@ export function parseEurInputStrict(
   }
 
   return { ok: true, cents }
-}
-
-export function eurInputSchema() {
-  return z
-    .string()
-    .superRefine((raw, context) => {
-      const result = parseEurInputStrict(raw)
-      if (!result.ok) {
-        context.addIssue({
-          code: 'custom',
-          message: result.message,
-        })
-      }
-    })
-    .transform((raw) => {
-      const result = parseEurInputStrict(raw)
-      if (!result.ok) {
-        throw new Error('eurInputSchema transform called after failed refine')
-      }
-      return result.cents
-    })
 }

@@ -1,38 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  formatUsernameError,
-  nextSyncedAuthName,
-  parseUsername,
-  resolveHostParticipantName,
-} from './host-profile'
-import { PERSON_NAME_MAX } from './validation/constants'
-
-describe('parseUsername', () => {
-  it('accepts a valid Username and trims', () => {
-    const result = parseUsername('  Цветомир ')
-    expect(result.success).toBe(true)
-    if (result.success) expect(result.data).toBe('Цветомир')
-  })
-
-  it('treats empty and whitespace as unset', () => {
-    expect(parseUsername('')).toEqual({ success: true, data: undefined })
-    expect(parseUsername('   ')).toEqual({ success: true, data: undefined })
-  })
-
-  it('rejects overlong Username', () => {
-    const result = parseUsername('x'.repeat(PERSON_NAME_MAX + 1))
-    expect(result.success).toBe(false)
-    if (!result.success) {
-      expect(formatUsernameError(result.error)).toContain(
-        String(PERSON_NAME_MAX),
-      )
-    }
-  })
-
-  it('rejects control characters like Participant names', () => {
-    expect(parseUsername('Ив\u0001ан').success).toBe(false)
-  })
-})
+import { nextSyncedAuthName, resolveHostParticipantName } from './host-profile'
 
 describe('resolveHostParticipantName', () => {
   it('uses Auth name for the Host seat', () => {

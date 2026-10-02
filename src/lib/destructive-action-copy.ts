@@ -72,27 +72,11 @@ export function getFriendGroupMemberRemoveCopy(name: string): ConfirmOptions {
   })
 }
 
-export function getClaimUnassignCopy(name: string): ConfirmOptions {
-  return withDefaults({
-    title: 'Премахване на артикул?',
-    description: `„${name}" ще бъде премахнат от вашата част.`,
-    confirmLabel: 'Премахни',
-  })
-}
-
 export function getPaymentUndoCopy(): ConfirmOptions {
   return withDefaults({
     title: 'Отмяна на последното плащане?',
     description: 'Последното записано плащане ще бъде отменено.',
     confirmLabel: 'Отмени плащането',
-  })
-}
-
-export function getSignOutCopy(): ConfirmOptions {
-  return withDefaults({
-    title: 'Изход от профила?',
-    description: 'Ще бъдете изведени от акаунта си.',
-    confirmLabel: 'Изход',
   })
 }
 

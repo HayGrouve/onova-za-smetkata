@@ -265,18 +265,6 @@ function nextGuidanceStep(
   return currentGuidanceStep(steps, dismissedHintIds)
 }
 
-export function shouldCompleteOnboarding(input: {
-  lifecycle: HostOnboardingLifecycle
-  preparedAt?: number
-  sharedAt?: number
-}): boolean {
-  return (
-    input.lifecycle === 'active' &&
-    input.preparedAt !== undefined &&
-    input.sharedAt !== undefined
-  )
-}
-
 export function stepBarGuidanceLabel(input: {
   steps: GuidanceStep[]
   currentStep: GuidanceStepNumber

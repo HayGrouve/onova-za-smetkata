@@ -56,20 +56,6 @@ export function formatFriendGroupErrors(error: z.ZodError) {
   return fieldErrors
 }
 
-export function dedupeMemberNames(names: string[]): string[] {
-  const seen = new Set<string>()
-  const result: string[] = []
-  for (const raw of names) {
-    const trimmed = raw.trim()
-    if (!trimmed) continue
-    const key = trimmed.toLowerCase()
-    if (seen.has(key)) continue
-    seen.add(key)
-    result.push(trimmed)
-  }
-  return result
-}
-
 export interface AddMembersToBillResult {
   added: number
   skipped: number

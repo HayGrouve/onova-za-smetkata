@@ -1,23 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  THEME_ROCKER_GROUP_LABEL,
-  THEME_ROCKER_LABEL,
-  THEME_ROCKER_MODES,
-  resolveThemeRockerMode,
-  themeRockerThumbIndex,
-} from './theme-rocker'
-
-describe('theme rocker stops', () => {
-  it('orders sun, system, moon with Bulgarian accessible names', () => {
-    expect(THEME_ROCKER_MODES).toEqual(['light', 'system', 'dark'])
-    expect(THEME_ROCKER_GROUP_LABEL).toBe('Тема')
-    expect(THEME_ROCKER_LABEL).toEqual({
-      light: 'Светла',
-      system: 'Системна',
-      dark: 'Тъмна',
-    })
-  })
-})
+import { resolveThemeRockerMode, themeRockerThumbIndex } from './theme-rocker'
 
 describe('resolveThemeRockerMode', () => {
   it('keeps light, dark, and system', () => {

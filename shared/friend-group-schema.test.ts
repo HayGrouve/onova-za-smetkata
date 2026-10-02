@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  dedupeMemberNames,
   formatFriendGroupErrors,
   parseFriendGroupInput,
   summarizeAddMembersToBill,
@@ -37,15 +36,6 @@ describe('parseFriendGroupInput', () => {
         formatFriendGroupErrors(result.error).memberNameAt?.[1],
       ).toBeTruthy()
     }
-  })
-})
-
-describe('dedupeMemberNames', () => {
-  it('trims and removes case-insensitive duplicates', () => {
-    expect(dedupeMemberNames([' Иван ', 'иван', 'Мария'])).toEqual([
-      'Иван',
-      'Мария',
-    ])
   })
 })
 

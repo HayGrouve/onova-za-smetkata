@@ -85,24 +85,27 @@ pnpm dlx shadcn@latest add <component>
 
 ## Testing
 
-| Layer     | Command                 | Convention                                                              |
-| --------- | ----------------------- | ----------------------------------------------------------------------- |
-| Unit      | `pnpm run test`         | `*.test.ts` / `*.test.tsx` colocated with source                        |
-| E2E       | `pnpm run test:e2e`     | `e2e/*.spec.ts` — needs `npx convex dev` + `DEV_MODE` on dev deployment |
-| Full gate | `pnpm run ci:preflight` | Prettier + ESLint + typecheck + Knip + Vitest + PWA icons + build       |
+| Layer          | Command                 | Convention                                                                     |
+| -------------- | ----------------------- | ------------------------------------------------------------------------------ |
+| Unit           | `pnpm run test`         | `*.test.ts` / `*.test.tsx` colocated with source                               |
+| Convex (fakes) | `pnpm run test`         | `convex/<module>.test.ts` on `convex-test`; fixtures in `convex/test.setup.ts` |
+| E2E            | `pnpm run test:e2e`     | `e2e/*.spec.ts` — needs `npx convex dev` + `DEV_MODE` on dev deployment        |
+| Full gate      | `pnpm run ci:preflight` | Prettier + ESLint + typecheck + Knip + Vitest + PWA icons + build              |
 
-**Testing priorities**
+**Where a test belongs**
 
-1. **`shared/`** — primary home for business-logic tests (calculations, schemas, validation).
-2. **`convex/lib/`** — server-only rules (auth, draft assertions, dev mode).
-3. **`src/lib/`** — client adapters and browser helpers.
-4. **`e2e/`** — only for critical browser journeys; see `e2e/README.md`.
+1. **`shared/`** — pure business rules: money, Unit allocation, claim plans, readiness, schemas. Money rules carry `fast-check` properties (Shares add up to the cent, the Host is never Outstanding) on top of a few worked examples.
+2. **`convex/*.test.ts`** — what the server actually enforces, driven through the real mutations: who may act for a seat, share links and ownership, the final-bill lock, which rows a payment writes. Seed with `seedBill` / `joinAsGuest`; assert on stored rows and thrown messages. Prefer this over unit-testing a single `convex/lib` guard.
+3. **`src/lib/`** — client adapters and browser helpers (storage, clipboard, URL building).
+4. **`e2e/`** — only whole browser journeys that the layers above cannot see (live updates between phones, Clerk, Revolut hand-off); see `e2e/README.md`.
+
+Do not test copy: asserting a Bulgarian string equals itself breaks on wording edits and never catches a bug. Assert behaviour and reuse the message constant (e.g. `GUEST_FLOW_MESSAGES.nameTaken`) when a test needs the text.
 
 Vitest excludes `e2e/**`, `.worktrees/**`, and `.claude/worktrees/**`. Local git worktrees there are ignored by git and tooling — do not commit them.
 
-**Knip** (`pnpm run knip`, part of the full gate) fails on unused files, exports, and dependencies. Delete dead code rather than ignoring it; `knip.json` only ignores shadcn `src/components/ui/**` and `public/sw.js`.
+**Knip** (`pnpm run knip`, part of the full gate) fails on unused files, exports, and dependencies. A second `--production` pass also fails on exports that only tests import, so a test cannot keep dead code alive. Delete dead code rather than ignoring it; `knip.json` only ignores shadcn `src/components/ui/**` and `public/sw.js`.
 
-When implementing from a spec or ticket, prefer `/tdd` at agreed seams (usually `shared/` or `convex/lib/`).
+When implementing from a spec or ticket, prefer `/tdd` at agreed seams (usually `shared/` or a `convex/*.test.ts` scenario).
 
 ## Local development
 

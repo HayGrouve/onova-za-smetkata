@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   calculateItemsSubtotalCents,
   formatEurInputValue,
-  resolveInitialTipCents,
   tipCentsFromPercent,
 } from './tip-calculations'
 
@@ -36,23 +35,5 @@ describe('formatEurInputValue', () => {
   it('formats cents for Bulgarian input', () => {
     expect(formatEurInputValue(1250)).toBe('12,50')
     expect(formatEurInputValue(0)).toBe('')
-  })
-})
-
-describe('resolveInitialTipCents', () => {
-  it('computes from percent preference', () => {
-    expect(resolveInitialTipCents({ mode: 'percent', percent: 15 }, 2000)).toBe(
-      300,
-    )
-  })
-
-  it('uses custom cents when stored', () => {
-    expect(
-      resolveInitialTipCents({ mode: 'custom', customCents: 400 }, 2000),
-    ).toBe(400)
-  })
-
-  it('returns 0 when no preference', () => {
-    expect(resolveInitialTipCents(null, 2000)).toBe(0)
   })
 })

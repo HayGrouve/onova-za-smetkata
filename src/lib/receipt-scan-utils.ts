@@ -5,10 +5,6 @@ export interface ExtractedItem {
   confidence: 'high' | 'low'
 }
 
-export function filterExtractedItems(items: ExtractedItem[]): ExtractedItem[] {
-  return items.filter((i) => i.unitPriceCents > 0 && i.name.trim().length > 0)
-}
-
 export function sumItemsCents(items: ExtractedItem[]): number {
   return items.reduce((s, i) => s + i.unitPriceCents * i.quantity, 0)
 }

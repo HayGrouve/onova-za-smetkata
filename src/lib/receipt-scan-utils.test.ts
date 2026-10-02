@@ -1,35 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  filterExtractedItems,
-  detectTotalsMismatch,
-  sumItemsCents,
-} from './receipt-scan-utils'
-
-describe('filterExtractedItems', () => {
-  it('removes zero and negative prices', () => {
-    const items = [
-      {
-        name: 'Soup',
-        unitPriceCents: 500,
-        quantity: 1,
-        confidence: 'high' as const,
-      },
-      {
-        name: 'Total',
-        unitPriceCents: 0,
-        quantity: 1,
-        confidence: 'high' as const,
-      },
-      {
-        name: 'Bad',
-        unitPriceCents: -100,
-        quantity: 1,
-        confidence: 'high' as const,
-      },
-    ]
-    expect(filterExtractedItems(items)).toHaveLength(1)
-  })
-})
+import { detectTotalsMismatch, sumItemsCents } from './receipt-scan-utils'
 
 describe('detectTotalsMismatch', () => {
   it('returns true when difference exceeds 1 cent', () => {

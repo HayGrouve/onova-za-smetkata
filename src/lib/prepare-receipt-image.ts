@@ -24,14 +24,6 @@ export function needsHeicConversion(file: File): boolean {
   return false
 }
 
-export function resolveUploadContentType(file: File): string {
-  if (file.type && file.type !== 'application/octet-stream') {
-    return file.type
-  }
-  if (hasHeicExtension(file.name)) return 'image/heic'
-  return 'image/jpeg'
-}
-
 export async function prepareReceiptImage(
   file: File,
 ): Promise<{ blob: Blob; contentType: string }> {

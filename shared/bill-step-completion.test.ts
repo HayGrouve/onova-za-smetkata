@@ -1,138 +1,32 @@
 import { describe, expect, it } from 'vitest'
 import { getBillStepCompletion } from './bill-step-completion'
 
-const p1 = { id: 'p1', sortOrder: 0 }
+const p1 = { id: 'p1', sortOrder: 1 }
 const i1 = { id: 'i1', unitPriceCents: 1000, quantity: 1 }
 const a1 = { itemId: 'i1', participantId: 'p1', unitIndex: 0 }
 
 describe('getBillStepCompletion', () => {
-  it('marks step 1 done once the restaurant is named and items are priced', () => {
-    expect(
-      getBillStepCompletion({
-        restaurantName: '   ',
-        participants: [],
-        items: [i1],
-        assignments: [],
-      })[1],
-    ).toBe(false)
-    expect(
-      getBillStepCompletion({
-        restaurantName: '  Механа  ',
-        participants: [],
-        items: [],
-        assignments: [],
-      })[1],
-    ).toBe(false)
-    expect(
-      getBillStepCompletion({
-        restaurantName: '  Механа  ',
-        participants: [],
-        items: [i1],
-        assignments: [],
-      })[1],
-    ).toBe(true)
-  })
-
-  it('marks step 2 done when there is at least one participant', () => {
-    expect(
-      getBillStepCompletion({
-        restaurantName: '',
-        participants: [],
-        items: [],
-        assignments: [],
-      })[2],
-    ).toBe(false)
-    expect(
-      getBillStepCompletion({
-        restaurantName: '',
-        participants: [p1],
-        items: [],
-        assignments: [],
-      })[2],
-    ).toBe(true)
-  })
-
-  it('does not mark step 2 done when only the host participant exists', () => {
+  // Steps 1–3 are views over `bill-readiness`; its tests cover each predicate.
+  it('maps steps 1–3 to the bill readiness views', () => {
     const host = { id: 'host', sortOrder: 0 }
     expect(
       getBillStepCompletion({
-        restaurantName: '',
+        restaurantName: 'Механа',
         participants: [host],
-        items: [],
+        items: [i1],
         assignments: [],
         hostParticipantId: 'host',
-      })[2],
-    ).toBe(false)
+      }),
+    ).toMatchObject({ 1: true, 2: false, 3: false })
     expect(
       getBillStepCompletion({
         restaurantName: '',
         participants: [host, p1],
-        items: [],
-        assignments: [],
+        items: [i1],
+        assignments: [a1],
         hostParticipantId: 'host',
-      })[2],
-    ).toBe(true)
-  })
-
-  it('marks step 3 done when every item has an assignment and there is ≥1 item', () => {
-    expect(
-      getBillStepCompletion({
-        restaurantName: '',
-        participants: [p1],
-        items: [],
-        assignments: [],
-      })[3],
-    ).toBe(false)
-    expect(
-      getBillStepCompletion({
-        restaurantName: '',
-        participants: [p1],
-        items: [i1],
-        assignments: [],
-      })[3],
-    ).toBe(false)
-    expect(
-      getBillStepCompletion({
-        restaurantName: '',
-        participants: [p1],
-        items: [i1],
-        assignments: [a1],
-      })[3],
-    ).toBe(true)
-  })
-
-  it('does not mark step 3 done for zero-price items even when assigned', () => {
-    const free = { id: 'i2', unitPriceCents: 0, quantity: 1 }
-    expect(
-      getBillStepCompletion({
-        restaurantName: '',
-        participants: [p1],
-        items: [free],
-        assignments: [{ itemId: 'i2', participantId: 'p1', unitIndex: 0 }],
-      })[3],
-    ).toBe(false)
-  })
-
-  it('does not require restaurant for step 3 done', () => {
-    expect(
-      getBillStepCompletion({
-        restaurantName: '',
-        participants: [],
-        items: [i1],
-        assignments: [a1],
-      })[3],
-    ).toBe(true)
-  })
-
-  it('does not mark step 3 done when a multi-qty item has an empty unit', () => {
-    expect(
-      getBillStepCompletion({
-        restaurantName: '',
-        participants: [p1],
-        items: [{ id: 'i2', unitPriceCents: 100, quantity: 2 }],
-        assignments: [{ itemId: 'i2', participantId: 'p1', unitIndex: 0 }],
-      })[3],
-    ).toBe(false)
+      }),
+    ).toMatchObject({ 1: false, 2: true, 3: true })
   })
 
   it('marks step 4 incomplete when finalize validation fails', () => {

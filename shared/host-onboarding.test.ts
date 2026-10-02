@@ -5,7 +5,6 @@ import {
   isEditorStepGuidanceComplete,
   isEligibleForAutomaticOnboarding,
   isPreparedBill,
-  shouldCompleteOnboarding,
   stepBarGuidanceLabel,
 } from './host-onboarding'
 
@@ -123,24 +122,6 @@ describe('isPreparedBill', () => {
         assignments: [{ itemId: 'i1', participantId: 'g1', unitIndex: 0 }],
       }),
     ).toBe(true)
-  })
-})
-
-describe('shouldCompleteOnboarding', () => {
-  it('completes only after both milestones while active', () => {
-    expect(
-      shouldCompleteOnboarding({
-        lifecycle: 'active',
-        preparedAt: 1,
-        sharedAt: 2,
-      }),
-    ).toBe(true)
-    expect(
-      shouldCompleteOnboarding({
-        lifecycle: 'active',
-        preparedAt: 1,
-      }),
-    ).toBe(false)
   })
 })
 

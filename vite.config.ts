@@ -17,6 +17,8 @@ export default defineConfig(({ command }) => ({
       '.worktrees/**',
       '.claude/worktrees/**',
     ],
+    // Convex function tests (`convex/*.test.ts`) run on convex-test.
+    server: { deps: { inline: ['convex-test'] } },
   },
   plugins: [
     ...(command === 'serve' ? [devtools()] : []),
