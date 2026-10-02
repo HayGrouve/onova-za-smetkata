@@ -14,7 +14,7 @@ const now = Date.UTC(2026, 6, 15, 12, 0, 0)
 
 function user(overrides: Partial<UserBillingFields> = {}): UserBillingFields {
   return {
-    clerkPlanSlug: 'free_user',
+    plan: 'free',
     subscriptionStatus: undefined,
     currentPeriodEnd: undefined,
     graceUntil: undefined,
@@ -30,7 +30,7 @@ describe('getEffectiveTier', () => {
   it('returns pro for active pro subscription', () => {
     expect(
       getEffectiveTier(
-        user({ clerkPlanSlug: 'pro', subscriptionStatus: 'active' }),
+        user({ plan: 'pro', subscriptionStatus: 'active' }),
         now,
       ),
     ).toBe('pro')
@@ -40,7 +40,7 @@ describe('getEffectiveTier', () => {
     expect(
       getEffectiveTier(
         user({
-          clerkPlanSlug: 'pro',
+          plan: 'pro',
           subscriptionStatus: 'canceled',
           currentPeriodEnd: now + 86_400_000,
         }),
@@ -53,7 +53,7 @@ describe('getEffectiveTier', () => {
     expect(
       getEffectiveTier(
         user({
-          clerkPlanSlug: 'pro',
+          plan: 'pro',
           subscriptionStatus: 'canceled',
           currentPeriodEnd: now - 1,
         }),
@@ -66,7 +66,7 @@ describe('getEffectiveTier', () => {
     expect(
       getEffectiveTier(
         user({
-          clerkPlanSlug: 'pro',
+          plan: 'pro',
           subscriptionStatus: 'past_due',
           graceUntil: now + 86_400_000,
         }),
@@ -79,7 +79,7 @@ describe('getEffectiveTier', () => {
     expect(
       getEffectiveTier(
         user({
-          clerkPlanSlug: 'pro',
+          plan: 'pro',
           subscriptionStatus: 'past_due',
           graceUntil: now - 1,
         }),

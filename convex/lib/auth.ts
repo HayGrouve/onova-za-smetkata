@@ -17,7 +17,7 @@ function newUserFields(identity: UserIdentity) {
     email: identity.email,
     name: identity.name,
     image: identity.pictureUrl,
-    clerkPlanSlug: 'free_user' as const,
+    plan: 'free' as const,
   }
 }
 

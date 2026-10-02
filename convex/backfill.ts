@@ -89,3 +89,21 @@ export const wipeItemAssignments = internalMutation({
     return { removed: assignments.length }
   },
 })
+
+/** Run once after adding users.plan: npx convex run backfill:planFromClerkPlanSlug */
+export const planFromClerkPlanSlug = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const users = await ctx.db.query('users').collect()
+    let patched = 0
+    for (const user of users) {
+      if (user.clerkPlanSlug === undefined && user.plan !== undefined) continue
+      await ctx.db.patch(user._id, {
+        plan: user.plan ?? (user.clerkPlanSlug === 'pro' ? 'pro' : 'free'),
+        clerkPlanSlug: undefined,
+      })
+      patched++
+    }
+    return { patched }
+  },
+})

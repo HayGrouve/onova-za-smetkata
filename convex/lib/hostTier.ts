@@ -21,7 +21,7 @@ export type HostTier = 'free' | 'pro'
 
 export type UserBillingFields = Pick<
   Doc<'users'>,
-  'clerkPlanSlug' | 'subscriptionStatus' | 'currentPeriodEnd' | 'graceUntil'
+  'plan' | 'subscriptionStatus' | 'currentPeriodEnd' | 'graceUntil'
 >
 
 /** The tier the Host's Stripe subscription pays for. */
@@ -30,7 +30,7 @@ export function getEffectiveTier(
   nowMs: number,
 ): HostTier {
   if (
-    user.clerkPlanSlug === 'pro' &&
+    user.plan === 'pro' &&
     (user.subscriptionStatus === 'active' ||
       user.subscriptionStatus === 'trialing' ||
       (user.subscriptionStatus === 'canceled' &&

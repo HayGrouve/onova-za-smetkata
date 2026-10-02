@@ -78,7 +78,7 @@ export function isLiveSubscriptionStatus(status: string | undefined): boolean {
 
 type BillingMirror = Pick<
   Doc<'users'>,
-  | 'clerkPlanSlug'
+  | 'plan'
   | 'subscriptionStatus'
   | 'currentPeriodEnd'
   | 'graceUntil'
@@ -97,7 +97,7 @@ export function billingFieldsFromSubscription(
 ): BillingMirror {
   if (!subscription) {
     return {
-      clerkPlanSlug: 'free_user',
+      plan: 'free',
       subscriptionStatus: undefined,
       currentPeriodEnd: undefined,
       graceUntil: undefined,
@@ -114,7 +114,7 @@ export function billingFieldsFromSubscription(
     previous.graceUntil !== undefined
 
   return {
-    clerkPlanSlug: 'pro',
+    plan: 'pro',
     subscriptionStatus: subscription.status,
     currentPeriodEnd: ended
       ? (subscription.endedAt ?? nowMs)

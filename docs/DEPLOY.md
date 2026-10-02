@@ -157,6 +157,12 @@ Canonical production path: **merge (or push) to `main` → GitHub Actions `prefl
    npx convex run backfill:dedupeAssignments
    ```
 
+   After deploying `users.plan` (replaces the Clerk Billing-era `clerkPlanSlug`) — required once per environment before `clerkPlanSlug` is dropped from the schema; idempotent:
+
+   ```bash
+   npx convex run backfill:planFromClerkPlanSlug
+   ```
+
 4. **Emergency / local-only Convex deploy**
 
    Prefer the Actions path. Use a manual deploy only when CI cannot (dashboard outage workaround, break-glass):
