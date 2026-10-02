@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useRef } from 'react'
+import type { ReactNode } from 'react'
 import { AlertTriangleIcon, MinusIcon, MoreHorizontalIcon } from 'lucide-react'
 import { SeatAvatar, useSeatLookup } from '#/components/receipt/seats.tsx'
 import { formatEur } from '#/lib/format-currency.ts'
@@ -33,9 +34,8 @@ export function ClaimLine({
   onTap,
   onMore,
   onReleaseUnit,
-  index = 0,
-  printIn = false,
   tapLabel,
+  after,
 }: {
   group: ClaimGroup
   membersOf: (unit: UnitRef) => string[]
@@ -51,11 +51,10 @@ export function ClaimLine({
   onMore?: () => void
   /** Guest: tapping your own avatar in a slot gives that Unit back. */
   onReleaseUnit?: (unit: UnitRef, seatId: string) => void
-  index?: number
-  /** Animate the line printing in when it mounts. */
-  printIn?: boolean
   /** Accessible name of the tap action, e.g. „Мое“. */
   tapLabel?: string
+  /** Rendered inside the line under it (the line's Units panel). */
+  after?: ReactNode
 }) {
   const count = group.units.length
   const members = group.units.map((unit) => membersOf(unit))
@@ -106,15 +105,6 @@ export function ClaimLine({
       data-line={group.key}
       data-testid={`claim-group-${group.itemIds[0]}`}
       layout="position"
-      initial={
-        printIn ? { opacity: 0, y: -10, clipPath: 'inset(0 0 100% 0)' } : false
-      }
-      animate={{ opacity: 1, y: 0, clipPath: 'inset(0 0 0% 0)' }}
-      transition={{
-        duration: 0.32,
-        delay: printIn ? index * 0.07 : 0,
-        ease: [0.2, 0.8, 0.3, 1],
-      }}
       className={cn('relative -mx-2 list-none', open && 'bg-paper-2')}
     >
       <div className="flex items-stretch">
@@ -224,6 +214,7 @@ export function ClaimLine({
           </motion.p>
         ) : null}
       </AnimatePresence>
+      {after}
     </motion.li>
   )
 }

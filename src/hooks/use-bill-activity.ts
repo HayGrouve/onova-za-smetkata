@@ -6,7 +6,7 @@ import { indexUnitMembers } from '../../shared/claim-groups.ts'
 const MAX_EVENTS = 24
 
 export interface BillActivityInput {
-  items: Array<{ _id: string; name: string }>
+  items: Array<{ _id: string; name: string; quantity: number }>
   assignments: Array<{
     itemId: string
     participantId: string
@@ -44,6 +44,7 @@ export function useBillActivity({
     return {
       unitMembers: indexUnitMembers(assignments),
       itemNames: new Map(items.map((item) => [item._id, item.name])),
+      itemQuantities: new Map(items.map((item) => [item._id, item.quantity])),
       activeSeatIds: new Set(activeSeatIds),
       paidCents,
     }
@@ -66,7 +67,7 @@ export function useBillActivity({
       snapshot,
       (id) => labelsRef.current[id] ?? 'Някой',
       Date.now(),
-    ).filter((event) => !quiet.has(event.seatId))
+    ).filter((event) => !event.seatIds.some((id) => quiet.has(id)))
     if (fresh.length === 0) return
     setEvents((all) => [...fresh.reverse(), ...all].slice(0, MAX_EVENTS))
   }, [snapshot, quietKey])

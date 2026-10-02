@@ -31,7 +31,7 @@ export function LinePanel({
       animate={{ height: 'auto', opacity: 1 }}
       exit={{ height: 0, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 380, damping: 36 }}
-      className="-mx-2 overflow-hidden bg-paper-2"
+      className="overflow-hidden bg-paper-2"
       role="region"
       aria-label={title}
     >

@@ -251,9 +251,9 @@ function GuestClaimTable({
       )
       return
     }
-    fly(actorId, group.key)
     const ok = await actions.take(group.itemIds)
     if (!ok) return
+    fly(actorId, group.key)
     const who =
       actorId === participantId ? 'Взехте' : `За ${labels[actorId] ?? 'друг'}:`
     pushUndo(`${who} ${group.name}`, () => {
@@ -280,11 +280,23 @@ function GuestClaimTable({
       busy: actions.busy,
       take: () => actions.take(group.itemIds),
       takeAll: async () => {
+        // One Unit at a time (the server picks each); undo returns what landed.
         const free = viewFor(group, actorId).freeUnits.length
+        let taken = 0
         for (let i = 0; i < free; i++) {
-          if (!(await actions.take(group.itemIds))) return false
+          if (!(await actions.take(group.itemIds))) break
+          taken += 1
         }
-        return true
+        if (taken > 0) {
+          pushUndo(`Взехте ${taken} × ${group.name}`, () => {
+            void (async () => {
+              for (let i = 0; i < taken; i++) {
+                if (!(await actions.release(group.itemIds))) return
+              }
+            })()
+          })
+        }
+        return taken === free
       },
       release: () => actions.release(group.itemIds),
       share: (withIds, unit) => actions.share(group.itemIds, withIds, unit),
@@ -419,49 +431,45 @@ function GuestClaimTable({
               </p>
             ) : (
               <ul>
-                {groups.map((group, index) => (
-                  <div key={group.key}>
-                    <ClaimLine
-                      group={group}
-                      index={index}
-                      membersOf={membersOf}
-                      mode={readOnly ? 'readonly' : 'claim'}
-                      highlightIds={mySeatIds}
-                      countIds={[actorId]}
-                      open={openKey === group.key}
-                      error={
-                        lineError?.key === group.key ? lineError.text : null
-                      }
-                      disabled={actions.busy}
-                      tapLabel="Мое"
-                      onTap={() => void take(group)}
-                      onMore={() =>
-                        setOpenKey(openKey === group.key ? null : group.key)
-                      }
-                      onReleaseUnit={(unit, seatId) =>
-                        void leaveAs(seatId, unit)
-                      }
-                    />
-                    <AnimatePresence initial={false}>
-                      {openKey === group.key && !readOnly ? (
-                        <ClaimLineDrawer
-                          key="drawer"
-                          group={group}
-                          view={viewFor(group, actorId)}
-                          actorId={actorId}
-                          title={
-                            actorId === participantId
-                              ? group.name
-                              : `${group.name}, за ${labels[actorId] ?? 'друг'}`
-                          }
-                          participants={claimInput.participants}
-                          labels={labels}
-                          actions={lineActions(group)}
-                          onClose={() => setOpenKey(null)}
-                        />
-                      ) : null}
-                    </AnimatePresence>
-                  </div>
+                {groups.map((group) => (
+                  <ClaimLine
+                    key={group.key}
+                    group={group}
+                    membersOf={membersOf}
+                    mode={readOnly ? 'readonly' : 'claim'}
+                    highlightIds={mySeatIds}
+                    countIds={[actorId]}
+                    open={openKey === group.key}
+                    error={lineError?.key === group.key ? lineError.text : null}
+                    disabled={actions.busy}
+                    tapLabel="Мое"
+                    onTap={() => void take(group)}
+                    onMore={() =>
+                      setOpenKey(openKey === group.key ? null : group.key)
+                    }
+                    onReleaseUnit={(unit, seatId) => void leaveAs(seatId, unit)}
+                    after={
+                      <AnimatePresence initial={false}>
+                        {openKey === group.key && !readOnly ? (
+                          <ClaimLineDrawer
+                            key={`drawer-${actorId}`}
+                            group={group}
+                            view={viewFor(group, actorId)}
+                            actorId={actorId}
+                            title={
+                              actorId === participantId
+                                ? group.name
+                                : `${group.name}, за ${labels[actorId] ?? 'друг'}`
+                            }
+                            participants={claimInput.participants}
+                            labels={labels}
+                            actions={lineActions(group)}
+                            onClose={() => setOpenKey(null)}
+                          />
+                        ) : null}
+                      </AnimatePresence>
+                    }
+                  />
                 ))}
               </ul>
             )}

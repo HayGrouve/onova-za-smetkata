@@ -97,8 +97,6 @@ export interface HostBillViewProps {
   shareGuidance?: GuidanceFocusHandle
   /** Onboarding bar, shown under the header. */
   guidance?: ReactNode
-  /** Freshly created bill: print the receipt in. */
-  printIn?: boolean
 }
 
 /**
@@ -128,7 +126,6 @@ function HostBillTable({
   onShareLink,
   shareGuidance,
   guidance,
-  printIn = false,
 }: HostBillViewProps) {
   const { bill, participants, items, assignments, payments } = data
   const final = bill.status === 'final'
@@ -221,12 +218,14 @@ function HostBillTable({
   const unitsOf = (seatId: string) =>
     assignments.filter((a) => a.participantId === seatId).length
 
-  const pendingBySeat = new Map<
-    string,
-    { requestId: Id<'combinedPaymentRequests'>; totalCents: number }
-  >()
+  const pendingBySeat = new Map<string, NonNullable<HostSlipModel['pending']>>()
   for (const request of pendingRequests ?? []) {
-    const entry = { requestId: request._id, totalCents: request.totalCents }
+    const entry = {
+      requestId: request._id,
+      totalCents: request.totalCents,
+      payerId: request.payerParticipantId as string,
+      payerLabel: labels[request.payerParticipantId] ?? 'друг',
+    }
     pendingBySeat.set(request.payerParticipantId, entry)
     for (const id of getCoveredParticipantIds(request)) {
       pendingBySeat.set(id, entry)
@@ -328,13 +327,13 @@ function HostBillTable({
       )
       return
     }
-    fly(brush.id, group.key)
     const args = {
       itemIds: group.itemIds as Id<'items'>[],
       participantId: brush.id as Id<'participants'>,
     }
     try {
       await takeUnit(args)
+      fly(brush.id, group.key)
       pushUndo(`${brush.label} взе ${group.name}`, () => {
         void releaseUnit(args).catch((error: unknown) =>
           toast.error(getConvexErrorMessage(error)),
@@ -364,7 +363,6 @@ function HostBillTable({
       onPaint={(group) => void paint(group)}
       lineError={lineError}
       freeUnits={freeUnits}
-      printIn={printIn}
       onBackToAssemble={onPhase ? () => onPhase('assemble') : undefined}
     />
   )
@@ -374,12 +372,7 @@ function HostBillTable({
     : undefined
 
   const receipt = (
-    <motion.div
-      initial={printIn ? { y: -60, clipPath: 'inset(0 0 100% 0)' } : false}
-      animate={{ y: 0, clipPath: 'inset(0 0 -10% 0)' }}
-      transition={{ duration: 0.7, ease: [0.2, 0.7, 0.2, 1] }}
-      className="relative"
-    >
+    <div className="relative">
       <div className="paper-shadow">
         <div className="paper paper-top thermal relative px-4 pb-4 sm:px-6">
           <ReceiptHeader
@@ -449,7 +442,7 @@ function HostBillTable({
         </div>
         <div className="paper-end" aria-hidden />
       </div>
-    </motion.div>
+    </div>
   )
 
   const actions = (
@@ -624,7 +617,6 @@ function LineList({
   onPaint,
   lineError,
   freeUnits,
-  printIn,
   onBackToAssemble,
 }: {
   groups: ClaimGroup[]
@@ -637,7 +629,6 @@ function LineList({
   onPaint: (group: ClaimGroup) => void
   lineError: { key: string; text: string } | null
   freeUnits: number
-  printIn: boolean
   onBackToAssemble?: () => void
 }) {
   const [expanded, setExpanded] = useState(false)
@@ -684,36 +675,35 @@ function LineList({
   const mode = phase === 'table' ? (brushId ? 'paint' : 'inspect') : 'readonly'
   return (
     <ul>
-      {groups.map((group, index) => (
-        <div key={group.key}>
-          <ClaimLine
-            group={group}
-            index={index}
-            printIn={printIn}
-            membersOf={membersOf}
-            mode={mode}
-            highlightIds={brushId ? [brushId] : []}
-            open={openKey === group.key}
-            error={lineError?.key === group.key ? lineError.text : null}
-            onTap={mode === 'readonly' ? undefined : () => onPaint(group)}
-            onMore={
-              mode === 'readonly'
-                ? undefined
-                : () => setOpenKey(openKey === group.key ? null : group.key)
-            }
-          />
-          <AnimatePresence initial={false}>
-            {openKey === group.key && mode !== 'readonly' ? (
-              <HostUnitDrawer
-                key="drawer"
-                group={group}
-                membersOf={membersOf}
-                participants={participants}
-                onClose={() => setOpenKey(null)}
-              />
-            ) : null}
-          </AnimatePresence>
-        </div>
+      {groups.map((group) => (
+        <ClaimLine
+          key={group.key}
+          group={group}
+          membersOf={membersOf}
+          mode={mode}
+          highlightIds={brushId ? [brushId] : []}
+          open={openKey === group.key}
+          error={lineError?.key === group.key ? lineError.text : null}
+          onTap={mode === 'readonly' ? undefined : () => onPaint(group)}
+          onMore={
+            mode === 'readonly'
+              ? undefined
+              : () => setOpenKey(openKey === group.key ? null : group.key)
+          }
+          after={
+            <AnimatePresence initial={false}>
+              {openKey === group.key && mode !== 'readonly' ? (
+                <HostUnitDrawer
+                  key="drawer"
+                  group={group}
+                  membersOf={membersOf}
+                  participants={participants}
+                  onClose={() => setOpenKey(null)}
+                />
+              ) : null}
+            </AnimatePresence>
+          }
+        />
       ))}
     </ul>
   )

@@ -203,7 +203,8 @@ export function TransientTicker({
   className?: string
 }) {
   const seatOf = useSeatLookup()
-  const [seenId, setSeenId] = useState<string | undefined>(undefined)
+  // Mounting (e.g. coming back to На масата) is not news: start caught up.
+  const [seenId, setSeenId] = useState<string | undefined>(() => latest?.id)
   const visible = !!latest && latest.id !== seenId
   useEffect(() => {
     if (!visible) return

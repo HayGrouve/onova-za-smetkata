@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from 'react'
+import { createContext, useCallback, useContext, useMemo } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { buildParticipantInitials } from '#/lib/participant-initials.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
@@ -66,7 +66,7 @@ export function useSeats(): Seat[] {
 
 export function useSeatLookup(): (id: string) => Seat | undefined {
   const { byId } = useContext(SeatsContext)
-  return (id) => byId.get(id)
+  return useCallback((id: string) => byId.get(id), [byId])
 }
 
 const SIZES = {

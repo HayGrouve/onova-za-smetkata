@@ -30,7 +30,8 @@ test('sharing a drink puts half of it on the friend right away', async ({
   await expect(drawer.getByText(/вие плащате 4,00/)).toBeVisible()
   await drawer.getByRole('button', { name: 'Сподели 1 бройка' }).click()
 
-  await expect(rowA.getByText(`делите с ${bobi}`)).toBeVisible()
+  // The line's own hint („ваши 1, делите с …“), not the open drawer.
+  await expect(rowA.getByText(new RegExp(`, делите с ${bobi}`))).toBeVisible()
   await expect(guestA.page.getByTestId('claim-pay-bar-amount')).toHaveText(
     /4,00/,
   )

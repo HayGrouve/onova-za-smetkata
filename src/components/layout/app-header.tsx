@@ -254,7 +254,10 @@ export function AppHeader() {
             </Link>
           </Button>
         ) : null}
-        {slot.active ? null : (
+        {slot.active ? (
+          // The timeline replaces the visible title; keep the page heading.
+          <h1 className="sr-only">{title}</h1>
+        ) : (
           <div className="flex min-w-0 flex-1 items-center gap-2.5 pl-1">
             {!backTo ? (
               <img

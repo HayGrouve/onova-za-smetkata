@@ -48,7 +48,7 @@ export function FlightLayer({ children }: { children: ReactNode }) {
 
   const fly = useCallback<FlyFn>(
     (seatId, lineKey) => {
-      if (reduce) return
+      if (reduce || !seatOf(seatId)) return
       const src = firstVisible(`[data-seat-src="${CSS.escape(seatId)}"]`)
       const dst = firstVisible(
         `[data-line="${CSS.escape(lineKey)}"] [data-slots]`,
@@ -67,7 +67,7 @@ export function FlightLayer({ children }: { children: ReactNode }) {
         },
       ])
     },
-    [reduce],
+    [reduce, seatOf],
   )
 
   return (

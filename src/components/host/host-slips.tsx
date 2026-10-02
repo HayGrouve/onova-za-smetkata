@@ -27,6 +27,9 @@ export interface HostSlipModel {
   pending: {
     requestId: Id<'combinedPaymentRequests'>
     totalCents: number
+    /** Who sent the transfer; a Covered seat's slip points at them. */
+    payerId: string
+    payerLabel: string
   } | null
 }
 
@@ -109,7 +112,10 @@ export function HostSlip({
     }
   }
 
-  const actions = readOnly ? null : status === 'pending' && slip.pending ? (
+  const paysForSelf = slip.pending?.payerId === seat.id
+  const actions = readOnly ? null : status === 'pending' &&
+    slip.pending &&
+    paysForSelf ? (
     <Button
       type="button"
       size="sm"
@@ -191,7 +197,9 @@ export function HostSlip({
           </span>
           <span className="block text-[11px] leading-snug text-ink-muted">
             {status === 'pending' && slip.pending
-              ? `отбеляза превод ${formatEur(slip.pending.totalCents)}`
+              ? paysForSelf
+                ? `отбеляза превод ${formatEur(slip.pending.totalCents)}`
+                : `плаща ${slip.pending.payerLabel}`
               : status === 'paid'
                 ? `платени ${formatEur(totals.paidCents)}`
                 : status === 'host'

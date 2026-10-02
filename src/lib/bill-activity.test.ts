@@ -12,6 +12,10 @@ function snapshot(overrides: Partial<ActivitySnapshot> = {}): ActivitySnapshot {
       ['i1', 'Шопска салата'],
       ['i2', 'Бира'],
     ]),
+    itemQuantities: new Map([
+      ['i1', 1],
+      ['i2', 3],
+    ]),
     activeSeatIds: new Set(),
     paidCents: new Map(),
     ...overrides,
@@ -49,11 +53,33 @@ describe('diffActivity', () => {
     })
     const next = snapshot({
       itemNames: new Map([['i1', 'Шопска салата']]),
+      itemQuantities: new Map([['i1', 1]]),
       unitMembers: new Map(),
     })
     expect(diffActivity(prev, next, labelOf, 1).map((e) => e.text)).toEqual([
       'Деси върна Шопска салата',
     ])
+  })
+
+  it('does not report a Unit cut by a quantity edit as returned', () => {
+    const prev = snapshot({ unitMembers: new Map([['i2:2', ['a']]]) })
+    const next = snapshot({
+      itemQuantities: new Map([
+        ['i1', 1],
+        ['i2', 2],
+      ]),
+    })
+    expect(diffActivity(prev, next, labelOf, 1)).toEqual([])
+  })
+
+  it('names everyone on a Shared Unit so their phones can stay quiet', () => {
+    const [event] = diffActivity(
+      snapshot({ unitMembers: new Map([['i2:0', ['a']]]) }),
+      snapshot({ unitMembers: new Map([['i2:0', ['a', 'b']]]) }),
+      labelOf,
+      1,
+    )
+    expect(event.seatIds).toEqual(['a', 'b'])
   })
 
   it('reports joins and payments', () => {

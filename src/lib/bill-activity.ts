@@ -8,6 +8,8 @@ export interface ActivitySnapshot {
   /** Unit key (`itemId:unitIndex`) to member seat ids. */
   unitMembers: Map<string, string[]>
   itemNames: Map<string, string>
+  /** Item id to quantity: a Unit past the end went with a quantity edit. */
+  itemQuantities: Map<string, number>
   /** Seats with a phone on the table right now. */
   activeSeatIds: Set<string>
   /**
@@ -24,12 +26,22 @@ export interface ActivityEvent {
   at: number
   kind: ActivityKind
   seatId: string
+  /** Every seat the event is about (a Shared Unit names all its members). */
+  seatIds: string[]
   text: string
 }
 
-function itemIdOf(unitKeyValue: string): string {
+function parseUnitKey(unitKeyValue: string): {
+  itemId: string
+  unitIndex: number
+} {
   const separator = unitKeyValue.lastIndexOf(':')
-  return separator === -1 ? unitKeyValue : unitKeyValue.slice(0, separator)
+  return separator === -1
+    ? { itemId: unitKeyValue, unitIndex: 0 }
+    : {
+        itemId: unitKeyValue.slice(0, separator),
+        unitIndex: Number(unitKeyValue.slice(separator + 1)),
+      }
 }
 
 export function diffActivity(
@@ -39,8 +51,20 @@ export function diffActivity(
   at: number,
 ): ActivityEvent[] {
   const events: ActivityEvent[] = []
-  const push = (kind: ActivityKind, seatId: string, text: string) => {
-    events.push({ id: `${at}:${events.length}`, at, kind, seatId, text })
+  const push = (
+    kind: ActivityKind,
+    seatId: string,
+    text: string,
+    seatIds: string[] = [seatId],
+  ) => {
+    events.push({
+      id: `${at}:${events.length}`,
+      at,
+      kind,
+      seatId,
+      seatIds,
+      text,
+    })
   }
 
   for (const seatId of next.activeSeatIds) {
@@ -53,8 +77,8 @@ export function diffActivity(
   for (const key of keys) {
     const before = prev.unitMembers.get(key) ?? []
     const after = next.unitMembers.get(key) ?? []
-    const item =
-      next.itemNames.get(itemIdOf(key)) ?? prev.itemNames.get(itemIdOf(key))
+    const { itemId, unitIndex } = parseUnitKey(key)
+    const item = next.itemNames.get(itemId) ?? prev.itemNames.get(itemId)
     if (!item) continue
     const added = after.filter((id) => !before.includes(id))
     const removed = before.filter((id) => !after.includes(id))
@@ -64,12 +88,14 @@ export function diffActivity(
         'shared',
         added[0],
         `${names.slice(0, -1).join(', ')} и ${names.at(-1)} делят ${item}`,
+        after,
       )
     } else {
       for (const id of added) push('took', id, `${labelOf(id)} взе ${item}`)
     }
-    // A Unit deleted with its item line is not "returned" by anyone.
-    if (next.itemNames.has(itemIdOf(key))) {
+    // A Unit deleted with its line, or cut by a quantity edit, is not
+    // "returned" by anyone.
+    if (unitIndex < (next.itemQuantities.get(itemId) ?? 0)) {
       for (const id of removed) {
         push('released', id, `${labelOf(id)} върна ${item}`)
       }

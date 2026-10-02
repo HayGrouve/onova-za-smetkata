@@ -1,4 +1,3 @@
-import { motion } from 'motion/react'
 import type { ReactNode } from 'react'
 import { formatEur } from '#/lib/format-currency.ts'
 import { cn } from '#/lib/utils.ts'
@@ -13,23 +12,15 @@ export function Receipt({
   footer,
   className,
   innerClassName,
-  printIn = false,
 }: {
   children: ReactNode
   /** Rendered below the paper body, still on the same strip (slips, stubs). */
   footer?: ReactNode
   className?: string
   innerClassName?: string
-  /** Animate the paper printing out (fresh receipts). */
-  printIn?: boolean
 }) {
   return (
-    <motion.div
-      initial={printIn ? { y: -60, clipPath: 'inset(0 0 100% 0)' } : false}
-      animate={{ y: 0, clipPath: 'inset(0 0 -10% 0)' }}
-      transition={{ duration: 0.7, ease: [0.2, 0.7, 0.2, 1] }}
-      className={cn('relative', className)}
-    >
+    <div className={cn('relative', className)}>
       <div className="paper-shadow">
         <div
           className={cn(
@@ -42,7 +33,7 @@ export function Receipt({
         {footer ? <div className="paper">{footer}</div> : null}
         <div className="paper-end" aria-hidden />
       </div>
-    </motion.div>
+    </div>
   )
 }
 

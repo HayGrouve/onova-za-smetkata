@@ -60,18 +60,27 @@ export function LinkStub({
 
   useEffect(() => {
     if (!qrOpen || !joinUrl) return
-    // The canvas mounts with the dialog; draw on the next frame.
+    // The canvas mounts with the dialog; draw once it and the chunk are there.
+    let cancelled = false
     const frame = window.requestAnimationFrame(() => {
-      if (!canvasRef.current) return
-      void import('qrcode').then(({ default: QRCode }) =>
-        QRCode.toCanvas(canvasRef.current!, joinUrl, {
-          width: 220,
-          margin: 1,
-          color: { dark: '#1d2430', light: '#fbfaf7' },
-        }),
-      )
+      import('qrcode')
+        .then(({ default: QRCode }) => {
+          const canvas = canvasRef.current
+          if (cancelled || !canvas) return
+          return QRCode.toCanvas(canvas, joinUrl, {
+            width: 220,
+            margin: 1,
+            color: { dark: '#1d2430', light: '#fbfaf7' },
+          })
+        })
+        .catch(() => {
+          if (!cancelled) toast.error('QR кодът не се зареди')
+        })
     })
-    return () => window.cancelAnimationFrame(frame)
+    return () => {
+      cancelled = true
+      window.cancelAnimationFrame(frame)
+    }
   }, [qrOpen, joinUrl])
 
   async function handleShare() {
