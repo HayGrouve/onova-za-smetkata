@@ -7,6 +7,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from '#/components/ui/sheet.tsx'
+import { HostProPlanPicker } from '#/components/subscription/host-pro-plan-picker.tsx'
+import { useHostProStatus } from '#/hooks/use-host-pro.ts'
 import { ICON } from '#/lib/app-icons.ts'
 
 export interface QuotaPaywallSheetProps {
@@ -20,6 +22,9 @@ export function QuotaPaywallSheet({
   onOpenChange,
   message,
 }: QuotaPaywallSheetProps) {
+  const hostPro = useHostProStatus()
+  const canUpgrade = hostPro?.enabled === true
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -36,9 +41,12 @@ export function QuotaPaywallSheet({
 
         <p className="px-4 text-sm text-muted-foreground">{message}</p>
 
+        {canUpgrade ? <HostProPlanPicker className="px-4" /> : null}
+
         <SheetFooter className="border-t">
           <Button
             type="button"
+            variant={canUpgrade ? 'outline' : 'default'}
             className="h-11 w-full"
             onClick={() => onOpenChange(false)}
           >

@@ -8,6 +8,9 @@ const RATE_LIMIT_MAX_AGE_MS = 2 * 60 * 60 * 1000
 /** Terminal receipt scans kept for 30 days. */
 const RECEIPT_SCAN_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
 
+/** Stripe stops retrying a webhook after three days; keep event ids for 30. */
+const WEBHOOK_EVENT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
+
 const BATCH_SIZE = 200
 
 export const run = internalMutation({
@@ -17,6 +20,7 @@ export const run = internalMutation({
     let purgedSessions = 0
     let purgedBuckets = 0
     let purgedScans = 0
+    let purgedWebhookEvents = 0
 
     const sessions = await ctx.db.query('guestSessions').collect()
     for (const session of sessions) {
@@ -45,7 +49,18 @@ export const run = internalMutation({
       if (purgedScans >= BATCH_SIZE) break
     }
 
-    return { purgedSessions, purgedBuckets, purgedScans }
+    const webhookEvents = await ctx.db
+      .query('processedWebhookEvents')
+      .withIndex('by_processedAt', (q) =>
+        q.lt('processedAt', now - WEBHOOK_EVENT_RETENTION_MS),
+      )
+      .take(BATCH_SIZE)
+    for (const event of webhookEvents) {
+      await ctx.db.delete(event._id)
+      purgedWebhookEvents++
+    }
+
+    return { purgedSessions, purgedBuckets, purgedScans, purgedWebhookEvents }
   },
 })
 

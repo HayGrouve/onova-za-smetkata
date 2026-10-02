@@ -16,19 +16,33 @@ export default defineSchema({
     email: v.optional(v.string()),
     /** Retired Username (`Потребителско име`); kept so existing rows validate. */
     username: v.optional(v.string()),
-    /** Host Pro billing mirror (read by `lib/hostTier.ts`; Stripe webhook to write it). */
+    /**
+     * Host Pro billing mirror, written by the Stripe sync (`billing.ts`) and
+     * read by `lib/hostTier.ts`. `clerkPlanSlug` is a legacy name: `'pro'`
+     * once the Host has a Stripe subscription, else `'free_user'`.
+     */
     clerkPlanSlug: v.optional(v.string()),
+    /** Stripe subscription status, as Stripe reports it. */
     subscriptionStatus: v.optional(v.string()),
     currentPeriodEnd: v.optional(v.number()),
     graceUntil: v.optional(v.number()),
+    cancelAtPeriodEnd: v.optional(v.boolean()),
+    stripeCustomerId: v.optional(v.string()),
+    stripeSubscriptionId: v.optional(v.string()),
+    /** When the Stripe state behind the mirror was fetched; older syncs are dropped. */
+    billingSyncedAt: v.optional(v.number()),
   })
     .index('by_clerkSubject', ['clerkSubject'])
-    .index('email', ['email']),
+    .index('email', ['email'])
+    .index('by_stripeCustomerId', ['stripeCustomerId']),
 
+  /** Stripe webhook event ids already handled (deliveries repeat). */
   processedWebhookEvents: defineTable({
     eventId: v.string(),
     processedAt: v.number(),
-  }).index('by_eventId', ['eventId']),
+  })
+    .index('by_eventId', ['eventId'])
+    .index('by_processedAt', ['processedAt']),
 
   bills: defineTable({
     ownerId: v.id('users'),

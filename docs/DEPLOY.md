@@ -7,7 +7,7 @@
 - [ ] Vercel env: `VITE_CONVEX_URL` = prod Convex cloud URL
 - [ ] Convex prod env: `GEMINI_API_KEY` (for receipt OCR)
 - [ ] Clerk production instance configured per `docs/clerk-production-setup.md` (Google SSO, email sign-in — **auth only**, not Clerk Billing)
-- [ ] Stripe Billing for Host Pro when that work ships (Checkout + Customer Portal + webhooks) — [ADR 0003](./adr/0003-stripe-billing-beside-clerk.md)
+- [ ] Host Pro billing stays **off** until `BILLING_ENABLED=true` on Convex — see [Host Pro billing (Stripe Managed Payments)](#host-pro-billing-stripe-managed-payments) and [ADR 0004](./adr/0004-stripe-managed-payments.md)
 - [ ] Optional: `VITE_SENTRY_DSN` on Vercel for client error tracking
 - [ ] GitHub Actions secrets for production release (see below)
 - [ ] `vercel.json` in repo sets `git.deploymentEnabled.main: false` so a push to `main` does **not** auto-deploy production on Vercel
@@ -26,13 +26,32 @@
 | `CLERK_PUBLISHABLE_KEY`      | Vercel / `.env.local`           | Recommended (same `pk_live_…`; SSR middleware fallback)               |
 | `CLERK_SECRET_KEY`           | Vercel / `.env.local`           | Yes (TanStack Start `clerkMiddleware`)                                |
 | `DEV_MODE`                   | Convex Dashboard (**dev only**) | No — dev-only mutations (e.g. onboarding reset); **never production** |
+| `BILLING_ENABLED`            | Convex Dashboard                | No — `true` turns Host Pro billing on; unset = everyone free          |
+| `STRIPE_SECRET_KEY`          | Convex Dashboard                | When billing is on (restricted key recommended)                       |
+| `STRIPE_WEBHOOK_SECRET`      | Convex Dashboard                | When billing is on (`whsec_…` of the `/stripe/webhook` endpoint)      |
+| `STRIPE_PRICE_MONTHLY`       | Convex Dashboard                | When billing is on (`price_…`, €2.99/month, VAT-inclusive)            |
+| `STRIPE_PRICE_YEARLY`        | Convex Dashboard                | When billing is on (`price_…`, €29/year, VAT-inclusive)               |
+| `APP_ORIGIN`                 | Convex Dashboard                | When billing is on (Checkout/Portal return URL origin)                |
 | `CONVEX_DEPLOYMENT`          | Local `.env.local`              | Yes for local `npx convex` CLI                                        |
 | `CONVEX_DEPLOY_KEY`          | GitHub Actions secret           | Yes — production deploy key (`deployment:deploy`)                     |
 | `VERCEL_TOKEN`               | GitHub Actions secret           | Yes — Vercel access token for CLI deploys                             |
 | `VERCEL_ORG_ID`              | GitHub Actions secret           | Yes                                                                   |
 | `VERCEL_PROJECT_ID`          | GitHub Actions secret           | Yes                                                                   |
 
-Never put `GEMINI_API_KEY`, Clerk secrets, `DEV_MODE`, or deploy keys/tokens in the repo.
+Never put `GEMINI_API_KEY`, Stripe keys, Clerk secrets, `DEV_MODE`, or deploy keys/tokens in the repo.
+
+### Host Pro billing (Stripe Managed Payments)
+
+Billing is off until `BILLING_ENABLED=true`; until then every Host has Pro limits and no billing UI is shown. To turn it on for an environment ([ADR 0004](./adr/0004-stripe-managed-payments.md)):
+
+1. Stripe Dashboard → **Settings → Managed Payments**: pass the eligibility review and accept the Managed Payments terms.
+2. **Tax settings → Include tax in prices** (or `tax_behavior: inclusive` on each price), so €2.99 / €29 are what customers pay.
+3. Create one product „Онова за сметката Pro“ with tax code `txcd_10103000` (SaaS, personal use) and two EUR prices: €2.99 monthly and €29 yearly.
+4. **Customer Portal** settings: allow cancel at period end, switching between the two prices, payment-method updates and invoice history; set the Bulgarian business details.
+5. **Webhooks**: endpoint `https://<deployment>.convex.site/stripe/webhook` with events `checkout.session.completed`, `customer.subscription.created|updated|deleted|paused|resumed`, `invoice.paid`, `invoice.payment_failed`.
+6. Set the Convex env vars above (`npx convex env set …`, or `--prod`), then `BILLING_ENABLED=true` last.
+
+Local testing: use a Stripe sandbox and `stripe listen --forward-to https://<dev-deployment>.convex.site/stripe/webhook` (the dev deployment URL is public), with `APP_ORIGIN=http://localhost:3000`.
 
 ### Security notes
 

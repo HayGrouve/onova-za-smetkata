@@ -6,6 +6,7 @@ import {
   SUBSCRIPTION_MESSAGES,
 } from '../../shared/subscription-messages'
 import type { QuotaErrorCode } from '../../shared/subscription-messages'
+import { isBillingEnabled } from './billingEnv'
 
 export const FREE_BILLS_PER_MONTH = 5
 export const FREE_OCR_PER_MONTH = 5
@@ -23,6 +24,7 @@ export type UserBillingFields = Pick<
   'clerkPlanSlug' | 'subscriptionStatus' | 'currentPeriodEnd' | 'graceUntil'
 >
 
+/** The tier the Host's Stripe subscription pays for. */
 export function getEffectiveTier(
   user: UserBillingFields,
   nowMs: number,
@@ -30,6 +32,7 @@ export function getEffectiveTier(
   if (
     user.clerkPlanSlug === 'pro' &&
     (user.subscriptionStatus === 'active' ||
+      user.subscriptionStatus === 'trialing' ||
       (user.subscriptionStatus === 'canceled' &&
         user.currentPeriodEnd !== undefined &&
         nowMs < user.currentPeriodEnd))
@@ -46,6 +49,18 @@ export function getEffectiveTier(
   }
 
   return 'free'
+}
+
+/**
+ * The tier quotas are enforced at. While Host Pro billing is switched off,
+ * every Host gets Pro for free.
+ */
+export function getEntitledTier(
+  user: UserBillingFields,
+  nowMs: number,
+  billingEnabled: boolean = isBillingEnabled(),
+): HostTier {
+  return billingEnabled ? getEffectiveTier(user, nowMs) : 'pro'
 }
 
 export function getMonthlyBillLimit(tier: HostTier): number | null {
@@ -123,7 +138,7 @@ export async function assertBillCreateQuota(
   userId: Id<'users'>,
   nowMs: number,
 ): Promise<void> {
-  const tier = getEffectiveTier(user, nowMs)
+  const tier = getEntitledTier(user, nowMs)
   const limit = getMonthlyBillLimit(tier)
   if (limit === null) return
 
@@ -143,7 +158,7 @@ export async function assertOcrStartQuota(
   userId: Id<'users'>,
   nowMs: number,
 ): Promise<void> {
-  const tier = getEffectiveTier(user, nowMs)
+  const tier = getEntitledTier(user, nowMs)
   const limit = getMonthlyOcrLimit(tier)
   if (limit === null) return
 
@@ -162,7 +177,7 @@ export async function assertFriendGroupCreateQuota(
   existingGroupCount: number,
   nowMs: number,
 ): Promise<void> {
-  const tier = getEffectiveTier(user, nowMs)
+  const tier = getEntitledTier(user, nowMs)
   const limit = getFriendGroupLimit(tier)
   if (existingGroupCount >= limit) {
     throwQuotaError('QUOTA_GROUPS')
