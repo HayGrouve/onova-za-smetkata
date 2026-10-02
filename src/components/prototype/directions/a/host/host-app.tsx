@@ -36,7 +36,9 @@ export function HostApp() {
   useLiveTable(showingLive)
 
   // A new screen starts at the top.
-  useEffect(() => window.scrollTo(0, 0), [screen, sel])
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [screen, sel])
 
   // Плащания lives in the rail at ≥1280.
   const effectiveTab: BillTab = xl && tab === 'payments' ? 'items' : tab

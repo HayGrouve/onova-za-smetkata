@@ -13,7 +13,9 @@ export function GuestApp() {
   const [screen, setScreen] = useState<Screen>('claim')
   const joined = !!state.guestSeatId
   // New screen starts at the top.
-  useEffect(() => window.scrollTo(0, 0), [screen, joined])
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [screen, joined])
   if (!state.guestSeatId) return <Join onJoined={() => setScreen('claim')} />
   if (screen === 'pay')
     return (
