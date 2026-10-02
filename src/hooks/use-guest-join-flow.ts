@@ -95,7 +95,7 @@ export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
 
   /**
    * Claim the guest's own seat and open the claim page straight away. Covered
-   * seats are added later from the claim page („Плащате и за някого?“).
+   * seats are added later from the slip on the claim page („Плащам и за...“).
    */
   async function join(participantId: Id<'participants'>) {
     if (takenSeats.has(participantId)) return

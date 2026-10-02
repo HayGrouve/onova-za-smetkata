@@ -59,22 +59,15 @@ describe('buildBillEditorDerivedState', () => {
     payments: [],
   }
 
-  it('derives totals, completion, and host context from relations', () => {
+  it('derives the subtotal and host context from relations', () => {
     const derived = buildBillEditorDerivedState({
       relations,
       hostParticipantId: 'host',
-      tipCents: 0,
-      restaurantNameDraft: 'Механа',
     })
 
     expect(derived.itemsSubtotalCents).toBe(1200)
-    expect(derived.totals.billTotalCents).toBe(1200)
     expect(derived.guestCount).toBe(1)
     expect(derived.hostParticipantName).toBe('Иван')
-    expect(derived.stepCompletion[1]).toBe(true)
-    expect(derived.stepCompletion[2]).toBe(true)
-    expect(derived.stepCompletion[3]).toBe(true)
-    expect(derived.unassignedItemsCount).toBe(0)
   })
 })
 

@@ -1,13 +1,7 @@
-import { toBillCalculationSnapshot } from './bill-calculation-snapshot'
-import type { BillCalculationSnapshot } from './bill-calculation-snapshot'
-import { calculateBillTotals } from './bill-calculations'
-import type { BillTotals } from './bill-calculations'
-import type { BillStepCompletion, BillStepNumber } from './bill-step-completion'
-import { getBillStepCompletion } from './bill-step-completion'
+import type { BillStepNumber } from './bill-step-completion'
 import { isHostParticipant } from './host-bill-participant'
 import type { HostOnboardingContentRoute } from './host-onboarding'
 import { calculateItemsSubtotalCents } from './tip-calculations'
-import { countItemsWithEmptyUnits } from './unit-coverage'
 
 export type { BillStepNumber as BillEditorStep }
 
@@ -71,16 +65,10 @@ export interface BillEditorRelations {
 export interface BillEditorDerivedInput {
   relations: BillEditorRelations
   hostParticipantId?: string
-  tipCents: number
-  restaurantNameDraft: string
 }
 
 export interface BillEditorDerivedState {
   itemsSubtotalCents: number
-  billSnapshot: BillCalculationSnapshot
-  totals: BillTotals
-  unassignedItemsCount: number
-  stepCompletion: BillStepCompletion
   guestCount: number
   hostParticipantName: string
 }
@@ -88,7 +76,7 @@ export interface BillEditorDerivedState {
 export function buildBillEditorDerivedState(
   input: BillEditorDerivedInput,
 ): BillEditorDerivedState {
-  const { relations, hostParticipantId, tipCents, restaurantNameDraft } = input
+  const { relations, hostParticipantId } = input
 
   const itemsSubtotalCents = calculateItemsSubtotalCents(
     relations.items.map((item) => ({
@@ -97,34 +85,6 @@ export function buildBillEditorDerivedState(
       quantity: item.quantity,
     })),
   )
-
-  const billSnapshot = toBillCalculationSnapshot(
-    {
-      participants: relations.participants.map((participant) => ({
-        _id: participant.id,
-        sortOrder: participant.sortOrder,
-      })),
-      items: relations.items.map((item) => ({
-        _id: item.id,
-        name: item.name,
-        unitPriceCents: item.unitPriceCents,
-        quantity: item.quantity,
-      })),
-      assignments: relations.assignments,
-      payments: relations.payments,
-    },
-    { tipCents, hostParticipantId },
-  )
-
-  const totals = calculateBillTotals(billSnapshot.calculationInput)
-  const unassignedItemsCount = countItemsWithEmptyUnits(
-    billSnapshot.calculationInput.items,
-    billSnapshot.calculationInput.assignments,
-  )
-  const stepCompletion = getBillStepCompletion({
-    restaurantName: restaurantNameDraft,
-    ...billSnapshot.calculationInput,
-  })
 
   const guestCount = relations.participants.filter(
     (participant) => !isHostParticipant(participant.id, hostParticipantId),
@@ -136,10 +96,6 @@ export function buildBillEditorDerivedState(
 
   return {
     itemsSubtotalCents,
-    billSnapshot,
-    totals,
-    unassignedItemsCount,
-    stepCompletion,
     guestCount,
     hostParticipantName: hostParticipant?.name ?? 'домакин',
   }

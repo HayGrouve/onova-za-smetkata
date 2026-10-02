@@ -37,7 +37,7 @@ export interface AppHeaderMenuConfigInput {
 }
 
 const FINALIZE_UNPAID_TOOLTIP =
-  'Всички гости трябва да платят, преди да завършите сметката.'
+  'Всички гости трябва да платят, преди да приключите сметката.'
 
 export { FINALIZE_UNPAID_TOOLTIP }
 
@@ -57,7 +57,7 @@ function finalizeItem(
 
   return {
     id: 'finalizeBill',
-    label: 'Завърши сметка',
+    label: 'Приключи сметката',
     hidden,
     disabled: hidden ? undefined : disabled,
     tooltip: hidden ? undefined : tooltip,

@@ -129,8 +129,8 @@ Orchestration for the host bill editor — step clamp/redirect, metadata draft s
 _Avoid_: wiring OCR, guidance, and step completion ad hoc in the route file
 
 **Guest claim session**:
-Orchestration for the guest claim page — Claim groups, per-seat Shares (the receipt reads Claim groups and seat views from it; the tab filter and search remain in the module but the Live receipt shows every line). Pure module: `shared/guest-claim-session.ts` (Claim groups in `shared/claim-groups.ts`); React seam: `useGuestClaimSession`.
-_Avoid_: wiring tab semantics, item filters, and share breakdown separately in the claim route; „Остават“ meaning “items I have not claimed”
+What a guest phone needs to pay: table progress in Units and per-seat Shares (own seat and Covered seats). Pure module: `shared/guest-claim-session.ts`; React seam: `useGuestClaimSession` (the Pay step). The Live receipt reads Claim groups and seat views from `shared/claim-groups.ts` directly.
+_Avoid_: computing Shares separately in the pay route; „Остават“ meaning “items I have not claimed”
 
 **Guest flow session**:
 Orchestration for the Guest journey — join resume, seat pick (own + Covered seats), claim/pay redirects, session-lost recovery, doc mapping to Guest claim session input. Pure module: `shared/guest-flow-session.ts`; React seams: `useGuestJoinFlow`, `useGuestBillSession` (shared by the claim and pay pages).

@@ -48,6 +48,7 @@ import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { useBillActivity } from '#/hooks/use-bill-activity.ts'
 import { buildBillJoinUrl, resolveAppOrigin } from '#/lib/bill-join-url.ts'
 import { formatEur } from '#/lib/format-currency.ts'
+import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import type { GuidanceFocusHandle } from '#/lib/guidance-focus/use-guidance-focus.ts'
 import { navigateToFinalBillSummary } from '#/lib/navigate-to-final-bill-summary.ts'
@@ -94,7 +95,8 @@ export interface HostBillViewProps {
   assemble?: AssembleSlots
   /** Onboarding: sharing is intercepted by the payment checkpoint. */
   onShareLink?: (joinUrl: string) => Promise<boolean>
-  shareGuidance?: GuidanceFocusHandle
+  /** Onboarding focus: the share stub and the lines to allocate. */
+  guidanceFocus?: GuidanceFocusHandle
   /** Onboarding bar, shown under the header. */
   guidance?: ReactNode
 }
@@ -124,7 +126,7 @@ function HostBillTable({
   onPhase,
   assemble,
   onShareLink,
-  shareGuidance,
+  guidanceFocus,
   guidance,
 }: HostBillViewProps) {
   const { bill, participants, items, assignments, payments } = data
@@ -392,7 +394,7 @@ function HostBillTable({
                 shareToken={bill.shareToken}
                 readOnly={final}
                 onShareLink={onShareLink}
-                shareGuidance={shareGuidance}
+                shareGuidance={guidanceFocus}
               />
             ) : null}
             {bill.note && !assembling ? (
@@ -400,7 +402,13 @@ function HostBillTable({
             ) : null}
           </ReceiptHeader>
           <Rule />
-          {lines}
+          {guidanceFocus && activePhase === 'table' ? (
+            <GuidanceTarget stepId="allocation" focus={guidanceFocus}>
+              {lines}
+            </GuidanceTarget>
+          ) : (
+            lines
+          )}
           <Rule />
           <ReceiptTotals subtotalCents={subtotalCents} tipCents={tipCents}>
             {freeUnits > 0 && !assembling ? (

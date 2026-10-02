@@ -20,10 +20,7 @@ import {
   shouldShowContentRouteChoice,
 } from '../../shared/bill-editing-controller.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
-import {
-  parseTipInputToCents,
-  validateBillMetadataField,
-} from '../../shared/bill-metadata-schema.ts'
+import { validateBillMetadataField } from '../../shared/bill-metadata-schema.ts'
 import type { BillMetadataPatchInput } from '../../shared/bill-metadata-schema.ts'
 import { readDismissedHintIds } from '#/lib/host-onboarding-session.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
@@ -222,25 +219,13 @@ export function useBillEditorController({
     [participants],
   )
 
-  const tipCentsForTotals = useMemo(() => {
-    const parsed = parseTipInputToCents(metadata.tip)
-    return parsed.ok ? parsed.cents : 0
-  }, [metadata.tip])
-
   const derived = useMemo(
     () =>
       buildBillEditorDerivedState({
         relations,
         hostParticipantId: bill.hostParticipantId,
-        tipCents: tipCentsForTotals,
-        restaurantNameDraft: metadata.restaurantName,
       }),
-    [
-      relations,
-      bill.hostParticipantId,
-      tipCentsForTotals,
-      metadata.restaurantName,
-    ],
+    [relations, bill.hostParticipantId],
   )
 
   const onboardingActive = guidanceHintsEnabledForBill(billId)

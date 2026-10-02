@@ -47,8 +47,8 @@ Run these locally before merge when you touch guest/host browser flows. In CI, t
 
 | File                                  | Journey                                                                      |
 | ------------------------------------- | ---------------------------------------------------------------------------- |
-| `guest-claim-by-count.spec.ts`        | Two phones press „+“ on the same drink at once — nobody ends up splitting    |
-| `guest-share-unit.spec.ts`            | „Сподели“ puts half a drink on a friend right away                           |
+| `guest-claim-by-count.spec.ts`        | Two phones tap the same receipt line at once — nobody ends up splitting      |
+| `guest-share-unit.spec.ts`            | Sharing a Unit from the line's „⋯“ puts half on a friend right away          |
 | `guest-covered-seat.spec.ts`          | One phone claims and pays for two seats; Host confirms both                  |
 | `guest-pay-for-other-release.spec.ts` | A pay-for-others pick frees the covered Guest when the payer's phone leaves  |
 | `session-conflict.spec.ts`            | Two browsers claim the same guest seat                                       |

@@ -1,6 +1,6 @@
 # Живата сметка (live receipt) design
 
-The product UI follows direction C from `docs/prototypes/directions/` (PR #169): one shared, living receipt is the product. Host and guests look at the same paper with different permissions. People are seats around the table, and payments are stamps.
+The product UI follows direction C of the three design explorations (closed prototype PR #169, shipped in #170): one shared, living receipt is the product. Host and guests look at the same paper with different permissions. People are seats around the table, and payments are stamps.
 
 ## Decisions
 

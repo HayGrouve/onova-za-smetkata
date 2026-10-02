@@ -26,7 +26,10 @@ export const HOST_ONBOARDING_STEP_BAR = {
   guidanceOn: 'Напътствията са включени',
   nextStepPrefix: 'Следваща стъпка:',
   dismissHint: 'Скрий напътствието',
-  goToStep: (step: number) => `Към стъпка ${step}`,
+  /** The receipt names steps by what they hold, not by number. */
+  goToStep: (step: number) =>
+    ['Към бележката', 'Към хората', 'Към масата', 'Към разплащане'][step - 1] ??
+    'Напред',
 } as const
 
 export const HOST_ONBOARDING_PAYMENT_CHECKPOINT = {
@@ -49,12 +52,12 @@ export const HOST_ONBOARDING_SHARE = {
 
 export const HOST_ONBOARDING_REVIEW = {
   title: 'Прегледайте сметката',
-  body: 'Следете плащанията и завършете сметката, когато всички са платили.',
+  body: 'Следете плащанията по бележките на хората и приключете сметката, когато всички са платили.',
 } as const
 
 export const HOST_ONBOARDING_HANDOFF = {
   title: 'Готово! Сметката е при гостите',
-  body: 'Следете плащанията по-долу и завършете сметката, когато всички са платили.',
+  body: 'На масата виждате кой какво взема. Приключете сметката, когато всички са платили.',
 } as const
 
 export const HOST_ONBOARDING_CONTENT_ROUTE = {
@@ -70,7 +73,7 @@ export const HOST_ONBOARDING_SCAN = {
     'Хванете всички редове в кадър — така цените се разчитат по-точно.',
   runOcrTitle: 'Стартирайте разпознаването',
   runOcrBody:
-    'Натиснете „Разпознай артикули“, за да извлечем ресторанта и артикулите от снимката.',
+    'Натиснете „Разпознай редовете“, за да извлечем ресторанта и редовете от снимката.',
   processingTitle: 'Разпознаване на бележката…',
   processingBody:
     'Четем снимката и търсим ресторант, артикули и суми. Обикновено отнема няколко секунди.',
