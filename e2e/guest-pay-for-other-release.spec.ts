@@ -3,7 +3,7 @@ import {
   addBillParticipants,
   getJoinUrl,
 } from './helpers/bill-editor'
-import { claimGroup, goToPayStep, joinAsGuest } from './helpers/guest'
+import { goToPayStep, joinAsGuest, takeUnit } from './helpers/guest'
 import { expect, openHostContext, test } from './helpers/host-auth'
 import { configureRevolut } from './helpers/payment-settings'
 
@@ -24,16 +24,11 @@ test('a pay-for-others pick is freed when that phone leaves', async ({
   const joinUrl = await getJoinUrl(hostPage)
 
   const guestB = await joinAsGuest(browser, joinUrl, bobi)
-  const takeBeer = /^(Мое: |Още една )Бира$/
-  await claimGroup(guestB.page, 'Бира')
-    .getByRole('button', { name: takeBeer })
-    .click()
+  await takeUnit(guestB.page, 'Бира')
 
   // Ани picks Боби on the Pay step (a reservation — no transfer yet).
   const guestA = await joinAsGuest(browser, joinUrl, ani)
-  await claimGroup(guestA.page, 'Бира')
-    .getByRole('button', { name: takeBeer })
-    .click()
+  await takeUnit(guestA.page, 'Бира')
   await goToPayStep(guestA.page)
   await guestA.page.getByRole('button', { name: new RegExp(bobi) }).click()
 

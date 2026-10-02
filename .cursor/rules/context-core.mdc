@@ -19,7 +19,7 @@ Use these consistently in code, UI copy, tests, and issues. Full glossary: **`CO
 | **Take a Unit** | Put a seat alone on a free Unit (`takeUnit`); the default claim action | Joining someone else's Unit as the default tap |
 | **Shared Unit** | Unit with 2+ members — only via explicit share (`shareUnit`) or join (`joinUnit`) | Creating splits implicitly |
 | **Claim group** | Identical lines (same name + unit price) shown as one claim row | Merging stored items |
-| **Covered seat** | Extra seat a Guest's phone claims and pays for (added from the claim page) | "member", "companion" |
+| **Covered seat** | Extra seat a Guest's phone claims and pays for (added from the Slip on the claim page) | "member", "companion" |
 | **Outstanding** | Money still to collect from guests | Outstanding for the host (host never has it) |
 | **Bill status** | **draft** (Чернова) or **final** (Приключени) | completed, closed, settled |
 

@@ -26,10 +26,6 @@ async function copyAmount(
   return copied
 }
 
-export async function copyRemainingAmount(cents: number): Promise<void> {
-  await copyAmount(cents)
-}
-
 export function ParticipantPayActions({
   remainingCents,
   onOpenSettings,

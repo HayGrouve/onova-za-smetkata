@@ -1,10 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import type { FunctionReturnType } from 'convex/server'
 import { ArrowRightIcon } from 'lucide-react'
-import { Badge } from '#/components/ui/badge.tsx'
-import { ICON } from '#/lib/app-icons.ts'
 import { formatEur } from '#/lib/format-currency.ts'
-import { cn } from '#/lib/utils.ts'
 import type { api } from '../../../convex/_generated/api'
 
 type OpenBill = FunctionReturnType<
@@ -13,57 +10,50 @@ type OpenBill = FunctionReturnType<
 type OpenBillAction = OpenBill['nextAction']
 
 const shortDate = new Intl.DateTimeFormat('bg-BG', {
-  day: 'numeric',
+  day: '2-digit',
   month: 'short',
+  timeZone: 'Europe/Sofia',
 })
 
 /** Quickest wins first: bills ready to close, then collecting, then drafts. */
-const GROUPS: ReadonlyArray<{
-  action: OpenBillAction
-  title: string
-  cta: string
-}> = [
-  { action: 'close', title: 'Готови за приключване', cta: 'Приключи' },
-  { action: 'collect', title: 'Чакат плащания', cta: 'Плащания' },
-  { action: 'finish', title: 'Довършете', cta: 'Продължи' },
-]
+const ORDER: Record<OpenBillAction, number> = {
+  close: 0,
+  collect: 1,
+  finish: 2,
+}
+
+const PHASE: Record<OpenBillAction, string> = {
+  finish: 'Сглобяване',
+  collect: 'Разплащане',
+  close: 'Разплащане',
+}
 
 export interface OpenBillsListProps {
   bills: OpenBill[]
   truncated: boolean
 }
 
-/** „Нужно е действие“: draft bills grouped by the Host's next step. */
+/** „На масата“: the live receipts, each a stub with its next step. */
 export function OpenBillsList({ bills, truncated }: OpenBillsListProps) {
   if (bills.length === 0) return null
+  const sorted = [...bills].sort(
+    (a, b) => ORDER[a.nextAction] - ORDER[b.nextAction],
+  )
 
   return (
-    <section aria-labelledby="home-open-title" className="flex flex-col gap-3">
-      <h2 id="home-open-title" className="text-base font-semibold">
-        Нужно е действие
+    <section aria-labelledby="home-open-title" className="flex flex-col gap-4">
+      <h2 id="home-open-title" className="text-[15px] font-bold">
+        На масата
       </h2>
-      {GROUPS.map((group) => {
-        const groupBills = bills.filter(
-          (bill) => bill.nextAction === group.action,
-        )
-        if (groupBills.length === 0) return null
-        return (
-          <div key={group.action} className="flex flex-col gap-1.5">
-            <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              {group.title}
-            </h3>
-            <ul className="flex flex-col gap-2">
-              {groupBills.map((bill) => (
-                <li key={bill.billId}>
-                  <OpenBillRow bill={bill} cta={group.cta} />
-                </li>
-              ))}
-            </ul>
-          </div>
-        )
-      })}
+      <ul className="grid gap-5 sm:grid-cols-2">
+        {sorted.map((bill, index) => (
+          <li key={bill.billId} className="list-none">
+            <OpenBillStub bill={bill} tilt={index % 2 === 0 ? -0.7 : 0.6} />
+          </li>
+        ))}
+      </ul>
       {truncated ? (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[11px] text-on-table-muted">
           Показани са последните 50 чернови. По-старите намерете чрез търсене
           по-долу.
         </p>
@@ -72,60 +62,69 @@ export function OpenBillsList({ bills, truncated }: OpenBillsListProps) {
   )
 }
 
-function OpenBillRow({ bill, cta }: { bill: OpenBill; cta: string }) {
+function OpenBillStub({ bill, tilt }: { bill: OpenBill; tilt: number }) {
   const step = bill.nextAction === 'finish' ? bill.firstIncompleteStep : 4
-  const name = bill.restaurantName.trim() || 'Без име'
+  const name = bill.restaurantName.trim()
 
   return (
     <Link
       to="/bills/$billId"
       params={{ billId: bill.billId }}
       search={{ step }}
-      className={cn(
-        'tap-feedback flex items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-colors hover:bg-muted/40',
-        bill.nextAction === 'close' && 'border-success/40',
-      )}
+      className="block text-ink transition-transform hover:-translate-y-0.5 active:scale-[0.99]"
+      style={{ rotate: `${tilt}deg` }}
+      aria-label={`${name || 'Без име'}: ${PHASE[bill.nextAction]}`}
     >
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2">
-          <span className="truncate font-semibold">{name}</span>
-          <span className="shrink-0 text-xs text-muted-foreground">
-            {shortDate.format(new Date(bill.date))}
-          </span>
-        </div>
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-          {bill.nextAction === 'finish' ? (
-            <span>{bill.missing ?? 'Проверете сметката'}</span>
-          ) : (
-            <>
-              {bill.owingGuestCount > 0 ? (
-                <Badge variant="secondary" className="font-normal">
-                  {bill.paidGuestCount} от {bill.owingGuestCount} платили
-                </Badge>
-              ) : null}
-              {bill.nextAction === 'collect' ? (
-                <span>
-                  Остават{' '}
-                  <span className="money font-medium text-foreground">
-                    {formatEur(bill.outstandingCents)}
-                  </span>
-                </span>
-              ) : (
-                <span className="text-success">Всички са платили</span>
-              )}
-            </>
-          )}
+      <div className="paper-lift">
+        <div className="paper stub thermal px-4 py-4">
+          <div className="flex items-baseline justify-between gap-2 text-[11px] text-ink-muted">
+            <span>{shortDate.format(new Date(bill.date))}</span>
+            <span>{formatEur(bill.billTotalCents)}</span>
+          </div>
+          <p
+            className={
+              name
+                ? 'mt-1 truncate font-display text-[15px] font-bold uppercase'
+                : 'mt-1 truncate font-display text-[15px] font-bold text-ink-muted uppercase italic'
+            }
+          >
+            {name || 'Без име'}
+          </p>
+          <div className="mt-2 flex items-center gap-2">
+            <span className="rounded-full bg-ink px-2.5 py-1 font-display text-[10px] font-bold text-paper">
+              {PHASE[bill.nextAction]}
+            </span>
+          </div>
+          <div className="mt-3 flex items-end justify-between gap-3">
+            <p className="min-w-0 text-[11px] leading-snug text-ink-muted">
+              {bill.nextAction === 'finish'
+                ? (bill.missing ?? 'Проверете сметката')
+                : bill.owingGuestCount > 0
+                  ? `${bill.paidGuestCount} от ${bill.owingGuestCount} платили`
+                  : 'Никой не дължи'}
+            </p>
+            {bill.nextAction === 'collect' ? (
+              <span className="stamp stamp-wait shrink-0 text-[10px]">
+                Дължат {formatEur(bill.outstandingCents)}
+              </span>
+            ) : bill.nextAction === 'close' ? (
+              <span className="stamp shrink-0 text-[11px]">Всички платиха</span>
+            ) : (
+              <span className="stamp stamp-wait shrink-0 text-[10px]">
+                Чернова
+              </span>
+            )}
+          </div>
+          <p className="mt-3 flex items-center justify-end gap-1 text-[12px] font-semibold">
+            {bill.nextAction === 'close'
+              ? 'Приключи'
+              : bill.nextAction === 'collect'
+                ? 'Плащания'
+                : 'Продължи'}
+            <ArrowRightIcon className="size-4" strokeWidth={1.75} aria-hidden />
+          </p>
         </div>
       </div>
-      <span
-        className={cn(
-          'flex shrink-0 items-center gap-1 text-sm font-medium',
-          bill.nextAction === 'close' ? 'text-success' : 'text-primary',
-        )}
-      >
-        {cta}
-        <ArrowRightIcon className={ICON.button} aria-hidden />
-      </span>
     </Link>
   )
 }

@@ -12,7 +12,7 @@ export function OfflineBanner() {
   return (
     <div
       role="status"
-      className="sticky top-14 z-40 border-b border-accent-foreground/30 bg-accent px-4 py-2 text-sm text-accent-foreground"
+      className="sticky top-14 z-40 bg-ink px-4 py-2 text-[12px] text-paper"
     >
       <div className="page-shell flex items-center justify-between gap-3">
         <p className="flex items-center gap-2">
@@ -22,7 +22,7 @@ export function OfflineBanner() {
         </p>
         <button
           type="button"
-          className="tap-feedback rounded-md p-1"
+          className="grid size-9 place-items-center rounded-full hover:bg-paper/10"
           aria-label="Затвори"
           onClick={() => setDismissed(true)}
         >

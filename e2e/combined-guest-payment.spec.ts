@@ -5,8 +5,8 @@ import {
   goToBillStep,
 } from './helpers/bill-editor'
 import {
-  claimGroup,
   goToPayStep,
+  takeUnit,
   initiateRevolutPayment,
   joinAsGuest,
 } from './helpers/guest'
@@ -28,14 +28,10 @@ test('host banner hidden until guest opens Revolut', async ({ browser }) => {
   const joinUrl = await getJoinUrl(hostPage)
 
   const guestB = await joinAsGuest(browser, joinUrl, participantB)
-  await claimGroup(guestB.page, 'Пица')
-    .getByRole('button', { name: 'Още една Пица' })
-    .click()
+  await takeUnit(guestB.page, 'Пица')
 
   const guestA = await joinAsGuest(browser, joinUrl, participantA)
-  await claimGroup(guestA.page, 'Пица')
-    .getByRole('button', { name: 'Още една Пица' })
-    .click()
+  await takeUnit(guestA.page, 'Пица')
   await goToPayStep(guestA.page)
   await guestA.page.getByRole('button', { name: participantB }).click()
   await expect(guestA.page.getByTestId('pay-total')).toHaveText(/10,00/)

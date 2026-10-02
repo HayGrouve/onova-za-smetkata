@@ -3,7 +3,7 @@ import {
   addBillParticipants,
   getJoinUrl,
 } from './helpers/bill-editor'
-import { claimGroup, joinAsGuest } from './helpers/guest'
+import { claimGroup, joinAsGuest, takeUnit } from './helpers/guest'
 import { expect, openHostContext, test } from './helpers/host-auth'
 
 test('sharing a drink puts half of it on the friend right away', async ({
@@ -22,22 +22,23 @@ test('sharing a drink puts half of it on the friend right away', async ({
 
   const guestA = await joinAsGuest(browser, joinUrl, ani)
   const rowA = claimGroup(guestA.page, 'Голяма бира')
-  await rowA.getByRole('button', { name: 'Мое: Голяма бира' }).click()
-  await rowA.getByRole('button', { name: 'Сподели' }).click()
+  await takeUnit(guestA.page, 'Голяма бира')
+  // „⋯“ on the line opens its Units: share one with a friend.
+  await rowA.getByRole('button', { name: 'Бройки на Голяма бира' }).click()
+  const drawer = guestA.page.getByRole('region', { name: 'Голяма бира' })
+  await drawer.getByRole('button', { name: bobi }).click()
+  await expect(drawer.getByText(/вие плащате 4,00/)).toBeVisible()
+  await drawer.getByRole('button', { name: 'Сподели 1 бройка' }).click()
 
-  const sheet = guestA.page.getByTestId('share-unit-sheet')
-  await sheet.getByRole('button', { name: bobi }).click()
-  await expect(sheet.getByText(/вие плащате 4,00/)).toBeVisible()
-  await sheet.getByRole('button', { name: 'Сподели', exact: true }).click()
-
-  await expect(rowA.getByText(`Споделено с ${bobi}`)).toBeVisible()
+  // The line's own hint („ваши 1, делите с …“), not the open drawer.
+  await expect(rowA.getByText(new RegExp(`, делите с ${bobi}`))).toBeVisible()
   await expect(guestA.page.getByTestId('claim-pay-bar-amount')).toHaveText(
     /4,00/,
   )
 
   const guestB = await joinAsGuest(browser, joinUrl, bobi)
   await expect(
-    claimGroup(guestB.page, 'Голяма бира').getByText(`Споделено с ${ani}`),
+    claimGroup(guestB.page, 'Голяма бира').getByText(`делите с ${ani}`),
   ).toBeVisible()
   await expect(guestB.page.getByTestId('claim-pay-bar-amount')).toHaveText(
     /4,00/,

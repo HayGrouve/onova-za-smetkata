@@ -1,5 +1,6 @@
 import { Component, useState } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
+import { ReceiptLoading } from '#/components/receipt/receipt-states.tsx'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
@@ -87,11 +88,7 @@ function Home() {
   )
 
   if (isLoading || !isAuthenticated) {
-    return (
-      <div className="page-container py-10 text-center text-muted-foreground">
-        Зареждане...
-      </div>
-    )
+    return <ReceiptLoading />
   }
 
   async function handleCreateBill() {
@@ -140,102 +137,114 @@ function Home() {
   const showResumeGuidedBill =
     onboarding?.lifecycle === 'active' && resumeGuidedBillId !== undefined
 
-  return (
-    <div className="page-container flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <PwaInstallBanner />
-        {paymentSettingsStatus === 'unconfigured' ? (
-          <PaymentSettingsOpenButton onClick={openPaymentSettings} />
-        ) : null}
+  const actions = (
+    <div className="flex flex-col gap-2 sm:max-w-[360px]">
+      <PwaInstallBanner />
+      {paymentSettingsStatus === 'unconfigured' ? (
+        <PaymentSettingsOpenButton onClick={openPaymentSettings} />
+      ) : null}
 
-        {showResumeGuidedBill ? (
-          <Button
-            className="h-11 w-full"
-            onClick={() => void handleResumeGuidedBill()}
-          >
-            {HOST_ONBOARDING_HOME.resumeGuidedBill}
-          </Button>
-        ) : null}
-
-        {needsAnotherGuidedBill ? (
-          <Button
-            className="h-11 w-full"
-            disabled={isCreating}
-            onClick={() => void handleStartAnotherGuidedBill()}
-          >
-            {HOST_ONBOARDING_HOME.startNewGuidedBill}
-          </Button>
-        ) : null}
-
-        {onboarding?.lifecycle === 'active' ? (
-          <Button
-            variant="ghost"
-            className="h-10 w-full text-muted-foreground"
-            onClick={() => void stopGuidance()}
-          >
-            {HOST_ONBOARDING_HOME.stopGuidance}
-          </Button>
-        ) : null}
-
-        <Button
-          className="h-11 w-full"
-          onClick={handleCreateBill}
-          disabled={isCreating}
-        >
-          <PlusIcon /> Нова сметка
+      {showResumeGuidedBill ? (
+        <Button onClick={() => void handleResumeGuidedBill()}>
+          {HOST_ONBOARDING_HOME.resumeGuidedBill}
         </Button>
-      </div>
+      ) : null}
 
+      {needsAnotherGuidedBill ? (
+        <Button
+          disabled={isCreating}
+          onClick={() => void handleStartAnotherGuidedBill()}
+        >
+          {HOST_ONBOARDING_HOME.startNewGuidedBill}
+        </Button>
+      ) : null}
+
+      {onboarding?.lifecycle === 'active' ? (
+        <Button variant="ghost" onClick={() => void stopGuidance()}>
+          {HOST_ONBOARDING_HOME.stopGuidance}
+        </Button>
+      ) : null}
+
+      <Button
+        size="lg"
+        variant={
+          showResumeGuidedBill || needsAnotherGuidedBill ? 'outline' : 'default'
+        }
+        onClick={handleCreateBill}
+        disabled={isCreating}
+      >
+        <PlusIcon strokeWidth={2} /> Нова сметка
+      </Button>
+    </div>
+  )
+
+  return (
+    <div className="mx-auto w-full max-w-[1180px] px-4 pt-5 pb-24 sm:px-6 lg:pt-10">
       <HomeSectionErrorBoundary
         resetKey={resetKey}
         onRetry={() => setResetKey((n) => n + 1)}
       >
-        <div key={resetKey} className="flex flex-col gap-6">
-          <CollectionOverview />
-          <BillHistory />
-        </div>
+        <CollectionOverview key={resetKey} actions={actions} />
       </HomeSectionErrorBoundary>
     </div>
   )
 }
 
-/** Money still owed across open bills, who owes it, and what to do next. */
-function CollectionOverview() {
+/**
+ * The receipt shelf: what is still out there, the live receipts on top, and
+ * older bills as stamped stubs.
+ */
+function CollectionOverview({ actions }: { actions: ReactNode }) {
   const overview = useQuery(api.bills.homeOverview, {})
 
-  if (overview === undefined) {
-    return (
-      <div className="flex flex-col gap-3" aria-busy>
-        <Skeleton className="h-36 w-full rounded-xl" />
-        <Skeleton className="h-16 w-full rounded-xl" />
-        <Skeleton className="h-16 w-full rounded-xl" />
-      </div>
-    )
-  }
-
-  if (overview.openBills.length === 0) return null
-
-  // Unfinished drafts have no settled Shares yet — the money card only makes
+  // Unfinished drafts have no settled Shares yet; the money line only makes
   // sense once at least one bill is collecting or ready to close.
-  const hasPreparedBill = overview.openBills.some(
-    (bill) => bill.nextAction !== 'finish',
-  )
+  const hasPreparedBill =
+    overview?.openBills.some((bill) => bill.nextAction !== 'finish') ?? false
 
   return (
-    <>
-      {hasPreparedBill ? (
-        <OwedSummaryCard
-          owedCents={overview.owedCents}
-          collectedCents={overview.collectedCents}
-          debtorCount={overview.debtors.length}
-          owingBillCount={overview.owingBillCount}
-        />
-      ) : null}
-      <DebtorsList debtors={overview.debtors} />
-      <OpenBillsList
-        bills={overview.openBills}
-        truncated={overview.truncated}
-      />
-    </>
+    <div className="grid gap-10 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:gap-16">
+      <div className="flex flex-col gap-8">
+        {overview === undefined ? (
+          <div className="space-y-3" aria-busy>
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-11 w-48" />
+          </div>
+        ) : hasPreparedBill ? (
+          <OwedSummaryCard
+            owedCents={overview.owedCents}
+            collectedCents={overview.collectedCents}
+            debtorCount={overview.debtors.length}
+            owingBillCount={overview.owingBillCount}
+          />
+        ) : (
+          <section aria-label="Онова за сметката">
+            <p className="font-display text-[26px] leading-tight font-bold sm:text-[32px]">
+              Кой какво яде, кой колко дава.
+            </p>
+            <p className="mt-2 max-w-[36ch] text-[12px] leading-relaxed text-on-table-muted">
+              Снимате бележката, пращате линка в групата, всеки отбелязва своето
+              и плаща с Revolut.
+            </p>
+          </section>
+        )}
+        {actions}
+        {overview ? <DebtorsList debtors={overview.debtors} /> : null}
+      </div>
+      <div className="flex flex-col gap-10">
+        {overview === undefined ? (
+          <div className="grid gap-4 sm:grid-cols-2" aria-busy>
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-40 w-full" />
+          </div>
+        ) : (
+          <OpenBillsList
+            bills={overview.openBills}
+            truncated={overview.truncated}
+          />
+        )}
+        <BillHistory />
+      </div>
+    </div>
   )
 }

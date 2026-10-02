@@ -1,5 +1,9 @@
 import type { Locator, Page } from '@playwright/test'
-import { billIdFromUrl, goToBillStep } from './helpers/bill-editor'
+import {
+  billIdFromUrl,
+  expectParticipantAdded,
+  goToBillStep,
+} from './helpers/bill-editor'
 import { expect, openHostContext, test } from './helpers/host-auth'
 
 function userButtonTrigger(page: Page): Locator {
@@ -117,7 +121,7 @@ test('guest join and claim have no UserButton; theme stays in the kebab', async 
   const participantName = `Guest ${Date.now()}`
   await hostPage.getByPlaceholder('Име на участник').fill(participantName)
   await hostPage.getByRole('button', { name: 'Добави', exact: true }).click()
-  await expect(hostPage.getByText(participantName)).toBeVisible()
+  await expectParticipantAdded(hostPage, participantName)
 
   await goToBillStep(hostPage, 3)
   const joinUrl = await hostPage.getByTestId('join-url').textContent()

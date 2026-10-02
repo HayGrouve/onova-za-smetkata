@@ -4,9 +4,7 @@ import { MoreVerticalIcon, Trash2Icon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
-import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
-import { Card, CardContent } from '#/components/ui/card.tsx'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,9 +20,10 @@ import { api } from '../../../convex/_generated/api'
 import type { Doc } from '../../../convex/_generated/dataModel'
 
 const dateFormatter = new Intl.DateTimeFormat('bg-BG', {
-  day: 'numeric',
+  day: '2-digit',
   month: 'short',
   year: 'numeric',
+  timeZone: 'Europe/Sofia',
 })
 
 export interface BillSummary {
@@ -38,7 +37,11 @@ export function BillCard({
   bill,
   billTotalCents,
   totalOutstandingCents,
-}: BillSummary) {
+  tilt = 0,
+}: BillSummary & {
+  /** Degrees: stubs on the shelf sit slightly crooked. */
+  tilt?: number
+}) {
   const removeBill = useMutation(api.bills.remove)
   const { confirm } = useConfirmAction()
   const [isDeleting, setIsDeleting] = useState(false)
@@ -59,51 +62,50 @@ export function BillCard({
     }
   }
 
+  const owes = !isDraft && (totalOutstandingCents ?? 0) > 0
+
   return (
-    <Card className="gap-3 py-4 transition-colors interactive-hover active:bg-accent">
-      <CardContent className="flex items-center gap-3 px-4">
+    <div className="paper-lift" style={{ rotate: `${tilt}deg` }}>
+      <div className="paper stub relative flex items-start gap-1 py-4 pr-1 pl-4">
         <Link
           to={to}
           params={{ billId: bill._id }}
-          className="flex min-w-0 flex-1 items-center justify-between gap-3 tap-feedback"
+          className="min-w-0 flex-1 text-ink"
           data-interactive="true"
         >
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="truncate font-semibold">
-                {bill.restaurantName.trim() || 'Без име'}
-              </span>
-              {draftStatus ? (
-                <Badge
-                  variant="secondary"
-                  className={cn(
-                    draftStatus.tone === 'collect' &&
-                      'bg-accent text-accent-foreground',
-                    draftStatus.tone === 'close' &&
-                      'bg-success/15 text-success',
-                  )}
-                >
-                  {draftStatus.label}
-                </Badge>
-              ) : null}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {dateFormatter.format(new Date(bill.date))}
-            </p>
+          <div className="flex items-baseline justify-between gap-2 text-[11px] text-ink-muted">
+            <span>{dateFormatter.format(new Date(bill.date))}</span>
+            <span>{formatEur(billTotalCents)}</span>
           </div>
-          <div className="shrink-0 text-right">
-            <p className="money font-semibold">{formatEur(billTotalCents)}</p>
-            {draftStatus?.tone === 'collect' ? (
-              <p className="money text-sm text-muted-foreground">
-                Остава {formatEur(bill.listOutstandingCents ?? 0)}
-              </p>
-            ) : null}
-            {!isDraft && (
-              <p className="money text-sm text-muted-foreground">
-                {totalOutstandingCents && totalOutstandingCents > 0
-                  ? `Дължимо ${formatEur(totalOutstandingCents)}`
-                  : 'Платено'}
-              </p>
+          <p
+            className={cn(
+              'mt-1 truncate font-display text-[15px] font-bold uppercase',
+              !bill.restaurantName.trim() && 'text-ink-muted italic',
+            )}
+          >
+            {bill.restaurantName.trim() || 'Без име'}
+          </p>
+          <div className="mt-2 flex items-center justify-between gap-3">
+            <p className="min-w-0 text-[11px] leading-snug text-ink-muted">
+              {draftStatus?.tone === 'collect'
+                ? `Остава ${formatEur(bill.listOutstandingCents ?? 0)}`
+                : owes
+                  ? `Дължимо ${formatEur(totalOutstandingCents ?? 0)}`
+                  : isDraft
+                    ? draftStatus?.label
+                    : 'Платено'}
+            </p>
+            {isDraft ? (
+              <span
+                className={cn(
+                  'stamp shrink-0 text-[10px]',
+                  draftStatus?.tone !== 'close' && 'stamp-wait',
+                )}
+              >
+                {draftStatus?.label}
+              </span>
+            ) : (
+              <span className="stamp shrink-0 text-[11px]">Приключена</span>
             )}
           </div>
         </Link>
@@ -113,7 +115,7 @@ export function BillCard({
               type="button"
               variant="ghost"
               size="icon-sm"
-              className="shrink-0"
+              className="-mt-1 shrink-0 text-ink-muted"
               aria-label="Опции за сметка"
               onClick={(e) => {
                 e.preventDefault()
@@ -137,8 +139,8 @@ export function BillCard({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 

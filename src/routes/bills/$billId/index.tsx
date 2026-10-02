@@ -1,33 +1,21 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
-import type { FunctionReturnType } from 'convex/server'
-import {
-  ReceiptIcon,
-  ShoppingBagIcon,
-  StoreIcon,
-  UsersIcon,
-} from 'lucide-react'
 import { useEffect } from 'react'
 import { BillAdvancedSettings } from '#/components/bills/bill-advanced-settings.tsx'
 import { OcrActivityBar } from '#/components/bills/ocr-activity-bar.tsx'
-import { TipField } from '#/components/bills/tip-field.tsx'
-import { ItemList } from '#/components/bills/item-list.tsx'
-import { BillInviteCard } from '#/components/bills/bill-invite-card.tsx'
-import { BillItemsCard } from '#/components/bills/bill-items-card.tsx'
 import { ParticipantList } from '#/components/bills/participant-list.tsx'
 import { ReceiptScanReviewSheet } from '#/components/bills/receipt-scan-review-sheet.tsx'
-import { BillStepsBar } from '#/components/bills/bill-steps-bar.tsx'
-import type { BillStep } from '#/components/bills/bill-steps-bar.tsx'
-import { BillSummaryContent } from '#/components/bills/bill-summary-content.tsx'
-import { StepNavBar } from '#/components/bills/step-nav-bar.tsx'
-import { TotalsBreakdownSheet } from '#/components/bills/totals-breakdown-sheet.tsx'
+import { TipField } from '#/components/bills/tip-field.tsx'
+import type { BillStep } from '#/lib/bill-steps.ts'
+import { AssembleLines } from '#/components/host/assemble-lines.tsx'
+import { HostBillView } from '#/components/host/host-bill-view.tsx'
+import { ContentRouteChoice } from '#/components/host-onboarding/content-route-choice.tsx'
+import { StickyGuidanceBar } from '#/components/host-onboarding/sticky-guidance-bar.tsx'
+import { BillHeaderTitleSync } from '#/components/layout/bill-header-title.tsx'
+import { Rule } from '#/components/receipt/paper.tsx'
+import { ReceiptLoading } from '#/components/receipt/receipt-states.tsx'
+import { phaseForStep, stepForPhase } from '#/components/receipt/timeline.tsx'
 import { Button } from '#/components/ui/button.tsx'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '#/components/ui/card.tsx'
 import {
   Dialog,
   DialogContent,
@@ -36,25 +24,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog.tsx'
-import { Input } from '#/components/ui/input.tsx'
-import { Label } from '#/components/ui/label.tsx'
+import { useBillEditorController } from '#/hooks/use-bill-editor-controller.ts'
+import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
+import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
+import { buildNoIndexHead } from '#/lib/site-meta.ts'
 import {
   clampBillEditorStep,
   fromBillEditorDateInputValue,
   shouldRedirectFinalBillToSummary,
 } from '../../../../shared/bill-editing-controller.ts'
 import { validateBillMetadataField } from '../../../../shared/bill-metadata-schema.ts'
-import { ICON } from '#/lib/app-icons.ts'
-import { cn } from '#/lib/utils.ts'
-import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
-import { useBillEditorController } from '#/hooks/use-bill-editor-controller.ts'
-import { BillHeaderTitleSync } from '#/components/layout/bill-header-title.tsx'
-import { Skeleton } from '#/components/ui/skeleton.tsx'
-import { ContentRouteChoice } from '#/components/host-onboarding/content-route-choice.tsx'
-import { StickyGuidanceBar } from '#/components/host-onboarding/sticky-guidance-bar.tsx'
-import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
 import { HOST_ONBOARDING_STEP_BAR } from '../../../../shared/host-onboarding-messages.ts'
-import { buildNoIndexHead } from '#/lib/site-meta.ts'
+import type { FunctionReturnType } from 'convex/server'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
 
@@ -77,11 +58,7 @@ function BillEditor() {
   const data = useQuery(api.bills.get, isAuthenticated ? { billId } : 'skip')
 
   if (authLoading || !isAuthenticated) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-10 text-center text-muted-foreground">
-        Зареждане...
-      </div>
-    )
+    return <ReceiptLoading lines={7} />
   }
 
   if (data === undefined) {
@@ -92,13 +69,7 @@ function BillEditor() {
 }
 
 function BillEditorSkeleton() {
-  return (
-    <div className="page-container flex flex-col gap-4">
-      <Skeleton className="h-56 w-full rounded-xl" />
-      <Skeleton className="h-40 w-full rounded-xl" />
-      <Skeleton className="h-48 w-full rounded-xl" />
-    </div>
-  )
+  return <ReceiptLoading lines={7} />
 }
 
 function BillEditorContent({
@@ -129,12 +100,9 @@ function BillEditorContent({
     bill,
     participants,
     items,
-    assignments,
     labels,
     metadata,
     fieldErrors,
-    breakdownOpen,
-    setBreakdownOpen,
     derived,
     onboardingActive,
     receiptUploaded,
@@ -157,16 +125,35 @@ function BillEditorContent({
 
   const receiptUrl = useQuery(api.files.getReceiptUrl, { billId })
 
+  // Step 2 is the people section of the same receipt: bring it into view.
+  useEffect(() => {
+    if (step !== 2) return
+    const frame = window.requestAnimationFrame(() =>
+      document
+        .getElementById('bill-people')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    )
+    return () => window.cancelAnimationFrame(frame)
+  }, [step])
+
+  const phase = phaseForStep(step)
+  const guestCount = derived.guestCount
+  const blockers: string[] = []
+  if (!metadata.restaurantName.trim())
+    blockers.push('Въведете име на заведението.')
+  if (items.length === 0) blockers.push('Добавете поне един ред.')
+  if (guestCount === 0) blockers.push('Добавете поне един човек на масата.')
+
   const stepBarGuidanceNode =
     stepBarSignal?.kind === 'on' ? (
-      <p className="text-xs text-primary">
+      <p className="text-[11px] text-stamp">
         {HOST_ONBOARDING_STEP_BAR.guidanceOn}
       </p>
     ) : stepBarSignal?.kind === 'pointer' ? (
       <div
         aria-live="polite"
         aria-atomic="true"
-        className="flex items-center justify-between gap-2 text-xs text-primary"
+        className="flex items-center justify-between gap-2 text-[11px]"
       >
         <span>
           {HOST_ONBOARDING_STEP_BAR.nextStepPrefix} {stepBarSignal.label}
@@ -174,14 +161,155 @@ function BillEditorContent({
         <Button
           type="button"
           size="xs"
-          variant="ghost"
-          className="h-7 shrink-0 text-primary"
+          variant="outline"
+          className="shrink-0"
           onClick={() => goToStep(stepBarSignal.step)}
         >
           {stepBarSignal.actionLabel}
         </Button>
       </div>
     ) : null
+
+  const guidance =
+    guidancePanel || stepBarGuidanceNode ? (
+      <div className="sticky top-14 z-30 mx-auto w-full max-w-[1180px] px-3 sm:px-6">
+        <div className="space-y-1.5 rounded-b-[18px] bg-table-2 px-3 py-2">
+          {stepBarGuidanceNode}
+          <StickyGuidanceBar
+            billId={billId}
+            panel={guidancePanel}
+            sessionVersion={billSessionVersion}
+            onSessionChange={refreshBillSession}
+          />
+        </div>
+      </div>
+    ) : null
+
+  const restaurantField = (
+    <GuidanceTarget stepId="restaurant" focus={guidanceFocus}>
+      <div>
+        <label htmlFor="restaurantName" className="sr-only">
+          Име на заведението
+        </label>
+        <input
+          id="restaurantName"
+          value={metadata.restaurantName}
+          onChange={(event) => {
+            const value = event.target.value
+            setMetadata((prev) => ({ ...prev, restaurantName: value }))
+            if (fieldErrors.restaurantName) clearFieldError('restaurantName')
+            scheduleValidatedSave('restaurantName', value)
+          }}
+          placeholder="Заведение"
+          className="paper-input font-display text-[22px] font-bold uppercase"
+          aria-invalid={Boolean(fieldErrors.restaurantName)}
+          aria-describedby="restaurantName-hint"
+        />
+        {fieldErrors.restaurantName ? (
+          <p className="mt-1 text-[11px] font-semibold text-destructive">
+            {fieldErrors.restaurantName}
+          </p>
+        ) : null}
+        <p id="restaurantName-hint" className="mt-1 text-[11px] text-ink-muted">
+          Гостите го виждат, когато отворят линка. Попълва се от снимката на
+          бележката.
+        </p>
+      </div>
+    </GuidanceTarget>
+  )
+
+  const assembleBody = (
+    <>
+      {showContentRouteChoice ? (
+        <GuidanceTarget stepId="content-route" focus={guidanceFocus}>
+          <div className="mb-3">
+            <ContentRouteChoice
+              onChoose={(route) => {
+                chooseContentRoute(billId, route)
+              }}
+            />
+          </div>
+        </GuidanceTarget>
+      ) : null}
+      <AssembleLines
+        billId={billId}
+        items={items}
+        receiptScan={receiptScan}
+        receiptUploaded={receiptUploaded}
+        receiptUrl={receiptUrl}
+        itemsSubtotalCents={derived.itemsSubtotalCents}
+        guidanceFocus={guidanceFocus}
+      />
+      <Rule />
+      <section aria-label="Бакшиш и детайли" className="space-y-3">
+        <TipField
+          key={bill._id}
+          itemsSubtotalCents={derived.itemsSubtotalCents}
+          value={metadata.tip}
+          onValueChange={(value) => {
+            setMetadata((prev) => ({ ...prev, tip: value }))
+            if (fieldErrors.tip) clearFieldError('tip')
+            const validated = validateBillMetadataField('tip', value)
+            if (!validated.ok) {
+              setFieldErrors((prev) => ({ ...prev, tip: validated.message }))
+              return
+            }
+            clearFieldError('tip')
+          }}
+          onValidCents={handleTipValidCents}
+          error={fieldErrors.tip}
+          onClearError={() => clearFieldError('tip')}
+        />
+        <BillAdvancedSettings
+          note={metadata.note}
+          date={metadata.date}
+          noteError={fieldErrors.note}
+          dateError={fieldErrors.date}
+          onNoteChange={(value) => {
+            setMetadata((prev) => ({ ...prev, note: value }))
+            if (fieldErrors.note) clearFieldError('note')
+            scheduleValidatedSave('note', value)
+          }}
+          onDateChange={(value) => {
+            setMetadata((prev) => ({ ...prev, date: value }))
+            if (fieldErrors.date) clearFieldError('date')
+            scheduleValidatedSave('date', value, {
+              dateMs: fromBillEditorDateInputValue(value),
+            })
+          }}
+        />
+      </section>
+      <Rule />
+      <section
+        id="bill-people"
+        aria-labelledby="bill-people-title"
+        className="scroll-mt-24"
+      >
+        <h3
+          id="bill-people-title"
+          className="mb-2 font-display text-[17px] font-bold"
+        >
+          Кой беше на масата?
+        </h3>
+        <ParticipantList
+          billId={billId}
+          participants={participants}
+          labels={labels}
+          hostParticipantId={bill.hostParticipantId}
+          readOnly={bill.status === 'final'}
+          suggestedGroupName={bill.restaurantName}
+          participantsGuidance={
+            onboardingActive
+              ? {
+                  focus: guidanceFocus,
+                  onAddGuestFocusChange: setAddGuestFocused,
+                }
+              : undefined
+          }
+        />
+      </section>
+    </>
+  )
 
   return (
     <>
@@ -190,274 +318,37 @@ function BillEditorContent({
         isScanning={receiptScan.isScanning}
       />
       <BillHeaderTitleSync title={bill.restaurantName} />
-      <div className="sticky-surface sticky top-14 z-30 border-b">
-        <BillStepsBar
-          step={step}
-          completed={derived.stepCompletion}
-          onStepSelect={goToStep}
-          guidanceSignal={stepBarGuidanceNode}
-        />
-        <StickyGuidanceBar
-          billId={billId}
-          panel={guidancePanel}
-          sessionVersion={billSessionVersion}
-          onSessionChange={refreshBillSession}
-        />
-      </div>
-      <div
-        key={step}
-        className={cn(
-          'page-container animate-in fade-in slide-in-from-bottom-2 duration-[250ms]',
-          receiptScan.isOcrBusy && 'pt-1',
-        )}
-      >
-        <div className="flex flex-col gap-4">
-          {step === 1 && (
-            <>
-              {showContentRouteChoice ? (
-                <GuidanceTarget stepId="content-route" focus={guidanceFocus}>
-                  <ContentRouteChoice
-                    onChoose={(route) => {
-                      chooseContentRoute(billId, route)
-                    }}
-                  />
-                </GuidanceTarget>
-              ) : null}
-
-              <GuidanceTarget stepId="restaurant" focus={guidanceFocus}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <StoreIcon className={ICON.section} aria-hidden />
-                      Ресторант
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-col gap-1.5">
-                    <Label htmlFor="restaurantName" className="sr-only">
-                      Ресторант
-                    </Label>
-                    <Input
-                      id="restaurantName"
-                      value={metadata.restaurantName}
-                      onChange={(event) => {
-                        const value = event.target.value
-                        setMetadata((prev) => ({
-                          ...prev,
-                          restaurantName: value,
-                        }))
-                        if (fieldErrors.restaurantName)
-                          clearFieldError('restaurantName')
-                        scheduleValidatedSave('restaurantName', value)
-                      }}
-                      placeholder="Напр. Механа Крайречна"
-                      className="h-11"
-                      aria-invalid={Boolean(fieldErrors.restaurantName)}
-                    />
-                    {fieldErrors.restaurantName ? (
-                      <p className="text-xs text-destructive">
-                        {fieldErrors.restaurantName}
-                      </p>
-                    ) : null}
-                    <p className="text-xs text-muted-foreground">
-                      Гостите го виждат, когато отворят линка. Попълва се
-                      автоматично от снимката на бележката.
-                    </p>
-                  </CardContent>
-                </Card>
-              </GuidanceTarget>
-
-              <BillItemsCard
-                billId={billId}
-                items={items}
-                readOnly={bill.status === 'final'}
-                receiptScan={receiptScan}
-                receiptUploaded={receiptUploaded}
-                receiptUrl={receiptUrl}
-                itemsSubtotalCents={derived.itemsSubtotalCents}
-                guidanceFocus={guidanceFocus}
-              />
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ReceiptIcon className={ICON.section} aria-hidden />
-                    Бакшиш и детайли
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3">
-                  <TipField
-                    key={bill._id}
-                    itemsSubtotalCents={derived.itemsSubtotalCents}
-                    value={metadata.tip}
-                    onValueChange={(value) => {
-                      setMetadata((prev) => ({ ...prev, tip: value }))
-                      if (fieldErrors.tip) clearFieldError('tip')
-                      const validated = validateBillMetadataField('tip', value)
-                      if (!validated.ok) {
-                        setFieldErrors((prev) => ({
-                          ...prev,
-                          tip: validated.message,
-                        }))
-                        return
-                      }
-                      clearFieldError('tip')
-                    }}
-                    onValidCents={handleTipValidCents}
-                    error={fieldErrors.tip}
-                    onClearError={() => clearFieldError('tip')}
-                  />
-                  <BillAdvancedSettings
-                    note={metadata.note}
-                    date={metadata.date}
-                    noteError={fieldErrors.note}
-                    dateError={fieldErrors.date}
-                    onNoteChange={(value) => {
-                      setMetadata((prev) => ({ ...prev, note: value }))
-                      if (fieldErrors.note) clearFieldError('note')
-                      scheduleValidatedSave('note', value)
-                    }}
-                    onDateChange={(value) => {
-                      setMetadata((prev) => ({ ...prev, date: value }))
-                      if (fieldErrors.date) clearFieldError('date')
-                      scheduleValidatedSave('date', value, {
-                        dateMs: fromBillEditorDateInputValue(value),
-                      })
-                    }}
-                  />
-                </CardContent>
-              </Card>
-            </>
-          )}
-
-          {step === 2 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UsersIcon className={ICON.section} aria-hidden />
-                  Участници
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ParticipantList
-                  billId={billId}
-                  participants={participants}
-                  labels={labels}
-                  hostParticipantId={bill.hostParticipantId}
-                  readOnly={bill.status === 'final'}
-                  suggestedGroupName={bill.restaurantName}
-                  participantsGuidance={
-                    onboardingActive
-                      ? {
-                          focus: guidanceFocus,
-                          onAddGuestFocusChange: setAddGuestFocused,
-                        }
-                      : undefined
-                  }
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {step === 3 && (
-            <>
-              {participants.length === 0 && (
-                <Card>
-                  <CardContent className="flex flex-col items-start gap-2">
-                    <p className="text-sm text-muted-foreground">
-                      Няма участници — добавете ги, за да разпределите
-                      артикулите.
-                    </p>
-                    <Button
-                      variant="outline"
-                      className="h-11"
-                      onClick={() => goToStep(2)}
-                    >
-                      Към стъпка 2 · Участници
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-              <BillInviteCard
-                billId={billId}
-                shareToken={bill.shareToken}
-                disabled={participants.length === 0}
-                readOnly={bill.status === 'final'}
-                onShareLink={
-                  onboardingActive
-                    ? (joinUrl) => interceptGuestShare(billId, joinUrl)
-                    : undefined
+      <HostBillView
+        billId={billId}
+        data={data}
+        phase={phase}
+        onPhase={(next) => goToStep(stepForPhase(next))}
+        guidance={guidance}
+        onShareLink={
+          onboardingActive
+            ? (joinUrl) => interceptGuestShare(billId, joinUrl)
+            : undefined
+        }
+        shareGuidance={onboardingActive ? guidanceFocus : undefined}
+        assemble={{
+          title: restaurantField,
+          body: assembleBody,
+          blockers,
+          primary:
+            step === 1
+              ? {
+                  label: 'Към хората',
+                  onClick: () => goToStep(2, { resetScroll: false }),
+                  ready: true,
                 }
-                shareGuidance={onboardingActive ? guidanceFocus : undefined}
-              />
-              <GuidanceTarget stepId="allocation" focus={guidanceFocus}>
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between gap-3">
-                      <CardTitle className="flex items-center gap-2">
-                        <ShoppingBagIcon className={ICON.section} aria-hidden />
-                        Кой какво консумира
-                      </CardTitle>
-                      {bill.hostParticipantId ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="h-9 shrink-0"
-                          onClick={() =>
-                            void navigate({
-                              to: '/bills/$billId/claim',
-                              params: { billId },
-                              search: { mode: 'host' },
-                            })
-                          }
-                        >
-                          Моите артикули
-                        </Button>
-                      ) : null}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex flex-col gap-3">
-                    <p className="text-xs text-muted-foreground">
-                      Гостите могат сами да си отбележат артикулите от линка
-                      по-горе. Тук разпределяте вместо тях.
-                    </p>
-                    <ItemList
-                      billId={billId}
-                      items={items}
-                      participants={participants}
-                      assignments={assignments}
-                      labels={labels}
-                      readOnly={bill.status === 'final'}
-                      onAddItems={() => goToStep(1)}
-                      onAllAssigned={() => goToStep(4)}
-                    />
-                  </CardContent>
-                </Card>
-              </GuidanceTarget>
-            </>
-          )}
-
-          {step === 4 && <BillSummaryContent billId={billId} embedded />}
-        </div>
-      </div>
-
-      {!receiptScan.reviewSheetOpen && (
-        <StepNavBar
-          step={step}
-          onStepChange={goToStep}
-          totalCents={derived.totals.billTotalCents}
-          unassignedCount={derived.unassignedItemsCount}
-          onTotalClick={() => setBreakdownOpen(true)}
-          nextButtonPopToken={guidanceFocus.nextButtonPopToken}
-          onNextButtonPopEnd={guidanceFocus.onNextButtonPopEnd}
-        />
-      )}
-
-      <TotalsBreakdownSheet
-        open={breakdownOpen}
-        onOpenChange={setBreakdownOpen}
-        totals={derived.totals}
-        participants={participants}
-        labels={labels}
+              : {
+                  label: 'Сложи я на масата',
+                  onClick: () => goToStep(3),
+                  ready: blockers.length === 0,
+                },
+          popToken: guidanceFocus.nextButtonPopToken,
+          onPopEnd: guidanceFocus.onNextButtonPopEnd,
+        }}
       />
 
       <Dialog
@@ -466,10 +357,9 @@ function BillEditorContent({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Вече има артикули в сметката</DialogTitle>
+            <DialogTitle>Вече има редове на бележката</DialogTitle>
             <DialogDescription>
-              Искате ли да добавите разпознатите артикули към съществуващите,
-              или да ги замените?
+              Да добавим ли разпознатите редове към тези, или да ги заменим?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -498,10 +388,10 @@ function BillEditorContent({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Ще изтриете съществуващите артикули</DialogTitle>
+            <DialogTitle>Ще изтриете сегашните редове</DialogTitle>
             <DialogDescription>
-              Артикулите имат разпределения между участници. Замяната ще изтрие
-              съществуващите артикули и разпределенията им. Продължавате ли?
+              Някои редове вече са разпределени между хората. Замяната ще изтрие
+              редовете и отметките по тях. Продължавате ли?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

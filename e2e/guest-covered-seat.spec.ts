@@ -7,6 +7,7 @@ import {
 import {
   claimGroup,
   goToPayStep,
+  takeUnit,
   initiateRevolutPayment,
   joinAsGuest,
 } from './helpers/guest'
@@ -35,18 +36,22 @@ test('one phone claims and pays for two seats', async ({ browser }) => {
   const otherPage = await other.newPage()
   await otherPage.goto(joinUrl)
   await expect(
-    otherPage.getByRole('button', { name: `${bobi} — с ${ani}` }),
+    otherPage.getByRole('button', { name: `${bobi}, с ${ani}` }),
   ).toBeDisabled()
   await other.close()
 
   const pizza = () => claimGroup(payer.page, 'Пица')
-  await pizza().getByRole('button', { name: 'Още една Пица' }).click()
+  await takeUnit(payer.page, 'Пица')
   await expect(pizza().locator('[data-testid^="claim-count-"]')).toHaveText('1')
 
-  await payer.page.getByRole('tab', { name: bobi }).click()
-  await pizza().getByRole('button', { name: 'Още една Пица' }).click()
+  // Mark for Боби from the same phone: the count follows the active seat.
+  await payer.page
+    .getByRole('group', { name: 'Отбелязвате за' })
+    .getByRole('button', { name: bobi })
+    .click()
+  await takeUnit(payer.page, 'Пица')
   await expect(pizza().locator('[data-testid^="claim-count-"]')).toHaveText('1')
-  await expect(pizza().getByText(`${ani} 1`)).toBeVisible()
+  await expect(pizza().locator('[data-free]')).toHaveCount(1)
 
   await expect(payer.page.getByText(`Общо за ${ani} и ${bobi}`)).toBeVisible()
   await expect(payer.page.getByTestId('claim-pay-bar-amount')).toHaveText(
@@ -61,11 +66,8 @@ test('one phone claims and pays for two seats', async ({ browser }) => {
   await goToBillStep(hostPage, 4)
   const banner = hostPage.getByText(new RegExp(`${ani} плати 20,00`))
   await expect(banner).toBeVisible({ timeout: 15_000 })
+  // One tap confirms the whole request (Ани and Боби).
   await hostPage.getByRole('button', { name: 'Потвърди' }).first().click()
-  await hostPage
-    .getByRole('alertdialog')
-    .getByRole('button', { name: 'Потвърди' })
-    .click()
   await expect(banner).not.toBeVisible({ timeout: 15_000 })
 
   await payer.context.close()

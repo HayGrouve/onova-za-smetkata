@@ -1,4 +1,5 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
+import { ReceiptMessage } from '#/components/receipt/receipt-states.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
 
@@ -9,14 +10,15 @@ export const Route = createFileRoute('/$')({
 
 function NotFoundPage() {
   return (
-    <div className="page-container flex min-h-[60dvh] flex-col items-center justify-center gap-4 py-10 text-center">
-      <h1 className="text-lg font-semibold">Страницата не е намерена</h1>
-      <p className="text-sm text-muted-foreground">
-        Проверете адреса или се върнете към началото.
-      </p>
-      <Button asChild className="h-11">
-        <Link to="/">Към началото</Link>
-      </Button>
-    </div>
+    <ReceiptMessage
+      title="Страницата не е намерена"
+      action={
+        <Button asChild className="w-full">
+          <Link to="/">Към началото</Link>
+        </Button>
+      }
+    >
+      Тази бележка не е на масата. Проверете адреса или се върнете към началото.
+    </ReceiptMessage>
   )
 }
