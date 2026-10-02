@@ -7,7 +7,10 @@ import { toast } from 'sonner'
 import { CombinedCoverNotice } from '#/components/bills/combined-cover-notice.tsx'
 import { CoveredSeatsSheet } from '#/components/bills/covered-seats-sheet.tsx'
 import { BillHeaderSlot } from '#/components/layout/bill-header-title.tsx'
-import { DockHandle } from '#/components/layout/dock-handle.tsx'
+import {
+  DockHandle,
+  useDockCollapsed,
+} from '#/components/layout/dock-handle.tsx'
 import { ClaimLine } from '#/components/receipt/claim-line.tsx'
 import { FlightLayer, useFly } from '#/components/receipt/flight.tsx'
 import { ClaimLineDrawer } from '#/components/receipt/line-drawer.tsx'
@@ -129,7 +132,7 @@ function GuestClaimTable({
   const errorTimer = useRef<number | undefined>(undefined)
   const [undo, pushUndo, clearUndo] = useUndo()
   const [coveredOpen, setCoveredOpen] = useState(false)
-  const [dockCollapsed, setDockCollapsed] = useState(false)
+  const [dockCollapsed, toggleDock] = useDockCollapsed()
   const actions = useClaimActions({ seatId: actorId, sessionToken })
   const leaveUnit = useMutation(api.assignments.leaveUnit)
   const pending = useQuery(api.combinedPayments.getPendingForGuest, {
@@ -498,7 +501,7 @@ function GuestClaimTable({
           <div className="fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-background from-60% to-transparent pt-2 after:absolute after:inset-x-0 after:top-full after:h-16 after:bg-background md:static md:z-auto md:bg-none md:pt-0 md:after:hidden">
             <DockHandle
               collapsed={dockCollapsed}
-              onToggle={() => setDockCollapsed((c) => !c)}
+              onToggle={toggleDock}
               label="Моята сметка"
               className={cn(
                 dockCollapsed && 'pb-[max(10px,env(safe-area-inset-bottom))]',

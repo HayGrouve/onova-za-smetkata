@@ -14,7 +14,10 @@ import { CombinedPaymentBanner } from '#/components/bills/combined-payment-banne
 import { ParticipantDetailSheet } from '#/components/bills/participant-detail-sheet.tsx'
 import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
 import { BillHeaderSlot } from '#/components/layout/bill-header-title.tsx'
-import { DockHandle } from '#/components/layout/dock-handle.tsx'
+import {
+  DockHandle,
+  useDockCollapsed,
+} from '#/components/layout/dock-handle.tsx'
 import {
   HostSlip,
   SlipStack,
@@ -156,7 +159,7 @@ function HostBillTable({
   const errorTimer = useRef<number | undefined>(undefined)
   const [undo, pushUndo, clearUndo] = useUndo()
   const [detailId, setDetailId] = useState<string | null>(null)
-  const [dockCollapsed, setDockCollapsed] = useState(false)
+  const [dockCollapsed, toggleDock] = useDockCollapsed()
   const activePhase: Phase | 'final' = final ? 'final' : phase
   const assembling = activePhase === 'assemble' && assemble !== undefined
 
@@ -545,7 +548,7 @@ function HostBillTable({
             <div className="space-y-2 rounded-t-[26px] bg-table-2 px-3 pt-1 pb-[max(12px,env(safe-area-inset-bottom))] shadow-[0_-16px_40px_-20px_var(--paper-shadow)] md:rounded-none md:bg-transparent md:p-0 md:shadow-none">
               <DockHandle
                 collapsed={dockCollapsed}
-                onToggle={() => setDockCollapsed((c) => !c)}
+                onToggle={toggleDock}
                 label="Действия"
               />
               {activePhase === 'table' || activePhase === 'assemble' ? (

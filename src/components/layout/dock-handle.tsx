@@ -1,5 +1,47 @@
 import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
+import { useSyncExternalStore } from 'react'
 import { cn } from '#/lib/utils.ts'
+
+const STORAGE_KEY = 'onova-dock-collapsed'
+const listeners = new Set<() => void>()
+// Stands in for storage when the browser blocks it, so folding still works.
+let fallback = false
+
+function readCollapsed() {
+  try {
+    return localStorage.getItem(STORAGE_KEY) === '1'
+  } catch {
+    return fallback
+  }
+}
+
+function subscribe(onChange: () => void) {
+  listeners.add(onChange)
+  window.addEventListener('storage', onChange)
+  return () => {
+    listeners.delete(onChange)
+    window.removeEventListener('storage', onChange)
+  }
+}
+
+/**
+ * Whether the phone dock is folded. One remembered choice for every bill,
+ * host or guest; the server render (and a browser without storage) starts
+ * the dock open.
+ */
+export function useDockCollapsed() {
+  const collapsed = useSyncExternalStore(subscribe, readCollapsed, () => false)
+  function toggle() {
+    fallback = !collapsed
+    try {
+      localStorage.setItem(STORAGE_KEY, fallback ? '1' : '0')
+    } catch {
+      // Storage blocked: `fallback` keeps the choice for this visit.
+    }
+    for (const listener of listeners) listener()
+  }
+  return [collapsed, toggle] as const
+}
 
 /**
  * The grip on top of a phone's bottom dock: folds the dock down to this
