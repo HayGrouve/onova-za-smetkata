@@ -142,7 +142,7 @@ export function useBillHeaderMenuActions({
     try {
       await finalizeBill({ billId })
       setFinalizeOpen(false)
-      toast.success('Сметката е завършена')
+      toast.success('Сметката е приключена')
       await navigateToFinalBillSummary(navigate, billId)
     } catch {
       toast.error('Неуспешно завършване на сметката')
@@ -261,7 +261,7 @@ export function useBillHeaderMenuActions({
         <Dialog open={finalizeOpen} onOpenChange={setFinalizeOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Завършване на сметката?</DialogTitle>
+              <DialogTitle>Приключване на сметката?</DialogTitle>
               <DialogDescription asChild>
                 <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                   <p>
@@ -280,9 +280,9 @@ export function useBillHeaderMenuActions({
                     <p>Всички участници са платили.</p>
                   )}
                   <p>
-                    След завършване сметката е само за преглед — гостите не
-                    могат да променят артикулите, а плащанията не могат да се
-                    отменят или добавят.
+                    След приключване бележката се заключва: гостите не могат да
+                    променят артикулите, а плащанията не могат да се отменят или
+                    добавят.
                   </p>
                 </div>
               </DialogDescription>
@@ -297,12 +297,11 @@ export function useBillHeaderMenuActions({
                 Отказ
               </Button>
               <Button
-                className="bg-success text-success-foreground hover:bg-success/90"
                 onClick={() => void handleFinalize()}
                 disabled={isFinalizing || unpaidCount > 0 || isDeleting}
               >
                 <CheckCircleIcon className={ICON.button} aria-hidden />
-                {isFinalizing ? 'Завършване...' : 'Завърши сметка'}
+                {isFinalizing ? 'Приключване...' : 'Приключи'}
               </Button>
             </DialogFooter>
           </DialogContent>

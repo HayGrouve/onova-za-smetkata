@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type {
   BillCalculationContext,
   LoadedBillRelations,
@@ -8,7 +8,6 @@ import { buildGuestClaimSessionState } from '../../shared/guest-claim-session'
 import type {
   GuestClaimSessionItem,
   GuestClaimSessionState,
-  GuestClaimTab,
 } from '../../shared/guest-claim-session'
 import type { GuestItemAssignment } from '../../shared/guest-claim-items'
 
@@ -22,15 +21,7 @@ export interface UseGuestClaimSessionOptions {
   billContext?: BillCalculationContext
 }
 
-export interface UseGuestClaimSessionResult {
-  itemTab: GuestClaimTab
-  setItemTab: (tab: GuestClaimTab) => void
-  search: string
-  setSearch: (search: string) => void
-  clearSearch: () => void
-  session: GuestClaimSessionState | null
-}
-
+/** Table progress and per-seat Shares for a guest phone (the Pay step). */
 export function useGuestClaimSession({
   items,
   assignments,
@@ -39,10 +30,7 @@ export function useGuestClaimSession({
   mySeatIds,
   billRelations,
   billContext,
-}: UseGuestClaimSessionOptions): UseGuestClaimSessionResult {
-  const [itemTab, setItemTab] = useState<GuestClaimTab>('all')
-  const [search, setSearch] = useState('')
-
+}: UseGuestClaimSessionOptions): { session: GuestClaimSessionState | null } {
   const session = useMemo(() => {
     if (!seatId) return null
     return buildGuestClaimSessionState({
@@ -51,8 +39,6 @@ export function useGuestClaimSession({
       participants,
       seatId,
       mySeatIds,
-      activeTab: itemTab,
-      search,
       billRelations,
       billContext,
     })
@@ -60,20 +46,11 @@ export function useGuestClaimSession({
     assignments,
     billContext,
     billRelations,
-    itemTab,
     items,
     mySeatIds,
     participants,
-    search,
     seatId,
   ])
 
-  return {
-    itemTab,
-    setItemTab,
-    search,
-    setSearch,
-    clearSearch: () => setSearch(''),
-    session,
-  }
+  return { session }
 }

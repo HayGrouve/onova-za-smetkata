@@ -329,7 +329,7 @@ function BillEditorContent({
             ? (joinUrl) => interceptGuestShare(billId, joinUrl)
             : undefined
         }
-        shareGuidance={onboardingActive ? guidanceFocus : undefined}
+        guidanceFocus={onboardingActive ? guidanceFocus : undefined}
         assemble={{
           title: restaurantField,
           body: assembleBody,
