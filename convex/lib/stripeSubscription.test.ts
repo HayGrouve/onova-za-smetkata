@@ -115,7 +115,7 @@ describe('Host Pro from a Stripe subscription', () => {
 
   it('no subscription clears the mirror back to Free', () => {
     expect(billingFieldsFromSubscription(null, noHistory, now)).toEqual({
-      clerkPlanSlug: 'free_user',
+      plan: 'free',
       subscriptionStatus: undefined,
       currentPeriodEnd: undefined,
       graceUntil: undefined,

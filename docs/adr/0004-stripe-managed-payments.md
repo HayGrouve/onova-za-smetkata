@@ -19,7 +19,7 @@ Billing is not live yet: Managed Payments needs Stripe's eligibility review, and
 ## Consequences
 
 - New Convex env: `BILLING_ENABLED`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY`, `APP_ORIGIN` ([DEPLOY.md](../DEPLOY.md)).
-- `clerkPlanSlug` keeps its legacy name (`'pro'` once a Stripe subscription exists). Renaming it needs a data migration.
+- `users.plan` is `'pro'` once a Stripe subscription exists, else `'free'`. It replaced the Clerk Billing-era `clerkPlanSlug`, which `backfill:planFromClerkPlanSlug` moves over once per environment.
 - Managed Payments cannot be enabled on existing subscriptions; switching to direct Stripe billing later only affects new subscriptions.
 - Customers see "Sold through Link" and `LINK.COM*` on statements; custom checkout domains are not supported.
 - Tests cover the signature check against Stripe's own signer, webhook dedupe, the subscription → tier mapping and the switch. The Stripe API calls themselves are verified in Stripe test mode, not in Vitest.

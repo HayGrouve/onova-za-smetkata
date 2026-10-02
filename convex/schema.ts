@@ -18,8 +18,13 @@ export default defineSchema({
     username: v.optional(v.string()),
     /**
      * Host Pro billing mirror, written by the Stripe sync (`billing.ts`) and
-     * read by `lib/hostTier.ts`. `clerkPlanSlug` is a legacy name: `'pro'`
-     * once the Host has a Stripe subscription, else `'free_user'`.
+     * read by `lib/hostTier.ts`. `'pro'` once the Host has a Stripe
+     * subscription, else `'free'`.
+     */
+    plan: v.optional(v.union(v.literal('free'), v.literal('pro'))),
+    /**
+     * Retired Clerk Billing plan slug, superseded by `plan`; cleared by
+     * `backfill:planFromClerkPlanSlug`. Drop once every environment has run it.
      */
     clerkPlanSlug: v.optional(v.string()),
     /** Stripe subscription status, as Stripe reports it. */
