@@ -38,15 +38,15 @@ export function BillHistory() {
       aria-labelledby="home-history-title"
       className="flex flex-col gap-3"
     >
-      <h2 id="home-history-title" className="text-base font-semibold">
-        Всички сметки
+      <h2 id="home-history-title" className="text-[15px] font-bold">
+        Предишни бележки
       </h2>
       <div className="relative">
         <Label htmlFor="home-bill-search" className="sr-only">
           Търсене по ресторант или участник
         </Label>
         <SearchIcon
-          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+          className="pointer-events-none absolute top-1/2 left-0.5 size-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden
         />
         <Input
@@ -55,29 +55,35 @@ export function BillHistory() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Търсене по ресторант или участник"
-          className="h-11 pl-9"
+          className="pl-7"
         />
       </div>
 
       {status === 'LoadingFirstPage' ? (
-        Array.from({ length: 3 }).map((_, index) => (
-          <Skeleton key={index} className="h-20 w-full rounded-xl" />
-        ))
+        <div className="grid gap-4 sm:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-24 w-full" />
+          ))}
+        </div>
       ) : results.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">
+        <p className="py-6 text-center text-[12px] text-on-table-muted">
           {homeBillListEmptyMessage({ search: debouncedSearch })}
         </p>
       ) : (
-        results.map((summary) => (
-          <BillCard key={summary.bill._id} {...summary} />
-        ))
+        <ul className="grid gap-4 sm:grid-cols-2 lg:gap-5">
+          {results.map((summary, index) => (
+            <li key={summary.bill._id} className="list-none">
+              <BillCard {...summary} tilt={index % 2 === 0 ? -0.8 : 0.7} />
+            </li>
+          ))}
+        </ul>
       )}
 
       {status === 'CanLoadMore' || status === 'LoadingMore' ? (
         <Button
           type="button"
           variant="outline"
-          className="h-11 w-full"
+          className="w-full sm:w-auto"
           disabled={status === 'LoadingMore'}
           onClick={() => loadMore(HOME_BILL_PAGE_SIZE)}
         >

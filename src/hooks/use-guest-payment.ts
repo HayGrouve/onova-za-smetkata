@@ -237,6 +237,7 @@ export function useGuestPayment({
     settingsLoaded: settings !== undefined,
     hasRevolut: Boolean(revolutUsername),
     hasIban: Boolean(iban),
+    iban,
     pending,
     transferInitiated,
     coveredIds,

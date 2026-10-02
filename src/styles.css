@@ -1,5 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap');
-/* display=swap in the URL above avoids invisible text while fonts load */
+@import '@fontsource-variable/unbounded';
+@import '@fontsource-variable/martian-mono/standard.css';
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
@@ -7,94 +7,160 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Живата сметка. Two surfaces: the table (page background, follows the
+ * theme) and paper (receipts, stubs, sheets, dialogs). Paper stays light in
+ * dark mode because it is a physical object on the table; inside `.paper`
+ * the shadcn tokens switch to ink values. See docs/design/live-receipt.md.
+ */
 :root {
   color-scheme: light;
-  /* Slate + Copper — light */
-  --background: oklch(0.985 0.003 84); /* #faf9f7 */
-  --foreground: oklch(0.3 0.012 286); /* #2b2b33 */
-  --card: oklch(1 0 0); /* #ffffff */
-  --card-foreground: oklch(0.3 0.012 286);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.3 0.012 286);
-  --primary: oklch(0.52 0.13 55); /* copper #a4551e */
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.955 0.006 84); /* #f1efea */
-  --secondary-foreground: oklch(0.3 0.012 286);
-  --muted: oklch(0.955 0.006 84);
-  --muted-foreground: oklch(0.54 0.012 286); /* #6b6b74 */
-  --accent: oklch(0.94 0.025 65); /* copper tint #f6e8dc */
-  --accent-foreground: oklch(0.52 0.13 55);
-  --destructive: oklch(0.55 0.18 30); /* #c03a2e */
-  --destructive-foreground: oklch(1 0 0);
-  --success: oklch(0.53 0.1 155); /* #2e7d4f */
-  --success-foreground: oklch(1 0 0);
-  --border: oklch(0.905 0.009 84); /* #e5e2da — decorative separators */
-  --input: oklch(
-    0.64 0.01 84
-  ); /* form field borders: ≥3:1 vs card/bg (WCAG 1.4.11) */
-  --ring: oklch(0.52 0.13 55 / 40%);
-  --chart-1: oklch(0.52 0.13 55);
-  --chart-2: oklch(0.3 0.012 286);
-  --chart-3: oklch(0.53 0.1 155);
-  --chart-4: oklch(0.7 0.02 84);
-  --chart-5: oklch(0.76 0.11 60);
-  --radius: 0.625rem;
+  --table: oklch(0.9 0.008 250);
+  --table-2: oklch(0.86 0.01 250);
+  --table-3: oklch(0.82 0.012 250);
+  --table-texture: oklch(0.5 0.02 255 / 0.07);
+  --on-table: oklch(0.25 0.02 255);
+  --on-table-muted: oklch(0.44 0.02 255);
+  --paper: oklch(0.985 0.003 95);
+  --paper-2: oklch(0.955 0.004 95);
+  --ink: oklch(0.22 0.015 255);
+  --ink-muted: oklch(0.5 0.015 255);
+  --ink-faint: oklch(0.72 0.01 255);
+  --rule: oklch(0.82 0.008 255);
+  /* Vermilion stamp ink: the one accent. */
+  --stamp: oklch(0.6 0.2 33);
+  --stamp-soft: oklch(0.93 0.04 40);
+  --paper-shadow: oklch(0.2 0.02 255 / 0.4);
+  /* Seat identity: same lightness and chroma, always paired with initials. */
+  --seat-0: oklch(0.72 0.09 250);
+  --seat-1: oklch(0.72 0.09 160);
+  --seat-2: oklch(0.72 0.09 85);
+  --seat-3: oklch(0.72 0.09 320);
+  --seat-4: oklch(0.72 0.09 200);
+  --seat-ink: oklch(0.22 0.015 255);
+
+  --background: var(--table);
+  --foreground: var(--on-table);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  /* Filled actions: one step deeper than the stamp so paper text passes AA. */
+  --primary: oklch(0.55 0.19 33);
+  --primary-foreground: var(--paper);
+  --secondary: var(--table-2);
+  --secondary-foreground: var(--on-table);
+  --muted: var(--table-2);
+  --muted-foreground: var(--on-table-muted);
+  --accent: var(--table-2);
+  --accent-foreground: var(--on-table);
+  --destructive: oklch(0.5 0.19 22);
+  --destructive-foreground: var(--paper);
+  --success: oklch(0.5 0.1 160);
+  --success-foreground: var(--paper);
+  --border: var(--table-3);
+  --input: var(--on-table-muted);
+  --ring: oklch(0.6 0.2 33 / 55%);
+  --chart-1: var(--stamp);
+  --chart-2: var(--ink);
+  --chart-3: var(--seat-1);
+  --chart-4: var(--seat-0);
+  --chart-5: var(--seat-2);
+  --radius: 0.5rem;
   --motion-slow: 250ms;
   --motion-press: 120ms;
   --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.3 0.012 286);
-  --sidebar-primary: oklch(0.52 0.13 55);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.94 0.025 65);
-  --sidebar-accent-foreground: oklch(0.52 0.13 55);
-  --sidebar-border: oklch(0.905 0.009 84);
-  --sidebar-ring: oklch(0.52 0.13 55 / 40%);
+  --sidebar: var(--paper);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--paper);
+  --sidebar-accent: var(--paper-2);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--rule);
+  --sidebar-ring: var(--ring);
 }
 
 .dark {
   color-scheme: dark;
-  /* Slate + Copper — dark */
-  --background: oklch(0.18 0.004 286); /* #121214 */
-  --foreground: oklch(0.92 0.006 84); /* #e8e6e1 */
-  --card: oklch(0.225 0.005 286); /* #1c1c20 */
-  --card-foreground: oklch(0.92 0.006 84);
-  --popover: oklch(0.225 0.005 286);
-  --popover-foreground: oklch(0.92 0.006 84);
-  --primary: oklch(0.7 0.14 55); /* copper #e08540 */
-  --primary-foreground: oklch(0.2 0.04 55); /* #2a1505 */
-  --secondary: oklch(0.25 0.005 286); /* #232327 */
-  --secondary-foreground: oklch(0.92 0.006 84);
-  --muted: oklch(0.25 0.005 286);
-  --muted-foreground: oklch(0.7 0.008 84); /* #a3a19b */
-  --accent: oklch(0.3 0.06 55); /* #45260f */
-  --accent-foreground: oklch(0.76 0.11 60); /* #eda05f */
-  --destructive: oklch(0.62 0.16 28); /* #e0604f */
-  --destructive-foreground: oklch(0.98 0.005 84);
-  --success: oklch(0.71 0.1 155); /* #5cba8a */
-  --success-foreground: oklch(0.22 0.04 155); /* #0b2417 */
-  --border: oklch(0.3 0.006 286); /* #333338 — decorative separators */
-  --input: oklch(
-    0.53 0.008 286
-  ); /* form field borders: ≥3:1 vs card/bg (WCAG 1.4.11) */
-  --ring: oklch(0.7 0.14 55 / 40%);
-  --chart-1: oklch(0.7 0.14 55);
-  --chart-2: oklch(0.92 0.006 84);
-  --chart-3: oklch(0.71 0.1 155);
-  --chart-4: oklch(0.45 0.01 286);
-  --chart-5: oklch(0.76 0.11 60);
-  --sidebar: oklch(0.225 0.005 286);
-  --sidebar-foreground: oklch(0.92 0.006 84);
-  --sidebar-primary: oklch(0.7 0.14 55);
-  --sidebar-primary-foreground: oklch(0.2 0.04 55);
-  --sidebar-accent: oklch(0.3 0.06 55);
-  --sidebar-accent-foreground: oklch(0.76 0.11 60);
-  --sidebar-border: oklch(0.3 0.006 286);
-  --sidebar-ring: oklch(0.7 0.14 55 / 40%);
+  --table: oklch(0.2 0.02 255);
+  --table-2: oklch(0.24 0.022 255);
+  --table-3: oklch(0.3 0.024 255);
+  --table-texture: oklch(0.8 0.02 255 / 0.05);
+  --on-table: oklch(0.92 0.01 250);
+  --on-table-muted: oklch(0.74 0.015 250);
+  --paper: oklch(0.94 0.006 95);
+  --paper-2: oklch(0.905 0.007 95);
+  --rule: oklch(0.78 0.008 255);
+  --stamp: oklch(0.68 0.19 35);
+  --stamp-soft: oklch(0.88 0.05 40);
+  --paper-shadow: oklch(0.08 0.02 255 / 0.7);
+  --primary: oklch(0.68 0.19 35);
+  --primary-foreground: oklch(0.2 0.02 255);
+  --destructive: oklch(0.66 0.17 25);
+  --destructive-foreground: oklch(0.2 0.02 255);
+  --success: oklch(0.72 0.1 160);
+  --success-foreground: oklch(0.2 0.02 255);
+  --ring: oklch(0.68 0.19 35 / 60%);
+}
+
+/*
+ * Paper context. Anything printed on paper reads ink-on-paper in both
+ * themes. Shadcn overlays are paper through their data-slot.
+ */
+.paper,
+[data-slot='card'],
+[data-slot='sheet-content'],
+[data-slot='dialog-content'],
+[data-slot='alert-dialog-content'],
+[data-slot='dropdown-menu-content'],
+[data-slot='dropdown-menu-sub-content'],
+[data-slot='tooltip-content'],
+[data-sonner-toast] {
+  color-scheme: light;
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  --primary: oklch(0.55 0.19 33);
+  --primary-foreground: oklch(0.985 0.003 95);
+  --secondary: var(--paper-2);
+  --secondary-foreground: var(--ink);
+  --muted: var(--paper-2);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--paper-2);
+  --accent-foreground: var(--ink);
+  --destructive: oklch(0.5 0.19 22);
+  --destructive-foreground: oklch(0.985 0.003 95);
+  --success: oklch(0.45 0.1 160);
+  --success-foreground: oklch(0.985 0.003 95);
+  --border: var(--rule);
+  --input: var(--ink-muted);
+  --ring: oklch(0.6 0.2 33 / 55%);
+  --stamp: oklch(0.6 0.2 33);
+  color: var(--ink);
 }
 
 @theme inline {
-  --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-sans:
+    'Martian Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-mono:
+    'Martian Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-display: 'Unbounded Variable', ui-sans-serif, system-ui, sans-serif;
+  --color-table: var(--table);
+  --color-table-2: var(--table-2);
+  --color-table-3: var(--table-3);
+  --color-on-table: var(--on-table);
+  --color-on-table-muted: var(--on-table-muted);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-rule: var(--rule);
+  --color-stamp: var(--stamp);
+  --color-stamp-soft: var(--stamp-soft);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -150,21 +216,33 @@ body {
   margin: 0;
   color: var(--foreground);
   font-family: var(--font-sans);
+  font-stretch: 87.5%;
+  font-size: 13px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
   background-color: var(--background);
+  /* A faint woven texture so paper reads as an object on the table. */
+  background-image: radial-gradient(
+    var(--table-texture) 1px,
+    transparent 1.4px
+  );
+  background-size: 14px 14px;
+  -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
+/* Inline text links. Links rendered as buttons keep their own colours. */
+a:not([data-slot='button']) {
   color: var(--primary);
   text-decoration-color: color-mix(in oklab, var(--primary) 40%, transparent);
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
 }
 
-a:hover {
+a:not([data-slot='button']):hover {
   color: color-mix(in oklab, var(--primary) 85%, var(--foreground));
 }
 
@@ -212,6 +290,19 @@ a {
     color: var(--foreground);
   }
 
+  :focus-visible {
+    outline: 2px solid var(--stamp);
+    outline-offset: 2px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-stretch: normal;
+    letter-spacing: -0.02em;
+  }
+
   button:not(:disabled),
   a[href],
   [role='button']:not([aria-disabled='true']),
@@ -227,9 +318,214 @@ a {
 
 @layer utilities {
   .money {
-    font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
-    font-weight: 500;
+    font-family: var(--font-mono);
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Unbounded: totals, stamps, titles. Never for long text. */
+  .font-display {
+    font-family: var(--font-display);
+    font-stretch: normal;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  /* ------------------------------------------------------- paper objects */
+
+  .paper-shadow {
+    filter: drop-shadow(0 22px 26px var(--paper-shadow));
+  }
+
+  .paper-lift {
+    filter: drop-shadow(0 10px 14px var(--paper-shadow));
+  }
+
+  /* Receipt with zig-zag top and bottom edges. */
+  .paper-edge {
+    --zz: 9px;
+    --_g: #0000, #000 1deg 89deg, #0000 90deg;
+    background-color: var(--paper);
+    mask:
+      conic-gradient(from -45deg at bottom, var(--_g)) bottom /
+        calc(2 * var(--zz)) 51% repeat-x,
+      conic-gradient(from 135deg at top, var(--_g)) top / calc(2 * var(--zz))
+        51% repeat-x;
+    padding-block: calc(var(--zz) + 14px);
+  }
+
+  /* Receipt whose slips continue below: zig-zag on top only. */
+  .paper-top {
+    --zz: 9px;
+    --_g: #0000, #000 1deg 89deg, #0000 90deg;
+    background-color: var(--paper);
+    mask:
+      linear-gradient(#000 0 0) bottom / 100% 51% no-repeat,
+      conic-gradient(from 135deg at top, var(--_g)) top / calc(2 * var(--zz))
+        51% repeat-x;
+    padding-top: calc(var(--zz) + 14px);
+  }
+
+  /* Closes a receipt with a zig-zag bottom edge. */
+  .paper-end {
+    --zz: 9px;
+    --_g: #0000, #000 1deg 89deg, #0000 90deg;
+    height: 26px;
+    background-color: var(--paper);
+    mask: conic-gradient(from -45deg at bottom, var(--_g)) bottom /
+      calc(2 * var(--zz)) 100% repeat-x;
+  }
+
+  /* Thermal-print texture: very faint horizontal banding. */
+  .thermal {
+    background-image: repeating-linear-gradient(
+      180deg,
+      oklch(0.5 0.01 255 / 0.025) 0 1px,
+      transparent 1px 3px
+    );
+  }
+
+  /* Stand-alone stub (shelf, slip column): notched on all four corners. */
+  .stub {
+    background-color: var(--paper);
+    mask:
+      radial-gradient(circle 8px at 0 0, #0000 98%, #000) top left / 51% 51%
+        no-repeat,
+      radial-gradient(circle 8px at 100% 0, #0000 98%, #000) top right / 51% 51%
+        no-repeat,
+      radial-gradient(circle 8px at 0 100%, #0000 98%, #000) bottom left / 51%
+        51% no-repeat,
+      radial-gradient(circle 8px at 100% 100%, #0000 98%, #000) bottom right /
+        51% 51% no-repeat;
+  }
+
+  /* A slip under a perforation: notched on the top corners. */
+  .slip {
+    background-color: var(--paper);
+    mask:
+      radial-gradient(circle 9px at 0 0, #0000 98%, #000) top left / 51% 100%
+        no-repeat,
+      radial-gradient(circle 9px at 100% 0, #0000 98%, #000) top right / 51%
+        100% no-repeat;
+  }
+
+  /* Dotted leader between a line's name and its price. */
+  .leader {
+    flex: 1 1 auto;
+    min-width: 12px;
+    margin-inline: 6px;
+    translate: 0 -4px;
+    border-bottom: 2px dotted var(--ink-faint);
+  }
+
+  /* Perforated tear line. */
+  .perf {
+    position: relative;
+    height: 18px;
+  }
+  .perf::before {
+    content: '';
+    position: absolute;
+    inset: 8px 14px auto;
+    border-top: 2px dashed var(--rule);
+  }
+
+  .rule {
+    border-top: 2px dashed var(--rule);
+  }
+
+  /* Rubber stamp. Paid, closed. */
+  .stamp {
+    display: inline-block;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-stretch: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    color: var(--stamp);
+    border: 4px double currentColor;
+    padding: 0.35em 0.55em 0.3em;
+    border-radius: 3px;
+    rotate: -8deg;
+    white-space: nowrap;
+    /* Ink grit: a few lighter specks so it reads as rubber. */
+    mask:
+      radial-gradient(circle at 18% 30%, #0006 0 2px, #000 3px),
+      radial-gradient(circle at 70% 70%, #0008 0 1.5px, #000 2.5px);
+    mask-size:
+      23px 19px,
+      31px 17px;
+    mask-composite: intersect;
+  }
+
+  /* Waiting stamp: dashed ink. Pending, draft. */
+  .stamp-wait {
+    color: var(--ink);
+    border: 2px dashed currentColor;
+    font-weight: 700;
+  }
+
+  /* Underlined field printed on paper. */
+  .paper-input {
+    min-height: 44px;
+    width: 100%;
+    border-radius: 0;
+    border: 0;
+    border-bottom: 2px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    padding: 6px 2px;
+    outline: none;
+  }
+  .paper-input::placeholder {
+    color: var(--ink-muted);
+  }
+  .paper-input:focus-visible {
+    border-bottom-color: var(--stamp);
+    box-shadow: 0 2px 0 0 var(--stamp);
+  }
+  .paper-input[aria-invalid='true'] {
+    border-bottom-style: dashed;
+  }
+
+  .skeleton-print {
+    background: linear-gradient(
+      90deg,
+      var(--paper-2) 0%,
+      oklch(0.9 0.006 95) 50%,
+      var(--paper-2) 100%
+    );
+    background-size: 200% 100%;
+  }
+
+  .scroll-x-quiet {
+    scrollbar-width: none;
+  }
+  .scroll-x-quiet::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .skeleton-print {
+      animation: skeleton-print 1.2s linear infinite;
+    }
+    .live-ring {
+      animation: live-ring 1.6s ease-out infinite;
+    }
+    @keyframes skeleton-print {
+      to {
+        background-position: -200% 0;
+      }
+    }
+    @keyframes live-ring {
+      0% {
+        box-shadow: 0 0 0 0 var(--live-ring, var(--stamp));
+      }
+      100% {
+        box-shadow: 0 0 0 7px transparent;
+      }
+    }
   }
 
   .page-shell {

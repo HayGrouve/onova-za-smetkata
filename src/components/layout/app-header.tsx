@@ -4,9 +4,12 @@ import { useConvexAuth, useQuery } from 'convex/react'
 import { ChevronLeftIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { AppHeaderMenu } from '#/components/layout/app-header-menu.tsx'
-import { useBillHeaderTitleValue } from '#/components/layout/bill-header-title.tsx'
+import {
+  useBillHeaderSlot,
+  useBillHeaderTitleValue,
+} from '#/components/layout/bill-header-title.tsx'
 import { Button } from '#/components/ui/button.tsx'
-import type { BillStep } from '#/components/bills/bill-steps-bar.tsx'
+import type { BillStep } from '#/lib/bill-steps.ts'
 import { getClaimHeaderBack } from '#/lib/claim-header-nav.ts'
 import { useBillHeaderMenuActions } from '#/hooks/use-bill-header-menu-actions.tsx'
 import {
@@ -179,6 +182,7 @@ export function AppHeader() {
   const { title, backTo, backParams, backSearch, routeContext, billId, bill } =
     useHeaderConfig()
   const { isSignedIn } = useAuth()
+  const slot = useBillHeaderSlot()
 
   const isGuestRoute = isGuestRouteContext(routeContext)
   const isLogin = pathname === '/login'
@@ -235,36 +239,42 @@ export function AppHeader() {
     bill !== undefined
 
   return (
-    <header className="sticky-surface sticky top-0 z-50 overflow-visible border-b pt-[env(safe-area-inset-top)]">
-      <div className="page-shell flex h-14 items-center gap-2 overflow-visible">
+    <header className="sticky top-0 z-50 overflow-visible bg-background/90 pt-[env(safe-area-inset-top)] backdrop-blur-sm">
+      <div className="mx-auto flex h-14 max-w-[1180px] items-center gap-2 overflow-visible px-2 sm:px-6">
         {backTo ? (
           <Button
             variant="ghost"
             size="icon"
-            className="shrink-0 tap-feedback"
+            className="shrink-0"
             aria-label="Назад"
             asChild
           >
             <Link to={backTo} params={backParams} search={backSearch}>
-              <ChevronLeftIcon className="size-5" />
+              <ChevronLeftIcon className="size-5" strokeWidth={1.75} />
             </Link>
           </Button>
         ) : null}
-        <div className="flex min-w-0 flex-1 items-center gap-3 overflow-visible">
-          {!backTo ? (
-            <div className="shrink-0 self-end">
+        {slot.active ? null : (
+          <div className="flex min-w-0 flex-1 items-center gap-2.5 pl-1">
+            {!backTo ? (
               <img
                 src="/logo.png"
                 alt=""
                 aria-hidden
-                className="relative z-10 size-14 translate-y-3 rounded-full ring-2 ring-background shadow-sm"
+                className="size-8 shrink-0 rounded-full"
               />
-            </div>
-          ) : null}
-          <h1 className="min-w-0 flex-1 truncate text-base font-semibold">
-            {title}
-          </h1>
-        </div>
+            ) : null}
+            <h1 className="min-w-0 flex-1 truncate font-display text-[13px] font-bold">
+              {title}
+            </h1>
+          </div>
+        )}
+        {/* Bill pages portal their phase timeline here instead of a title. */}
+        <div
+          ref={slot.ref}
+          className={slot.active ? 'min-w-0 flex-1 lg:max-w-[460px]' : 'hidden'}
+        />
+        {slot.active ? <div className="hidden flex-1 lg:block" /> : null}
         {showHostActions ? (
           <UserButton
             userProfileMode="navigation"

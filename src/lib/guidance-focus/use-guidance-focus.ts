@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
-import type { BillStep } from '#/components/bills/bill-steps-bar.tsx'
+import type { BillStep } from '#/lib/bill-steps.ts'
 import type { GuidanceStep } from '../../../shared/host-onboarding.ts'
 import {
   createNextButtonPopTracker,

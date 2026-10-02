@@ -10,6 +10,32 @@ import { clerkBgLocalization } from '#/lib/clerk-bg-localization.ts'
 import { SubscriptionProvider } from '#/components/subscription/subscription-provider.tsx'
 
 const convexUrl = assertConvexUrlForBuild()
+
+/**
+ * Clerk's sign-in and account screens are printed paper too: ink on thermal
+ * white with a vermilion action. Paper stays light in dark mode, so these are
+ * fixed values (the paper tokens from styles.css).
+ */
+const CLERK_APPEARANCE = {
+  variables: {
+    colorPrimary: '#c83314',
+    colorBackground: '#fbfaf8',
+    colorText: '#161b22',
+    colorTextSecondary: '#5e646c',
+    colorInputBackground: '#fbfaf8',
+    colorInputText: '#161b22',
+    colorNeutral: '#161b22',
+    colorDanger: '#b7162d',
+    borderRadius: '2px',
+    fontFamily: "'Martian Mono Variable', ui-monospace, monospace",
+    fontFamilyButtons: "'Unbounded Variable', ui-sans-serif, sans-serif",
+  },
+  elements: {
+    card: { boxShadow: '0 22px 40px -18px rgba(20, 26, 36, 0.45)' },
+    formButtonPrimary: { borderRadius: '999px', fontWeight: 700 },
+    socialButtonsBlockButton: { borderRadius: '999px' },
+  },
+}
 const clerkPublishableKey = getClerkPublishableKey()
 
 const convexQueryClient = convexUrl ? new ConvexQueryClient(convexUrl) : null
@@ -110,6 +136,7 @@ export default function AppConvexProvider({
     <ClerkProvider
       publishableKey={clerkPublishableKey}
       localization={clerkBgLocalization}
+      appearance={CLERK_APPEARANCE}
     >
       <ConvexProviderWithClerk client={client} useAuth={useAuth}>
         <EnsureConvexUser>

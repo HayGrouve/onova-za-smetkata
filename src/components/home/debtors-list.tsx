@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { BellRingIcon, ChevronDownIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { SeatAvatar } from '#/components/receipt/seats.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 import { buildBillJoinUrl, resolveAppOrigin } from '#/lib/bill-join-url.ts'
@@ -40,80 +41,90 @@ export function DebtorsList({ debtors }: DebtorsListProps) {
       aria-labelledby="home-debtors-title"
       className="flex flex-col gap-2"
     >
-      <h2 id="home-debtors-title" className="text-base font-semibold">
+      <h2 id="home-debtors-title" className="text-[15px] font-bold">
         Кой дължи
       </h2>
-      <ul className="divide-y overflow-hidden rounded-xl border bg-card">
-        {debtors.map((debtor, index) => {
-          const expanded = expandedKey === debtor.key
-          const detailsId = `home-debtor-${index}`
-          return (
-            <li key={debtor.key}>
-              <div className="flex items-center gap-2 px-3 py-2">
-                <button
-                  type="button"
-                  className="tap-feedback flex min-w-0 flex-1 items-center gap-3 text-left"
-                  aria-expanded={expanded}
-                  aria-controls={detailsId}
-                  onClick={() => setExpandedKey(expanded ? null : debtor.key)}
-                >
-                  <span
-                    className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/15 text-xs font-semibold"
-                    aria-hidden
+      <div className="paper-shadow">
+        <ul className="paper paper-edge thermal px-3">
+          {debtors.map((debtor, index) => {
+            const expanded = expandedKey === debtor.key
+            const detailsId = `home-debtor-${index}`
+            return (
+              <li
+                key={debtor.key}
+                className="[&+&]:border-t-2 [&+&]:border-dashed [&+&]:border-rule"
+              >
+                <div className="flex items-center gap-2 py-2">
+                  <button
+                    type="button"
+                    className="flex min-h-12 min-w-0 flex-1 items-center gap-3 text-left"
+                    aria-expanded={expanded}
+                    aria-controls={detailsId}
+                    onClick={() => setExpandedKey(expanded ? null : debtor.key)}
                   >
-                    {initials[debtor.key]}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">
-                      {debtor.name}
+                    <SeatAvatar
+                      seat={{
+                        initials: initials[debtor.key] ?? '?',
+                        hue: index % 5,
+                      }}
+                      size="sm"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">
+                        {debtor.name}
+                      </span>
+                      <span className="block truncate text-[11px] text-ink-muted">
+                        {debtor.bills.length === 1
+                          ? debtor.bills[0].restaurantName.trim() || 'Без име'
+                          : `в ${debtor.bills.length} сметки`}
+                      </span>
                     </span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {debtor.bills.length === 1
-                        ? debtor.bills[0].restaurantName.trim() || 'Без име'
-                        : `в ${debtor.bills.length} сметки`}
+                    <span className="shrink-0 font-display text-[14px] font-bold">
+                      {formatEur(debtor.outstandingCents)}
                     </span>
-                  </span>
-                  <span className="money shrink-0 font-semibold">
-                    {formatEur(debtor.outstandingCents)}
-                  </span>
-                  <ChevronDownIcon
-                    className={cn(
-                      'size-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none',
-                      expanded && 'rotate-180',
-                    )}
-                    aria-hidden
-                  />
-                </button>
-                <RemindButton debtor={debtor} />
-              </div>
-              {expanded ? (
-                <ul id={detailsId} className="border-t bg-muted/30 px-3 py-1">
-                  {debtor.bills.map((bill) => (
-                    <li key={bill.billId}>
-                      <Link
-                        to="/bills/$billId"
-                        params={{ billId: bill.billId }}
-                        search={{ step: 4 }}
-                        className="flex items-center justify-between gap-2 py-2 text-sm hover:underline"
-                      >
-                        <span className="min-w-0 truncate">
-                          {bill.restaurantName.trim() || 'Без име'} ·{' '}
-                          {shortDate.format(new Date(bill.date))}
-                        </span>
-                        <span className="money shrink-0">
-                          {formatEur(bill.outstandingCents)}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </li>
-          )
-        })}
-      </ul>
+                    <ChevronDownIcon
+                      className={cn(
+                        'size-4 shrink-0 text-ink-muted transition-transform motion-reduce:transition-none',
+                        expanded && 'rotate-180',
+                      )}
+                      aria-hidden
+                    />
+                  </button>
+                  <RemindButton debtor={debtor} />
+                </div>
+                {expanded ? (
+                  <ul
+                    id={detailsId}
+                    className="mb-2 border-l-[3px] border-ink bg-paper-2 px-3 py-1"
+                  >
+                    {debtor.bills.map((bill) => (
+                      <li key={bill.billId}>
+                        <Link
+                          to="/bills/$billId"
+                          params={{ billId: bill.billId }}
+                          search={{ step: 4 }}
+                          className="flex min-h-11 items-baseline gap-2 py-2 text-[12px] text-ink hover:underline"
+                        >
+                          <span className="min-w-0 truncate">
+                            {bill.restaurantName.trim() || 'Без име'},{' '}
+                            {shortDate.format(new Date(bill.date))}
+                          </span>
+                          <span className="leader" aria-hidden />
+                          <span className="money shrink-0">
+                            {formatEur(bill.outstandingCents)}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </li>
+            )
+          })}
+        </ul>
+      </div>
       {merged ? (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[11px] text-on-table-muted">
           Хората с еднакво име в различни сметки са обединени.
         </p>
       ) : null}
@@ -141,7 +152,7 @@ function RemindButton({ debtor }: { debtor: Debtor }) {
       }
     }
     if (await copyToClipboard(text)) {
-      toast.success('Напомнянето е копирано — поставете го в чата')
+      toast.success('Напомнянето е копирано. Поставете го в чата.')
     } else {
       toast.error('Неуспешно копиране')
     }
@@ -150,8 +161,9 @@ function RemindButton({ debtor }: { debtor: Debtor }) {
   return (
     <Button
       type="button"
-      variant="outline"
-      className="h-10 shrink-0"
+      variant="secondary"
+      size="sm"
+      className="shrink-0"
       aria-label={`Напомни на ${debtor.name}`}
       onClick={() => void handleRemind()}
     >

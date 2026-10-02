@@ -1,6 +1,3 @@
-import { PartyPopperIcon, WalletIcon } from 'lucide-react'
-import { Card, CardContent } from '#/components/ui/card.tsx'
-import { ICON } from '#/lib/app-icons.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 
 export interface OwedSummaryCardProps {
@@ -11,14 +8,14 @@ export interface OwedSummaryCardProps {
 }
 
 function pluralPeople(count: number): string {
-  return count === 1 ? '1 човек' : `${count} човека`
+  return count === 1 ? '1 човек' : `${count} души`
 }
 
 function pluralBills(count: number): string {
   return count === 1 ? '1 сметка' : `${count} сметки`
 }
 
-/** „Дължат ви“: Outstanding across open bills, and how much is already in. */
+/** „Навън са общо“: Outstanding across open bills, printed on the table. */
 export function OwedSummaryCard({
   owedCents,
   collectedCents,
@@ -27,17 +24,15 @@ export function OwedSummaryCard({
 }: OwedSummaryCardProps) {
   if (owedCents === 0) {
     return (
-      <Card className="border-success/30 bg-success/5 py-4">
-        <CardContent className="flex items-center gap-3 px-4">
-          <PartyPopperIcon className="size-5 text-success" aria-hidden />
-          <div>
-            <p className="font-medium">Никой не ви дължи нищо</p>
-            <p className="text-sm text-muted-foreground">
-              Всички гости са платили. Приключете сметките по-долу.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <section aria-label="Дължат ви">
+        <p className="text-[12px] text-on-table-muted">Навън са общо</p>
+        <p className="mt-1 font-display text-[40px] leading-none font-bold sm:text-[48px]">
+          {formatEur(0)}
+        </p>
+        <p className="mt-2 max-w-[36ch] text-[12px] leading-relaxed text-on-table-muted">
+          Никой не ви дължи нищо. Приключете платените сметки по-долу.
+        </p>
+      </section>
     )
   }
 
@@ -45,40 +40,30 @@ export function OwedSummaryCard({
   const collectedShare = expectedCents > 0 ? collectedCents / expectedCents : 0
 
   return (
-    <Card className="py-4">
-      <CardContent className="flex flex-col gap-3 px-4">
-        <div>
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <WalletIcon className={ICON.section} aria-hidden />
-            Дължат ви
-          </p>
-          <p className="money text-3xl font-bold text-primary">
-            {formatEur(owedCents)}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            от {pluralPeople(debtorCount)} в {pluralBills(owingBillCount)}
-          </p>
-        </div>
-        <div className="flex flex-col gap-1">
-          <div
-            className="flex h-2 overflow-hidden rounded-full bg-primary/20"
-            role="progressbar"
-            aria-label="Събрани пари"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(collectedShare * 100)}
-          >
-            <div
-              className="h-full bg-success"
-              style={{ width: `${collectedShare * 100}%` }}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Събрани <span className="money">{formatEur(collectedCents)}</span>{' '}
-            от <span className="money">{formatEur(expectedCents)}</span>
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+    <section aria-label="Дължат ви">
+      <p className="text-[12px] text-on-table-muted">Навън са общо</p>
+      <p className="mt-1 font-display text-[40px] leading-none font-bold sm:text-[48px]">
+        {formatEur(owedCents)}
+      </p>
+      <p className="mt-2 text-[12px] text-on-table-muted">
+        от {pluralPeople(debtorCount)} в {pluralBills(owingBillCount)}
+      </p>
+      <div
+        className="mt-3 h-[3px] max-w-[320px] rounded-full bg-table-3"
+        role="progressbar"
+        aria-label="Събрани пари"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(collectedShare * 100)}
+      >
+        <div
+          className="h-full rounded-full bg-stamp"
+          style={{ width: `${collectedShare * 100}%` }}
+        />
+      </div>
+      <p className="mt-1.5 text-[11px] text-on-table-muted">
+        Събрани {formatEur(collectedCents)} от {formatEur(expectedCents)}
+      </p>
+    </section>
   )
 }

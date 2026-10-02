@@ -1,14 +1,12 @@
-import { ClockIcon } from 'lucide-react'
 import { useMutation, useQuery } from 'convex/react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { Button } from '#/components/ui/button.tsx'
-import { Card, CardContent } from '#/components/ui/card.tsx'
+import { SeatAvatar, useSeatLookup } from '#/components/receipt/seats.tsx'
 import { formatEur } from '#/lib/format-currency.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { getCoveredParticipantIds } from '../../../shared/combined-payment.ts'
-import { ICON } from '#/lib/app-icons.ts'
 import { buildParticipantLabels, joinLabels } from '#/lib/participant-labels.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -56,12 +54,18 @@ function formatCombinedCopy(
   }
 }
 
+/**
+ * „Деси отбеляза превод“: guests who opened Revolut or copied the IBAN wait
+ * here for the Host. One tap confirms the whole request (payer and Covered
+ * seats); a mistake is undone from that person's slip.
+ */
 export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
   const pending = useQuery(api.combinedPayments.listPendingForBill, { billId })
   const confirmMutation = useMutation(api.combinedPayments.confirm)
   const rejectMutation = useMutation(api.combinedPayments.reject)
   const { confirm: confirmAction } = useConfirmAction()
   const bill = useQuery(api.bills.get, { billId })
+  const seatOf = useSeatLookup()
   const [activeRequestId, setActiveRequestId] =
     useState<Id<'combinedPaymentRequests'> | null>(null)
 
@@ -76,13 +80,6 @@ export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
     requestId: Id<'combinedPaymentRequests'>,
     copy: ReturnType<typeof formatCombinedCopy>,
   ) {
-    const confirmed = await confirmAction({
-      title: copy.confirmPrompt,
-      confirmLabel: COMBINED_PAYMENT_MESSAGES.confirm,
-      variant: 'default',
-    })
-    if (!confirmed) return
-
     setActiveRequestId(requestId)
     try {
       await confirmMutation({ billId, requestId })
@@ -95,6 +92,13 @@ export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
   }
 
   async function handleReject(requestId: Id<'combinedPaymentRequests'>) {
+    const confirmed = await confirmAction({
+      title: 'Не виждате превода?',
+      description:
+        'Гостът ще види, че плащането не е потвърдено, и може да опита отново.',
+      confirmLabel: COMBINED_PAYMENT_MESSAGES.reject,
+    })
+    if (!confirmed) return
     setActiveRequestId(requestId)
     try {
       await rejectMutation({ billId, requestId })
@@ -118,41 +122,35 @@ export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
           request.totalCents,
         )
         const isBusy = activeRequestId === request._id
+        const seat = seatOf(request.payerParticipantId)
 
         return (
-          <Card
+          <div
             key={request._id}
-            className="border-accent-foreground/40 bg-accent/40"
+            className="rounded-[22px] bg-table-2 px-3 py-2.5 text-on-table"
           >
-            <CardContent className="flex flex-col gap-3 pt-4">
-              <p className="flex items-start gap-2 text-sm">
-                <ClockIcon
-                  className={`${ICON.section} mt-0.5 shrink-0 text-amber-600 dark:text-amber-500`}
-                  aria-hidden
-                />
-                <span>{copy.banner}</span>
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  className="h-11 flex-1 bg-success text-success-foreground hover:bg-success/90"
-                  disabled={isBusy}
-                  onClick={() => void handleConfirm(request._id, copy)}
-                >
-                  {COMBINED_PAYMENT_MESSAGES.confirm}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 flex-1"
-                  disabled={isBusy}
-                  onClick={() => void handleReject(request._id)}
-                >
-                  {COMBINED_PAYMENT_MESSAGES.reject}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            <div className="flex items-center gap-2.5 text-[12px]">
+              {seat ? <SeatAvatar seat={seat} size="sm" /> : null}
+              <span className="min-w-0 flex-1 leading-snug">{copy.banner}</span>
+              <Button
+                type="button"
+                size="sm"
+                className="shrink-0"
+                disabled={isBusy}
+                onClick={() => void handleConfirm(request._id, copy)}
+              >
+                {COMBINED_PAYMENT_MESSAGES.confirm}
+              </Button>
+            </div>
+            <button
+              type="button"
+              className="mt-1 ml-[42px] min-h-9 text-[11px] text-on-table-muted underline decoration-dotted decoration-2 underline-offset-4"
+              disabled={isBusy}
+              onClick={() => void handleReject(request._id)}
+            >
+              Не виждам превода
+            </button>
+          </div>
         )
       })}
     </div>
