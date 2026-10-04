@@ -1,3 +1,4 @@
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { usePaginatedQuery } from 'convex/react'
 import { Loader2Icon, SearchIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -17,15 +18,30 @@ import { api } from '../../../convex/_generated/api'
 
 /** „Всички сметки“: searchable archive of every bill, newest first. */
 export function BillHistory() {
-  const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  // The URL holds the settled query, so back/refresh keep the search.
+  const { q } = useSearch({ from: '/' })
+  const debouncedSearch = q ?? ''
+  const navigate = useNavigate({ from: '/' })
+  const [search, setSearch] = useState(debouncedSearch)
 
   useEffect(() => {
+    const next = search.trim()
+    if (next === debouncedSearch) return
     const handle = window.setTimeout(() => {
-      setDebouncedSearch(search.trim())
+      void navigate({
+        search: (prev) => ({ ...prev, q: next || undefined }),
+        replace: true,
+      })
     }, HOME_BILL_SEARCH_DEBOUNCE_MS)
     return () => window.clearTimeout(handle)
-  }, [search])
+  }, [search, debouncedSearch, navigate])
+
+  // Back/forward can change the query underneath the input.
+  useEffect(() => {
+    setSearch((current) =>
+      current.trim() === debouncedSearch ? current : debouncedSearch,
+    )
+  }, [debouncedSearch])
 
   const { results, status, loadMore } = usePaginatedQuery(
     api.bills.listWithSummary,
@@ -52,15 +68,17 @@ export function BillHistory() {
         <Input
           id="home-bill-search"
           type="search"
+          name="q"
+          autoComplete="off"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Търсене по ресторант или участник"
+          placeholder="Търсене по ресторант или участник…"
           className="pl-7"
         />
       </div>
 
       {status === 'LoadingFirstPage' ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2" aria-busy>
           {Array.from({ length: 4 }).map((_, index) => (
             <Skeleton key={index} className="h-24 w-full" />
           ))}
@@ -96,7 +114,7 @@ export function BillHistory() {
               aria-hidden
             />
           ) : null}
-          Зареди още
+          {status === 'LoadingMore' ? 'Зареждане…' : 'Зареди още'}
         </Button>
       ) : null}
     </section>

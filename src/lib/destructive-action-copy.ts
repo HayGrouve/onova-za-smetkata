@@ -89,3 +89,13 @@ export function getStopGuidanceCopy(): ConfirmOptions {
     variant: 'default',
   })
 }
+
+export function getScanDismissCopy(): ConfirmOptions {
+  return withDefaults({
+    title: 'Отказ от сканирането?',
+    description:
+      'Разпознатите артикули няма да бъдат добавени. За да ги върнете, ще трябва да снимате бележката отново.',
+    confirmLabel: 'Откажи сканирането',
+    cancelLabel: 'Назад',
+  })
+}

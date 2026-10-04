@@ -6,7 +6,7 @@ import { Slot } from 'radix-ui'
 import { cn } from '#/lib/utils.ts'
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full text-[13px] font-semibold whitespace-nowrap transition-[transform,filter,background-color,color] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-45 aria-invalid:ring-2 aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 active:translate-y-px active:scale-[0.98]",
+  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full text-[13px] font-semibold whitespace-nowrap transition-[transform,filter,background-color,color] outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-stamp disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-45 aria-invalid:ring-2 aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 active:translate-y-px active:scale-[0.98]",
   {
     variants: {
       variant: {

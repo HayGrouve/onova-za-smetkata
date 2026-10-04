@@ -71,15 +71,16 @@ function OpenBillStub({ bill, tilt }: { bill: OpenBill; tilt: number }) {
       to="/bills/$billId"
       params={{ billId: bill.billId }}
       search={{ step }}
-      className="block text-ink transition-transform hover:-translate-y-0.5 active:scale-[0.99]"
+      className="block text-ink transition-transform hover:-translate-y-0.5 active:scale-[0.99] motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100"
       style={{ rotate: `${tilt}deg` }}
-      aria-label={`${name || 'Без име'}: ${PHASE[bill.nextAction]}`}
     >
       <div className="paper-lift">
         <div className="paper stub thermal px-4 py-4">
           <div className="flex items-baseline justify-between gap-2 text-[11px] text-ink-muted">
             <span>{shortDate.format(new Date(bill.date))}</span>
-            <span>{formatEur(bill.billTotalCents)}</span>
+            <span className="tabular-nums">
+              {formatEur(bill.billTotalCents)}
+            </span>
           </div>
           <p
             className={
@@ -104,7 +105,7 @@ function OpenBillStub({ bill, tilt }: { bill: OpenBill; tilt: number }) {
                   : 'Никой не дължи'}
             </p>
             {bill.nextAction === 'collect' ? (
-              <span className="stamp stamp-wait shrink-0 text-[10px]">
+              <span className="stamp stamp-wait shrink-0 text-[10px] tabular-nums">
                 Дължат {formatEur(bill.outstandingCents)}
               </span>
             ) : bill.nextAction === 'close' ? (
