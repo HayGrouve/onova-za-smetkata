@@ -7,6 +7,7 @@ import {
   validateItemUpdatePatch,
 } from '../shared/item-schema'
 import { touchBill } from './lib/touchBill'
+import { nextSortOrder } from '../shared/sort-order'
 
 export const add = mutation({
   args: {
@@ -42,7 +43,7 @@ export const add = mutation({
       unitPriceCents: validated.data.unitPriceCents,
       quantity: validated.data.quantity,
       note: validated.data.note,
-      sortOrder: existing.length,
+      sortOrder: nextSortOrder(existing),
     })
     await touchBill(ctx, args.billId)
     return id

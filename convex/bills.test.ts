@@ -147,6 +147,41 @@ describe('creating a bill', () => {
   })
 })
 
+describe('editing seats and lines', () => {
+  it('a seat or line added after a removal never shares a sort order', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t, {
+      guests: ['Ани', 'Боби', 'Вики'],
+      items: [
+        { name: 'Бира', unitPriceCents: 300 },
+        { name: 'Вода', unitPriceCents: 150 },
+      ],
+    })
+    await bill.host.mutation(api.participants.remove, {
+      participantId: bill.seats['Боби'],
+    })
+    await bill.host.mutation(api.items.remove, { itemId: bill.itemIds[0] })
+
+    await bill.host.mutation(api.participants.add, {
+      billId: bill.billId,
+      name: 'Гошо',
+    })
+    await bill.host.mutation(api.items.add, {
+      billId: bill.billId,
+      name: 'Хляб',
+      unitPriceCents: 200,
+    })
+
+    const { participants, items } = await bill.host.query(api.bills.get, {
+      billId: bill.billId,
+    })
+    for (const rows of [participants, items]) {
+      const orders = rows.map((row) => row.sortOrder)
+      expect(new Set(orders).size).toBe(orders.length)
+    }
+  })
+})
+
 describe('finalizing', () => {
   it('waits for a restaurant, every Unit claimed and every Guest paid', async () => {
     const t = setupConvex()

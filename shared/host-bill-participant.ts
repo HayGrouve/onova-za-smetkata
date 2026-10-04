@@ -22,11 +22,6 @@ export function planHostParticipantOnBillCreate(
   }
 }
 
-/** Sort order for the next participant added after the host (and any existing seats). */
-export function nextParticipantSortOrder(existingParticipantCount: number) {
-  return existingParticipantCount
-}
-
 export function shouldClearHostParticipantId(
   removedParticipantId: string,
   hostParticipantId: string | undefined,

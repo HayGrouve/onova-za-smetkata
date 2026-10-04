@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   HOST_PARTICIPANT_SORT_ORDER,
   isHostParticipant,
-  nextParticipantSortOrder,
   planHostParticipantOnBillCreate,
   shouldClearHostParticipantId,
 } from './host-bill-participant'
@@ -21,16 +20,6 @@ describe('planHostParticipantOnBillCreate', () => {
       name: 'домакин',
       sortOrder: HOST_PARTICIPANT_SORT_ORDER,
     })
-  })
-})
-
-describe('nextParticipantSortOrder', () => {
-  it('places the first guest after the host at sortOrder 1', () => {
-    expect(nextParticipantSortOrder(1)).toBe(1)
-  })
-
-  it('continues after existing participants when host is already on the bill', () => {
-    expect(nextParticipantSortOrder(3)).toBe(3)
   })
 })
 

@@ -13,6 +13,7 @@ import { restaurantNameSchema } from '../shared/validation/fields'
 import { validateReceiptImportItems } from '../shared/receipt-import-schema'
 import { assertRateLimit } from './lib/rateLimit'
 import { touchBill } from './lib/touchBill'
+import { nextSortOrder } from '../shared/sort-order'
 import {
   assertOcrStartQuota,
   formatUsageMonthKey,
@@ -121,7 +122,7 @@ export const importScannedItems = mutation({
       .withIndex('by_billId', (q) => q.eq('billId', scan.billId))
       .collect()
 
-    let sortOrderOffset = existing.length
+    let sortOrderOffset = nextSortOrder(existing)
 
     if (args.mode === 'replace') {
       for (const item of existing) {

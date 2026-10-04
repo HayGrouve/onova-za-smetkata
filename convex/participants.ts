@@ -6,10 +6,8 @@ import { validateParticipantAdd } from '../shared/participant-schema'
 import { touchBill } from './lib/touchBill'
 import { deleteGuestSessionsForParticipant } from './guestSessions'
 import { cancelRequestsForParticipant } from './lib/paymentReservations'
-import {
-  nextParticipantSortOrder,
-  shouldClearHostParticipantId,
-} from '../shared/host-bill-participant'
+import { shouldClearHostParticipantId } from '../shared/host-bill-participant'
+import { nextSortOrder } from '../shared/sort-order'
 import type { Doc, Id } from './_generated/dataModel'
 import type { MutationCtx } from './_generated/server'
 
@@ -99,7 +97,7 @@ export const add = mutation({
     const id = await ctx.db.insert('participants', {
       billId: args.billId,
       name: validated.name,
-      sortOrder: nextParticipantSortOrder(existing.length),
+      sortOrder: nextSortOrder(existing),
     })
     await touchBill(ctx, args.billId)
     return id
