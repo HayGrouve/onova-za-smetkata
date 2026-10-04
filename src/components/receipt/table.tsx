@@ -122,13 +122,13 @@ export function SeatsRail({
                 </span>
               ) : brush ? (
                 <span className="block text-[10px] leading-tight font-bold text-stamp uppercase">
-                  четка
+                  избран
                 </span>
               ) : null}
             </span>
             {column && brush ? (
               <span className="rounded-full bg-primary px-2 py-0.5 font-display text-[10px] font-bold text-primary-foreground">
-                четка
+                избран
               </span>
             ) : null}
           </>
@@ -150,8 +150,8 @@ export function SeatsRail({
             aria-pressed={brush}
             aria-label={
               brush
-                ? `${seat.label} е четката. Докоснете, за да спрете`
-                : `Четка: ${seat.label}. ${presence}`
+                ? `Избран: ${seat.label}. Докоснете, за да спрете`
+                : `Изберете ${seat.label}. ${presence}`
             }
           >
             {inner}
