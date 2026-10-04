@@ -144,8 +144,8 @@ export function useBillHeaderMenuActions({
       setFinalizeOpen(false)
       toast.success('Сметката е приключена')
       await navigateToFinalBillSummary(navigate, billId)
-    } catch {
-      toast.error('Неуспешно завършване на сметката')
+    } catch (error) {
+      toast.error(getConvexErrorMessage(error))
     } finally {
       setIsFinalizing(false)
     }

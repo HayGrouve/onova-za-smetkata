@@ -3,7 +3,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { api } from './_generated/api'
 import { GUEST_FLOW_MESSAGES } from '../shared/guest-flow-messages'
 import { GUEST_SESSION_TTL_MS } from './lib/guestSession'
-import { joinAsGuest, seedBill, setupConvex } from './test.setup'
+import { COMBINED_PAYMENT_MESSAGES } from '../shared/combined-payment-messages'
+import {
+  hostTakesUnits,
+  joinAsGuest,
+  seedBill,
+  setupConvex,
+} from './test.setup'
 import type { SeededBill, TestConvex } from './test.setup'
 
 afterEach(() => {
@@ -68,6 +74,48 @@ describe('picking a seat', () => {
     await expect(joinAsGuest(t, oldLink, bill.seats['Ани'])).rejects.toThrow(
       GUEST_FLOW_MESSAGES.invalidShareLink,
     )
+  })
+
+  it('the Host seat is never a Guest’s to pick', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+
+    await expect(joinAsGuest(t, bill, bill.hostSeat)).rejects.toThrow(
+      GUEST_FLOW_MESSAGES.hostSeatNotJoinable,
+    )
+    expect(await activeSeats(t, bill)).toEqual([])
+  })
+
+  it('a phone needs a real session token', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    for (const sessionToken of ['', 'short', 'x'.repeat(10_000)]) {
+      await expect(
+        t.mutation(api.guestSessions.claim, {
+          billId: bill.billId,
+          shareToken: bill.shareToken,
+          participantId: bill.seats['Ани'],
+          sessionToken,
+        }),
+      ).rejects.toThrow(GUEST_FLOW_MESSAGES.sessionRequired)
+    }
+  })
+
+  it('rotating the share link signs every phone off at once', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+
+    await bill.host.mutation(api.bills.rotateShareToken, {
+      billId: bill.billId,
+    })
+
+    await expect(
+      t.mutation(api.assignments.takeUnit, {
+        itemIds: bill.itemIds,
+        ...ani,
+      }),
+    ).rejects.toThrow(GUEST_FLOW_MESSAGES.sessionExpired)
   })
 
   it('a seat from another bill cannot be picked through this link', async () => {
@@ -197,6 +245,87 @@ describe('Covered seats', () => {
   })
 })
 
+describe('coming back after the TTL', () => {
+  it('a phone back from Revolut still sees its sent transfer and cannot pay twice', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    await hostTakesUnits(bill, bill.itemIds[0], Object.values(bill.seats))
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+    const sent = await t.mutation(api.combinedPayments.createSolo, {
+      billId: bill.billId,
+      shareToken: bill.shareToken,
+      sessionToken: ani.sessionToken,
+    })
+
+    // Ани sits in the Revolut app long enough for the session to lapse, then
+    // comes back on the same tab — and once more from a fresh tab.
+    for (const sessionToken of [ani.sessionToken, 'session-new-phone-token']) {
+      vi.setSystemTime(Date.now() + GUEST_SESSION_TTL_MS + 1_000)
+      await t.mutation(api.guestSessions.claim, {
+        billId: bill.billId,
+        shareToken: bill.shareToken,
+        participantId: bill.seats['Ани'],
+        sessionToken,
+      })
+      const pending = await t.query(api.combinedPayments.getPendingForGuest, {
+        billId: bill.billId,
+        shareToken: bill.shareToken,
+        sessionToken,
+      })
+      expect(pending?._id).toBe(sent.requestId)
+      await expect(
+        t.mutation(api.combinedPayments.createSolo, {
+          billId: bill.billId,
+          shareToken: bill.shareToken,
+          sessionToken,
+        }),
+      ).rejects.toThrow(COMBINED_PAYMENT_MESSAGES.pendingExists)
+    }
+  })
+
+  it('an expired phone cannot send, change or cancel a pay request', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedBill(t, {
+      guests: ['Ани', 'Боби', 'Вики'],
+      items: [{ name: 'Бира', unitPriceCents: 300, quantity: 3 }],
+    })
+    await hostTakesUnits(bill, bill.itemIds[0], Object.values(bill.seats))
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+    const { requestId } = await t.mutation(api.combinedPayments.create, {
+      billId: bill.billId,
+      shareToken: bill.shareToken,
+      sessionToken: ani.sessionToken,
+      coveredParticipantIds: [bill.seats['Боби']],
+    })
+
+    vi.setSystemTime(Date.now() + GUEST_SESSION_TTL_MS + 1_000)
+    const asAni = {
+      billId: bill.billId,
+      sessionToken: ani.sessionToken,
+      requestId,
+    }
+    for (const attempt of [
+      t.mutation(api.combinedPayments.initiateTransfer, asAni),
+      t.mutation(api.combinedPayments.cancel, asAni),
+      t.mutation(api.combinedPayments.updateCovered, {
+        ...asAni,
+        coveredParticipantIds: [bill.seats['Вики']],
+      }),
+    ]) {
+      await expect(attempt).rejects.toThrow(GUEST_FLOW_MESSAGES.sessionExpired)
+    }
+    expect(await t.run((ctx) => ctx.db.get(requestId))).toMatchObject({
+      status: 'pending',
+      coveredParticipantIds: [bill.seats['Боби']],
+    })
+    expect(
+      (await t.run((ctx) => ctx.db.get(requestId)))?.transferInitiatedAt,
+    ).toBeUndefined()
+  })
+})
+
 describe('leaving the bill', () => {
   it('release frees the seats and cancels unsent pay requests, but keeps sent transfers', async () => {
     const t = setupConvex()
@@ -242,5 +371,26 @@ describe('leaving the bill', () => {
     expect(await status(sent.requestId)).toBe('pending')
     // Боби is free to pay for himself again.
     await expect(joinAsGuest(t, bill, bill.seats['Боби'])).resolves.toBeTruthy()
+  })
+
+  it('releasing with an unknown token leaves no trace', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const buckets = () =>
+      t.run(
+        async (ctx) =>
+          (await ctx.db.query('rateLimitBuckets').collect()).length,
+      )
+    const before = await buckets()
+
+    for (let index = 0; index < 5; index++) {
+      await t.mutation(api.guestSessions.release, {
+        billId: bill.billId,
+        shareToken: bill.shareToken,
+        sessionToken: `unknown-token-${index}-padding`,
+      })
+    }
+
+    expect(await buckets()).toBe(before)
   })
 })

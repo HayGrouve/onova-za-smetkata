@@ -20,6 +20,8 @@ import {
   usageCounterKey,
 } from './lib/hostTier'
 
+const OCR_SCANS_PER_HOST_PER_HOUR = 20
+
 const editedItemValidator = v.object({
   name: v.string(),
   unitPriceCents: v.number(),
@@ -40,6 +42,14 @@ export const startScan = mutation({
     const now = Date.now()
     await assertOcrStartQuota(ctx, owner, bill.ownerId, now)
     await assertRateLimit(ctx, `ocr:${args.billId}`, 10, 3_600_000)
+    // Per Host too: bills are free to create, so a per-bill cap alone does not
+    // bound Gemini spend while every Host has Pro limits.
+    await assertRateLimit(
+      ctx,
+      `ocr:user:${bill.ownerId}`,
+      OCR_SCANS_PER_HOST_PER_HOUR,
+      3_600_000,
+    )
     if (!bill.receiptStorageId) {
       throw new Error('Няма прикачена снимка на бележка за тази сметка')
     }

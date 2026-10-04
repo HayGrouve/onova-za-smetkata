@@ -5,6 +5,7 @@ import { requireAuth, requireBillOwner } from './lib/auth'
 import { validateParticipantAdd } from '../shared/participant-schema'
 import { touchBill } from './lib/touchBill'
 import { deleteGuestSessionsForParticipant } from './guestSessions'
+import { cancelRequestsForParticipant } from './lib/paymentReservations'
 import {
   nextParticipantSortOrder,
   shouldClearHostParticipantId,
@@ -33,6 +34,7 @@ async function deleteParticipantWithRelations(
     await ctx.db.delete(p._id)
   }
 
+  await cancelRequestsForParticipant(ctx, bill._id, participantId)
   await deleteGuestSessionsForParticipant(ctx, bill._id, participantId)
   await ctx.db.delete(participantId)
 

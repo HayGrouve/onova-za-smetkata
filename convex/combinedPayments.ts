@@ -252,6 +252,11 @@ export const updateCovered = mutation({
     if (!session || session.billId !== args.billId) {
       throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
     }
+    await requireGuestSession(ctx, {
+      billId: args.billId,
+      participantId: session.participantId,
+      sessionToken: args.sessionToken,
+    })
 
     const bill = await ctx.db.get(args.billId)
     if (!bill) {
@@ -396,6 +401,11 @@ export const initiateTransfer = mutation({
     if (!session || session.billId !== args.billId) {
       throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
     }
+    await requireGuestSession(ctx, {
+      billId: args.billId,
+      participantId: session.participantId,
+      sessionToken: args.sessionToken,
+    })
 
     const bill = await ctx.db.get(args.billId)
     if (!bill) {
@@ -437,6 +447,11 @@ export const cancel = mutation({
     if (!session || session.billId !== args.billId) {
       throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
     }
+    await requireGuestSession(ctx, {
+      billId: args.billId,
+      participantId: session.participantId,
+      sessionToken: args.sessionToken,
+    })
 
     const bill = await ctx.db.get(args.billId)
     if (!bill) {

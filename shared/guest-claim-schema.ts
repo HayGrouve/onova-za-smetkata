@@ -1,4 +1,5 @@
 import { deviceIdSchema } from './validation/fields'
+import { SESSION_TOKEN_MAX, SESSION_TOKEN_MIN } from './validation/constants'
 
 export type GuestClaimInput = {
   deviceId?: string
@@ -23,4 +24,13 @@ export function buildClaimActorKey(
 ): string {
   if (deviceId) return `device:${deviceId}`
   return `token:${sessionToken.slice(0, 36)}`
+}
+
+/** A phone's session token: a client-made UUID, never empty or unbounded. */
+export function isValidSessionToken(sessionToken: string): boolean {
+  return (
+    sessionToken.length >= SESSION_TOKEN_MIN &&
+    sessionToken.length <= SESSION_TOKEN_MAX &&
+    sessionToken.trim() === sessionToken
+  )
 }

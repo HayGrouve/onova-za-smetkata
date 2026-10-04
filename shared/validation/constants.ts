@@ -8,6 +8,9 @@ export const QUANTITY_MAX = 999
 export const EUR_CENTS_MAX = 999_900
 export const BILL_PARTICIPANTS_MAX = 50
 export const DEVICE_ID_MAX = 64
+/** Guest session tokens are client-made UUIDs (36 chars). */
+export const SESSION_TOKEN_MIN = 16
+export const SESSION_TOKEN_MAX = 128
 export const FRIEND_GROUP_MAX_MEMBERS = 20
 
 export const BILL_DATE_MIN_MS = Date.UTC(2000, 0, 1)

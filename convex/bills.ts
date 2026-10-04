@@ -28,6 +28,10 @@ import {
   shouldDeleteReplacedReceiptStorage,
 } from './lib/receiptStorage'
 import { deleteGuestSessionsForBill } from './guestSessions'
+import {
+  deleteRequestsForBill,
+  settleRequestsForFinalize,
+} from './lib/paymentReservations'
 import { isGuestSessionActive } from './lib/guestSession'
 import { assertShareToken, toGuestVisibleBill } from './lib/guestAccess'
 import { firstZodIssueMessage } from '../shared/validation/errors'
@@ -36,15 +40,9 @@ import { createShareToken } from './lib/shareToken'
 import { sessionSeatIds } from '../shared/guest-seat-selection'
 import { calculateBillTotals } from '../shared/bill-calculations'
 import { toBillCalculationSnapshot } from '../shared/bill-calculation-snapshot'
-import { planHostParticipantOnBillCreate } from '../shared/host-bill-participant'
 import { touchBill } from './lib/touchBill'
 import { clearGuidedBillReference } from './lib/hostOnboardingBillHooks'
-import {
-  assertBillCreateQuota,
-  formatUsageMonthKey,
-  incrementUsageCount,
-  usageCounterKey,
-} from './lib/hostTier'
+import { createBillForOwner } from './lib/createBill'
 
 export const list = query({
   args: {},
@@ -208,41 +206,7 @@ export const create = mutation({
     if (!owner) {
       throw new ConvexError('Потребителят не е намерен.')
     }
-
-    const now = Date.now()
-    await assertBillCreateQuota(ctx, owner, ownerId, now)
-
-    const billId = await ctx.db.insert('bills', {
-      ownerId,
-      restaurantName: '',
-      date: now,
-      status: 'draft',
-      shareToken: createShareToken(),
-      listBillTotalCents: 0,
-      listParticipantNames: [],
-      createdAt: now,
-      updatedAt: now,
-    })
-
-    const hostPlan = planHostParticipantOnBillCreate({
-      authName: owner.name,
-    })
-    const hostParticipantId = await ctx.db.insert('participants', {
-      billId,
-      name: hostPlan.name,
-      sortOrder: hostPlan.sortOrder,
-    })
-    await ctx.db.patch(billId, { hostParticipantId })
-    await touchBill(ctx, billId)
-
-    const monthKey = formatUsageMonthKey(now)
-    await incrementUsageCount(
-      ctx,
-      usageCounterKey(ownerId, 'bills', monthKey),
-      now,
-    )
-
-    return billId
+    return await createBillForOwner(ctx, owner)
   },
 })
 
@@ -325,6 +289,7 @@ export const finalize = mutation({
       restaurantName: bill.restaurantName,
       ...calculationInput,
     })
+    await settleRequestsForFinalize(ctx, args.billId)
 
     await ctx.db.patch(args.billId, {
       status: 'final',
@@ -345,6 +310,8 @@ export const rotateShareToken = mutation({
       shareToken,
       updatedAt: Date.now(),
     })
+    // The old link is revoked now, not when the phones' heartbeats lapse.
+    await deleteGuestSessionsForBill(ctx, args.billId)
     return { shareToken }
   },
 })
@@ -358,6 +325,7 @@ export const remove = mutation({
 
     await deleteReceiptScansForBill(ctx, args.billId)
     await deleteGuestSessionsForBill(ctx, args.billId)
+    await deleteRequestsForBill(ctx, args.billId)
 
     const { participants, items, payments } = await loadBillRelations(
       ctx,

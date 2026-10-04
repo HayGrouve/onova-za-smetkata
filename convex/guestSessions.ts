@@ -4,6 +4,7 @@ import type { Doc, Id } from './_generated/dataModel'
 import type { MutationCtx } from './_generated/server'
 import {
   buildClaimActorKey,
+  isValidSessionToken,
   parseGuestClaimInput,
 } from '../shared/guest-claim-schema'
 import { GUEST_FLOW_MESSAGES } from '../shared/guest-flow-messages'
@@ -14,7 +15,10 @@ import {
 import { assertBillDraft } from './lib/assertBillDraft'
 import { GUEST_SESSION_TTL_MS, isGuestSessionActive } from './lib/guestSession'
 import { requireGuestSession } from './lib/requireGuestSession'
-import { cancelReservationsForSession } from './lib/paymentReservations'
+import {
+  adoptSeatRequests,
+  cancelReservationsForSession,
+} from './lib/paymentReservations'
 import { assertRateLimit } from './lib/rateLimit'
 import { assertShareToken } from './lib/guestAccess'
 
@@ -29,6 +33,7 @@ async function purgeExpiredSessionsForBill(
     .collect()
   for (const session of sessions) {
     if (!isGuestSessionActive(session.lastSeenAt, now)) {
+      await cancelReservationsForSession(ctx, session._id)
       await ctx.db.delete(session._id)
     }
   }
@@ -153,6 +158,9 @@ export const claim = mutation({
   },
   handler: async (ctx, args) => {
     const bill = await assertShareToken(ctx, args.billId, args.shareToken)
+    if (!isValidSessionToken(args.sessionToken)) {
+      throw new ConvexError(GUEST_FLOW_MESSAGES.sessionRequired)
+    }
 
     const parsedDevice = parseGuestClaimInput({ deviceId: args.deviceId })
     if (!parsedDevice.ok) {
@@ -168,6 +176,9 @@ export const claim = mutation({
 
     const now = Date.now()
     await assertParticipantOnBill(ctx, args.billId, args.participantId)
+    if (args.participantId === bill.hostParticipantId) {
+      throw new ConvexError(GUEST_FLOW_MESSAGES.hostSeatNotJoinable)
+    }
     await purgeExpiredSessionsForBill(ctx, args.billId, now)
 
     const sessions = (
@@ -213,10 +224,11 @@ export const claim = mutation({
       )
       .first()
     if (existingTokenSession) {
+      await cancelReservationsForSession(ctx, existingTokenSession._id)
       await ctx.db.delete(existingTokenSession._id)
     }
 
-    await ctx.db.insert('guestSessions', {
+    const sessionId = await ctx.db.insert('guestSessions', {
       billId: args.billId,
       participantId: args.participantId,
       ...(coveredParticipantIds && coveredParticipantIds.length > 0
@@ -225,6 +237,11 @@ export const claim = mutation({
       sessionToken: args.sessionToken,
       lastSeenAt: now,
       createdAt: now,
+    })
+    await adoptSeatRequests(ctx, {
+      billId: args.billId,
+      participantId: args.participantId,
+      sessionId,
     })
     return { ok: true as const }
   },
@@ -324,7 +341,6 @@ export const release = mutation({
   },
   handler: async (ctx, args) => {
     await assertShareToken(ctx, args.billId, args.shareToken)
-    await assertRateLimit(ctx, `release:${args.sessionToken}`, 20, 60_000)
     const session = await ctx.db
       .query('guestSessions')
       .withIndex('by_sessionToken', (q) =>
@@ -332,12 +348,15 @@ export const release = mutation({
       )
       .first()
     if (session && session.billId === args.billId) {
+      // Rate-limit only real sessions: unknown tokens must not grow buckets.
+      await assertRateLimit(ctx, `release:${args.sessionToken}`, 20, 60_000)
       await cancelReservationsForSession(ctx, session._id)
       await ctx.db.delete(session._id)
     }
   },
 })
 
+/** Sign every phone off the bill; their unsent pay requests go with them. */
 export async function deleteGuestSessionsForBill(
   ctx: MutationCtx,
   billId: Id<'bills'>,
@@ -347,6 +366,7 @@ export async function deleteGuestSessionsForBill(
     .withIndex('by_billId', (q) => q.eq('billId', billId))
     .collect()
   for (const session of sessions) {
+    await cancelReservationsForSession(ctx, session._id)
     await ctx.db.delete(session._id)
   }
 }

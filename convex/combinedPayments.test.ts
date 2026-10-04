@@ -177,6 +177,48 @@ describe('paying for others', () => {
   })
 })
 
+describe('when a seat leaves the bill', () => {
+  it('removing a Participant cancels requests that pay for or cover them', async () => {
+    const t = setupConvex()
+    const bill = await seedClaimedBill(t)
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+    const vicky = await joinAsGuest(t, bill, bill.seats['Вики'])
+    const covering = await t.mutation(api.combinedPayments.create, {
+      billId: bill.billId,
+      shareToken: bill.shareToken,
+      sessionToken: ani.sessionToken,
+      coveredParticipantIds: [bill.seats['Боби']],
+    })
+    await t.mutation(api.combinedPayments.initiateTransfer, {
+      billId: bill.billId,
+      sessionToken: ani.sessionToken,
+      requestId: covering.requestId,
+    })
+    const own = await t.mutation(api.combinedPayments.createSolo, {
+      billId: bill.billId,
+      shareToken: bill.shareToken,
+      sessionToken: vicky.sessionToken,
+    })
+
+    for (const name of ['Боби', 'Вики']) {
+      await bill.host.mutation(api.participants.remove, {
+        participantId: bill.seats[name],
+      })
+    }
+
+    for (const { requestId } of [covering, own]) {
+      expect(await t.run((ctx) => ctx.db.get(requestId))).toMatchObject({
+        status: 'cancelled',
+      })
+    }
+    expect(
+      await bill.host.query(api.combinedPayments.listPendingForBill, {
+        billId: bill.billId,
+      }),
+    ).toEqual([])
+  })
+})
+
 describe('who may act on a pay request', () => {
   it('another phone cannot send or cancel someone else’s request', async () => {
     const t = setupConvex()

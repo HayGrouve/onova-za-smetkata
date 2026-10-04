@@ -9,6 +9,7 @@ export const GUEST_FLOW_MESSAGES = {
   nameTaken: 'Това име вече е заето от друг телефон.',
   sessionExpired: 'Сесията изтече. Изберете името си отново.',
   sessionRequired: 'Изисква се валидна гост-сесия.',
+  hostSeatNotJoinable: 'Това място е на домакина. Изберете своето име.',
   billFinalNoEdit: 'Сметката е приключена и не може да се редактира.',
   sessionLostRedirect: 'Сесията изтече или името е заето. Изберете отново.',
   invalidJoinLink:
