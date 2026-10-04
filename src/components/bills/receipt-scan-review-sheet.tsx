@@ -33,6 +33,7 @@ import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
 import type { GuidanceFocusHandle } from '#/lib/guidance-focus/use-guidance-focus.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
+import { focusContentInsteadOfField } from '#/lib/dialog-focus.ts'
 
 export interface ReceiptScanReviewSheetProps {
   open: boolean
@@ -223,7 +224,7 @@ export function ReceiptScanReviewSheet({
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        onOpenAutoFocus={(event) => event.preventDefault()}
+        onOpenAutoFocus={focusContentInsteadOfField}
         className="mx-auto flex max-h-[85dvh] w-full max-w-lg flex-col gap-0 overflow-hidden rounded-t-xl border-t bg-background p-0 pb-[env(safe-area-inset-bottom)] shadow-lg"
       >
         <SheetClose className="absolute top-4 right-4 z-10 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:pointer-events-none">

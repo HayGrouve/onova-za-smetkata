@@ -24,7 +24,7 @@ import { ICON } from '#/lib/app-icons.ts'
 
 import { SentryInit } from '../components/sentry-init.tsx'
 import { ServiceWorkerRegister } from '../components/service-worker-register.tsx'
-import { SITE_NAME } from '#/lib/site-meta.ts'
+import { SITE_NAME, titleMeta } from '#/lib/site-meta.ts'
 import appCss from '../styles.css?url'
 
 function RootError({ error }: ErrorComponentProps) {
@@ -55,8 +55,8 @@ function RootError({ error }: ErrorComponentProps) {
 
 export const Route = createRootRoute({
   head: () => ({
-    title: SITE_NAME,
     meta: [
+      titleMeta(SITE_NAME),
       {
         charSet: 'utf-8',
       },

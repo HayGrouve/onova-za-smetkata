@@ -86,8 +86,8 @@ export function TipField({
 
   function handleCustomChange(next: string) {
     setSelectedPercent(null)
+    // onValueChange validates and sets or clears the error itself.
     onValueChange(next)
-    onClearError?.()
     const parsed = parseTipInputToCents(next)
     if (parsed.ok) {
       writeTipPreference({ mode: 'custom', customCents: parsed.cents })

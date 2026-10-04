@@ -81,8 +81,9 @@ export const quantityInputSchema = z
   .transform((value) => {
     if (typeof value === 'number') return value
     const trimmed = value.trim()
-    if (!trimmed) return Number.NaN
-    return Number.parseInt(trimmed, 10)
+    // Digits only: parseInt would read `2.5` as 2 and `3abc` as 3.
+    if (!/^\d+$/.test(trimmed)) return Number.NaN
+    return Number(trimmed)
   })
   .refine(
     (value) => Number.isInteger(value) && value >= 1,

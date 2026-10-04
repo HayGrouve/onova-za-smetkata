@@ -320,10 +320,10 @@ export function ParticipantList({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="border-dashed"
+                        className="max-w-full border-dashed"
                         onClick={() => void handleAdd(recentName)}
                       >
-                        + {recentName}
+                        <span className="truncate">+ {recentName}</span>
                       </Button>
                     ))}
                   </div>

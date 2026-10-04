@@ -23,6 +23,7 @@ import {
   parsePaymentSettingsInput,
 } from '../../../shared/payment-settings-schema.ts'
 import { api } from '../../../convex/_generated/api'
+import { focusContentInsteadOfField } from '#/lib/dialog-focus.ts'
 
 export interface PaymentSettingsSheetProps {
   open: boolean
@@ -100,7 +101,7 @@ export function PaymentSettingsSheet({
       <SheetContent
         side="bottom"
         className="mx-auto max-w-lg rounded-t-xl"
-        onOpenAutoFocus={(event) => event.preventDefault()}
+        onOpenAutoFocus={focusContentInsteadOfField}
       >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">

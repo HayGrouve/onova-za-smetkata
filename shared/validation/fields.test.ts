@@ -81,6 +81,12 @@ describe('quantityInputSchema', () => {
   it('rejects zero quantity', () => {
     expect(quantityInputSchema.safeParse('0').success).toBe(false)
   })
+
+  it('rejects text it would otherwise read only in part', () => {
+    for (const input of ['2.5', '2,5', '3abc', '1e2', '0x3']) {
+      expect(quantityInputSchema.safeParse(input).success).toBe(false)
+    }
+  })
 })
 
 describe('cents schemas', () => {

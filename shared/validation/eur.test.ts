@@ -11,6 +11,35 @@ describe('parseEurInputStrict', () => {
     expect(parseEurInputStrict('12.50')).toEqual({ ok: true, cents: 1250 })
   })
 
+  it('accepts spaces that group thousands', () => {
+    expect(parseEurInputStrict('1 234,50')).toEqual({ ok: true, cents: 123450 })
+    expect(parseEurInputStrict('1\u00a0234')).toEqual({
+      ok: true,
+      cents: 123400,
+    })
+    expect(parseEurInputStrict('4,5')).toEqual({ ok: true, cents: 450 })
+  })
+
+  it('rejects input it would otherwise read only in part', () => {
+    // parseFloat stops at the first stray character: 12 345,67 became 12,00 €.
+    for (const input of [
+      '12 345,67',
+      '1.234,50',
+      '1,234.50',
+      '1e3',
+      '12abc',
+      '1,2,3',
+      '12 3',
+      '0x10',
+      '4,567',
+    ]) {
+      expect(parseEurInputStrict(input)).toEqual({
+        ok: false,
+        message: 'Невалидна сума.',
+      })
+    }
+  })
+
   it('rejects empty input', () => {
     expect(parseEurInputStrict('')).toEqual({
       ok: false,

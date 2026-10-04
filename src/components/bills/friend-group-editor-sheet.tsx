@@ -27,6 +27,7 @@ import {
 } from '../../../shared/friend-group-schema.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
+import { focusContentInsteadOfField } from '#/lib/dialog-focus.ts'
 
 const EMPTY_MEMBER_NAMES: string[] = []
 
@@ -199,7 +200,7 @@ export function FriendGroupEditorSheet({
       <SheetContent
         side="bottom"
         className="mx-auto max-w-lg rounded-t-xl"
-        onOpenAutoFocus={(event) => event.preventDefault()}
+        onOpenAutoFocus={focusContentInsteadOfField}
       >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">

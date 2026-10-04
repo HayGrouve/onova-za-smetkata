@@ -10,6 +10,7 @@ import {
 import { HostProPlanPicker } from '#/components/subscription/host-pro-plan-picker.tsx'
 import { useHostProStatus } from '#/hooks/use-host-pro.ts'
 import { ICON } from '#/lib/app-icons.ts'
+import { focusContentInsteadOfField } from '#/lib/dialog-focus.ts'
 
 export interface QuotaPaywallSheetProps {
   open: boolean
@@ -30,7 +31,7 @@ export function QuotaPaywallSheet({
       <SheetContent
         side="bottom"
         className="mx-auto max-w-lg rounded-t-xl"
-        onOpenAutoFocus={(event) => event.preventDefault()}
+        onOpenAutoFocus={focusContentInsteadOfField}
       >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
