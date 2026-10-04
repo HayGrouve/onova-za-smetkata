@@ -203,7 +203,7 @@ function CollectionOverview({ actions }: { actions: ReactNode }) {
     overview?.openBills.some((bill) => bill.nextAction !== 'finish') ?? false
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:gap-16">
+    <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:gap-16">
       <div className="flex flex-col gap-8">
         {overview === undefined ? (
           <div className="space-y-3" aria-busy>
@@ -233,7 +233,7 @@ function CollectionOverview({ actions }: { actions: ReactNode }) {
       </div>
       <div className="flex flex-col gap-10">
         {overview === undefined ? (
-          <div className="grid gap-4 sm:grid-cols-2" aria-busy>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2" aria-busy>
             <Skeleton className="h-40 w-full" />
             <Skeleton className="h-40 w-full" />
           </div>

@@ -220,13 +220,22 @@ export function TransientTicker({
       )}
       aria-live="polite"
     >
-      <AnimatePresence>
+      {/* One pill at a time: when claims come in quick succession the old
+          pill clears out fast instead of piling up beside the new one. */}
+      <AnimatePresence mode="wait" custom={visible}>
         {visible ? (
           <motion.div
             key={latest.id}
+            custom={visible}
             initial={{ y: -12, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.4 } }}
+            exit="exit"
+            variants={{
+              exit: (replaced: boolean) => ({
+                opacity: 0,
+                transition: { duration: replaced ? 0.1 : 0.4 },
+              }),
+            }}
             transition={{ type: 'spring', stiffness: 320, damping: 28 }}
             className="flex max-w-full items-center gap-2 rounded-full bg-ink py-1 pr-3 pl-1 text-[11px] text-paper shadow-[0_10px_24px_-10px_var(--paper-shadow)]"
           >

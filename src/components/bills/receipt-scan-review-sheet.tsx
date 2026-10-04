@@ -392,7 +392,7 @@ export function ReceiptScanReviewSheet({
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 flex-1"
+                className="h-11"
                 onClick={() => void handleCancel()}
                 disabled={isSubmitting}
               >
@@ -402,7 +402,7 @@ export function ReceiptScanReviewSheet({
                 <GuidanceTarget
                   stepId="scan-review"
                   focus={scanReviewGuidance}
-                  className="flex-1"
+                  className="min-w-0 flex-1"
                 >
                   <Button
                     type="button"
@@ -416,13 +416,13 @@ export function ReceiptScanReviewSheet({
                         restaurantValidation.ok === false)
                     }
                   >
-                    Импортирай избраните ({checkedCount})
+                    Импортирай ({checkedCount})
                   </Button>
                 </GuidanceTarget>
               ) : (
                 <Button
                   type="button"
-                  className="h-11 flex-1"
+                  className="h-11 min-w-0 flex-1"
                   onClick={() => void handleImport()}
                   disabled={
                     isSubmitting ||
@@ -431,7 +431,7 @@ export function ReceiptScanReviewSheet({
                     (updateRestaurantName && restaurantValidation.ok === false)
                   }
                 >
-                  Импортирай избраните ({checkedCount})
+                  Импортирай ({checkedCount})
                 </Button>
               )}
             </div>
