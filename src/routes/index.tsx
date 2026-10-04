@@ -4,7 +4,7 @@ import { ReceiptLoading } from '#/components/receipt/receipt-states.tsx'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
-import { PlusIcon } from 'lucide-react'
+import { Loader2Icon, PlusIcon } from 'lucide-react'
 import {
   PaymentSettingsOpenButton,
   usePaymentSettingsStatus,
@@ -20,13 +20,21 @@ import { Skeleton } from '#/components/ui/skeleton.tsx'
 import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
 import { useSubscriptionPaywall } from '#/components/subscription/subscription-provider.tsx'
 import { PwaInstallBanner } from '#/components/pwa-install-banner.tsx'
+import { ICON } from '#/lib/app-icons.ts'
 import { buildHomeHead } from '#/lib/site-meta.ts'
+import { cn } from '#/lib/utils.ts'
 import { useHostOnboarding } from '#/components/host-onboarding/host-onboarding-provider.tsx'
 import { HOST_ONBOARDING_HOME } from '../../shared/host-onboarding-messages.ts'
 import { api } from '../../convex/_generated/api'
 
 export const Route = createFileRoute('/')({
   head: () => buildHomeHead(),
+  validateSearch: (search: Record<string, unknown>): { q?: string } => ({
+    q:
+      typeof search.q === 'string' && search.q.trim()
+        ? search.q.trim()
+        : undefined,
+  }),
   component: Home,
 })
 
@@ -137,6 +145,13 @@ function Home() {
   const showResumeGuidedBill =
     onboarding?.lifecycle === 'active' && resumeGuidedBillId !== undefined
 
+  const creatingSpinner = (
+    <Loader2Icon
+      className={cn(ICON.button, 'animate-spin motion-reduce:animate-none')}
+      aria-hidden
+    />
+  )
+
   const actions = (
     <div className="flex flex-col gap-2 sm:max-w-[360px]">
       <PwaInstallBanner />
@@ -155,6 +170,7 @@ function Home() {
           disabled={isCreating}
           onClick={() => void handleStartAnotherGuidedBill()}
         >
+          {isCreating ? creatingSpinner : null}
           {HOST_ONBOARDING_HOME.startNewGuidedBill}
         </Button>
       ) : null}
@@ -173,7 +189,12 @@ function Home() {
         onClick={handleCreateBill}
         disabled={isCreating}
       >
-        <PlusIcon strokeWidth={2} /> Нова сметка
+        {isCreating ? (
+          creatingSpinner
+        ) : (
+          <PlusIcon strokeWidth={2} aria-hidden />
+        )}
+        Нова сметка
       </Button>
     </div>
   )

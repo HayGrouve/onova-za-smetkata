@@ -240,7 +240,7 @@ export function TransientTicker({
             className="flex max-w-full items-center gap-2 rounded-full bg-ink py-1 pr-3 pl-1 text-[11px] text-paper shadow-[0_10px_24px_-10px_var(--paper-shadow)]"
           >
             {seat ? <SeatAvatar seat={seat} size="xs" /> : null}
-            <span className="truncate">{latest.text}</span>
+            <span className="min-w-0 truncate">{latest.text}</span>
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -286,7 +286,7 @@ export function ActivityFeed({
                   {seat ? (
                     <SeatAvatar seat={seat} size="xs" className="mt-px" />
                   ) : (
-                    <span className="size-[22px] shrink-0" />
+                    <span className="size-[22px] shrink-0" aria-hidden />
                   )}
                   <span className="min-w-0 flex-1">{event.text}</span>
                   <span className="shrink-0 text-[11px] text-on-table-muted">

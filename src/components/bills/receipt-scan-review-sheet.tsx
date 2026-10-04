@@ -1,7 +1,8 @@
 import { useMutation, useQuery } from 'convex/react'
-import { XIcon } from 'lucide-react'
+import { Loader2Icon, XIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { Checkbox } from '#/components/ui/checkbox.tsx'
@@ -15,6 +16,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from '#/components/ui/sheet.tsx'
+import { ICON } from '#/lib/app-icons.ts'
+import { getScanDismissCopy } from '#/lib/destructive-action-copy.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { validateBillMetadataField } from '../../../shared/bill-metadata-schema.ts'
 import {
@@ -65,6 +68,7 @@ export function ReceiptScanReviewSheet({
   const scan = useQuery(api.receiptScan.getLatestScan, { billId })
   const importScannedItems = useMutation(api.receiptScan.importScannedItems)
   const dismissScan = useMutation(api.receiptScan.dismissScan)
+  const { confirm } = useConfirmAction()
 
   const [rows, setRows] = useState<ReviewRow[]>([])
   const [restaurantName, setRestaurantName] = useState('')
@@ -150,6 +154,8 @@ export function ReceiptScanReviewSheet({
   }
 
   async function handleCancel() {
+    // Dismissing deletes the scan; nothing to lose when nothing was read.
+    if (rows.length > 0 && !(await confirm(getScanDismissCopy()))) return
     await dismissScan({ scanId })
     onOpenChange(false)
   }
@@ -200,16 +206,28 @@ export function ReceiptScanReviewSheet({
     }
   }
 
+  const importLabel = isSubmitting ? (
+    <>
+      <Loader2Icon
+        className={cn(ICON.button, 'animate-spin motion-reduce:animate-none')}
+        aria-hidden
+      />
+      <span className="truncate">Импортиране…</span>
+    </>
+  ) : (
+    <span className="truncate">Импортирай ({checkedCount})</span>
+  )
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
         showCloseButton={false}
         onOpenAutoFocus={(event) => event.preventDefault()}
-        className="mx-auto flex max-h-[85vh] w-full max-w-lg flex-col gap-0 overflow-hidden rounded-t-xl border-t bg-background p-0 pb-[env(safe-area-inset-bottom)] shadow-lg"
+        className="mx-auto flex max-h-[85dvh] w-full max-w-lg flex-col gap-0 overflow-hidden rounded-t-xl border-t bg-background p-0 pb-[env(safe-area-inset-bottom)] shadow-lg"
       >
-        <SheetClose className="absolute top-4 right-4 z-10 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
-          <XIcon className="size-4" />
+        <SheetClose className="absolute top-4 right-4 z-10 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:pointer-events-none">
+          <XIcon className="size-4" aria-hidden />
           <span className="sr-only">Затвори</span>
         </SheetClose>
 
@@ -221,13 +239,13 @@ export function ReceiptScanReviewSheet({
 
         <div
           className={cn(
-            'flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4',
+            'flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 pb-4',
             scanReady === undefined && 'min-h-[40vh]',
           )}
         >
           {scanReady === undefined && (
             <div className="flex flex-1 items-center justify-center py-10">
-              <p className="text-sm text-muted-foreground">Зареждане...</p>
+              <p className="text-sm text-muted-foreground">Зареждане…</p>
             </div>
           )}
 
@@ -236,13 +254,23 @@ export function ReceiptScanReviewSheet({
               <Label htmlFor="scan-restaurant-name">Ресторант</Label>
               <Input
                 id="scan-restaurant-name"
+                name="restaurantName"
+                autoComplete="off"
                 value={restaurantName}
                 onChange={(e) => setRestaurantName(e.target.value)}
                 className="h-11"
                 aria-invalid={Boolean(restaurantError)}
+                aria-describedby={
+                  restaurantError ? 'scan-restaurant-name-error' : undefined
+                }
               />
               {restaurantError ? (
-                <p className="text-xs text-destructive">{restaurantError}</p>
+                <p
+                  id="scan-restaurant-name-error"
+                  className="text-xs text-destructive"
+                >
+                  {restaurantError}
+                </p>
               ) : null}
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox
@@ -281,6 +309,8 @@ export function ReceiptScanReviewSheet({
           {rows.map((row, index) => {
             const hasRowErrors = index in rowErrors
             const errors = hasRowErrors ? rowErrors[index] : undefined
+            const errorId = (field: string) =>
+              `scan-row-${index}-${field}-error`
             return (
               <div
                 key={index}
@@ -307,22 +337,33 @@ export function ReceiptScanReviewSheet({
                       onChange={(e) =>
                         updateRow(index, { name: e.target.value })
                       }
+                      name={`items.${index}.name`}
+                      autoComplete="off"
                       placeholder="Наименование"
                       aria-label={`Наименование, ред ${index + 1}`}
                       className="h-10 flex-1"
                       aria-invalid={Boolean(errors?.name)}
+                      aria-describedby={
+                        errors?.name ? errorId('name') : undefined
+                      }
                     />
                     {row.confidence === 'low' && (
                       <Badge
                         variant="outline"
                         className="border-accent-foreground/50 text-accent-foreground"
                       >
-                        ?
+                        <span aria-hidden>?</span>
+                        <span className="sr-only">Несигурно разпознаване</span>
                       </Badge>
                     )}
                   </div>
                   {errors?.name ? (
-                    <p className="text-xs text-destructive">{errors.name}</p>
+                    <p
+                      id={errorId('name')}
+                      className="text-xs text-destructive"
+                    >
+                      {errors.name}
+                    </p>
                   ) : null}
                   <div className="flex items-center gap-2">
                     <Input
@@ -330,30 +371,50 @@ export function ReceiptScanReviewSheet({
                       onChange={(e) =>
                         updateRow(index, { priceInput: e.target.value })
                       }
+                      name={`items.${index}.price`}
+                      autoComplete="off"
                       inputMode="decimal"
-                      placeholder="Цена (€)"
+                      placeholder="12,50…"
                       aria-label={`Цена (€), ред ${index + 1}`}
                       className="h-10 flex-1"
                       aria-invalid={Boolean(errors?.price)}
+                      aria-describedby={
+                        errors?.price ? errorId('price') : undefined
+                      }
                     />
-                    <span className="text-muted-foreground">×</span>
+                    <span className="text-muted-foreground" aria-hidden>
+                      ×
+                    </span>
                     <Input
                       value={row.quantity}
                       onChange={(e) =>
                         updateRow(index, { quantity: e.target.value })
                       }
+                      name={`items.${index}.quantity`}
+                      autoComplete="off"
                       inputMode="numeric"
-                      placeholder="Бр."
+                      placeholder="1…"
                       aria-label={`Бройки, ред ${index + 1}`}
                       className="h-10 w-16"
                       aria-invalid={Boolean(errors?.quantity)}
+                      aria-describedby={
+                        errors?.quantity ? errorId('quantity') : undefined
+                      }
                     />
                   </div>
                   {errors?.price ? (
-                    <p className="text-xs text-destructive">{errors.price}</p>
+                    <p
+                      id={errorId('price')}
+                      className="text-xs text-destructive"
+                    >
+                      {errors.price}
+                    </p>
                   ) : null}
                   {errors?.quantity ? (
-                    <p className="text-xs text-destructive">
+                    <p
+                      id={errorId('quantity')}
+                      className="text-xs text-destructive"
+                    >
                       {errors.quantity}
                     </p>
                   ) : null}
@@ -416,7 +477,7 @@ export function ReceiptScanReviewSheet({
                         restaurantValidation.ok === false)
                     }
                   >
-                    Импортирай ({checkedCount})
+                    {importLabel}
                   </Button>
                 </GuidanceTarget>
               ) : (
@@ -431,7 +492,7 @@ export function ReceiptScanReviewSheet({
                     (updateRestaurantName && restaurantValidation.ok === false)
                   }
                 >
-                  Импортирай ({checkedCount})
+                  {importLabel}
                 </Button>
               )}
             </div>
