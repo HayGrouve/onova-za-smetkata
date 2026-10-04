@@ -124,7 +124,9 @@ export default defineSchema({
     key: v.string(),
     windowStart: v.number(),
     count: v.number(),
-  }).index('by_key', ['key']),
+  })
+    .index('by_key', ['key'])
+    .index('by_windowStart', ['windowStart']),
 
   guestSessions: defineTable({
     billId: v.id('bills'),
@@ -137,7 +139,8 @@ export default defineSchema({
   })
     .index('by_billId', ['billId'])
     .index('by_sessionToken', ['sessionToken'])
-    .index('by_participantId', ['participantId']),
+    .index('by_participantId', ['participantId'])
+    .index('by_lastSeenAt', ['lastSeenAt']),
 
   payments: defineTable({
     billId: v.id('bills'),
@@ -203,7 +206,9 @@ export default defineSchema({
     totalsMismatch: v.optional(v.boolean()),
     errorMessage: v.optional(v.string()),
     createdAt: v.number(),
-  }).index('by_billId', ['billId']),
+  })
+    .index('by_billId', ['billId'])
+    .index('by_createdAt', ['createdAt']),
 
   hostOnboarding: defineTable({
     userId: v.id('users'),
