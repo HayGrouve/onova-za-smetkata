@@ -45,7 +45,7 @@ export function OpenBillsList({ bills, truncated }: OpenBillsListProps) {
       <h2 id="home-open-title" className="text-[15px] font-bold">
         На масата
       </h2>
-      <ul className="grid gap-5 sm:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         {sorted.map((bill, index) => (
           <li key={bill.billId} className="list-none">
             <OpenBillStub bill={bill} tilt={index % 2 === 0 ? -0.7 : 0.6} />
