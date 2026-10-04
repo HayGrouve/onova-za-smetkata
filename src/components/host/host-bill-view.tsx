@@ -570,7 +570,7 @@ function HostBillTable({
                               })
                         : undefined
                     }
-                    label={brushable ? 'Изберете четка' : 'Хората на масата'}
+                    label={brushable ? 'Изберете човек' : 'Хората на масата'}
                   />
                 </div>
               ) : null}
@@ -752,7 +752,7 @@ function TableColumn({
       <h2 className="text-[14px] font-bold">Масата</h2>
       {hint ? (
         <p className="text-[11px] leading-snug text-on-table-muted">
-          Изберете човек за четка, после докосвайте редовете.
+          Изберете човек, после докосвайте редовете му.
         </p>
       ) : null}
       <SeatsRail
@@ -762,7 +762,7 @@ function TableColumn({
         liveIds={liveIds}
         brushId={brushId}
         onSeat={onSeat}
-        label={onSeat ? 'Изберете четка' : undefined}
+        label={onSeat ? 'Изберете човек' : undefined}
       />
     </section>
   )
@@ -961,7 +961,7 @@ function PhaseActions({
             </div>
           )}
           <p className="mt-1 hidden pb-1 text-[11px] leading-snug text-on-table-muted md:block">
-            Гостите отбелязват сами от линка. Вие довършвате с четката.
+            Гостите отбелязват сами от линка. Вие довършвате с избрания човек.
           </p>
         </Box>
       ) : null}
