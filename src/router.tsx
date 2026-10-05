@@ -19,5 +19,7 @@ declare module '@tanstack/react-router' {
   interface HistoryState {
     /** The pay slip was torn off the receipt: Back returns to it. */
     fromReceipt?: boolean
+    /** A quick bill turn opened from „Чий ред е?“: „Готово“ returns to it. */
+    fromQuickSeats?: boolean
   }
 }

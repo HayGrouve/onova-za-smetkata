@@ -88,7 +88,9 @@ export default defineSchema({
     .index('by_updatedAt', ['updatedAt'])
     .index('by_ownerId_updatedAt', ['ownerId', 'updatedAt'])
     .index('by_ownerId_status_updatedAt', ['ownerId', 'status', 'updatedAt'])
-    .index('by_shareToken', ['shareToken']),
+    .index('by_shareToken', ['shareToken'])
+    // A quick scan deletes its photo: it must never take a bill's receipt.
+    .index('by_receiptStorageId', ['receiptStorageId']),
 
   participants: defineTable({
     billId: v.id('bills'),
@@ -209,6 +211,29 @@ export default defineSchema({
   })
     .index('by_billId', ['billId'])
     .index('by_createdAt', ['createdAt']),
+
+  /**
+   * A receipt read for a quick bill, which lives only on the Host's phone.
+   * The photo is deleted once read; the phone takes the lines and discards
+   * the row, and the cleanup cron sweeps whatever is left.
+   */
+  quickScans: defineTable({
+    ownerId: v.id('users'),
+    storageId: v.optional(v.id('_storage')),
+    status: v.union(
+      v.literal('pending'),
+      v.literal('processing'),
+      v.literal('failed'),
+      v.literal('done'),
+    ),
+    extractedRestaurantName: v.optional(v.string()),
+    extractedItems: v.optional(v.array(extractedItemValidator)),
+    receiptTotalCents: v.optional(v.number()),
+    errorMessage: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index('by_createdAt', ['createdAt'])
+    .index('by_storageId', ['storageId']),
 
   hostOnboarding: defineTable({
     userId: v.id('users'),

@@ -12,6 +12,8 @@ Bulgarian mobile web PWA: a **Host** creates a bill from a restaurant receipt, a
 
 **Host bill phases** — the Host's bill is one Live receipt moving through three phases: **Сглобяване** (restaurant, lines from receipt scan or by hand, tip, who was at the table) → **На масата** (join link, guests claim live, the Host paints the rest with a Brush) → **Разплащане** (Slips, confirm payments, finalize). The `?step=1..4` editor steps remain underneath (steps 1 and 2 are both Сглобяване) because Напътствия count steps.
 
+**Quick bill journey** — „Бърза сметка“ on home opens the camera → the receipt is read while the Host sets „Колко сте?“ → check the lines, mark „За всички“ → pass the phone („Чий ред е?“): each person taps their seat, optionally types a name, takes Units → summary (leftovers „Раздели по равно“, tip, „Закръгли“) → send the amounts to the chat → close. No link, no Guests, no payments.
+
 The host also has a participant seat on the bill but is never **Outstanding**.
 
 ## Language
@@ -139,6 +141,10 @@ _Avoid_: wiring OCR, guidance, and step completion ad hoc in the route file
 **Guest flow session**:
 A Guest phone's journey on one bill — resume its seat when the join link opens again, pick a seat, recover when the claim or pay page loses its Guest session, switch to another seat. It decides where the Guest goes next and what they are told; a lost seat and a passing failure (rate limit, dropped connection) are told apart so the phone only forgets a seat that is really gone. Module: `src/lib/guest-flow-session/`, with the phone's storage and the server calls as adapters; React seams: `useGuestJoinFlow`, `useGuestBillSession` (shared by the claim and pay pages).
 _Avoid_: duplicating redirect/resume logic in routes; conflating with the Guest session it keeps alive
+
+**Quick bill**:
+A throwaway split on the Host's phone (product UI **Бърза сметка**). Seats start as „Човек 1…N“; one phone takes Units for every seat in turn, on the same Live receipt lines a bill shows (`quickBillReceipt`); totals are information only. It lives in the phone's storage until the Host closes it or it sits untouched for 12 hours. The receipt scan is the only server call (`quickScans`, photo deleted once read): it counts against the monthly OCR quota but never as a bill. Rules: `shared/quick-bill.ts`.
+_Avoid_: draft (a draft is a real bill's **Bill status**), Guests or Participants for its seats, Outstanding, Slips or Pay requests for its totals
 
 **Host Pro**:
 The paid SaaS tier that lifts Free-tier limits (bills per month, OCR scans, friend groups). The Host pays the product, not the restaurant: €2.99/month or €29/year through Stripe Managed Payments (Link is the seller).
