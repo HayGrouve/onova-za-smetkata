@@ -19,7 +19,7 @@ import {
   getFriendGroupDeleteCopy,
   getFriendGroupMemberRemoveCopy,
 } from '#/lib/destructive-action-copy.ts'
-import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { getConvexErrorMessage } from '#/lib/convex-error.ts'
 import { useSubscriptionPaywall } from '#/components/subscription/subscription-provider.tsx'
 import {
   formatFriendGroupErrors,

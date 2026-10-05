@@ -19,7 +19,7 @@ import { WelcomeSheet } from '#/components/host-onboarding/welcome-sheet.tsx'
 import { PaymentCheckpointSheet } from '#/components/host-onboarding/payment-checkpoint-sheet.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { getStopGuidanceCopy } from '#/lib/destructive-action-copy.ts'
-import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { getConvexErrorMessage } from '#/lib/convex-error.ts'
 import {
   clearHostOnboardingSession,
   deferWelcomeThisSession,

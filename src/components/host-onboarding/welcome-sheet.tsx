@@ -9,7 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '#/components/ui/sheet.tsx'
-import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { getConvexErrorMessage } from '#/lib/convex-error.ts'
 import { HOST_ONBOARDING_WELCOME } from '../../../shared/host-onboarding-messages.ts'
 import type { Id } from '../../../convex/_generated/dataModel'
 

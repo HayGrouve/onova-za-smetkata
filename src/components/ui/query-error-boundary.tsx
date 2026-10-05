@@ -1,7 +1,7 @@
 import { Component } from 'react'
 import type { ReactNode } from 'react'
 import { QueryErrorPanel } from '#/components/ui/query-error-panel.tsx'
-import { getConvexErrorData } from '#/lib/guest-participant-session.ts'
+import { getConvexErrorData } from '#/lib/convex-error.ts'
 import { isDefiniteErrorReason } from '#/lib/definite-error-reason.ts'
 
 interface QueryErrorBoundaryProps {

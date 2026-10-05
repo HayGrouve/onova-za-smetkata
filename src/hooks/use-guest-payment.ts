@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { formatCopyAmount } from '#/lib/bill-share.ts'
 import { copyToClipboard } from '#/lib/copy-to-clipboard.ts'
-import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { getConvexErrorMessage } from '#/lib/convex-error.ts'
 import {
   buildRevolutPaymentNote,
   buildRevolutUrl,

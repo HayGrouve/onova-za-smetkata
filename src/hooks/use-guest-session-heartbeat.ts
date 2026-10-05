@@ -2,7 +2,7 @@ import { useMutation } from 'convex/react'
 import { useEffect } from 'react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
-import type { StoredGuestSession } from '#/lib/guest-participant-session.ts'
+import type { StoredGuestSession } from '#/lib/guest-flow-session/guest-flow-session.ts'
 
 const HEARTBEAT_INTERVAL_MS = 30_000
 

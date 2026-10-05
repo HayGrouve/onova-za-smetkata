@@ -1,12 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  clearStoredGuestParticipant,
   createGuestSessionToken,
-  getConvexErrorMessage,
   getOrCreateGuestDeviceId,
-  getStoredGuestSession,
-  setStoredGuestSession,
-} from './guest-participant-session.ts'
+  localSeatStore,
+} from './local-seat-store.ts'
 
 const STORAGE_KEY = 'onova-guest-participant'
 const DEVICE_KEY = 'onova-guest-device'
@@ -35,34 +32,7 @@ function createStorage(): Storage {
   }
 }
 
-describe('getConvexErrorMessage', () => {
-  it('extracts Uncaught ConvexError message from client wrapper', () => {
-    const message =
-      '[CONVEX M(hostOnboarding:createFirstBill)] [Request ID: abc] Server Error Uncaught ConvexError: Първоначалните напътствия са само когато все още нямате сметки.\n    at handler (../convex/hostOnboarding.ts:64:23)'
-
-    expect(getConvexErrorMessage(new Error(message))).toBe(
-      'Първоначалните напътствия са само когато все още нямате сметки.',
-    )
-  })
-
-  it('returns plain Error messages unchanged', () => {
-    expect(getConvexErrorMessage(new Error('Името не може да е празно'))).toBe(
-      'Името не може да е празно',
-    )
-  })
-
-  it('reads string data from Convex-shaped errors', () => {
-    expect(getConvexErrorMessage({ data: 'Недостъпно извън DEV_MODE.' })).toBe(
-      'Недостъпно извън DEV_MODE.',
-    )
-  })
-
-  it('falls back for unknown errors', () => {
-    expect(getConvexErrorMessage(null)).toBe('Неуспешна операция')
-  })
-})
-
-describe('guest-participant-session', () => {
+describe('localSeatStore', () => {
   beforeEach(() => {
     vi.stubGlobal('localStorage', createStorage())
     vi.stubGlobal('sessionStorage', createStorage())
@@ -71,17 +41,17 @@ describe('guest-participant-session', () => {
   })
 
   it('returns null when nothing stored', () => {
-    expect(getStoredGuestSession('bill_a')).toBeNull()
+    expect(localSeatStore.read('bill_a')).toBeNull()
   })
 
   it('stores and reads session for bill', () => {
-    setStoredGuestSession({
+    localSeatStore.write({
       billId: 'bill_a',
       participantId: 'participant_1',
       sessionToken: 'token-1',
       shareToken: 'share-1',
     })
-    expect(getStoredGuestSession('bill_a')).toEqual({
+    expect(localSeatStore.read('bill_a')).toEqual({
       billId: 'bill_a',
       participantId: 'participant_1',
       sessionToken: 'token-1',
@@ -90,14 +60,14 @@ describe('guest-participant-session', () => {
   })
 
   it('keeps Covered seats for resume', () => {
-    setStoredGuestSession({
+    localSeatStore.write({
       billId: 'bill_a',
       participantId: 'participant_1',
       sessionToken: 'token-1',
       shareToken: 'share-1',
       coveredParticipantIds: ['participant_2'],
     })
-    expect(getStoredGuestSession('bill_a')?.coveredParticipantIds).toEqual([
+    expect(localSeatStore.read('bill_a')?.coveredParticipantIds).toEqual([
       'participant_2',
     ])
   })
@@ -114,38 +84,38 @@ describe('guest-participant-session', () => {
   })
 
   it('clear removes session for matching bill only', () => {
-    setStoredGuestSession({
+    localSeatStore.write({
       billId: 'bill_a',
       participantId: 'participant_1',
       sessionToken: 'token-1',
       shareToken: 'share-1',
     })
-    clearStoredGuestParticipant('bill_b')
-    expect(getStoredGuestSession('bill_a')).not.toBeNull()
-    clearStoredGuestParticipant('bill_a')
-    expect(getStoredGuestSession('bill_a')).toBeNull()
+    localSeatStore.clear('bill_b')
+    expect(localSeatStore.read('bill_a')).not.toBeNull()
+    localSeatStore.clear('bill_a')
+    expect(localSeatStore.read('bill_a')).toBeNull()
   })
 
   it('new bill overwrites previous session', () => {
-    setStoredGuestSession({
+    localSeatStore.write({
       billId: 'bill_a',
       participantId: 'participant_1',
       sessionToken: 'token-1',
       shareToken: 'share-1',
     })
-    setStoredGuestSession({
+    localSeatStore.write({
       billId: 'bill_b',
       participantId: 'participant_2',
       sessionToken: 'token-2',
       shareToken: 'share-2',
     })
-    expect(getStoredGuestSession('bill_a')).toBeNull()
-    expect(getStoredGuestSession('bill_b')?.participantId).toBe('participant_2')
+    expect(localSeatStore.read('bill_a')).toBeNull()
+    expect(localSeatStore.read('bill_b')?.participantId).toBe('participant_2')
   })
 
   it('ignores malformed json', () => {
     localStorage.setItem(STORAGE_KEY, '{not-json')
-    expect(getStoredGuestSession('bill_a')).toBeNull()
+    expect(localSeatStore.read('bill_a')).toBeNull()
   })
 
   it('ignores session without shareToken', () => {
@@ -157,6 +127,6 @@ describe('guest-participant-session', () => {
         sessionToken: 'token-1',
       }),
     )
-    expect(getStoredGuestSession('bill_a')).toBeNull()
+    expect(localSeatStore.read('bill_a')).toBeNull()
   })
 })
