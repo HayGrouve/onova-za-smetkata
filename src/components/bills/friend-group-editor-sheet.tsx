@@ -28,7 +28,10 @@ import {
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { focusContentInsteadOfField } from '#/lib/dialog-focus.ts'
-import { parseParticipantName } from '../../../shared/participant-schema.ts'
+import {
+  parseParticipantName,
+  participantNameKey,
+} from '../../../shared/participant-schema.ts'
 
 const EMPTY_MEMBER_NAMES: string[] = []
 
@@ -115,8 +118,8 @@ export function FriendGroupEditorSheet({
       }))
       return
     }
-    const key = trimmed.toLowerCase()
-    if (memberNames.some((member) => member.toLowerCase() === key)) {
+    const key = participantNameKey(trimmed)
+    if (memberNames.some((member) => participantNameKey(member) === key)) {
       setFieldErrors((prev) => ({
         ...prev,
         memberNames: 'Името вече е в групата',

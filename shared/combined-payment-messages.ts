@@ -30,6 +30,8 @@ export const COMBINED_PAYMENT_MESSAGES = {
   duplicateCovered: 'Избран е един и същ участник повече от веднъж.',
   noCoveredSelected: 'Изберете поне един участник.',
   payerCoveredByOther: 'Друг гост вече плаща за вас.',
+  participantHasTransfer:
+    'За този участник има изпратен превод. Потвърдете го или го отхвърлете първо.',
   transfersAwaitingHost:
     'Има изпратени преводи, които чакат потвърждение. Потвърдете ги или ги отхвърлете преди да приключите.',
 } as const

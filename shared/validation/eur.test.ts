@@ -20,6 +20,12 @@ describe('parseEurInputStrict', () => {
     expect(parseEurInputStrict('4,5')).toEqual({ ok: true, cents: 450 })
   })
 
+  it('accepts cents typed without the leading zero', () => {
+    expect(parseEurInputStrict(',50')).toEqual({ ok: true, cents: 50 })
+    expect(parseEurInputStrict('.5')).toEqual({ ok: true, cents: 50 })
+    expect(parseEurInputStrict(',').ok).toBe(false)
+  })
+
   it('rejects input it would otherwise read only in part', () => {
     // parseFloat stops at the first stray character: 12 345,67 became 12,00 €.
     for (const input of [

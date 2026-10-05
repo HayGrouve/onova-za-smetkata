@@ -112,7 +112,11 @@ export async function settleRequestsForFinalize(
   }
 }
 
-/** Cancel every pending pay request that pays for or covers a removed seat. */
+/**
+ * A seat is leaving the bill: cancel the unsent pay requests that pay for or
+ * cover it. A transfer already sent is real money — the Host confirms or
+ * rejects it first, or nobody could record it once the seat is gone.
+ */
 export async function cancelRequestsForParticipant(
   ctx: MutationCtx,
   billId: Id<'bills'>,
@@ -124,14 +128,16 @@ export async function cancelRequestsForParticipant(
       q.eq('billId', billId).eq('status', 'pending'),
     )
     .collect()
+  const involving = pending.filter(
+    (request) =>
+      request.payerParticipantId === participantId ||
+      getCoveredParticipantIds(request).includes(participantId),
+  )
+  if (involving.some((request) => isAwaitingHostConfirmation(request))) {
+    throw new ConvexError(COMBINED_PAYMENT_MESSAGES.participantHasTransfer)
+  }
   const now = Date.now()
-  for (const request of pending) {
-    if (
-      request.payerParticipantId !== participantId &&
-      !getCoveredParticipantIds(request).includes(participantId)
-    ) {
-      continue
-    }
+  for (const request of involving) {
     await ctx.db.patch(request._id, { status: 'cancelled', resolvedAt: now })
   }
 }

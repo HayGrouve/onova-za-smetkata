@@ -2,6 +2,12 @@ import { Component } from 'react'
 import type { ReactNode } from 'react'
 import { QueryErrorPanel } from '#/components/ui/query-error-panel.tsx'
 import { getConvexErrorData } from '#/lib/guest-participant-session.ts'
+import { GUEST_FLOW_MESSAGES } from '../../../shared/guest-flow-messages.ts'
+
+const DEFINITE_REASONS = new Set<string>([
+  GUEST_FLOW_MESSAGES.invalidShareLink,
+  GUEST_FLOW_MESSAGES.billNotFound,
+])
 
 interface QueryErrorBoundaryProps {
   children: ReactNode
@@ -30,14 +36,17 @@ export class QueryErrorBoundary extends Component<
 
   render() {
     if (this.state.error) {
-      // A reason the server gave on purpose (invalid link, bill gone) does not
-      // go away on retry; only unexplained failures offer one.
+      // An invalid link or a bill that is gone does not come back on retry;
+      // anything else (including other server reasons) still offers one.
       const reason = getConvexErrorData(this.state.error)
+      const definite = reason !== null && DEFINITE_REASONS.has(reason)
       return (
         <div className="page-container py-10">
           <QueryErrorPanel
             message={reason ?? undefined}
-            onRetry={reason ? undefined : () => this.setState({ error: null })}
+            onRetry={
+              definite ? undefined : () => this.setState({ error: null })
+            }
           />
         </div>
       )

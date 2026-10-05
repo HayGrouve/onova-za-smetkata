@@ -23,6 +23,9 @@ import {
 
 const OCR_SCANS_PER_HOST_PER_HOUR = 20
 
+/** A scan still pending/processing after this long is treated as dead. */
+const SCAN_IN_FLIGHT_MS = 3 * 60 * 1000
+
 const editedItemValidator = v.object({
   name: v.string(),
   unitPriceCents: v.number(),
@@ -45,8 +48,12 @@ export const startScan = mutation({
       .withIndex('by_billId', (q) => q.eq('billId', args.billId))
       .order('desc')
       .first()
-    if (latest?.status === 'pending' || latest?.status === 'processing') {
+    const inFlight =
+      (latest?.status === 'pending' || latest?.status === 'processing') &&
+      Date.now() - latest.createdAt < SCAN_IN_FLIGHT_MS
+    if (inFlight) {
       // A second tap must not pay for (or count against quota) a second scan.
+      // A scan whose action died is stale after a while and blocks nothing.
       throw new ConvexError('Бележката вече се разпознава.')
     }
 

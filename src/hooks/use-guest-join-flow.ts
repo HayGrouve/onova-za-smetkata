@@ -13,6 +13,7 @@ import type { Id } from '../../convex/_generated/dataModel'
 import {
   clearStoredGuestParticipant,
   createGuestSessionToken,
+  getConvexErrorData,
   getConvexErrorMessage,
   getOrCreateGuestDeviceId,
   getStoredGuestSession,
@@ -106,12 +107,13 @@ export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
         }
         if (!unmountedRef.current) goToClaim()
       } catch (error) {
-        if (isRateLimit(error)) {
-          // Not a lost seat: keep the stored session; tapping the seat retries.
-          toast.error(getConvexErrorMessage(error))
-        } else {
+        if (isSeatLost(error)) {
           clearStoredGuestParticipant(billId)
           toast.error(GUEST_FLOW_MESSAGES.sessionLostRedirect)
+        } else {
+          // A rate limit, a dropped connection, a server hiccup: the seat may
+          // still be ours, so keep the session — tapping the seat retries it.
+          toast.error(getConvexErrorMessage(error))
         }
         if (!unmountedRef.current) setResuming(false)
       }
@@ -172,4 +174,19 @@ function isRateLimit(error: unknown): boolean {
     message === GUEST_FLOW_MESSAGES.claimRateLimitActor ||
     message === GUEST_FLOW_MESSAGES.claimRateLimitBill
   )
+}
+
+/** Answers that mean this phone's stored seat is gone for good. */
+const SEAT_LOST_REASONS = new Set<string>([
+  GUEST_FLOW_MESSAGES.nameTaken,
+  GUEST_FLOW_MESSAGES.participantNotOnBill,
+  GUEST_FLOW_MESSAGES.hostSeatNotJoinable,
+  GUEST_FLOW_MESSAGES.sessionRequired,
+  GUEST_FLOW_MESSAGES.invalidShareLink,
+  GUEST_FLOW_MESSAGES.billNotFound,
+])
+
+function isSeatLost(error: unknown): boolean {
+  const reason = getConvexErrorData(error)
+  return reason !== null && SEAT_LOST_REASONS.has(reason)
 }

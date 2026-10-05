@@ -95,6 +95,42 @@ describe('the cleanup cron', () => {
     expect(left.sent).toBe('pending')
   })
 
+  it('stale buckets behind thousands of live usage counters still go', async () => {
+    vi.useFakeTimers()
+    const t = setupConvex()
+    const now = Date.now()
+    await t.run(async (ctx) => {
+      for (let index = 0; index < 300; index++) {
+        await ctx.db.insert('rateLimitBuckets', {
+          key: `heartbeat:old-${index}`,
+          windowStart: now - 20 * DAY_MS,
+          count: 1,
+        })
+      }
+      for (let index = 0; index < 2_100; index++) {
+        await ctx.db.insert('rateLimitBuckets', {
+          key: `usage:user-${index}:bills:2026-10`,
+          windowStart: now - 3 * DAY_MS,
+          count: 1,
+        })
+      }
+      await ctx.db.insert('rateLimitBuckets', {
+        key: 'usage:user-0:bills:2026-07',
+        windowStart: now - 70 * DAY_MS,
+        count: 3,
+      })
+    })
+
+    await t.mutation(internal.cleanup.run, {})
+    await t.finishAllScheduledFunctions(vi.runAllTimers)
+
+    const keys = await t.run(async (ctx) =>
+      (await ctx.db.query('rateLimitBuckets').collect()).map((row) => row.key),
+    )
+    expect(keys).toHaveLength(2_100)
+    expect(keys.every((key) => key.endsWith(':2026-10'))).toBe(true)
+  })
+
   it('works off a backlog bigger than one batch over follow-up runs', async () => {
     vi.useFakeTimers()
     const t = setupConvex()

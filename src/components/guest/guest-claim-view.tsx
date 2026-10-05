@@ -357,6 +357,7 @@ function GuestClaimTable({
           to: '/bills/$billId/pay',
           params: { billId },
           search: { t: shareToken },
+          state: (prev) => ({ ...prev, fromReceipt: true }),
         })
       }
       undo={undo}

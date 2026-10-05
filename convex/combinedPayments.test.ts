@@ -246,7 +246,27 @@ describe('paying for others', () => {
 })
 
 describe('when a seat leaves the bill', () => {
-  it('removing a Participant cancels requests that pay for or cover them', async () => {
+  it('removing a Participant cancels unsent requests that pay for or cover them', async () => {
+    const t = setupConvex()
+    const bill = await seedClaimedBill(t)
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+    const covering = await t.mutation(api.combinedPayments.create, {
+      billId: bill.billId,
+      shareToken: bill.shareToken,
+      sessionToken: ani.sessionToken,
+      coveredParticipantIds: [bill.seats['Боби']],
+    })
+
+    await bill.host.mutation(api.participants.remove, {
+      participantId: bill.seats['Боби'],
+    })
+
+    expect(await t.run((ctx) => ctx.db.get(covering.requestId))).toMatchObject({
+      status: 'cancelled',
+    })
+  })
+
+  it('a seat with a sent transfer stays until the Host settles the transfer', async () => {
     const t = setupConvex()
     const bill = await seedClaimedBill(t)
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
@@ -267,23 +287,26 @@ describe('when a seat leaves the bill', () => {
       shareToken: bill.shareToken,
       sessionToken: vicky.sessionToken,
     })
-
-    for (const name of ['Боби', 'Вики']) {
-      await bill.host.mutation(api.participants.remove, {
+    const remove = (name: string) =>
+      bill.host.mutation(api.participants.remove, {
         participantId: bill.seats[name],
       })
-    }
 
-    for (const { requestId } of [covering, own]) {
-      expect(await t.run((ctx) => ctx.db.get(requestId))).toMatchObject({
-        status: 'cancelled',
-      })
+    for (const name of ['Боби', 'Вики']) {
+      await expect(remove(name)).rejects.toThrow(
+        COMBINED_PAYMENT_MESSAGES.participantHasTransfer,
+      )
     }
+    await bill.host.mutation(api.combinedPayments.reject, {
+      billId: bill.billId,
+      requestId: own.requestId,
+    })
+    await remove('Вики')
     expect(
       await bill.host.query(api.combinedPayments.listPendingForBill, {
         billId: bill.billId,
       }),
-    ).toEqual([])
+    ).toEqual([expect.objectContaining({ _id: covering.requestId })])
   })
 })
 

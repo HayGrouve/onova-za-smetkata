@@ -99,7 +99,7 @@ export function GuestPayView({
   function backToReceipt() {
     // The slip was torn off the receipt: step back to it rather than stacking
     // another claim entry, so the phone's Back button then leaves the bill.
-    if (canGoBack) {
+    if (canGoBack && router.state.location.state.fromReceipt) {
       router.history.back()
       return
     }
