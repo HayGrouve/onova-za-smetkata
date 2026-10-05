@@ -13,15 +13,12 @@ import { getOptionalAuthUserId, requireAuth } from './lib/auth'
 import { assertOcrStartQuota } from './lib/hostTier'
 import { assertHostMayStartOcr, recordOcrStart } from './lib/ocrStart'
 import { assertRateLimit } from './lib/rateLimit'
-import { deleteStoredPhoto } from './lib/receiptStorage'
+import { assertFreshUpload, deleteStoredPhoto } from './lib/receiptStorage'
 
 /**
  * Receipt scans for a quick bill: no bill row, no participants. The Host's
  * phone uploads the photo, starts a scan, takes the lines and discards it.
  */
-
-/** A photo older than this was not uploaded for the scan being started. */
-const QUICK_UPLOAD_MAX_AGE_MS = 10 * 60 * 1000
 
 /** The photo is only needed until Gemini has read it. */
 async function dropPhoto(ctx: MutationCtx, scan: Doc<'quickScans'>) {
@@ -87,28 +84,9 @@ export const start = mutation({
     const owner = await ctx.db.get(ownerId)
     if (!owner) throw new ConvexError('Потребителят не е намерен.')
 
-    // The scan deletes its photo: only a fresh upload no scan has taken yet,
-    // never a file that belongs to something else (a bill's receipt).
+    // The scan deletes its photo once read.
     const now = Date.now()
-    const photo = await ctx.db.system.get('_storage', args.storageId)
-    const taken =
-      (await ctx.db
-        .query('quickScans')
-        .withIndex('by_storageId', (q) => q.eq('storageId', args.storageId))
-        .first()) ??
-      (await ctx.db
-        .query('bills')
-        .withIndex('by_receiptStorageId', (q) =>
-          q.eq('receiptStorageId', args.storageId),
-        )
-        .first())
-    if (
-      !photo ||
-      taken ||
-      now - photo._creationTime > QUICK_UPLOAD_MAX_AGE_MS
-    ) {
-      throw new ConvexError('Снимката не е качена. Опитайте отново.')
-    }
+    await assertFreshUpload(ctx, args.storageId, now)
 
     const refusal = await startRefusal(ctx, owner, now)
     if (refusal) {

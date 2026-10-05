@@ -58,7 +58,6 @@ describe('receipt scans', () => {
   it('a Host cannot start unlimited scans by spreading them over new bills', async () => {
     const t = setupConvex()
     const host = t.withIdentity(HOST_IDENTITY)
-    const storageId = await storeReceipt(t)
 
     let started = 0
     let refused = 0
@@ -66,7 +65,7 @@ describe('receipt scans', () => {
       const billId = await host.mutation(api.bills.create, {})
       await host.mutation(api.bills.update, {
         billId,
-        receiptStorageId: storageId,
+        receiptStorageId: await storeReceipt(t),
       })
       for (let scan = 0; scan < 8; scan++) {
         try {

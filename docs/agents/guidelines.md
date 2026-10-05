@@ -65,6 +65,7 @@ See `.cursor/rules/convex.mdc` for backend conventions; schema validators and sy
 
 - New tables and indices go in `convex/schema.ts`.
 - Put reusable server logic in `convex/lib/`, not duplicated across top-level modules.
+- A photo id (`v.id('_storage')`) sent by the phone goes through `assertFreshUpload` (`convex/lib/receiptStorage.ts`) before anything keeps it: a fresh upload that no bill or quick scan holds yet, since whatever keeps a photo may later delete it.
 - Secrets and server flags (`DEV_MODE`, OAuth keys, `GEMINI_API_KEY`) live in the **Convex Dashboard**, not Vercel.
 - **`DEV_MODE=true`** is allowed only on dev deployments in the allowlist (`convex/lib/devMode.ts`). Never on production.
 

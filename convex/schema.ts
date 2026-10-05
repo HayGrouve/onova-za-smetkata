@@ -89,7 +89,7 @@ export default defineSchema({
     .index('by_ownerId_updatedAt', ['ownerId', 'updatedAt'])
     .index('by_ownerId_status_updatedAt', ['ownerId', 'status', 'updatedAt'])
     .index('by_shareToken', ['shareToken'])
-    // A quick scan deletes its photo: it must never take a bill's receipt.
+    // A photo id from the phone must never be a bill's receipt already.
     .index('by_receiptStorageId', ['receiptStorageId']),
 
   participants: defineTable({
