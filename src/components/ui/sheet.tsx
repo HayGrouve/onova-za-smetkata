@@ -47,15 +47,37 @@ function SheetContent({
   children,
   side = 'right',
   showCloseButton = true,
+  onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: 'top' | 'right' | 'bottom' | 'left'
   showCloseButton?: boolean
 }) {
+  // Sheets open from state, not a SheetTrigger, so Radix has no trigger to
+  // hand focus back to on close and drops it on the page. Remember the opener.
+  const openerRef = React.useRef<HTMLElement | null>(null)
+
   return (
     <SheetPortal>
       <SheetOverlay />
       <SheetPrimitive.Content
+        onOpenAutoFocus={(event) => {
+          const active = document.activeElement
+          openerRef.current =
+            active instanceof HTMLElement && active !== document.body
+              ? active
+              : null
+          onOpenAutoFocus?.(event)
+        }}
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event)
+          const opener = openerRef.current
+          openerRef.current = null
+          if (event.defaultPrevented || !opener?.isConnected) return
+          event.preventDefault()
+          opener.focus({ preventScroll: true })
+        }}
         data-slot="sheet-content"
         className={cn(
           // A sheet is a length of receipt paper pulled over the table.

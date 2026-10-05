@@ -21,6 +21,7 @@ import { ThemeColorMeta } from '../components/theme-color-meta.tsx'
 import { Toaster } from '../components/ui/sonner'
 import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
+import { isDefiniteErrorReason } from '#/lib/definite-error-reason.ts'
 import { getConvexErrorData } from '#/lib/guest-participant-session.ts'
 
 import { SentryInit } from '../components/sentry-init.tsx'
@@ -45,14 +46,16 @@ function RootError({ error }: ErrorComponentProps) {
           </p>
         ) : null}
       </div>
-      <Button
-        type="button"
-        className="h-11"
-        onClick={() => window.location.reload()}
-      >
-        <RefreshCwIcon className={ICON.button} aria-hidden />
-        Опитай отново
-      </Button>
+      {isDefiniteErrorReason(reason) ? null : (
+        <Button
+          type="button"
+          className="h-11"
+          onClick={() => window.location.reload()}
+        >
+          <RefreshCwIcon className={ICON.button} aria-hidden />
+          Опитай отново
+        </Button>
+      )}
       <Button asChild variant="outline" className="h-11">
         <a href="/">Към началото</a>
       </Button>

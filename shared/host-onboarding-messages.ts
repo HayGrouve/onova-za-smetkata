@@ -39,6 +39,7 @@ export const HOST_ONBOARDING_PAYMENT_CHECKPOINT = {
   shareWithoutPayment: 'Сподели без начин на плащане',
   formTitle: 'Настройки за плащане',
   saveAndShare: 'Запази и сподели',
+  needOneMethod: 'Въведете Revolut потребителско име или IBAN.',
   back: 'Назад',
 } as const
 

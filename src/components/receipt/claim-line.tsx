@@ -82,7 +82,8 @@ export function ClaimLine({
     ),
   ].map((id) => seatOf(id)?.label ?? 'друг')
   const press = useRef<{ timer?: number; fired: boolean }>({ fired: false })
-  const interactive = mode !== 'readonly' && !!onTap && !disabled
+  const tappable = mode !== 'readonly' && !!onTap
+  const interactive = tappable && !disabled
 
   function startPress() {
     if (!onMore || mode === 'readonly') return
@@ -117,13 +118,16 @@ export function ClaimLine({
         <div className="relative min-w-0 flex-1">
           <button
             type="button"
-            disabled={!interactive}
+            // While a take is in flight the line ignores taps but stays
+            // focusable: a `disabled` button drops keyboard focus to the page.
+            disabled={!tappable}
+            aria-disabled={tappable && disabled ? true : undefined}
             onClick={() => {
               if (press.current.fired) {
                 press.current.fired = false
                 return
               }
-              onTap?.()
+              if (interactive) onTap()
             }}
             onPointerDown={startPress}
             onPointerUp={endPress}
@@ -133,7 +137,7 @@ export function ClaimLine({
               if (onMore) event.preventDefault()
             }}
             className={cn(
-              'absolute inset-0 transition-colors disabled:cursor-default',
+              'absolute inset-0 transition-colors disabled:cursor-default aria-disabled:cursor-default',
               interactive && 'hover:bg-paper-2 active:bg-paper-2',
             )}
             aria-label={`${tapLabel ? `${tapLabel}: ` : ''}${group.name}, ${formatEur(group.unitPriceCents)} за бройка, свободни ${free} от ${count}${mine > 0 ? `, ваши ${mine}` : ''}`}

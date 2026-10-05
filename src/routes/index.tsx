@@ -135,8 +135,11 @@ function Home() {
         params: { billId },
         search: { step: 1 },
       })
-    } catch {
-      toast.error('Неуспешно създаване на сметка')
+    } catch (error) {
+      // A guided bill counts against the monthly quota like any other.
+      if (!handleMutationError(error)) {
+        toast.error('Неуспешно създаване на сметка')
+      }
     } finally {
       setIsCreating(false)
     }
