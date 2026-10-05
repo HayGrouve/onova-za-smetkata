@@ -3,7 +3,7 @@ import type { MutationCtx } from './_generated/server'
 import { mutation } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
 import { assertAssignmentEditable } from './lib/assertAssignmentEditable'
-import { assertCanMutateAssignment } from './lib/assertCanMutateAssignment'
+import { requireSeatActor } from './lib/guestSession'
 import { requireBillOwner } from './lib/auth'
 import { touchBill } from './lib/touchBill'
 import { assertRateLimit } from './lib/rateLimit'
@@ -120,6 +120,34 @@ async function findMembership(
     .unique()
 }
 
+type ClaimAction =
+  'joinUnit' | 'leaveUnit' | 'takeUnit' | 'releaseUnit' | 'shareUnit'
+
+/** Caller may act for the seat; a Guest phone is rate-limited per action. */
+async function requireClaimActor(
+  ctx: MutationCtx,
+  args: {
+    billId: Id<'bills'>
+    participantId: Id<'participants'>
+    sessionToken?: string
+    action: ClaimAction
+  },
+) {
+  const actor = await requireSeatActor(ctx, {
+    billId: args.billId,
+    seatId: args.participantId,
+    sessionToken: args.sessionToken,
+  })
+  if (actor.kind === 'guest') {
+    await assertRateLimit(
+      ctx,
+      `assign:${args.action}:${actor.session.sessionToken}`,
+      60,
+      60_000,
+    )
+  }
+}
+
 async function mutateUnitMembership(
   ctx: MutationCtx,
   args: {
@@ -128,7 +156,7 @@ async function mutateUnitMembership(
     unitIndex: number
     sessionToken?: string
     join: boolean
-    rateLimitKey: string
+    action: ClaimAction
   },
 ) {
   const item = await ctx.db.get(args.itemId)
@@ -143,15 +171,12 @@ async function mutateUnitMembership(
 
   await assertUnitIndexInRange(item, args.unitIndex)
 
-  await assertCanMutateAssignment(ctx, {
+  await requireClaimActor(ctx, {
     billId: item.billId,
     participantId: args.participantId,
     sessionToken: args.sessionToken,
+    action: args.action,
   })
-
-  if (args.sessionToken) {
-    await assertRateLimit(ctx, args.rateLimitKey, 60, 60_000)
-  }
 
   const participant = await ctx.db.get(args.participantId)
   assertAssignmentEditable({
@@ -194,7 +219,7 @@ export const joinUnit = mutation({
     await mutateUnitMembership(ctx, {
       ...args,
       join: true,
-      rateLimitKey: `assign:joinUnit:${args.sessionToken ?? args.participantId}`,
+      action: 'joinUnit',
     })
   },
 })
@@ -210,7 +235,7 @@ export const leaveUnit = mutation({
     await mutateUnitMembership(ctx, {
       ...args,
       join: false,
-      rateLimitKey: `assign:leaveUnit:${args.sessionToken ?? args.participantId}`,
+      action: 'leaveUnit',
     })
   },
 })
@@ -225,7 +250,7 @@ async function loadClaimGroup(
     itemIds: Id<'items'>[]
     participantId: Id<'participants'>
     sessionToken?: string
-    rateLimitKey: string
+    action: ClaimAction
   },
 ) {
   const itemIds = [...new Set(args.itemIds)]
@@ -251,15 +276,12 @@ async function loadClaimGroup(
     throw new ConvexError('Сметката не е намерена.')
   }
 
-  await assertCanMutateAssignment(ctx, {
+  await requireClaimActor(ctx, {
     billId,
     participantId: args.participantId,
     sessionToken: args.sessionToken,
+    action: args.action,
   })
-
-  if (args.sessionToken) {
-    await assertRateLimit(ctx, args.rateLimitKey, 60, 60_000)
-  }
 
   const participant = await ctx.db.get(args.participantId)
   assertAssignmentEditable({
@@ -312,7 +334,7 @@ export const takeUnit = mutation({
   handler: async (ctx, args) => {
     const { billId, units, assignments } = await loadClaimGroup(ctx, {
       ...args,
-      rateLimitKey: `assign:takeUnit:${args.sessionToken ?? args.participantId}`,
+      action: 'takeUnit',
     })
 
     const plan = planTakeUnit({ units, assignments })
@@ -343,7 +365,7 @@ export const releaseUnit = mutation({
   handler: async (ctx, args) => {
     const { billId, units, assignments } = await loadClaimGroup(ctx, {
       ...args,
-      rateLimitKey: `assign:releaseUnit:${args.sessionToken ?? args.participantId}`,
+      action: 'releaseUnit',
     })
 
     const plan = planReleaseUnit({
@@ -388,7 +410,7 @@ export const shareUnit = mutation({
       itemIds: args.itemIds,
       participantId: args.participantId,
       sessionToken: args.sessionToken,
-      rateLimitKey: `assign:shareUnit:${args.sessionToken ?? args.participantId}`,
+      action: 'shareUnit',
     })
 
     await assertParticipantsOnBill(ctx, billId, args.withParticipantIds)

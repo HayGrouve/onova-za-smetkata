@@ -18,10 +18,9 @@ import {
 } from '../shared/combined-payment'
 import { validatePaymentAdd } from '../shared/payment-amount-schema'
 import { touchBill } from './lib/touchBill'
-import { assertShareToken } from './lib/guestAccess'
 import { assertBillDraft } from './lib/assertBillDraft'
 import { GUEST_FLOW_MESSAGES } from '../shared/guest-flow-messages'
-import { requireGuestSession } from './lib/requireGuestSession'
+import { findGuest, requireGuest } from './lib/guestSession'
 import { calculateBillTotals } from '../shared/bill-calculations'
 import type { BillTotals } from '../shared/bill-calculations'
 import { toBillCalculationSnapshot } from '../shared/bill-calculation-snapshot'
@@ -107,18 +106,14 @@ async function validateCoveredParticipantsOnBill(
 export const getPendingForGuest = query({
   args: {
     billId: v.id('bills'),
-    shareToken: v.string(),
+    /** Ignored: older clients still send it; a live session implies the link. */
+    shareToken: v.optional(v.string()),
     sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
-    await assertShareToken(ctx, args.billId, args.shareToken)
-    const session = await ctx.db
-      .query('guestSessions')
-      .withIndex('by_sessionToken', (q) =>
-        q.eq('sessionToken', args.sessionToken),
-      )
-      .first()
-    if (!session || session.billId !== args.billId) return null
+    const guest = await findGuest(ctx, args)
+    if (!guest) return null
+    const { session } = guest
 
     const pending = await ctx.db
       .query('combinedPaymentRequests')
@@ -151,18 +146,14 @@ export const listPendingForBill = query({
 export const getPendingCoverForGuest = query({
   args: {
     billId: v.id('bills'),
-    shareToken: v.string(),
+    /** Ignored: older clients still send it; a live session implies the link. */
+    shareToken: v.optional(v.string()),
     sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
-    await assertShareToken(ctx, args.billId, args.shareToken)
-    const session = await ctx.db
-      .query('guestSessions')
-      .withIndex('by_sessionToken', (q) =>
-        q.eq('sessionToken', args.sessionToken),
-      )
-      .first()
-    if (!session || session.billId !== args.billId) return null
+    const guest = await findGuest(ctx, args)
+    if (!guest) return null
+    const { session } = guest
 
     const pending = await loadSeatHoldingRequests(ctx, args.billId)
 
@@ -187,34 +178,15 @@ export const getPendingCoverForGuest = query({
 export const create = mutation({
   args: {
     billId: v.id('bills'),
-    shareToken: v.string(),
+    /** Ignored: older clients still send it; a live session implies the link. */
+    shareToken: v.optional(v.string()),
     sessionToken: v.string(),
     coveredParticipantIds: v.array(v.id('participants')),
   },
   handler: async (ctx, args) => {
-    await assertShareToken(ctx, args.billId, args.shareToken)
-
-    const session = await ctx.db
-      .query('guestSessions')
-      .withIndex('by_sessionToken', (q) =>
-        q.eq('sessionToken', args.sessionToken),
-      )
-      .first()
-    if (!session || session.billId !== args.billId) {
-      throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
-    }
-
-    const { sessionId } = await requireGuestSession(ctx, {
-      billId: args.billId,
-      participantId: session.participantId,
-      sessionToken: args.sessionToken,
-    })
+    const { session, bill } = await requireGuest(ctx, args)
+    const sessionId = session._id
     await assertPayRequestRateLimit(ctx, args.sessionToken)
-
-    const bill = await ctx.db.get(args.billId)
-    if (!bill) {
-      throw new ConvexError(GUEST_FLOW_MESSAGES.billNotFound)
-    }
     assertBillDraft(bill)
 
     await validateCoveredParticipantsOnBill(
@@ -279,26 +251,8 @@ export const updateCovered = mutation({
     coveredParticipantIds: v.array(v.id('participants')),
   },
   handler: async (ctx, args) => {
-    const session = await ctx.db
-      .query('guestSessions')
-      .withIndex('by_sessionToken', (q) =>
-        q.eq('sessionToken', args.sessionToken),
-      )
-      .first()
-    if (!session || session.billId !== args.billId) {
-      throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
-    }
-    await requireGuestSession(ctx, {
-      billId: args.billId,
-      participantId: session.participantId,
-      sessionToken: args.sessionToken,
-    })
+    const { session, bill } = await requireGuest(ctx, args)
     await assertPayRequestRateLimit(ctx, args.sessionToken)
-
-    const bill = await ctx.db.get(args.billId)
-    if (!bill) {
-      throw new ConvexError(GUEST_FLOW_MESSAGES.billNotFound)
-    }
     assertBillDraft(bill)
 
     const request = await ctx.db.get(args.requestId)
@@ -359,33 +313,14 @@ export const updateCovered = mutation({
 export const createSolo = mutation({
   args: {
     billId: v.id('bills'),
-    shareToken: v.string(),
+    /** Ignored: older clients still send it; a live session implies the link. */
+    shareToken: v.optional(v.string()),
     sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
-    await assertShareToken(ctx, args.billId, args.shareToken)
-
-    const session = await ctx.db
-      .query('guestSessions')
-      .withIndex('by_sessionToken', (q) =>
-        q.eq('sessionToken', args.sessionToken),
-      )
-      .first()
-    if (!session || session.billId !== args.billId) {
-      throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
-    }
-
-    const { sessionId } = await requireGuestSession(ctx, {
-      billId: args.billId,
-      participantId: session.participantId,
-      sessionToken: args.sessionToken,
-    })
+    const { session, bill } = await requireGuest(ctx, args)
+    const sessionId = session._id
     await assertPayRequestRateLimit(ctx, args.sessionToken)
-
-    const bill = await ctx.db.get(args.billId)
-    if (!bill) {
-      throw new ConvexError(GUEST_FLOW_MESSAGES.billNotFound)
-    }
     assertBillDraft(bill)
 
     const totals = await loadBillTotalsForCombinedPay(ctx, args.billId)
@@ -435,26 +370,8 @@ export const initiateTransfer = mutation({
     requestId: v.id('combinedPaymentRequests'),
   },
   handler: async (ctx, args) => {
-    const session = await ctx.db
-      .query('guestSessions')
-      .withIndex('by_sessionToken', (q) =>
-        q.eq('sessionToken', args.sessionToken),
-      )
-      .first()
-    if (!session || session.billId !== args.billId) {
-      throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
-    }
-    await requireGuestSession(ctx, {
-      billId: args.billId,
-      participantId: session.participantId,
-      sessionToken: args.sessionToken,
-    })
+    const { session, bill } = await requireGuest(ctx, args)
     await assertPayRequestRateLimit(ctx, args.sessionToken)
-
-    const bill = await ctx.db.get(args.billId)
-    if (!bill) {
-      throw new ConvexError(GUEST_FLOW_MESSAGES.billNotFound)
-    }
     assertBillDraft(bill)
 
     const request = await ctx.db.get(args.requestId)
@@ -482,26 +399,8 @@ export const cancel = mutation({
     requestId: v.id('combinedPaymentRequests'),
   },
   handler: async (ctx, args) => {
-    const session = await ctx.db
-      .query('guestSessions')
-      .withIndex('by_sessionToken', (q) =>
-        q.eq('sessionToken', args.sessionToken),
-      )
-      .first()
-    if (!session || session.billId !== args.billId) {
-      throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
-    }
-    await requireGuestSession(ctx, {
-      billId: args.billId,
-      participantId: session.participantId,
-      sessionToken: args.sessionToken,
-    })
+    const { session, bill } = await requireGuest(ctx, args)
     await assertPayRequestRateLimit(ctx, args.sessionToken)
-
-    const bill = await ctx.db.get(args.billId)
-    if (!bill) {
-      throw new ConvexError(GUEST_FLOW_MESSAGES.billNotFound)
-    }
     assertBillDraft(bill)
 
     const request = await ctx.db.get(args.requestId)

@@ -24,7 +24,6 @@ export interface CoveredSeatsSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   billId: Id<'bills'>
-  shareToken: string
   sessionToken: string
   candidates: CoveredSeatCandidate[]
   coveredIds: string[]
@@ -35,7 +34,6 @@ export function CoveredSeatsSheet({
   open,
   onOpenChange,
   billId,
-  shareToken,
   sessionToken,
   candidates,
   coveredIds,
@@ -54,7 +52,6 @@ export function CoveredSeatsSheet({
     try {
       const result = await updateCoveredSeats({
         billId,
-        shareToken,
         sessionToken,
         coveredParticipantIds: selected as Id<'participants'>[],
       })

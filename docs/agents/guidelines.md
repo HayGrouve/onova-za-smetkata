@@ -48,7 +48,7 @@ Before duplicating logic, check whether `shared/` or `convex/lib/` already owns 
 Domain terms and auth boundaries: **`.cursor/rules/context-core.mdc`**. Implementation detail:
 
 - **Host** — authenticated bill owner. Routes like `/bills/$billId`, `/bills/$billId/summary`. Guarded by `requireAuth` / `requireBillOwner` on the server and `useRequireHostAuth` on the client.
-- **Guest** — unauthenticated participant. Joins via `?t={shareToken}` → `/join` → `/claim`. Mutations require a valid guest session token (`convex/lib/requireGuestSession.ts`).
+- **Guest** — unauthenticated participant. Joins via `?t={shareToken}` → `/join` → `/claim`. Mutations require a live guest session (`convex/lib/guestSession.ts`: `requireGuest`, or `requireSeatActor` where the Host may act too). A live session implies the current share link, so session-holding calls take no share token.
 
 Guest-facing queries must not leak other participants' payment details. Respect existing privacy boundaries in `getForGuest` and related helpers.
 

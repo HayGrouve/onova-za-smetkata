@@ -13,32 +13,19 @@ import {
   validateCoveredSeatSelection,
 } from '../shared/guest-seat-selection'
 import { assertBillDraft } from './lib/assertBillDraft'
-import { GUEST_SESSION_TTL_MS, isGuestSessionActive } from './lib/guestSession'
-import { requireGuestSession } from './lib/requireGuestSession'
+import {
+  endExpiredGuestSessions,
+  endGuestSession,
+  findGuest,
+  isGuestSessionActive,
+  requireGuest,
+} from './lib/guestSession'
 import {
   adoptSeatRequests,
-  cancelReservationsForSession,
   hasTransferAwaitingHost,
 } from './lib/paymentReservations'
 import { assertRateLimit } from './lib/rateLimit'
 import { assertShareToken } from './lib/guestAccess'
-
-async function purgeExpiredSessionsForBill(
-  ctx: MutationCtx,
-  billId: Id<'bills'>,
-  now: number,
-) {
-  const sessions = await ctx.db
-    .query('guestSessions')
-    .withIndex('by_billId', (q) => q.eq('billId', billId))
-    .collect()
-  for (const session of sessions) {
-    if (!isGuestSessionActive(session.lastSeenAt, now)) {
-      await cancelReservationsForSession(ctx, session._id)
-      await ctx.db.delete(session._id)
-    }
-  }
-}
 
 async function assertParticipantOnBill(
   ctx: MutationCtx,
@@ -180,7 +167,7 @@ export const claim = mutation({
     if (args.participantId === bill.hostParticipantId) {
       throw new ConvexError(GUEST_FLOW_MESSAGES.hostSeatNotJoinable)
     }
-    await purgeExpiredSessionsForBill(ctx, args.billId, now)
+    await endExpiredGuestSessions(ctx, args.billId, now)
 
     const sessions = (
       await ctx.db
@@ -228,8 +215,7 @@ export const claim = mutation({
       )
       .first()
     if (existingTokenSession) {
-      await cancelReservationsForSession(ctx, existingTokenSession._id)
-      await ctx.db.delete(existingTokenSession._id)
+      await endGuestSession(ctx, existingTokenSession)
     }
 
     const sessionId = await ctx.db.insert('guestSessions', {
@@ -255,29 +241,15 @@ export const claim = mutation({
 export const updateCoveredSeats = mutation({
   args: {
     billId: v.id('bills'),
-    shareToken: v.string(),
+    /** Ignored: older clients still send it; a live session implies the link. */
+    shareToken: v.optional(v.string()),
     sessionToken: v.string(),
     coveredParticipantIds: v.array(v.id('participants')),
   },
   handler: async (ctx, args) => {
-    const bill = await assertShareToken(ctx, args.billId, args.shareToken)
+    const { session, bill } = await requireGuest(ctx, args)
     assertBillDraft(bill)
     await assertRateLimit(ctx, `coveredSeats:${args.sessionToken}`, 30, 60_000)
-
-    const session = await ctx.db
-      .query('guestSessions')
-      .withIndex('by_sessionToken', (q) =>
-        q.eq('sessionToken', args.sessionToken),
-      )
-      .first()
-    if (!session || session.billId !== args.billId) {
-      throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
-    }
-    await requireGuestSession(ctx, {
-      billId: args.billId,
-      participantId: session.participantId,
-      sessionToken: args.sessionToken,
-    })
 
     const pendingRequests = (
       await ctx.db
@@ -324,15 +296,19 @@ export const updateCoveredSeats = mutation({
 export const heartbeat = mutation({
   args: {
     billId: v.id('bills'),
-    shareToken: v.string(),
+    /** Ignored: older clients still send it; a live session implies the link. */
+    shareToken: v.optional(v.string()),
     participantId: v.id('participants'),
     sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
-    await assertShareToken(ctx, args.billId, args.shareToken)
+    const { session } = await requireGuest(ctx, {
+      billId: args.billId,
+      sessionToken: args.sessionToken,
+      seatId: args.participantId,
+    })
     await assertRateLimit(ctx, `heartbeat:${args.sessionToken}`, 120, 60_000)
-    const { sessionId } = await requireGuestSession(ctx, args)
-    await ctx.db.patch(sessionId, { lastSeenAt: Date.now() })
+    await ctx.db.patch(session._id, { lastSeenAt: Date.now() })
     return { ok: true as const }
   },
 })
@@ -340,67 +316,16 @@ export const heartbeat = mutation({
 export const release = mutation({
   args: {
     billId: v.id('bills'),
-    shareToken: v.string(),
+    /** Ignored: older clients still send it; a live session implies the link. */
+    shareToken: v.optional(v.string()),
     sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
-    await assertShareToken(ctx, args.billId, args.shareToken)
-    const session = await ctx.db
-      .query('guestSessions')
-      .withIndex('by_sessionToken', (q) =>
-        q.eq('sessionToken', args.sessionToken),
-      )
-      .first()
-    if (session && session.billId === args.billId) {
+    const guest = await findGuest(ctx, args)
+    if (guest) {
       // Rate-limit only real sessions: unknown tokens must not grow buckets.
       await assertRateLimit(ctx, `release:${args.sessionToken}`, 20, 60_000)
-      await cancelReservationsForSession(ctx, session._id)
-      await ctx.db.delete(session._id)
+      await endGuestSession(ctx, guest.session)
     }
   },
 })
-
-/** Sign every phone off the bill; their unsent pay requests go with them. */
-export async function deleteGuestSessionsForBill(
-  ctx: MutationCtx,
-  billId: Id<'bills'>,
-) {
-  const sessions = await ctx.db
-    .query('guestSessions')
-    .withIndex('by_billId', (q) => q.eq('billId', billId))
-    .collect()
-  for (const session of sessions) {
-    await cancelReservationsForSession(ctx, session._id)
-    await ctx.db.delete(session._id)
-  }
-}
-
-export async function deleteGuestSessionsForParticipant(
-  ctx: MutationCtx,
-  billId: Id<'bills'>,
-  participantId: Id<'participants'>,
-) {
-  const sessions = await ctx.db
-    .query('guestSessions')
-    .withIndex('by_participantId', (q) => q.eq('participantId', participantId))
-    .collect()
-  for (const session of sessions) {
-    await ctx.db.delete(session._id)
-  }
-
-  const billSessions = await ctx.db
-    .query('guestSessions')
-    .withIndex('by_billId', (q) => q.eq('billId', billId))
-    .collect()
-  for (const session of billSessions) {
-    const covered = session.coveredParticipantIds ?? []
-    if (covered.includes(participantId)) {
-      await ctx.db.patch(session._id, {
-        coveredParticipantIds: covered.filter((id) => id !== participantId),
-      })
-    }
-  }
-}
-
-/** Exported for tests / docs — heartbeat interval should stay below TTL. */
-export { GUEST_SESSION_TTL_MS }

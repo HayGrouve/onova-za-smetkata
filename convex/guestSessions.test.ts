@@ -103,19 +103,42 @@ describe('picking a seat', () => {
 
   it('rotating the share link signs every phone off at once', async () => {
     const t = setupConvex()
-    const bill = await seedBill(t)
+    const bill = await seedBill(t, { guests: ['Ани', 'Боби', 'Вики'] })
+    await hostTakesUnits(bill, bill.itemIds[0], [
+      bill.seats['Ани'],
+      bill.seats['Боби'],
+    ])
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+    const reservation = await t.mutation(api.combinedPayments.create, {
+      billId: bill.billId,
+      sessionToken: ani.sessionToken,
+      coveredParticipantIds: [bill.seats['Боби']],
+    })
 
     await bill.host.mutation(api.bills.rotateShareToken, {
       billId: bill.billId,
     })
 
+    // Session calls carry no share link: the old phone is stopped because
+    // rotating ended its session, not because it sent a stale link.
     await expect(
       t.mutation(api.assignments.takeUnit, {
         itemIds: bill.itemIds,
         ...ani,
       }),
     ).rejects.toThrow(GUEST_FLOW_MESSAGES.sessionExpired)
+    await expect(
+      t.mutation(api.guestSessions.heartbeat, { billId: bill.billId, ...ani }),
+    ).rejects.toThrow(GUEST_FLOW_MESSAGES.sessionExpired)
+    await expect(
+      t.mutation(api.combinedPayments.createSolo, {
+        billId: bill.billId,
+        sessionToken: ani.sessionToken,
+      }),
+    ).rejects.toThrow(GUEST_FLOW_MESSAGES.sessionExpired)
+    expect(
+      await t.run((ctx) => ctx.db.get(reservation.requestId)),
+    ).toMatchObject({ status: 'cancelled' })
   })
 
   it('a seat from another bill cannot be picked through this link', async () => {
@@ -138,7 +161,6 @@ describe('picking a seat', () => {
     vi.setSystemTime(Date.now() + GUEST_SESSION_TTL_MS - 1_000)
     await t.mutation(api.guestSessions.heartbeat, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       ...bobi,
     })
     vi.setSystemTime(Date.now() + 2_000)
@@ -150,7 +172,6 @@ describe('picking a seat', () => {
     await expect(
       t.mutation(api.guestSessions.heartbeat, {
         billId: bill.billId,
-        shareToken: bill.shareToken,
         ...ani,
       }),
     ).rejects.toThrow(GUEST_FLOW_MESSAGES.sessionExpired)
@@ -206,7 +227,6 @@ describe('Covered seats', () => {
     }
     const { requestId } = await t.mutation(api.combinedPayments.create, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: ani.sessionToken,
       coveredParticipantIds: [bill.seats['Боби']],
     })
@@ -219,7 +239,6 @@ describe('Covered seats', () => {
     await expect(
       t.mutation(api.guestSessions.updateCoveredSeats, {
         billId: bill.billId,
-        shareToken: bill.shareToken,
         sessionToken: ani.sessionToken,
         coveredParticipantIds: [bill.seats['Вики']],
       }),
@@ -238,7 +257,6 @@ describe('Covered seats', () => {
     ])
     const { requestId } = await t.mutation(api.combinedPayments.create, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: ani.sessionToken,
       coveredParticipantIds: [bill.seats['Боби']],
     })
@@ -295,7 +313,6 @@ describe('coming back after the TTL', () => {
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
     const sent = await t.mutation(api.combinedPayments.createSolo, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: ani.sessionToken,
     })
 
@@ -311,14 +328,12 @@ describe('coming back after the TTL', () => {
       })
       const pending = await t.query(api.combinedPayments.getPendingForGuest, {
         billId: bill.billId,
-        shareToken: bill.shareToken,
         sessionToken,
       })
       expect(pending?._id).toBe(sent.requestId)
       await expect(
         t.mutation(api.combinedPayments.createSolo, {
           billId: bill.billId,
-          shareToken: bill.shareToken,
           sessionToken,
         }),
       ).rejects.toThrow(COMBINED_PAYMENT_MESSAGES.pendingExists)
@@ -336,7 +351,6 @@ describe('coming back after the TTL', () => {
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
     const { requestId } = await t.mutation(api.combinedPayments.create, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: ani.sessionToken,
       coveredParticipantIds: [bill.seats['Боби']],
     })
@@ -386,21 +400,18 @@ describe('leaving the bill', () => {
     // Ани picks Боби to pay for but has not opened Revolut yet.
     const unsent = await t.mutation(api.combinedPayments.create, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: ani.sessionToken,
       coveredParticipantIds: [bill.seats['Боби']],
     })
     // Вики already sent a transfer for her own Share.
     const sent = await t.mutation(api.combinedPayments.createSolo, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: vicky.sessionToken,
     })
 
     for (const phone of [ani, vicky]) {
       await t.mutation(api.guestSessions.release, {
         billId: bill.billId,
-        shareToken: bill.shareToken,
         sessionToken: phone.sessionToken,
       })
     }
@@ -427,7 +438,6 @@ describe('leaving the bill', () => {
     for (let index = 0; index < 5; index++) {
       await t.mutation(api.guestSessions.release, {
         billId: bill.billId,
-        shareToken: bill.shareToken,
         sessionToken: `unknown-token-${index}-padding`,
       })
     }

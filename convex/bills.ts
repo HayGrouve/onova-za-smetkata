@@ -2,7 +2,6 @@ import { paginationOptsValidator } from 'convex/server'
 import { stream } from 'convex-helpers/server/stream'
 import { mutation, query } from './_generated/server'
 import schema from './schema'
-import type { Id } from './_generated/dataModel'
 import { ConvexError, v } from 'convex/values'
 import { assertBillDraft } from './lib/assertBillDraft'
 import { requireAuth, requireBillOwner } from './lib/auth'
@@ -29,17 +28,15 @@ import {
   deleteReceiptStorageFile,
   shouldDeleteReplacedReceiptStorage,
 } from './lib/receiptStorage'
-import { deleteGuestSessionsForBill } from './guestSessions'
 import {
   deleteRequestsForBill,
   settleRequestsForFinalize,
 } from './lib/paymentReservations'
-import { isGuestSessionActive } from './lib/guestSession'
+import { endGuestSessionsForBill, findGuest } from './lib/guestSession'
 import { assertShareToken, toGuestVisibleBill } from './lib/guestAccess'
 import { firstZodIssueMessage } from '../shared/validation/errors'
 import { parseBillMetadataPatch } from '../shared/bill-metadata-schema'
 import { createShareToken } from './lib/shareToken'
-import { sessionSeatIds } from '../shared/guest-seat-selection'
 import { calculateBillTotals } from '../shared/bill-calculations'
 import { toBillCalculationSnapshot } from '../shared/bill-calculation-snapshot'
 import { touchBill } from './lib/touchBill'
@@ -157,27 +154,16 @@ export const getForGuest = query({
     const { participants, items, assignments, payments } =
       await loadBillRelations(ctx, args.billId)
 
-    let myPayments: typeof payments = []
-    let mySeatIds: Id<'participants'>[] = []
-    if (args.sessionToken) {
-      const session = await ctx.db
-        .query('guestSessions')
-        .withIndex('by_sessionToken', (q) =>
-          q.eq('sessionToken', args.sessionToken!),
-        )
-        .first()
-      if (
-        session &&
-        session.billId === args.billId &&
-        isGuestSessionActive(session.lastSeenAt)
-      ) {
-        mySeatIds = sessionSeatIds(session) as Id<'participants'>[]
-        const seats = new Set<string>(mySeatIds)
-        myPayments = payments.filter((payment) =>
-          seats.has(payment.participantId),
-        )
-      }
-    }
+    const guest = args.sessionToken
+      ? await findGuest(ctx, {
+          billId: args.billId,
+          sessionToken: args.sessionToken,
+        })
+      : null
+    const mySeatIds = guest?.seatIds ?? []
+    const myPayments = payments.filter((payment) =>
+      mySeatIds.includes(payment.participantId),
+    )
 
     const { calculationInput } = toBillCalculationSnapshot(
       { participants, items, assignments, payments },
@@ -304,7 +290,7 @@ export const finalize = mutation({
       updatedAt: Date.now(),
     })
     await touchBill(ctx, args.billId)
-    await deleteGuestSessionsForBill(ctx, args.billId)
+    await endGuestSessionsForBill(ctx, args.billId)
   },
 })
 
@@ -319,7 +305,7 @@ export const rotateShareToken = mutation({
       updatedAt: Date.now(),
     })
     // The old link is revoked now, not when the phones' heartbeats lapse.
-    await deleteGuestSessionsForBill(ctx, args.billId)
+    await endGuestSessionsForBill(ctx, args.billId)
     return { shareToken }
   },
 })
@@ -332,7 +318,7 @@ export const remove = mutation({
     const receiptStorageId = bill.receiptStorageId
 
     await deleteReceiptScansForBill(ctx, args.billId)
-    await deleteGuestSessionsForBill(ctx, args.billId)
+    await endGuestSessionsForBill(ctx, args.billId)
     await deleteRequestsForBill(ctx, args.billId)
 
     const { participants, items, payments } = await loadBillRelations(

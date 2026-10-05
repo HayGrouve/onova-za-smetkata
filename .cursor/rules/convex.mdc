@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Convex
 
-Auth is **Clerk** + **`convex/react-clerk`** — reuse helpers in `convex/lib/` (e.g. `requireAuth`, `requireBillOwner`, `requireGuestSession`, `hostTier`). Do not invent parallel auth patterns.
+Auth is **Clerk** + **`convex/react-clerk`** — reuse helpers in `convex/lib/` (e.g. `requireAuth`, `requireBillOwner`, `requireGuest` / `requireSeatActor` in `guestSession.ts`, `hostTier`). Do not invent parallel auth patterns.
 
 **Host Pro** is **Stripe Managed Payments** (Checkout + Customer Portal + webhooks into Convex; ADR 0004), gated by the `BILLING_ENABLED` switch — enforce quotas through `getEntitledTier`, never `getEffectiveTier` directly. Do not add Clerk Billing APIs (`PricingTable`, `has({ plan })`, Clerk subscription webhooks) as the source of truth. Quotas stay in `convex/lib/hostTier.ts`.
 

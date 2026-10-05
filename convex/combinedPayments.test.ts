@@ -31,7 +31,6 @@ describe('a Guest paying their own Share', () => {
       api.combinedPayments.createSolo,
       {
         billId: bill.billId,
-        shareToken: bill.shareToken,
         sessionToken: ani.sessionToken,
       },
     )
@@ -70,7 +69,6 @@ describe('a Guest paying their own Share', () => {
     await expect(
       t.mutation(api.combinedPayments.createSolo, {
         billId: bill.billId,
-        shareToken: bill.shareToken,
         sessionToken: ani.sessionToken,
       }),
     ).rejects.toThrow(COMBINED_PAYMENT_MESSAGES.payerNothingOwed)
@@ -91,7 +89,6 @@ describe('paying for others', () => {
       api.combinedPayments.create,
       {
         billId: bill.billId,
-        shareToken: bill.shareToken,
         sessionToken: ani.sessionToken,
         coveredParticipantIds: [bill.seats['Боби']],
       },
@@ -135,7 +132,6 @@ describe('paying for others', () => {
     const cover = (sessionToken: string) =>
       t.mutation(api.combinedPayments.create, {
         billId: bill.billId,
-        shareToken: bill.shareToken,
         sessionToken,
         coveredParticipantIds: [bill.seats['Вики']],
       })
@@ -153,14 +149,12 @@ describe('paying for others', () => {
     const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
     await t.mutation(api.combinedPayments.createSolo, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: bobi.sessionToken,
     })
 
     await expect(
       t.mutation(api.combinedPayments.create, {
         billId: bill.billId,
-        shareToken: bill.shareToken,
         sessionToken: ani.sessionToken,
         coveredParticipantIds: [bill.seats['Боби']],
       }),
@@ -169,7 +163,6 @@ describe('paying for others', () => {
     // Switching an existing pick over to Боби is refused the same way.
     const { requestId } = await t.mutation(api.combinedPayments.create, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: ani.sessionToken,
       coveredParticipantIds: [bill.seats['Вики']],
     })
@@ -190,7 +183,6 @@ describe('paying for others', () => {
     const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
     await t.mutation(api.combinedPayments.create, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: ani.sessionToken,
       coveredParticipantIds: [bill.seats['Боби']],
     })
@@ -198,12 +190,10 @@ describe('paying for others', () => {
     for (const attempt of [
       t.mutation(api.combinedPayments.createSolo, {
         billId: bill.billId,
-        shareToken: bill.shareToken,
         sessionToken: bobi.sessionToken,
       }),
       t.mutation(api.combinedPayments.create, {
         billId: bill.billId,
-        shareToken: bill.shareToken,
         sessionToken: bobi.sessionToken,
         coveredParticipantIds: [bill.seats['Вики']],
       }),
@@ -220,7 +210,6 @@ describe('paying for others', () => {
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
     const { requestId } = await t.mutation(api.combinedPayments.create, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: ani.sessionToken,
       coveredParticipantIds: [bill.seats['Боби']],
     })
@@ -252,7 +241,6 @@ describe('when a seat leaves the bill', () => {
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
     const covering = await t.mutation(api.combinedPayments.create, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: ani.sessionToken,
       coveredParticipantIds: [bill.seats['Боби']],
     })
@@ -273,7 +261,6 @@ describe('when a seat leaves the bill', () => {
     const vicky = await joinAsGuest(t, bill, bill.seats['Вики'])
     const covering = await t.mutation(api.combinedPayments.create, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: ani.sessionToken,
       coveredParticipantIds: [bill.seats['Боби']],
     })
@@ -284,7 +271,6 @@ describe('when a seat leaves the bill', () => {
     })
     const own = await t.mutation(api.combinedPayments.createSolo, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: vicky.sessionToken,
     })
     const remove = (name: string) =>
@@ -318,7 +304,6 @@ describe('who may act on a pay request', () => {
     const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
     const { requestId } = await t.mutation(api.combinedPayments.create, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: ani.sessionToken,
       coveredParticipantIds: [bill.seats['Вики']],
     })
@@ -345,7 +330,6 @@ describe('who may act on a pay request', () => {
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
     const { requestId } = await t.mutation(api.combinedPayments.createSolo, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: ani.sessionToken,
     })
 
