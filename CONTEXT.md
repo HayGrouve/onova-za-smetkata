@@ -70,7 +70,7 @@ _Avoid_: merging or rewriting stored items; fuzzy name matching
 
 **Covered seat**:
 A Participant seat a Guest's phone handles in addition to its own — they take Units for it and pay for it (e.g. „плащам и за половинката си“). Added from the Slip on the claim page („Плащам и за...“) — the join page only picks the Guest's own seat and goes straight to claiming; locked to that phone like the Guest's own seat (others see „Заето · с Иван“). Stored on `guestSessions.coveredParticipantIds`; rules in `shared/guest-seat-selection.ts`.
-_Avoid_: member, companion; confusing with paying for someone who claims from their own phone (that stays a combined payment chosen on the Pay step)
+_Avoid_: member, companion; confusing with paying for someone who claims from their own phone (that is a Pay request picking another Guest on the Pay step)
 
 **Guest session**:
 A Guest phone's hold on its own seat and its Covered seats, kept alive while the phone checks in. Rotating the share link, finalizing or deleting the bill ends every Guest session, so a phone with a live one acts without the link. Module: `convex/lib/guestSession.ts`.
@@ -79,6 +79,10 @@ _Avoid_: Guest flow session (the phone's journey through join, claim and pay); l
 **Pay step**:
 The guest's torn-off Slip (`/bills/$billId/pay`): the amount first, „Какво плащате“ (Share lines per seat), „За кого плащате“ (own seat and Covered seats always; other Guests optional), then Revolut / IBAN. Opening Revolut or copying the IBAN records the transfer; the slip shows „Чака“ until the Host confirms and „Платено“ after. Warns when Units are still unclaimed on the bill.
 _Avoid_: the old pull-up claim drawer
+
+**Pay request**:
+One Guest phone's request to pay its own Share plus its Covered seats and any other Guests it picked. A **Reservation** holds the other Guests' seats before anything is sent (it lapses when the phone leaves); once Revolut opens or the IBAN is copied it is **Sent** („Чака“) and priced from the bill as it stands, until the Host confirms it (payments recorded) or rejects it. A phone has at most one pending Pay request; a Guest whose Share someone else's request covers cannot pay it again. Module: `convex/lib/payRequest.ts`.
+_Avoid_: combined payment (also covers paying alone), transfer (the money itself), billing (Host Pro)
 
 **Live receipt**:
 The bill as one shared paper that Host and Guests see with different permissions: one line per Claim group, one slot per Unit (dashed when free, seat avatars when taken), totals at the foot. Guests tap a line to take a Unit; the Host paints. Other phones' claims appear live, and a ticker derived on the client (`src/lib/bill-activity.ts`) says who took what. Design: `docs/design/live-receipt.md`.

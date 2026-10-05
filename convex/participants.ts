@@ -8,7 +8,7 @@ import {
 } from '../shared/participant-schema'
 import { touchBill } from './lib/touchBill'
 import { dropSeatFromGuestSessions } from './lib/guestSession'
-import { cancelRequestsForParticipant } from './lib/paymentReservations'
+import { onSeatRemoved } from './lib/payRequest'
 import { shouldClearHostParticipantId } from '../shared/host-bill-participant'
 import { nextSortOrder } from '../shared/sort-order'
 import type { Doc, Id } from './_generated/dataModel'
@@ -35,7 +35,7 @@ async function deleteParticipantWithRelations(
     await ctx.db.delete(p._id)
   }
 
-  await cancelRequestsForParticipant(ctx, bill._id, participantId)
+  await onSeatRemoved(ctx, bill._id, participantId)
   await dropSeatFromGuestSessions(ctx, bill._id, participantId)
   await ctx.db.delete(participantId)
 

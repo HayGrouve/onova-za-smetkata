@@ -3,10 +3,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { api } from './_generated/api'
 import { GUEST_FLOW_MESSAGES } from '../shared/guest-flow-messages'
 import { GUEST_SESSION_TTL_MS } from './lib/guestSession'
-import { COMBINED_PAYMENT_MESSAGES } from '../shared/combined-payment-messages'
 import {
   hostTakesUnits,
   joinAsGuest,
+  reserve,
   seedBill,
   setupConvex,
 } from './test.setup'
@@ -109,10 +109,10 @@ describe('picking a seat', () => {
       bill.seats['Боби'],
     ])
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
-    const reservation = await t.mutation(api.combinedPayments.create, {
+    const reservation = await reserve(t, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
-      coveredParticipantIds: [bill.seats['Боби']],
+      otherParticipantIds: [bill.seats['Боби']],
     })
 
     await bill.host.mutation(api.bills.rotateShareToken, {
@@ -131,9 +131,10 @@ describe('picking a seat', () => {
       t.mutation(api.guestSessions.heartbeat, { billId: bill.billId, ...ani }),
     ).rejects.toThrow(GUEST_FLOW_MESSAGES.sessionExpired)
     await expect(
-      t.mutation(api.combinedPayments.createSolo, {
+      t.mutation(api.combinedPayments.recordTransfer, {
         billId: bill.billId,
         sessionToken: ani.sessionToken,
+        otherParticipantIds: [],
       }),
     ).rejects.toThrow(GUEST_FLOW_MESSAGES.sessionExpired)
     expect(
@@ -225,15 +226,15 @@ describe('Covered seats', () => {
         sessionToken: ani.sessionToken,
       })
     }
-    const { requestId } = await t.mutation(api.combinedPayments.create, {
+    await reserve(t, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
-      coveredParticipantIds: [bill.seats['Боби']],
+      otherParticipantIds: [bill.seats['Боби']],
     })
-    await t.mutation(api.combinedPayments.initiateTransfer, {
+    await t.mutation(api.combinedPayments.recordTransfer, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
-      requestId,
+      otherParticipantIds: [bill.seats['Боби']],
     })
 
     await expect(
@@ -255,15 +256,15 @@ describe('Covered seats', () => {
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'], [
       bill.seats['Боби'],
     ])
-    const { requestId } = await t.mutation(api.combinedPayments.create, {
+    await reserve(t, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
-      coveredParticipantIds: [bill.seats['Боби']],
+      otherParticipantIds: [bill.seats['Боби']],
     })
-    await t.mutation(api.combinedPayments.initiateTransfer, {
+    await t.mutation(api.combinedPayments.recordTransfer, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
-      requestId,
+      otherParticipantIds: [bill.seats['Боби']],
     })
 
     await t.mutation(api.guestSessions.claim, {
@@ -311,9 +312,10 @@ describe('coming back after the TTL', () => {
     const bill = await seedBill(t)
     await hostTakesUnits(bill, bill.itemIds[0], Object.values(bill.seats))
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
-    const sent = await t.mutation(api.combinedPayments.createSolo, {
+    const sent = await t.mutation(api.combinedPayments.recordTransfer, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
+      otherParticipantIds: [],
     })
 
     // Ани sits in the Revolut app long enough for the session to lapse, then
@@ -331,12 +333,14 @@ describe('coming back after the TTL', () => {
         sessionToken,
       })
       expect(pending?._id).toBe(sent.requestId)
+      // Opening Revolut again records nothing new: the same transfer waits.
       await expect(
-        t.mutation(api.combinedPayments.createSolo, {
+        t.mutation(api.combinedPayments.recordTransfer, {
           billId: bill.billId,
           sessionToken,
+          otherParticipantIds: [],
         }),
-      ).rejects.toThrow(COMBINED_PAYMENT_MESSAGES.pendingExists)
+      ).resolves.toEqual(sent)
     }
   })
 
@@ -349,25 +353,21 @@ describe('coming back after the TTL', () => {
     })
     await hostTakesUnits(bill, bill.itemIds[0], Object.values(bill.seats))
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
-    const { requestId } = await t.mutation(api.combinedPayments.create, {
+    const { requestId } = await reserve(t, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
-      coveredParticipantIds: [bill.seats['Боби']],
+      otherParticipantIds: [bill.seats['Боби']],
     })
 
     vi.setSystemTime(Date.now() + GUEST_SESSION_TTL_MS + 1_000)
-    const asAni = {
-      billId: bill.billId,
-      sessionToken: ani.sessionToken,
-      requestId,
-    }
+    const asAni = { billId: bill.billId, sessionToken: ani.sessionToken }
     for (const attempt of [
-      t.mutation(api.combinedPayments.initiateTransfer, asAni),
-      t.mutation(api.combinedPayments.cancel, asAni),
-      t.mutation(api.combinedPayments.updateCovered, {
+      t.mutation(api.combinedPayments.recordTransfer, {
         ...asAni,
-        coveredParticipantIds: [bill.seats['Вики']],
+        otherParticipantIds: [bill.seats['Боби']],
       }),
+      t.mutation(api.combinedPayments.cancel, { ...asAni, requestId }),
+      reserve(t, { ...asAni, otherParticipantIds: [bill.seats['Вики']] }),
     ]) {
       await expect(attempt).rejects.toThrow(GUEST_FLOW_MESSAGES.sessionExpired)
     }
@@ -398,15 +398,16 @@ describe('leaving the bill', () => {
       })
     }
     // Ани picks Боби to pay for but has not opened Revolut yet.
-    const unsent = await t.mutation(api.combinedPayments.create, {
+    const unsent = await reserve(t, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
-      coveredParticipantIds: [bill.seats['Боби']],
+      otherParticipantIds: [bill.seats['Боби']],
     })
     // Вики already sent a transfer for her own Share.
-    const sent = await t.mutation(api.combinedPayments.createSolo, {
+    const sent = await t.mutation(api.combinedPayments.recordTransfer, {
       billId: bill.billId,
       sessionToken: vicky.sessionToken,
+      otherParticipantIds: [],
     })
 
     for (const phone of [ani, vicky]) {

@@ -6,6 +6,7 @@ import {
   hostTakesUnits,
   joinAsGuest,
   paymentsFor,
+  reserve,
   seedBill,
   setupConvex,
 } from './test.setup'
@@ -28,10 +29,11 @@ describe('a Guest paying their own Share', () => {
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
 
     const { requestId, totalCents } = await t.mutation(
-      api.combinedPayments.createSolo,
+      api.combinedPayments.recordTransfer,
       {
         billId: bill.billId,
         sessionToken: ani.sessionToken,
+        otherParticipantIds: [],
       },
     )
     expect(totalCents).toBe(300)
@@ -67,9 +69,10 @@ describe('a Guest paying their own Share', () => {
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
 
     await expect(
-      t.mutation(api.combinedPayments.createSolo, {
+      t.mutation(api.combinedPayments.recordTransfer, {
         billId: bill.billId,
         sessionToken: ani.sessionToken,
+        otherParticipantIds: [],
       }),
     ).rejects.toThrow(COMBINED_PAYMENT_MESSAGES.payerNothingOwed)
   })
@@ -85,14 +88,11 @@ describe('paying for others', () => {
         billId: bill.billId,
       })
 
-    const { requestId, totalCents } = await t.mutation(
-      api.combinedPayments.create,
-      {
-        billId: bill.billId,
-        sessionToken: ani.sessionToken,
-        coveredParticipantIds: [bill.seats['Боби']],
-      },
-    )
+    const { requestId, totalCents } = await reserve(t, {
+      billId: bill.billId,
+      sessionToken: ani.sessionToken,
+      otherParticipantIds: [bill.seats['Боби']],
+    })
     expect(totalCents).toBe(600)
     expect(await pending()).toEqual([])
     await expect(
@@ -102,12 +102,14 @@ describe('paying for others', () => {
       }),
     ).rejects.toThrow(COMBINED_PAYMENT_MESSAGES.transferNotInitiated)
 
-    await t.mutation(api.combinedPayments.initiateTransfer, {
+    await t.mutation(api.combinedPayments.recordTransfer, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
-      requestId,
+      otherParticipantIds: [bill.seats['Боби']],
     })
-    expect(await pending()).toHaveLength(1)
+    expect(await pending()).toEqual([
+      expect.objectContaining({ _id: requestId, totalCents: 600 }),
+    ])
     await bill.host.mutation(api.combinedPayments.confirm, {
       billId: bill.billId,
       requestId,
@@ -130,10 +132,10 @@ describe('paying for others', () => {
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
     const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
     const cover = (sessionToken: string) =>
-      t.mutation(api.combinedPayments.create, {
+      reserve(t, {
         billId: bill.billId,
         sessionToken,
-        coveredParticipantIds: [bill.seats['Вики']],
+        otherParticipantIds: [bill.seats['Вики']],
       })
 
     await cover(ani.sessionToken)
@@ -147,31 +149,31 @@ describe('paying for others', () => {
     const bill = await seedClaimedBill(t)
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
     const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
-    await t.mutation(api.combinedPayments.createSolo, {
+    await t.mutation(api.combinedPayments.recordTransfer, {
       billId: bill.billId,
       sessionToken: bobi.sessionToken,
+      otherParticipantIds: [],
     })
 
     await expect(
-      t.mutation(api.combinedPayments.create, {
+      reserve(t, {
         billId: bill.billId,
         sessionToken: ani.sessionToken,
-        coveredParticipantIds: [bill.seats['Боби']],
+        otherParticipantIds: [bill.seats['Боби']],
       }),
     ).rejects.toThrow(COMBINED_PAYMENT_MESSAGES.coveredPendingExists)
 
     // Switching an existing pick over to Боби is refused the same way.
-    const { requestId } = await t.mutation(api.combinedPayments.create, {
+    await reserve(t, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
-      coveredParticipantIds: [bill.seats['Вики']],
+      otherParticipantIds: [bill.seats['Вики']],
     })
     await expect(
-      t.mutation(api.combinedPayments.updateCovered, {
+      reserve(t, {
         billId: bill.billId,
         sessionToken: ani.sessionToken,
-        requestId,
-        coveredParticipantIds: [bill.seats['Боби']],
+        otherParticipantIds: [bill.seats['Боби']],
       }),
     ).rejects.toThrow(COMBINED_PAYMENT_MESSAGES.coveredPendingExists)
   })
@@ -181,21 +183,22 @@ describe('paying for others', () => {
     const bill = await seedClaimedBill(t)
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
     const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
-    await t.mutation(api.combinedPayments.create, {
+    await reserve(t, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
-      coveredParticipantIds: [bill.seats['Боби']],
+      otherParticipantIds: [bill.seats['Боби']],
     })
 
     for (const attempt of [
-      t.mutation(api.combinedPayments.createSolo, {
+      t.mutation(api.combinedPayments.recordTransfer, {
         billId: bill.billId,
         sessionToken: bobi.sessionToken,
+        otherParticipantIds: [],
       }),
-      t.mutation(api.combinedPayments.create, {
+      reserve(t, {
         billId: bill.billId,
         sessionToken: bobi.sessionToken,
-        coveredParticipantIds: [bill.seats['Вики']],
+        otherParticipantIds: [bill.seats['Вики']],
       }),
     ]) {
       await expect(attempt).rejects.toThrow(
@@ -208,15 +211,15 @@ describe('paying for others', () => {
     const t = setupConvex()
     const bill = await seedClaimedBill(t)
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
-    const { requestId } = await t.mutation(api.combinedPayments.create, {
+    const { requestId } = await reserve(t, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
-      coveredParticipantIds: [bill.seats['Боби']],
+      otherParticipantIds: [bill.seats['Боби']],
     })
-    await t.mutation(api.combinedPayments.initiateTransfer, {
+    await t.mutation(api.combinedPayments.recordTransfer, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
-      requestId,
+      otherParticipantIds: [bill.seats['Боби']],
     })
     await bill.host.mutation(api.payments.add, {
       billId: bill.billId,
@@ -234,15 +237,145 @@ describe('paying for others', () => {
   })
 })
 
+describe('one request per phone, priced when it is sent', () => {
+  it('sending prices afresh: a Guest who paid meanwhile drops out', async () => {
+    const t = setupConvex()
+    const bill = await seedClaimedBill(t)
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+    const { requestId } = await reserve(t, {
+      billId: bill.billId,
+      sessionToken: ani.sessionToken,
+      otherParticipantIds: [bill.seats['Боби'], bill.seats['Вики']],
+    })
+    await bill.host.mutation(api.payments.add, {
+      billId: bill.billId,
+      participantId: bill.seats['Боби'],
+      amountCents: 300,
+    })
+
+    const sent = await t.mutation(api.combinedPayments.recordTransfer, {
+      billId: bill.billId,
+      sessionToken: ani.sessionToken,
+      otherParticipantIds: [bill.seats['Боби'], bill.seats['Вики']],
+    })
+
+    expect(sent).toEqual({ requestId, totalCents: 600 })
+    expect(await t.run((ctx) => ctx.db.get(requestId))).toMatchObject({
+      coveredParticipantIds: [bill.seats['Вики']],
+      transferInitiatedAt: expect.any(Number),
+    })
+  })
+
+  it('picking nobody drops the Reservation and frees the seat', async () => {
+    const t = setupConvex()
+    const bill = await seedClaimedBill(t)
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+    const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
+    const { requestId } = await reserve(t, {
+      billId: bill.billId,
+      sessionToken: ani.sessionToken,
+      otherParticipantIds: [bill.seats['Боби']],
+    })
+
+    expect(
+      await t.mutation(api.combinedPayments.reserve, {
+        billId: bill.billId,
+        sessionToken: ani.sessionToken,
+        otherParticipantIds: [],
+      }),
+    ).toBeNull()
+    expect(await t.run((ctx) => ctx.db.get(requestId))).toMatchObject({
+      status: 'cancelled',
+    })
+    await expect(
+      t.mutation(api.combinedPayments.recordTransfer, {
+        billId: bill.billId,
+        sessionToken: bobi.sessionToken,
+        otherParticipantIds: [],
+      }),
+    ).resolves.toMatchObject({ totalCents: 300 })
+  })
+
+  it('Covered seats are always in the request; a sent one is not sent twice', async () => {
+    const t = setupConvex()
+    const bill = await seedClaimedBill(t)
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'], [
+      bill.seats['Вики'],
+    ])
+    const send = () =>
+      t.mutation(api.combinedPayments.recordTransfer, {
+        billId: bill.billId,
+        sessionToken: ani.sessionToken,
+        otherParticipantIds: [],
+      })
+
+    const first = await send()
+    expect(first.totalCents).toBe(600)
+    expect(await send()).toEqual(first)
+    await expect(
+      reserve(t, {
+        billId: bill.billId,
+        sessionToken: ani.sessionToken,
+        otherParticipantIds: [bill.seats['Боби']],
+      }),
+    ).rejects.toThrow(COMBINED_PAYMENT_MESSAGES.selectionLockedAfterTransfer)
+    expect(
+      await bill.host.query(api.combinedPayments.listPendingForBill, {
+        billId: bill.billId,
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        _id: first.requestId,
+        coveredParticipantIds: [bill.seats['Вики']],
+      }),
+    ])
+  })
+
+  it('a tab still on the previous Pay step keeps working through the old calls', async () => {
+    const t = setupConvex()
+    const bill = await seedClaimedBill(t)
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+    const vicky = await joinAsGuest(t, bill, bill.seats['Вики'])
+    const asAni = { billId: bill.billId, sessionToken: ani.sessionToken }
+
+    const { requestId } = await t.mutation(api.combinedPayments.create, {
+      ...asAni,
+      coveredParticipantIds: [bill.seats['Боби']],
+    })
+    await t.mutation(api.combinedPayments.updateCovered, {
+      ...asAni,
+      requestId,
+      coveredParticipantIds: [bill.seats['Боби']],
+    })
+    await t.mutation(api.combinedPayments.initiateTransfer, {
+      ...asAni,
+      requestId,
+    })
+    const solo = await t.mutation(api.combinedPayments.createSolo, {
+      billId: bill.billId,
+      sessionToken: vicky.sessionToken,
+    })
+
+    expect(
+      await bill.host.query(api.combinedPayments.listPendingForBill, {
+        billId: bill.billId,
+      }),
+    ).toEqual([
+      expect.objectContaining({ _id: requestId, totalCents: 600 }),
+      expect.objectContaining({ _id: solo.requestId, totalCents: 300 }),
+    ])
+  })
+})
+
 describe('when a seat leaves the bill', () => {
   it('removing a Participant cancels unsent requests that pay for or cover them', async () => {
     const t = setupConvex()
     const bill = await seedClaimedBill(t)
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
-    const covering = await t.mutation(api.combinedPayments.create, {
+    const covering = await reserve(t, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
-      coveredParticipantIds: [bill.seats['Боби']],
+      otherParticipantIds: [bill.seats['Боби']],
     })
 
     await bill.host.mutation(api.participants.remove, {
@@ -259,19 +392,20 @@ describe('when a seat leaves the bill', () => {
     const bill = await seedClaimedBill(t)
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
     const vicky = await joinAsGuest(t, bill, bill.seats['Вики'])
-    const covering = await t.mutation(api.combinedPayments.create, {
+    const covering = await reserve(t, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
-      coveredParticipantIds: [bill.seats['Боби']],
+      otherParticipantIds: [bill.seats['Боби']],
     })
-    await t.mutation(api.combinedPayments.initiateTransfer, {
+    await t.mutation(api.combinedPayments.recordTransfer, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
-      requestId: covering.requestId,
+      otherParticipantIds: [bill.seats['Боби']],
     })
-    const own = await t.mutation(api.combinedPayments.createSolo, {
+    const own = await t.mutation(api.combinedPayments.recordTransfer, {
       billId: bill.billId,
       sessionToken: vicky.sessionToken,
+      otherParticipantIds: [],
     })
     const remove = (name: string) =>
       bill.host.mutation(api.participants.remove, {
@@ -302,24 +436,29 @@ describe('who may act on a pay request', () => {
     const bill = await seedClaimedBill(t)
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
     const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
-    const { requestId } = await t.mutation(api.combinedPayments.create, {
+    const { requestId } = await reserve(t, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
-      coveredParticipantIds: [bill.seats['Вики']],
+      otherParticipantIds: [bill.seats['Вики']],
     })
 
-    for (const action of [
-      api.combinedPayments.initiateTransfer,
-      api.combinedPayments.cancel,
-    ]) {
-      await expect(
-        t.mutation(action, {
-          billId: bill.billId,
-          sessionToken: bobi.sessionToken,
-          requestId,
-        }),
-      ).rejects.toThrow(COMBINED_PAYMENT_MESSAGES.requestNotFound)
-    }
+    await expect(
+      t.mutation(api.combinedPayments.cancel, {
+        billId: bill.billId,
+        sessionToken: bobi.sessionToken,
+        requestId,
+      }),
+    ).rejects.toThrow(COMBINED_PAYMENT_MESSAGES.requestNotFound)
+    // Боби's phone can only ever send its own request.
+    const own = await t.mutation(api.combinedPayments.recordTransfer, {
+      billId: bill.billId,
+      sessionToken: bobi.sessionToken,
+      otherParticipantIds: [],
+    })
+    expect(own.requestId).not.toBe(requestId)
+    const anis = await t.run((ctx) => ctx.db.get(requestId))
+    expect(anis?.status).toBe('pending')
+    expect(anis?.transferInitiatedAt).toBeUndefined()
   })
 
   it('only the Host confirms or rejects', async () => {
@@ -328,10 +467,14 @@ describe('who may act on a pay request', () => {
     await seedBill(t, { hostIdentity: { subject: 'user_stranger' } })
     const stranger = t.withIdentity({ subject: 'user_stranger' })
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
-    const { requestId } = await t.mutation(api.combinedPayments.createSolo, {
-      billId: bill.billId,
-      sessionToken: ani.sessionToken,
-    })
+    const { requestId } = await t.mutation(
+      api.combinedPayments.recordTransfer,
+      {
+        billId: bill.billId,
+        sessionToken: ani.sessionToken,
+        otherParticipantIds: [],
+      },
+    )
 
     for (const action of [
       api.combinedPayments.confirm,

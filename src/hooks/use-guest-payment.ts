@@ -60,11 +60,10 @@ export function useGuestPayment({
     billId,
     sessionToken,
   })
-  const createCombined = useMutation(api.combinedPayments.create)
-  const updateCovered = useMutation(api.combinedPayments.updateCovered)
-  const createSolo = useMutation(api.combinedPayments.createSolo)
-  const initiateTransfer = useMutation(api.combinedPayments.initiateTransfer)
+  const reserve = useMutation(api.combinedPayments.reserve)
+  const sendTransfer = useMutation(api.combinedPayments.recordTransfer)
   const cancelRequest = useMutation(api.combinedPayments.cancel)
+  /** Other Guests picked while the server is still saving the pick. */
   const [optimisticIds, setOptimisticIds] = useState<string[] | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -73,11 +72,17 @@ export function useGuestPayment({
     0
 
   const transferInitiated = pending?.transferInitiatedAt != null
-  const requiredCoveredIds = coveredSeatIds.filter((id) => remainingOf(id) > 0)
-  const coveredIds: string[] = optimisticIds ?? [
+  // The server always adds this phone's Covered seats that still owe; the
+  // phone only picks the other Guests.
+  const otherIds: string[] =
+    optimisticIds ??
+    (pending ? getCoveredParticipantIds(pending) : []).filter(
+      (id) => !coveredSeatIds.includes(id as Id<'participants'>),
+    )
+  const coveredIds: string[] = [
     ...new Set<string>([
-      ...requiredCoveredIds,
-      ...(pending ? getCoveredParticipantIds(pending) : []),
+      ...coveredSeatIds.filter((id) => remainingOf(id) > 0),
+      ...otherIds,
     ]),
   ]
 
@@ -104,31 +109,18 @@ export function useGuestPayment({
 
   async function toggleExtra(id: Id<'participants'>) {
     if (selectionLocked) return
-    const next = coveredIds.includes(id)
-      ? coveredIds.filter((entry) => entry !== id)
-      : [...coveredIds, id]
+    const next = otherIds.includes(id)
+      ? otherIds.filter((entry) => entry !== id)
+      : [...otherIds, id]
     setOptimisticIds(next)
     setBusy(true)
     try {
-      if (next.length === 0) {
-        if (pending) {
-          await cancelRequest({ billId, sessionToken, requestId: pending._id })
-        }
-      } else if (pending) {
-        await updateCovered({
-          billId,
-          sessionToken,
-          requestId: pending._id,
-          coveredParticipantIds: next as Id<'participants'>[],
-        })
-      } else {
-        // Reserve the extra seats now so their phones show who is paying.
-        await createCombined({
-          billId,
-          sessionToken,
-          coveredParticipantIds: next as Id<'participants'>[],
-        })
-      }
+      // Reserve the picked seats now so their phones show who is paying.
+      await reserve({
+        billId,
+        sessionToken,
+        otherParticipantIds: next as Id<'participants'>[],
+      })
     } catch (error) {
       toast.error(getConvexErrorMessage(error))
     } finally {
@@ -137,37 +129,15 @@ export function useGuestPayment({
     }
   }
 
-  /** Save the request with fresh amounts and mark the transfer as sent. */
+  /** The server prices the request afresh and marks it Sent in one step. */
   async function recordTransfer(): Promise<boolean> {
     if (transferInitiated) return true
     try {
-      const covered = coveredIds.filter(
-        (id) => remainingOf(id) > 0,
-      ) as Id<'participants'>[]
-      if (covered.length === 0) {
-        if (pending) {
-          await cancelRequest({ billId, sessionToken, requestId: pending._id })
-        }
-        await createSolo({ billId, sessionToken })
-        return true
-      }
-      const requestId = pending
-        ? (
-            await updateCovered({
-              billId,
-              sessionToken,
-              requestId: pending._id,
-              coveredParticipantIds: covered,
-            })
-          ).requestId
-        : (
-            await createCombined({
-              billId,
-              sessionToken,
-              coveredParticipantIds: covered,
-            })
-          ).requestId
-      await initiateTransfer({ billId, sessionToken, requestId })
+      await sendTransfer({
+        billId,
+        sessionToken,
+        otherParticipantIds: otherIds as Id<'participants'>[],
+      })
       return true
     } catch (error) {
       toast.error(getConvexErrorMessage(error))
