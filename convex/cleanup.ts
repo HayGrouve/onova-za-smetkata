@@ -16,6 +16,12 @@ const USAGE_COUNTER_MAX_AGE_MS = 62 * 24 * 60 * 60 * 1000
 /** Receipt scans kept for 30 days, finished or not. */
 const RECEIPT_SCAN_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
 
+/**
+ * A quick bill's phone discards its scan once it has the lines; a scan still
+ * here after a day was abandoned (photo included, if the read never ran).
+ */
+const QUICK_SCAN_RETENTION_MS = 24 * 60 * 60 * 1000
+
 /** Stripe stops retrying a webhook after three days; keep event ids for 30. */
 const WEBHOOK_EVENT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
 
@@ -123,6 +129,17 @@ export const run = internalMutation({
       await ctx.db.delete(scan._id)
     }
 
+    const quickScans = await ctx.db
+      .query('quickScans')
+      .withIndex('by_createdAt', (q) =>
+        q.lt('createdAt', now - QUICK_SCAN_RETENTION_MS),
+      )
+      .take(CLEANUP_BATCH_SIZE)
+    for (const scan of quickScans) {
+      if (scan.storageId) await ctx.storage.delete(scan.storageId)
+      await ctx.db.delete(scan._id)
+    }
+
     const webhookEvents = await ctx.db
       .query('processedWebhookEvents')
       .withIndex('by_processedAt', (q) =>
@@ -137,6 +154,7 @@ export const run = internalMutation({
       sessions.length === CLEANUP_BATCH_SIZE ||
       bucketCursor !== undefined ||
       scans.length === CLEANUP_BATCH_SIZE ||
+      quickScans.length === CLEANUP_BATCH_SIZE ||
       webhookEvents.length === CLEANUP_BATCH_SIZE
     if (moreLeft) {
       await ctx.scheduler.runAfter(0, internal.cleanup.run, {
@@ -148,6 +166,7 @@ export const run = internalMutation({
       purgedSessions: sessions.length,
       purgedBuckets,
       purgedScans: scans.length,
+      purgedQuickScans: quickScans.length,
       purgedWebhookEvents: webhookEvents.length,
     }
   },

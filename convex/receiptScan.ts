@@ -14,14 +14,7 @@ import { validateReceiptImportItems } from '../shared/receipt-import-schema'
 import { assertRateLimit } from './lib/rateLimit'
 import { touchBill } from './lib/touchBill'
 import { nextSortOrder } from '../shared/sort-order'
-import {
-  assertOcrStartQuota,
-  formatUsageMonthKey,
-  incrementUsageCount,
-  usageCounterKey,
-} from './lib/hostTier'
-
-const OCR_SCANS_PER_HOST_PER_HOUR = 20
+import { assertHostMayStartOcr, recordOcrStart } from './lib/ocrStart'
 
 /** A scan still pending/processing after this long is treated as dead. */
 const SCAN_IN_FLIGHT_MS = 3 * 60 * 1000
@@ -58,16 +51,8 @@ export const startScan = mutation({
     }
 
     const now = Date.now()
-    await assertOcrStartQuota(ctx, owner, bill.ownerId, now)
+    await assertHostMayStartOcr(ctx, owner, now)
     await assertRateLimit(ctx, `ocr:${args.billId}`, 10, 3_600_000)
-    // Per Host too: bills are free to create, so a per-bill cap alone does not
-    // bound Gemini spend while every Host has Pro limits.
-    await assertRateLimit(
-      ctx,
-      `ocr:user:${bill.ownerId}`,
-      OCR_SCANS_PER_HOST_PER_HOUR,
-      3_600_000,
-    )
     if (!bill.receiptStorageId) {
       throw new Error('Няма прикачена снимка на бележка за тази сметка')
     }
@@ -83,12 +68,7 @@ export const startScan = mutation({
       scanId,
     })
 
-    const monthKey = formatUsageMonthKey(now)
-    await incrementUsageCount(
-      ctx,
-      usageCounterKey(bill.ownerId, 'ocr', monthKey),
-      now,
-    )
+    await recordOcrStart(ctx, bill.ownerId, now)
 
     return scanId
   },
