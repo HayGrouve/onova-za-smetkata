@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   preflight:
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -31,7 +31,7 @@ jobs:
         run: pnpm run ci:preflight
 
   e2e:
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     # Avoid secrets in job-level `if` (invalidates the whole workflow).
     # Skip the job body when the optional E2E secret is unset.
     # Host flows also need the Clerk dev keys and test user (see e2e/README.md).
@@ -72,7 +72,7 @@ jobs:
 
   deploy-convex:
     name: Deploy Convex (production)
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: [preflight]
     steps:
@@ -95,7 +95,7 @@ jobs:
 
   deploy-vercel:
     name: Deploy Vercel (production)
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: [deploy-convex]
     env:
