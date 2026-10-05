@@ -85,15 +85,15 @@ One Guest phone's request to pay its own Share plus its Covered seats and any ot
 _Avoid_: combined payment (also covers paying alone), transfer (the money itself), billing (Host Pro)
 
 **Live receipt**:
-The bill as one shared paper that Host and Guests see with different permissions: one line per Claim group, one slot per Unit (dashed when free, seat avatars when taken), totals at the foot. Guests tap a line to take a Unit; the Host paints. Other phones' claims appear live, and a ticker derived on the client (`src/lib/bill-activity.ts`) says who took what. Design: `docs/design/live-receipt.md`.
-_Avoid_: claim list, editor steps (as product language)
+The bill as one shared paper that Host and Guests see with different permissions: one line per Claim group, one slot per Unit (dashed when free, seat avatars when taken), totals at the foot. Guests tap a line to take a Unit; the Host paints. Other phones' claims appear live, and a ticker derived on the client (`src/lib/bill-activity.ts`) says who took what. Every phone — the Host's claim and settle screens, a Guest's claim page and Pay step — reads the same model of lines, totals, seats and Slips; only the seat money differs, because a Guest phone gets it from the server as it may see it. Module: `shared/live-receipt.ts`. Design: `docs/design/live-receipt.md`.
+_Avoid_: claim list, editor steps (as product language); computing Shares, free Units or a Slip's status in a view; „Остават“ meaning “items I have not claimed”
 
 **Brush**:
 On На масата the Host picks a seat in the seats rail as the brush; each tap on a line then takes one free Unit for that seat (`takeUnit`). Without a brush a tap opens the line's Units („Кой какво от този ред“) for per-Unit edits.
 _Avoid_: assign mode
 
 **Slip**:
-One person's tear-off part of the Live receipt: their running Share, and on the Host side a stamp — „Чака“ (transfer awaiting confirmation) or „Платено“. The Guest's own Slip is pinned to the bottom of the claim page and tears off into the Pay step.
+One person's tear-off part of the Live receipt: their running Share, and on the Host side a stamp — „Чака“ (a Sent Pay request pays for the seat) or „Платено“. One rule decides a seat's state on every phone; a Guest phone only sees its own Sent transfer. The Guest's own Slip is pinned to the bottom of the claim page and tears off into the Pay step.
 _Avoid_: card, row (for a person's payment state)
 
 **Unit index**:
@@ -136,13 +136,9 @@ _Avoid_: assembling snapshot + breakdown + labels separately in each UI consumer
 Orchestration for the host bill editor — step clamp/redirect, metadata draft state, derived snapshot/totals/completion, OCR→guidance handoff, guidance input. Pure module: `shared/bill-editing-controller.ts`; React seam: `useBillEditorController`.
 _Avoid_: wiring OCR, guidance, and step completion ad hoc in the route file
 
-**Guest claim session**:
-What a guest phone needs to pay: table progress in Units and per-seat Shares (own seat and Covered seats). Pure module: `shared/guest-claim-session.ts`; React seam: `useGuestClaimSession` (the Pay step). The Live receipt reads Claim groups and seat views from `shared/claim-groups.ts` directly.
-_Avoid_: computing Shares separately in the pay route; „Остават“ meaning “items I have not claimed”
-
 **Guest flow session**:
-Orchestration for the Guest journey — join resume, seat pick (own + Covered seats), claim/pay redirects, session-lost recovery, doc mapping to Guest claim session input. Pure module: `shared/guest-flow-session.ts`; React seams: `useGuestJoinFlow`, `useGuestBillSession` (shared by the claim and pay pages).
-_Avoid_: duplicating redirect/resume logic in routes; conflating with Guest claim session
+Orchestration for the Guest journey — join resume, seat pick (own + Covered seats), claim/pay redirects, session-lost recovery. Pure module: `shared/guest-flow-session.ts`; React seams: `useGuestJoinFlow`, `useGuestBillSession` (shared by the claim and pay pages).
+_Avoid_: duplicating redirect/resume logic in routes; conflating with the Guest session it keeps alive
 
 **Host Pro**:
 The paid SaaS tier that lifts Free-tier limits (bills per month, OCR scans, friend groups). The Host pays the product, not the restaurant: €2.99/month or €29/year through Stripe Managed Payments (Link is the seller).

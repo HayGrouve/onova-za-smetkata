@@ -21,7 +21,6 @@ import {
 import {
   HostSlip,
   SlipStack,
-  slipStatus,
   sortSlips,
 } from '#/components/host/host-slips.tsx'
 import type { HostSlipModel } from '#/components/host/host-slips.tsx'
@@ -36,12 +35,12 @@ import {
   Rule,
 } from '#/components/receipt/paper.tsx'
 import { SeatsProvider, useSeatLookup } from '#/components/receipt/seats.tsx'
-import type { Seat } from '#/components/receipt/seats.tsx'
 import {
   ActivityFeed,
   SeatsRail,
   TransientTicker,
   UndoRow,
+  toRailSeats,
   useUndo,
 } from '#/components/receipt/table.tsx'
 import type { RailSeat, UndoEntry } from '#/components/receipt/table.tsx'
@@ -63,13 +62,11 @@ import {
   validateBillForFinalize,
 } from '../../../shared/bill-calculations.ts'
 import { toBillCalculationSnapshot } from '../../../shared/bill-calculation-snapshot.ts'
-import { getCoveredParticipantIds } from '../../../shared/combined-payment.ts'
-import {
-  groupClaimItems,
-  indexUnitMembers,
-  unitKey,
-} from '../../../shared/claim-groups.ts'
 import type { ClaimGroup, UnitRef } from '../../../shared/claim-groups.ts'
+import {
+  buildLiveReceipt,
+  buildSeatLedger,
+} from '../../../shared/live-receipt.ts'
 import type { FunctionReturnType } from 'convex/server'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -182,110 +179,51 @@ function HostBillTable({
     () => calculateBillTotals(snapshot.calculationInput),
     [snapshot],
   )
-  const groups = useMemo(
-    () =>
-      groupClaimItems(
-        items.map((item) => ({
-          id: item._id,
-          name: item.name,
-          unitPriceCents: item.unitPriceCents,
-          quantity: item.quantity,
-          sortOrder: item.sortOrder,
-        })),
-      ),
-    [items],
-  )
-  const membersByUnit = useMemo(
-    () => indexUnitMembers(assignments),
-    [assignments],
-  )
-  const membersOf = (unit: UnitRef) => membersByUnit.get(unitKey(unit)) ?? []
-  const orderParticipants = participants.map((p) => ({
-    id: p._id,
-    sortOrder: p.sortOrder,
-  }))
-
-  const subtotalCents = items.reduce(
-    (sum, item) => sum + item.unitPriceCents * item.quantity,
-    0,
-  )
-  const tipCents = bill.tipCents ?? 0
-  const freeUnits = groups.reduce(
-    (sum, group) =>
-      sum + group.units.filter((unit) => membersOf(unit).length === 0).length,
-    0,
-  )
-  const freeCents = groups.reduce(
-    (sum, group) =>
-      sum +
-      group.units.filter((unit) => membersOf(unit).length === 0).length *
-        group.unitPriceCents,
-    0,
-  )
-  const unitsOf = (seatId: string) =>
-    assignments.filter((a) => a.participantId === seatId).length
-
-  const pendingBySeat = new Map<string, NonNullable<HostSlipModel['pending']>>()
-  for (const request of pendingRequests ?? []) {
-    const entry = {
-      requestId: request._id,
-      totalCents: request.totalCents,
-      payerId: request.payerParticipantId as string,
-      payerLabel: labels[request.payerParticipantId] ?? 'друг',
-    }
-    pendingBySeat.set(request.payerParticipantId, entry)
-    for (const id of getCoveredParticipantIds(request)) {
-      pendingBySeat.set(id, entry)
-    }
-  }
   const activeIds = useMemo(
     () => (activeSeats ?? []).map((seat) => seat.participantId as string),
     [activeSeats],
   )
-
-  const fallbackSeat = (id: string, name: string): Seat => ({
-    id,
-    label: name,
-    initials: '?',
-    hue: 0,
-    isHost: false,
-  })
-  const ordered = [...participants].sort((a, b) => a.sortOrder - b.sortOrder)
-  const slips: HostSlipModel[] = ordered.map((participant) => {
-    const seatTotals = totals.byParticipant[participant._id]
-    const pending = pendingBySeat.get(participant._id) ?? null
-    return {
-      seat:
-        seatOf(participant._id) ??
-        fallbackSeat(participant._id, participant.name),
-      status: slipStatus({
-        isHost: participant._id === bill.hostParticipantId,
-        pending: pending !== null,
-        totals: seatTotals,
+  const receipt = useMemo(
+    () =>
+      buildLiveReceipt({
+        participants,
+        items,
+        assignments,
+        tipCents: bill.tipCents,
+        hostParticipantId: bill.hostParticipantId,
+        seatMoney: buildSeatLedger({
+          totals,
+          sentRequests: pendingRequests ?? [],
+        }),
+        joinedSeatIds: activeIds,
       }),
-      totals: seatTotals,
-      units: unitsOf(participant._id),
-      pending,
-    }
-  })
-  const railSeats: RailSeat[] = slips.map((slip) => {
-    const joined = activeIds.includes(slip.seat.id)
-    return {
-      seat: slip.seat,
-      joined,
-      status: slip.status,
-      presence:
-        slip.status === 'host'
-          ? 'домакин'
-          : slip.status === 'paid'
-            ? 'платено'
-            : slip.status === 'pending'
-              ? 'чака потвърждение'
-              : joined
-                ? `на масата, ${slip.units} бр.`
-                : 'не е отворил линка',
-    }
-  })
+    [
+      participants,
+      items,
+      assignments,
+      bill,
+      totals,
+      pendingRequests,
+      activeIds,
+    ],
+  )
+  const { membersOf, freeUnits, freeCents } = receipt
+  const railSeats: RailSeat[] = toRailSeats(receipt.seats, seatOf)
+
+  const slips: HostSlipModel[] = receipt.seats.map((seat, index) => ({
+    seat: railSeats[index].seat,
+    status: seat.status,
+    totals: totals.byParticipant[seat.id],
+    units: seat.unitCount,
+    pending: seat.sent
+      ? {
+          requestId: seat.sent.requestId as Id<'combinedPaymentRequests'>,
+          totalCents: seat.sent.totalCents,
+          payerId: seat.sent.payerId,
+          payerLabel: labels[seat.sent.payerId] ?? 'друг',
+        }
+      : null,
+  }))
 
   const events = useBillActivity({
     items,
@@ -360,9 +298,9 @@ function HostBillTable({
     assemble.body
   ) : (
     <LineList
-      groups={groups}
+      groups={receipt.lines}
       membersOf={membersOf}
-      participants={orderParticipants}
+      participants={receipt.seatOrder}
       phase={activePhase}
       brushId={brushId}
       openKey={openKey}
@@ -378,7 +316,7 @@ function HostBillTable({
     ? labels[bill.hostParticipantId]
     : undefined
 
-  const receipt = (
+  const paper = (
     <div className="relative">
       <div className="paper-shadow">
         <div className="paper paper-top thermal relative px-4 pb-4 sm:px-6">
@@ -415,7 +353,10 @@ function HostBillTable({
             lines
           )}
           <Rule />
-          <ReceiptTotals subtotalCents={subtotalCents} tipCents={tipCents}>
+          <ReceiptTotals
+            subtotalCents={receipt.subtotalCents}
+            tipCents={receipt.tipCents}
+          >
             {freeUnits > 0 && !assembling ? (
               <div className="flex items-baseline text-ink-muted">
                 <span>Неразпределени</span>
@@ -469,13 +410,7 @@ function HostBillTable({
       freeUnits={freeUnits}
       freeCents={freeCents}
       seatCount={participants.length}
-      outstandingCents={slips.reduce(
-        (sum, slip) =>
-          slip.status === 'host'
-            ? sum
-            : sum + Math.max(0, slip.totals.balanceCents),
-        0,
-      )}
+      outstandingCents={receipt.outstandingCents}
       unpaid={slips.filter(
         (slip) => slip.status === 'owes' || slip.status === 'pending',
       )}
@@ -525,7 +460,7 @@ function HostBillTable({
           {activePhase !== 'assemble' ? <ActivityFeed events={events} /> : null}
         </aside>
 
-        <main className="min-w-0">{receipt}</main>
+        <main className="min-w-0">{paper}</main>
 
         {/*
           One copy of the actions: a dock pinned to the bottom on phones (with
@@ -615,7 +550,7 @@ function HostBillTable({
           billId={billId}
           participantId={detailId as Id<'participants'>}
           label={labels[detailId] ?? 'Участник'}
-          breakdownInput={snapshot.breakdownInput}
+          breakdownInput={receipt.breakdownInput}
           totals={totals.byParticipant[detailId]}
           payments={payments}
           onOpenPaymentSettings={openPaymentSettings}

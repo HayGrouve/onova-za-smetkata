@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildTakenSeats,
-  mapGuestBillToClaimSessionInput,
   planIdentitySwitchRecovery,
   planSessionLostRecovery,
   resolveClaimPageGate,
@@ -228,43 +227,6 @@ describe('resolveClaimPageGate', () => {
       shareToken: 'share-token',
       storedSession,
       participantId: 'participant-1',
-    })
-  })
-})
-
-describe('mapGuestBillToClaimSessionInput', () => {
-  it('maps convex guest bill docs to guest claim session input', () => {
-    expect(mapGuestBillToClaimSessionInput(billData)).toEqual({
-      items: [
-        {
-          id: 'item-1',
-          name: 'Salad',
-          quantity: 1,
-          sortOrder: 0,
-          unitPriceCents: 500,
-        },
-      ],
-      assignments: [
-        {
-          itemId: 'item-1',
-          participantId: 'participant-1',
-          unitIndex: 0,
-        },
-      ],
-      participants: [
-        { id: 'participant-1', sortOrder: 0 },
-        { id: 'participant-2', sortOrder: 1 },
-      ],
-      billRelations: {
-        participants: billData.participants,
-        items: billData.items,
-        assignments: billData.assignments,
-        payments: billData.myPayments,
-      },
-      billContext: {
-        tipCents: 100,
-        hostParticipantId: 'host-1',
-      },
     })
   })
 })

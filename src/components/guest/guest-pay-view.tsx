@@ -21,13 +21,17 @@ import { useGuestPayment } from '#/hooks/use-guest-payment.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { joinLabels } from '#/lib/participant-labels.ts'
 import { cn } from '#/lib/utils.ts'
-import type { GuestClaimSeatShare } from '../../../shared/guest-claim-session.ts'
+import { useGuestLiveReceipt } from '#/hooks/use-guest-live-receipt.ts'
 import type { FunctionReturnType } from 'convex/server'
 import type { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
 type GuestBillData = NonNullable<
   FunctionReturnType<typeof api.bills.getForGuest>
+>
+
+type ActiveSeats = FunctionReturnType<
+  typeof api.guestSessions.listActiveForBill
 >
 
 export interface GuestPayViewProps {
@@ -37,8 +41,7 @@ export interface GuestPayViewProps {
   data: GuestBillData
   payerId: Id<'participants'>
   mySeatIds: Id<'participants'>[]
-  seatShares: GuestClaimSeatShare[]
-  freeUnits: number
+  activeSeats: ActiveSeats | undefined
   labels: Record<string, string>
   readOnly: boolean
   pendingCover: { payerName: string; coveredAmountCents: number } | null
@@ -57,8 +60,7 @@ export function GuestPayView({
   data,
   payerId,
   mySeatIds,
-  seatShares,
-  freeUnits,
+  activeSeats,
   labels,
   readOnly,
   pendingCover,
@@ -81,7 +83,12 @@ export function GuestPayView({
     heldElsewhereIds,
   })
 
-  const owed = seatShares.reduce((sum, s) => sum + s.totals.owedCents, 0)
+  const receipt = useGuestLiveReceipt(data, activeSeats)
+  const { freeUnits } = receipt
+  const owed = mySeatIds.reduce(
+    (sum, id) => sum + (receipt.seat(id)?.owedCents ?? 0),
+    0,
+  )
   const remaining = mySeatIds.reduce(
     (sum, id) => sum + payment.remainingOf(id),
     0,
@@ -217,17 +224,16 @@ export function GuestPayView({
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"
                     >
-                      {seatShares.map((share) => (
-                        <div key={share.seatId} className="pb-3">
-                          {seatShares.length > 1 ? (
+                      {mySeatIds.map((seatId) => (
+                        <div key={seatId} className="pb-3">
+                          {mySeatIds.length > 1 ? (
                             <p className="pt-1 pb-0.5 text-[12px] font-semibold">
-                              {labels[share.seatId] ?? 'Участник'}
+                              {labels[seatId] ?? 'Участник'}
                             </p>
                           ) : null}
                           <ShareLines
-                            breakdownInput={share.breakdownInput}
-                            totals={share.totals}
-                            participantId={share.seatId}
+                            breakdownInput={receipt.breakdownInput}
+                            participantId={seatId}
                             labels={labels}
                           />
                         </div>

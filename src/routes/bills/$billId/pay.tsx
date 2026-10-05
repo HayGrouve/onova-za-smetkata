@@ -1,13 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
-import { useMemo } from 'react'
 import { GuestPayView } from '#/components/guest/guest-pay-view.tsx'
 import { ReceiptLoading } from '#/components/receipt/receipt-states.tsx'
 import { QueryErrorBoundary } from '#/components/ui/query-error-boundary.tsx'
 import { useGuestBillSession } from '#/hooks/use-guest-bill-session.ts'
-import { useGuestClaimSession } from '#/hooks/use-guest-claim-session.ts'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
-import { mapGuestBillToClaimSessionInput } from '../../../../shared/guest-flow-session.ts'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
 
@@ -18,8 +15,6 @@ export const Route = createFileRoute('/bills/$billId/pay')({
   }),
   component: BillPayPage,
 })
-
-const EMPTY_ITEMS: never[] = []
 
 function BillPayPage() {
   const { billId: billIdParam } = Route.useParams()
@@ -56,27 +51,7 @@ function GuestPayContent({
     shareToken ? { billId, shareToken } : 'skip',
   )
 
-  const claimInput = useMemo(
-    () => (data ? mapGuestBillToClaimSessionInput(data) : null),
-    [data],
-  )
-  const { session } = useGuestClaimSession({
-    items: claimInput?.items ?? EMPTY_ITEMS,
-    assignments: claimInput?.assignments ?? EMPTY_ITEMS,
-    participants: claimInput?.participants ?? EMPTY_ITEMS,
-    seatId: participantId,
-    mySeatIds,
-    billRelations: claimInput?.billRelations,
-    billContext: claimInput?.billContext,
-  })
-
-  if (
-    gate.status !== 'ready' ||
-    !data ||
-    !storedSession ||
-    !participantId ||
-    !session
-  ) {
+  if (gate.status !== 'ready' || !data || !storedSession || !participantId) {
     return <ReceiptLoading />
   }
 
@@ -96,8 +71,7 @@ function GuestPayContent({
       data={data}
       payerId={participantId}
       mySeatIds={mySeatIds}
-      seatShares={session.seatShares}
-      freeUnits={session.tableProgress.freeUnits}
+      activeSeats={activeSeats}
       labels={labels}
       readOnly={readOnly}
       pendingCover={pendingCover ?? null}

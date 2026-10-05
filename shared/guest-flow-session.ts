@@ -1,11 +1,3 @@
-import type {
-  BillCalculationContext,
-  LoadedBillRelations,
-} from './bill-calculation-snapshot'
-import type { GuestItemAssignment } from './guest-claim-items'
-import type { GuestClaimSessionItem } from './guest-claim-session'
-import type { ParticipantInput } from './bill-calculations'
-
 export type StoredGuestSessionRef = {
   billId: string
   participantId: string
@@ -53,14 +45,6 @@ export type GuestFlowBillData = {
   myPayments: GuestFlowBillPayment[]
   /** Seats this phone's guest session handles — own seat first, then Covered seats. */
   mySeatIds?: string[]
-}
-
-export type GuestClaimSessionInputSlice = {
-  items: GuestClaimSessionItem[]
-  assignments: GuestItemAssignment[]
-  participants: ParticipantInput[]
-  billRelations: LoadedBillRelations
-  billContext: BillCalculationContext
 }
 
 export type JoinPageGate = 'loading' | 'ready'
@@ -177,39 +161,6 @@ export function resolveClaimPageGate(input: {
     shareToken: input.shareToken,
     storedSession: input.storedSession,
     participantId: input.storedSession.participantId,
-  }
-}
-
-export function mapGuestBillToClaimSessionInput(
-  data: GuestFlowBillData,
-): GuestClaimSessionInputSlice {
-  return {
-    items: data.items.map((item) => ({
-      id: item._id,
-      name: item.name,
-      quantity: item.quantity,
-      sortOrder: item.sortOrder,
-      unitPriceCents: item.unitPriceCents,
-    })),
-    assignments: data.assignments.map((assignment) => ({
-      itemId: assignment.itemId,
-      participantId: assignment.participantId,
-      unitIndex: assignment.unitIndex,
-    })),
-    participants: data.participants.map((participant) => ({
-      id: participant._id,
-      sortOrder: participant.sortOrder,
-    })),
-    billRelations: {
-      participants: data.participants,
-      items: data.items,
-      assignments: data.assignments,
-      payments: data.myPayments,
-    },
-    billContext: {
-      tipCents: data.bill.tipCents ?? 0,
-      hostParticipantId: data.hostParticipantId,
-    },
   }
 }
 

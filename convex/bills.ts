@@ -28,13 +28,19 @@ import {
   deleteReceiptStorageFile,
   shouldDeleteReplacedReceiptStorage,
 } from './lib/receiptStorage'
-import { onBillDeleted, onBillFinalizing } from './lib/payRequest'
+import {
+  onBillDeleted,
+  onBillFinalizing,
+  pendingPayRequestOf,
+} from './lib/payRequest'
 import { endGuestSessionsForBill, findGuest } from './lib/guestSession'
 import { assertShareToken, toGuestVisibleBill } from './lib/guestAccess'
 import { firstZodIssueMessage } from '../shared/validation/errors'
 import { parseBillMetadataPatch } from '../shared/bill-metadata-schema'
 import { createShareToken } from './lib/shareToken'
 import { calculateBillTotals } from '../shared/bill-calculations'
+import { isAwaitingHostConfirmation } from '../shared/combined-payment'
+import { buildSeatLedger } from '../shared/live-receipt'
 import { toBillCalculationSnapshot } from '../shared/bill-calculation-snapshot'
 import { touchBill } from './lib/touchBill'
 import { clearGuidedBillReference } from './lib/hostOnboardingBillHooks'
@@ -170,10 +176,21 @@ export const getForGuest = query({
       },
     )
     const totals = calculateBillTotals(calculationInput)
+    // A Guest phone sees its own Sent transfer, never another phone's.
+    const ownRequest = guest
+      ? await pendingPayRequestOf(ctx, guest.session)
+      : null
+    const ledger = buildSeatLedger({
+      totals,
+      sentRequests:
+        ownRequest && isAwaitingHostConfirmation(ownRequest)
+          ? [ownRequest]
+          : [],
+    })
     const participantBalances = participants.map((p) => ({
       participantId: p._id,
       name: p.name,
-      remainingCents: Math.max(0, totals.byParticipant[p._id].balanceCents),
+      ...ledger[p._id],
     }))
 
     return {

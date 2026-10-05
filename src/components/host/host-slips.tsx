@@ -7,13 +7,13 @@ import { Perforation } from '#/components/receipt/paper.tsx'
 import { SeatAvatar } from '#/components/receipt/seats.tsx'
 import type { Seat } from '#/components/receipt/seats.tsx'
 import { Stamp } from '#/components/receipt/stamp.tsx'
-import type { SeatStatus } from '#/components/receipt/table.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { shareOrCopyText } from '#/lib/bill-share.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { cn } from '#/lib/utils.ts'
 import type { ParticipantTotals } from '../../../shared/bill-calculations.ts'
+import type { SeatStatus } from '../../../shared/live-receipt.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -31,19 +31,6 @@ export interface HostSlipModel {
     payerId: string
     payerLabel: string
   } | null
-}
-
-export function slipStatus(input: {
-  isHost: boolean
-  pending: boolean
-  totals: ParticipantTotals
-}): SeatStatus {
-  if (input.isHost) return 'host'
-  if (input.pending) return 'pending'
-  if (input.totals.owedCents > 0 && input.totals.balanceCents <= 0)
-    return 'paid'
-  if (input.totals.balanceCents > 0) return 'owes'
-  return 'empty'
 }
 
 const RANK: Record<SeatStatus, number> = {
