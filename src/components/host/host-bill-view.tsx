@@ -878,7 +878,7 @@ function PhaseActions({
   async function splitRest() {
     const confirmed = await confirm({
       title: 'Раздели неразпределеното поравно?',
-      description: `Редовете със свободни бройки (${freeUnits} бр., ${formatEur(freeCents)}) се делят поравно между всички ${seatCount} на масата. Досегашните отметки по тези редове се заменят.`,
+      description: `Свободните бройки (${freeUnits} бр., ${formatEur(freeCents)}) се делят поравно между всички ${seatCount} на масата. Вече отбелязаните бройки остават както са.`,
       confirmLabel: 'Раздели поравно',
       variant: 'default',
     })

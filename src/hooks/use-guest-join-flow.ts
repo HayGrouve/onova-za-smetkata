@@ -31,8 +31,19 @@ export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
   const [resuming, setResuming] = useState(() =>
     shouldAttemptJoinResume(getStoredGuestSession(billId), shareToken),
   )
-  /** After a rate limit, stop resuming on every seat update; a tap retries. */
-  const resumeRateLimitedRef = useRef(false)
+  /**
+   * Resume once per visit. The seat list updates as soon as the resume claim
+   * lands; re-running then would cancel it and claim again, so every page
+   * load used to spend several claims of the per-phone rate limit.
+   */
+  const resumeStartedRef = useRef(false)
+  const unmountedRef = useRef(false)
+  useEffect(() => {
+    unmountedRef.current = false
+    return () => {
+      unmountedRef.current = true
+    }
+  }, [])
 
   const storedSession = useMemo(
     () => getStoredGuestSession(billId),
@@ -63,21 +74,14 @@ export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
 
   useEffect(() => {
     if (data === undefined || activeSeats === undefined) return
-    if (
-      resumeRateLimitedRef.current ||
-      !shouldAttemptJoinResume(getStoredGuestSession(billId), shareToken)
-    ) {
-      setResuming(false)
-      return
-    }
-
+    if (resumeStartedRef.current) return
     const stored = getStoredGuestSession(billId)
-    if (!stored) {
+    if (!stored || !shouldAttemptJoinResume(stored, shareToken)) {
       setResuming(false)
       return
     }
+    resumeStartedRef.current = true
 
-    const cancelledRef = { current: false }
     const resume = (coveredParticipantIds: string[] | undefined) =>
       claimSession({
         billId,
@@ -100,24 +104,18 @@ export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
           await resume([])
           setStoredGuestSession({ ...stored, coveredParticipantIds: undefined })
         }
-        if (cancelledRef.current) return
-        goToClaim()
+        if (!unmountedRef.current) goToClaim()
       } catch (error) {
         if (isRateLimit(error)) {
           // Not a lost seat: keep the stored session; tapping the seat retries.
-          resumeRateLimitedRef.current = true
           toast.error(getConvexErrorMessage(error))
         } else {
           clearStoredGuestParticipant(billId)
           toast.error(GUEST_FLOW_MESSAGES.sessionLostRedirect)
         }
-        if (!cancelledRef.current) setResuming(false)
+        if (!unmountedRef.current) setResuming(false)
       }
     })()
-
-    return () => {
-      cancelledRef.current = true
-    }
   }, [billId, claimSession, data, activeSeats, navigate, shareToken])
 
   /**

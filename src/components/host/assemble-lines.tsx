@@ -196,7 +196,9 @@ export function AssembleLines({
                   aria-label={`Редактирай ${item.name}`}
                 >
                   <span className="flex items-baseline">
-                    <span className="min-w-0 font-medium">{item.name}</span>
+                    <span className="min-w-0 font-medium wrap-anywhere">
+                      {item.name}
+                    </span>
                     <span className="leader" aria-hidden />
                     <span className="shrink-0 font-semibold">
                       {formatEur(item.unitPriceCents * item.quantity)}

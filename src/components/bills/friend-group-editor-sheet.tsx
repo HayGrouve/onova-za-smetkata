@@ -28,6 +28,7 @@ import {
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { focusContentInsteadOfField } from '#/lib/dialog-focus.ts'
+import { parseParticipantName } from '../../../shared/participant-schema.ts'
 
 const EMPTY_MEMBER_NAMES: string[] = []
 
@@ -106,6 +107,14 @@ export function FriendGroupEditorSheet({
   function addMember(rawName?: string) {
     const trimmed = (rawName ?? memberInput).trim()
     if (!trimmed) return
+    const parsedName = parseParticipantName(trimmed)
+    if (!parsedName.success) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        memberNames: parsedName.error.issues[0]?.message ?? 'Невалидно име',
+      }))
+      return
+    }
     const key = trimmed.toLowerCase()
     if (memberNames.some((member) => member.toLowerCase() === key)) {
       setFieldErrors((prev) => ({
@@ -139,7 +148,19 @@ export function FriendGroupEditorSheet({
   async function handleSave() {
     const parsed = parseFriendGroupInput({ name, memberNames })
     if (!parsed.success) {
-      setFieldErrors(formatFriendGroupErrors(parsed.error))
+      // Per-member errors have no field of their own: name the member in the
+      // list's message, or Запази would silently do nothing.
+      const errors = formatFriendGroupErrors(parsed.error)
+      const [badIndex, badMessage] =
+        Object.entries(errors.memberNameAt ?? {})[0] ?? []
+      setFieldErrors({
+        name: errors.name,
+        memberNames:
+          errors.memberNames ??
+          (badMessage
+            ? `„${memberNames[Number(badIndex)]}“: ${badMessage}`
+            : undefined),
+      })
       return
     }
 

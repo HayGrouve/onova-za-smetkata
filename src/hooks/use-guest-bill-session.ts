@@ -10,6 +10,7 @@ import {
   resolveMySeatIds,
 } from '../../shared/guest-flow-session'
 import type { FlowRecoveryPlan } from '../../shared/guest-flow-session'
+import { GUEST_FLOW_MESSAGES } from '../../shared/guest-flow-messages'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import { useGuestSessionHeartbeat } from '#/hooks/use-guest-session-heartbeat.ts'
@@ -118,6 +119,7 @@ export function useGuestBillSession(
       gate.reason === 'participant-not-found'
     ) {
       clearStoredGuestParticipant(billId)
+      toast.error(GUEST_FLOW_MESSAGES.seatRemoved)
       redirectToJoin(shareToken)
     }
   }, [billId, gate, redirectToJoin, shareToken])

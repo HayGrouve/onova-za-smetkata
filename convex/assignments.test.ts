@@ -5,6 +5,7 @@ import { CLAIM_MESSAGES } from '../shared/claim-messages'
 import { GUEST_FLOW_MESSAGES } from '../shared/guest-flow-messages'
 import { GUEST_SESSION_TTL_MS } from './lib/guestSession'
 import {
+  hostTakesUnits,
   joinAsGuest,
   seedBill,
   setBillStatus,
@@ -305,6 +306,29 @@ describe('Host bulk assignment', () => {
 
     expect((await unitMembers(t, beer)).get(0)).toEqual([bill.seats['Ани']])
     expect((await unitMembers(t, salad)).get(0)).toEqual([
+      bill.hostSeat,
+      bill.seats['Ани'],
+      bill.seats['Боби'],
+    ])
+  })
+
+  it('assignAll unassigned_only fills only the free Units of a partly claimed line', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t, {
+      items: [{ name: 'Бира', unitPriceCents: 500, quantity: 3 }],
+    })
+    const [beer] = bill.itemIds
+    await hostTakesUnits(bill, beer, [bill.seats['Ани'], bill.seats['Ани']])
+
+    await bill.host.mutation(api.assignments.assignAll, {
+      billId: bill.billId,
+      mode: 'unassigned_only',
+    })
+
+    const units = await unitMembers(t, beer)
+    expect(units.get(0)).toEqual([bill.seats['Ани']])
+    expect(units.get(1)).toEqual([bill.seats['Ани']])
+    expect(units.get(2)).toEqual([
       bill.hostSeat,
       bill.seats['Ани'],
       bill.seats['Боби'],

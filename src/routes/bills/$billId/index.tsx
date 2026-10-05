@@ -245,6 +245,7 @@ function BillEditorContent({
         <TipField
           key={bill._id}
           itemsSubtotalCents={derived.itemsSubtotalCents}
+          storedTipCents={bill.tipCents}
           value={metadata.tip}
           onValueChange={(value) => {
             setMetadata((prev) => ({ ...prev, tip: value }))

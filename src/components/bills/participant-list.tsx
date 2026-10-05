@@ -153,7 +153,11 @@ export function ParticipantList({
         action: {
           label: 'Отмени',
           onClick: () => {
-            void handleAdd(participant.name)
+            // Not handleAdd: this closure's participant list still holds the
+            // removed seat, so its duplicate check would always refuse.
+            addParticipant({ billId, name: participant.name }).catch(
+              (error: unknown) => toast.error(getConvexErrorMessage(error)),
+            )
           },
         },
       })
@@ -265,10 +269,12 @@ export function ParticipantList({
                 return (
                   <span
                     key={participant._id}
-                    className="flex min-h-11 items-center gap-1.5 rounded-full border-2 border-ink py-1 pr-0.5 pl-1 text-[12px] font-semibold"
+                    className="flex min-h-11 max-w-full items-center gap-1.5 rounded-full border-2 border-ink py-1 pr-0.5 pl-1 text-[12px] font-semibold"
                   >
                     {seat ? <SeatAvatar seat={seat} size="sm" /> : null}
-                    {labels[participant._id] ?? participant.name}
+                    <span className="min-w-0 wrap-anywhere">
+                      {labels[participant._id] ?? participant.name}
+                    </span>
                     {!readOnly ? (
                       <button
                         type="button"

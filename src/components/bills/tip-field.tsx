@@ -18,6 +18,8 @@ import { cn } from '#/lib/utils.ts'
 
 export interface TipFieldProps {
   itemsSubtotalCents: number
+  /** The bill's saved tip; undefined until a tip was ever set on it. */
+  storedTipCents: number | undefined
   value: string
   onValueChange: (value: string) => void
   onValidCents: (cents: number) => void
@@ -27,6 +29,7 @@ export interface TipFieldProps {
 
 export function TipField({
   itemsSubtotalCents,
+  storedTipCents,
   value,
   onValueChange,
   onValidCents,
@@ -56,6 +59,17 @@ export function TipField({
     appliedPreferenceRef.current = true
     const pref = readTipPreference()
     if (!pref) return
+    // The remembered tip only fills a bill that has none yet. A bill with a
+    // saved tip keeps it; its percent chip lights up when it still matches.
+    if (storedTipCents !== undefined) {
+      if (
+        pref.mode === 'percent' &&
+        tipCentsFromPercent(itemsSubtotalCents, pref.percent) === storedTipCents
+      ) {
+        setSelectedPercent(pref.percent)
+      }
+      return
+    }
     if (pref.mode === 'percent') {
       setSelectedPercent(pref.percent)
       const cents = tipCentsFromPercent(itemsSubtotalCents, pref.percent)
