@@ -103,18 +103,25 @@ describe('quick bill scans', () => {
       host.mutation(api.quickScan.start, { storageId: once }),
     ).rejects.toThrow()
 
-    // A bill's receipt, uploaded long ago, is not the scan's to delete.
+    // A bill's receipt is not the scan's to delete, however fresh.
     const billId = await host.mutation(api.bills.create, {})
     const billReceipt = await storePhoto(t)
     await host.mutation(api.bills.update, {
       billId,
       receiptStorageId: billReceipt,
     })
-    vi.setSystemTime(Date.now() + 11 * MINUTE_MS)
     await expect(
       host.mutation(api.quickScan.start, { storageId: billReceipt }),
     ).rejects.toThrow()
     expect(await photoExists(t, billReceipt)).toBe(true)
+
+    // Nor is any photo uploaded long ago.
+    const old = await storePhoto(t)
+    vi.setSystemTime(Date.now() + 11 * MINUTE_MS)
+    await expect(
+      host.mutation(api.quickScan.start, { storageId: old }),
+    ).rejects.toThrow()
+    expect(await photoExists(t, old)).toBe(true)
   })
 
   it('delete the photo as soon as the read is over and tell the phone why it failed', async () => {

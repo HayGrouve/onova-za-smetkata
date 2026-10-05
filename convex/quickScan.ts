@@ -91,10 +91,17 @@ export const start = mutation({
     // never a file that belongs to something else (a bill's receipt).
     const now = Date.now()
     const photo = await ctx.db.system.get('_storage', args.storageId)
-    const taken = await ctx.db
-      .query('quickScans')
-      .withIndex('by_storageId', (q) => q.eq('storageId', args.storageId))
-      .first()
+    const taken =
+      (await ctx.db
+        .query('quickScans')
+        .withIndex('by_storageId', (q) => q.eq('storageId', args.storageId))
+        .first()) ??
+      (await ctx.db
+        .query('bills')
+        .withIndex('by_receiptStorageId', (q) =>
+          q.eq('receiptStorageId', args.storageId),
+        )
+        .first())
     if (
       !photo ||
       taken ||
