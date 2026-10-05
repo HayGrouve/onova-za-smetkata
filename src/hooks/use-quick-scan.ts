@@ -1,4 +1,4 @@
-import { useConvex, useMutation, useQuery } from 'convex/react'
+import { useConvex, useConvexAuth, useMutation, useQuery } from 'convex/react'
 import { useCallback, useEffect } from 'react'
 import { useSubscriptionPaywall } from '#/components/subscription/subscription-provider.tsx'
 import { getConvexErrorMessage } from '#/lib/convex-error.ts'
@@ -8,7 +8,10 @@ import {
   updateQuickBill,
   writeQuickBill,
 } from '#/lib/quick-bill-storage.ts'
-import type { StoredQuickBill } from '#/lib/quick-bill-storage.ts'
+import type {
+  QuickScanState,
+  StoredQuickBill,
+} from '#/lib/quick-bill-storage.ts'
 import { validateItemAddArgs } from '../../shared/item-schema.ts'
 import {
   createQuickBill,
@@ -41,6 +44,17 @@ function showPhoto(attempt: string, blob: Blob) {
 
 const SCAN_GONE = 'Разпознаването прекъсна. Снимайте бележката отново.'
 
+/** Upload plus read take seconds; after this long the read is presumed dead. */
+export const QUICK_SCAN_STALE_MS = 3 * 60 * 1000
+
+/** A photo still on its way after `QUICK_SCAN_STALE_MS`: offer a retake. */
+export function isQuickScanStale(scan: QuickScanState, now: number): boolean {
+  return (
+    (scan.phase === 'uploading' || scan.phase === 'reading') &&
+    now - scan.startedAt > QUICK_SCAN_STALE_MS
+  )
+}
+
 function isAttempt(stored: StoredQuickBill | null, attempt: string) {
   return (
     (stored?.scan.phase === 'uploading' || stored?.scan.phase === 'reading') &&
@@ -55,12 +69,16 @@ function isAttempt(stored: StoredQuickBill | null, attempt: string) {
  */
 export function useStartQuickScan() {
   const convex = useConvex()
-  const { handleMutationError } = useSubscriptionPaywall()
+  const { handleMutationError, openPaywall } = useSubscriptionPaywall()
 
   return useCallback(
     async (file: File, mode: 'new' | 'retake') => {
       const attempt = crypto.randomUUID()
-      const scan = { phase: 'uploading' as const, attempt }
+      const scan = {
+        phase: 'uploading' as const,
+        attempt,
+        startedAt: Date.now(),
+      }
       if (mode === 'new') {
         writeQuickBill({ bill: createQuickBill({ now: Date.now() }), scan })
       } else {
@@ -87,18 +105,33 @@ export function useStartQuickScan() {
         const { storageId } = (await response.json()) as {
           storageId: Id<'_storage'>
         }
-        const scanId = await convex.mutation(api.quickScan.start, {
+        const started = await convex.mutation(api.quickScan.start, {
           storageId,
         })
+        if (!started.ok) {
+          // Refused after the upload: the server already deleted the photo.
+          if (!isAttempt(readQuickBill(), attempt)) return
+          if (started.quota) openPaywall('QUOTA_OCR', started.message)
+          updateQuickBill((current) => ({
+            ...current,
+            scan: { phase: 'failed', message: started.message },
+          }))
+          return
+        }
+        const { scanId } = started
         if (!isAttempt(readQuickBill(), attempt)) {
           // Closed or typed by hand meanwhile: nobody wants these lines.
           void convex.mutation(api.quickScan.discard, { scanId })
           return
         }
-        updateQuickBill((current) => ({
-          ...current,
-          scan: { phase: 'reading', attempt, scanId },
-        }))
+        updateQuickBill((current) =>
+          current.scan.phase === 'uploading'
+            ? {
+                ...current,
+                scan: { ...current.scan, phase: 'reading', scanId },
+              }
+            : current,
+        )
       } catch (error) {
         if (!isAttempt(readQuickBill(), attempt)) return
         // Over the monthly scans: the paywall says so; the page offers typing.
@@ -111,19 +144,19 @@ export function useStartQuickScan() {
         if (liveAttempt === attempt) liveAttempt = null
       }
     },
-    [convex, handleMutationError],
+    [convex, handleMutationError, openPaywall],
   )
 }
 
 /** While the receipt is read: print its lines into the quick bill when done. */
-export function useQuickScanResult(
-  stored: StoredQuickBill | null,
-  enabled: boolean,
-) {
+export function useQuickScanResult(stored: StoredQuickBill | null) {
+  // Convex auth, not Clerk's: before the token reaches Convex the scan reads
+  // as missing, and a missing scan counts as lost.
+  const { isAuthenticated } = useConvexAuth()
   const reading = stored?.scan.phase === 'reading' ? stored.scan : null
   const scan = useQuery(
     api.quickScan.get,
-    enabled && reading
+    isAuthenticated && reading
       ? { scanId: reading.scanId as Id<'quickScans'> }
       : 'skip',
   )

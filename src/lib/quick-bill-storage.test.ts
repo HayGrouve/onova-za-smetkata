@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { QUICK_BILL_TTL_MS, createQuickBill } from '../../shared/quick-bill.ts'
 import {
   QUICK_BILL_STORAGE_KEY,
+  editQuickBill,
   readQuickBill,
   subscribeQuickBill,
   updateQuickBill,
@@ -73,6 +74,17 @@ describe('quick bill storage', () => {
     expect(readQuickBill(later + QUICK_BILL_TTL_MS - 1)?.bill.tipPercent).toBe(
       10,
     )
+  })
+
+  it('tells readers when the quick bill expired under them, and refuses the edit', () => {
+    writeQuickBill(stored())
+    const listener = vi.fn()
+    const unsubscribe = subscribeQuickBill(listener)
+    vi.useFakeTimers({ now: NOW + QUICK_BILL_TTL_MS + 1 })
+    expect(editQuickBill((bill) => bill).ok).toBe(false)
+    expect(listener).toHaveBeenCalled()
+    vi.useRealTimers()
+    unsubscribe()
   })
 
   it('ignores what it cannot read', () => {

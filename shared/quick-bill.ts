@@ -109,6 +109,14 @@ export function quickBillSeatLabel(seat: QuickBillSeat): string {
   return seat.name.trim() || `Човек ${seat.number}`
 }
 
+/** Someone has marked, named themselves or finished a turn: losing it costs. */
+export function isQuickBillUnderway(bill: QuickBill): boolean {
+  return (
+    bill.claims.length > 0 ||
+    bill.seats.some((s) => s.done || s.name.trim() !== '')
+  )
+}
+
 export function isQuickBillExpired(bill: QuickBill, now: number): boolean {
   return now - bill.updatedAt > QUICK_BILL_TTL_MS
 }

@@ -9,8 +9,8 @@ export const QUICK_BILL_STORAGE_KEY = 'quick-bill'
 
 /** How far the receipt photo got on its way to lines. */
 export type QuickScanState =
-  | { phase: 'uploading'; attempt: string }
-  | { phase: 'reading'; attempt: string; scanId: string }
+  | { phase: 'uploading'; attempt: string; startedAt: number }
+  | { phase: 'reading'; attempt: string; startedAt: number; scanId: string }
   | { phase: 'failed'; message: string }
   | { phase: 'read' }
 
@@ -25,20 +25,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function parseScan(value: unknown): QuickScanState | null {
   if (!isRecord(value)) return null
-  const { phase, attempt, scanId, message } = value
+  const { phase, attempt, startedAt, scanId, message } = value
   if (phase === 'read') return { phase }
   if (phase === 'failed' && typeof message === 'string') {
     return { phase, message }
   }
-  if (phase === 'uploading' && typeof attempt === 'string') {
-    return { phase, attempt }
-  }
-  if (
-    phase === 'reading' &&
-    typeof attempt === 'string' &&
-    typeof scanId === 'string'
-  ) {
-    return { phase, attempt, scanId }
+  if (typeof attempt !== 'string' || typeof startedAt !== 'number') return null
+  if (phase === 'uploading') return { phase, attempt, startedAt }
+  if (phase === 'reading' && typeof scanId === 'string') {
+    return { phase, attempt, startedAt, scanId }
   }
   return null
 }
@@ -99,7 +94,11 @@ export function updateQuickBill(
   now: number = Date.now(),
 ): void {
   const current = readQuickBill(now)
-  if (!current) return
+  if (!current) {
+    // Expired while on screen: let every reader drop the stale view.
+    for (const listener of listeners) listener()
+    return
+  }
   const next = change(current)
   if (next === current) return
   writeQuickBill({ ...next, bill: { ...next.bill, updatedAt: now } })
@@ -113,8 +112,12 @@ export function updateQuickBill(
 export function editQuickBill(
   change: (bill: QuickBill) => QuickBill | QuickBillResult,
 ): { ok: true } | { ok: false; message: string } {
-  let outcome: { ok: true } | { ok: false; message: string } = { ok: true }
+  let outcome: { ok: true } | { ok: false; message: string } = {
+    ok: false,
+    message: 'Бързата сметка изтече.',
+  }
   updateQuickBill((current) => {
+    outcome = { ok: true }
     const next = change(current.bill)
     if (!('ok' in next)) return { ...current, bill: next }
     if (!next.ok) {

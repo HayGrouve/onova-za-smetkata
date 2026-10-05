@@ -7,6 +7,7 @@ import {
   addQuickBillLine,
   createQuickBill,
   isQuickBillExpired,
+  isQuickBillUnderway,
   joinQuickBillUnit,
   leaveQuickBillUnit,
   parseQuickBill,
@@ -362,6 +363,17 @@ describe('summary', () => {
           ).toBe(evened.totalCents)
         },
       ),
+    )
+  })
+})
+
+describe('starting over', () => {
+  it('counts a quick bill as underway once anyone marked, named themselves or finished', () => {
+    const bill = billWith([{ name: 'Бира', unitPriceCents: 300, quantity: 2 }])
+    expect(isQuickBillUnderway(bill)).toBe(false)
+    expect(isQuickBillUnderway(take(bill, ['l1'], 's1'))).toBe(true)
+    expect(isQuickBillUnderway(renameQuickBillSeat(bill, 's2', 'Ани'))).toBe(
+      true,
     )
   })
 })

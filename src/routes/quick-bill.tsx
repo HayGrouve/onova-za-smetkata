@@ -35,7 +35,7 @@ function QuickBillPage() {
   const navigate = useNavigate()
   const { isAuthenticated, isLoading } = useRequireHostAuth('/quick-bill')
   const stored = useQuickBill()
-  useQuickScanResult(stored, isAuthenticated)
+  useQuickScanResult(stored)
 
   if (isLoading || !isAuthenticated) return <ReceiptLoading />
 

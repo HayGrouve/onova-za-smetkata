@@ -3,6 +3,7 @@ import { internal } from './_generated/api'
 import { internalMutation } from './_generated/server'
 import type { MutationCtx } from './_generated/server'
 import { endGuestSession, GUEST_SESSION_TTL_MS } from './lib/guestSession'
+import { deleteStoredPhoto } from './lib/receiptStorage'
 
 /** Buckets older than this are stale (longest app rate-limit window is 1 hour). */
 const RATE_LIMIT_MAX_AGE_MS = 2 * 60 * 60 * 1000
@@ -136,7 +137,7 @@ export const run = internalMutation({
       )
       .take(CLEANUP_BATCH_SIZE)
     for (const scan of quickScans) {
-      if (scan.storageId) await ctx.storage.delete(scan.storageId)
+      if (scan.storageId) await deleteStoredPhoto(ctx, scan.storageId)
       await ctx.db.delete(scan._id)
     }
 

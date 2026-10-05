@@ -40,6 +40,15 @@ export function getQuickBillCloseCopy(): ConfirmOptions {
   })
 }
 
+export function getQuickBillReplaceCopy(): ConfirmOptions {
+  return withDefaults({
+    title: 'Нова бърза сметка?',
+    description:
+      'Текущата бърза сметка вече е започната. Новата снимка ще я замени.',
+    confirmLabel: 'Започни нова',
+  })
+}
+
 export function getItemDeleteCopy(name: string): ConfirmOptions {
   return withDefaults({
     title: 'Изтриване на артикул?',

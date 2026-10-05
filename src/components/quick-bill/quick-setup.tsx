@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   AlertTriangleIcon,
   ArrowRightIcon,
@@ -26,6 +26,8 @@ import {
 import { SeatAvatar, useSeats } from '#/components/receipt/seats.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import {
+  QUICK_SCAN_STALE_MS,
+  isQuickScanStale,
   isQuickScanUploadLive,
   quickScanPhotoUrl,
 } from '#/hooks/use-quick-scan.ts'
@@ -46,6 +48,19 @@ import {
 import type { QuickBill, QuickBillLine } from '../../../shared/quick-bill.ts'
 
 const UPLOAD_CUT_OFF = 'Качването прекъсна. Снимайте бележката отново.'
+const SCAN_TOO_SLOW = 'Бележката се чете твърде дълго. Снимайте я отново.'
+
+/** Render again once a photo still on its way counts as stuck. */
+function useStaleRerender(startedAt: number | null) {
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    if (startedAt === null) return
+    const wait = startedAt + QUICK_SCAN_STALE_MS - Date.now()
+    if (wait < 0) return
+    const timer = window.setTimeout(() => setTick((n) => n + 1), wait + 50)
+    return () => window.clearTimeout(timer)
+  }, [startedAt])
+}
 
 /**
  * First screen: the photo is read while the Host says how many are at the
@@ -66,12 +81,21 @@ export function QuickSetup({
   const [adding, setAdding] = useState(false)
   const summary = summarizeQuickBill(bill)
 
+  const inFlight =
+    scan.phase === 'uploading' || scan.phase === 'reading' ? scan : null
+  useStaleRerender(inFlight?.startedAt ?? null)
+  const stale = isQuickScanStale(scan, Date.now())
   const cutOff =
     scan.phase === 'uploading' && !isQuickScanUploadLive(scan.attempt)
-  const reading =
-    (scan.phase === 'uploading' && !cutOff) || scan.phase === 'reading'
+  const reading = inFlight !== null && !cutOff && !stale
   const failure =
-    scan.phase === 'failed' ? scan.message : cutOff ? UPLOAD_CUT_OFF : null
+    scan.phase === 'failed'
+      ? scan.message
+      : cutOff
+        ? UPLOAD_CUT_OFF
+        : stale
+          ? SCAN_TOO_SLOW
+          : null
   const photoUrl =
     scan.phase === 'uploading' || scan.phase === 'reading'
       ? quickScanPhotoUrl(scan.attempt)

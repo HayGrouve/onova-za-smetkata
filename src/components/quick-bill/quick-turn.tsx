@@ -147,14 +147,27 @@ export function QuickTurn({
     }
   }
 
+  /** „За всички“ clears what anyone took from the line; undo puts it back. */
   function shareWithEveryone(group: ClaimGroup) {
-    editQuickBill((b) =>
+    const onLine = (claim: QuickBill['claims'][number]) =>
+      group.itemIds.includes(claim.itemId)
+    const taken = bill.claims.filter(onLine)
+    const setForEveryone = (b: QuickBill, on: boolean) =>
       group.itemIds.reduce(
-        (next, lineId) => setQuickBillLineForEveryone(next, lineId, true),
+        (next, lineId) => setQuickBillLineForEveryone(next, lineId, on),
         b,
-      ),
-    )
+      )
+    editQuickBill((b) => setForEveryone(b, true))
     setOpenKey(null)
+    pushUndo(`${group.name} е за всички`, () => {
+      editQuickBill((b) => {
+        const back = setForEveryone(b, false)
+        return {
+          ...back,
+          claims: [...back.claims.filter((c) => !onLine(c)), ...taken],
+        }
+      })
+    })
   }
 
   return (

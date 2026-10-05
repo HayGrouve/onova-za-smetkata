@@ -229,7 +229,9 @@ export default defineSchema({
     receiptTotalCents: v.optional(v.number()),
     errorMessage: v.optional(v.string()),
     createdAt: v.number(),
-  }).index('by_createdAt', ['createdAt']),
+  })
+    .index('by_createdAt', ['createdAt'])
+    .index('by_storageId', ['storageId']),
 
   hostOnboarding: defineTable({
     userId: v.id('users'),

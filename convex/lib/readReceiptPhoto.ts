@@ -51,9 +51,8 @@ export async function readReceiptPhoto(
     : null
   if (storedProblem) return { ok: false, errorMessage: storedProblem }
 
-  await onProcessing()
-
   try {
+    await onProcessing()
     const blob = await ctx.storage.get(storageId)
     if (!blob) throw new Error('Receipt image not found')
     const mimeType = blob.type || 'image/jpeg'

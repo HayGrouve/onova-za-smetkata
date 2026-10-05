@@ -41,3 +41,13 @@ export async function cleanupBillReceiptStorage(
   await deleteReceiptScansForBill(ctx, billId)
   await deleteReceiptStorageFile(ctx, storageId)
 }
+
+/** Delete a photo that may already be gone: the second delete must not throw. */
+export async function deleteStoredPhoto(
+  ctx: MutationCtx,
+  storageId: Id<'_storage'>,
+): Promise<void> {
+  if (await ctx.db.system.get('_storage', storageId)) {
+    await ctx.storage.delete(storageId)
+  }
+}
