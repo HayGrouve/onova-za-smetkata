@@ -117,36 +117,43 @@ export interface ParticipantShareViewInput {
   participantLabels?: Record<string, string>
 }
 
-export function buildParticipantShareView(
-  input: ParticipantShareViewInput,
-): ParticipantShareView {
-  const { breakdownInput, totals, participantId, participantLabels } = input
+/** One seat's Share as printed lines: items it is on, then its tip. */
+export function buildParticipantShareLines(
+  input: Omit<ParticipantShareViewInput, 'totals'>,
+): ParticipantShareLineView[] {
+  const { breakdownInput, participantId, participantLabels } = input
   const breakdown = calculateParticipantBreakdown(breakdownInput, participantId)
   const participantCount = breakdownInput.participants.length
 
-  const lines: ParticipantShareLineView[] = breakdown.lines.map(
-    (line, index) => {
-      const key =
-        line.kind === 'item' ? `item-${line.itemId}-${index}` : `tip-${index}`
+  return breakdown.lines.map((line, index) => {
+    const key =
+      line.kind === 'item' ? `item-${line.itemId}-${index}` : `tip-${index}`
 
-      return {
-        key,
-        kind: line.kind,
-        label: formatBreakdownLineLabel(line, participantCount),
-        unitsText:
-          line.kind === 'item' ? formatBreakdownLineUnitsText(line) : undefined,
-        sharedText:
-          line.kind === 'item'
-            ? formatBreakdownLineSharedText(line, participantLabels)
-            : undefined,
-        suffix:
-          line.kind === 'item'
-            ? formatBreakdownLineSuffix(line, participantLabels)
-            : '',
-        amountCents: line.amountCents,
-      }
-    },
-  )
+    return {
+      key,
+      kind: line.kind,
+      label: formatBreakdownLineLabel(line, participantCount),
+      unitsText:
+        line.kind === 'item' ? formatBreakdownLineUnitsText(line) : undefined,
+      sharedText:
+        line.kind === 'item'
+          ? formatBreakdownLineSharedText(line, participantLabels)
+          : undefined,
+      suffix:
+        line.kind === 'item'
+          ? formatBreakdownLineSuffix(line, participantLabels)
+          : '',
+      amountCents: line.amountCents,
+    }
+  })
+}
+
+export function buildParticipantShareView(
+  input: ParticipantShareViewInput,
+): ParticipantShareView {
+  const { breakdownInput, totals, participantId } = input
+  const lines = buildParticipantShareLines(input)
+  const participantCount = breakdownInput.participants.length
 
   return {
     participantId,

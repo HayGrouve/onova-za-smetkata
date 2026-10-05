@@ -351,6 +351,62 @@ describe('who can see and change a bill', () => {
     expect(view.bill).not.toHaveProperty('receiptStorageId')
     expect(view.myPayments).toEqual([])
   })
+
+  it('a Guest phone sees every seat’s money but only its own sent transfer', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t, { guests: ['Ани', 'Боби', 'Вики'] })
+    const [itemId] = bill.itemIds
+    await bill.host.mutation(api.items.update, { itemId, quantity: 3 })
+    await hostTakesUnits(bill, itemId, Object.values(bill.seats))
+    await bill.host.mutation(api.payments.add, {
+      billId: bill.billId,
+      participantId: bill.seats['Вики'],
+      amountCents: 300,
+    })
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+    const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
+    const sent = await t.mutation(api.combinedPayments.recordTransfer, {
+      billId: bill.billId,
+      sessionToken: bobi.sessionToken,
+      otherParticipantIds: [],
+    })
+    const moneyAsSeenBy = async (sessionToken: string) =>
+      Object.fromEntries(
+        (
+          await t.query(api.bills.getForGuest, {
+            billId: bill.billId,
+            shareToken: bill.shareToken,
+            sessionToken,
+          })
+        ).participantBalances.map((row) => [
+          row.participantId,
+          {
+            owedCents: row.owedCents,
+            remainingCents: row.remainingCents,
+            sent: row.sent,
+          },
+        ]),
+      )
+
+    const onAnisPhone = await moneyAsSeenBy(ani.sessionToken)
+    expect(onAnisPhone[bill.seats['Ани']]).toEqual({
+      owedCents: 300,
+      remainingCents: 300,
+      sent: null,
+    })
+    expect(onAnisPhone[bill.seats['Боби']].sent).toBeNull()
+    expect(onAnisPhone[bill.seats['Вики']]).toMatchObject({
+      owedCents: 300,
+      remainingCents: 0,
+    })
+    expect(
+      (await moneyAsSeenBy(bobi.sessionToken))[bill.seats['Боби']].sent,
+    ).toEqual({
+      requestId: sent.requestId,
+      totalCents: 300,
+      payerId: bill.seats['Боби'],
+    })
+  })
 })
 
 describe('deleting a bill', () => {

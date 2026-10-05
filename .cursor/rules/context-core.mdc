@@ -30,7 +30,7 @@ Use these consistently in code, UI copy, tests, and issues. Full glossary: **`CO
 | Bill readiness / prepared bill | `shared/bill-readiness.ts` |
 | Host onboarding guidance (Напътствия) | `shared/guidance-controller.ts` |
 | Bill editor orchestration | `shared/bill-editing-controller.ts` → `useBillEditorController` |
-| Guest claim page | `shared/guest-claim-session.ts` + `shared/claim-groups.ts` → `useGuestClaimSession` |
+| Live receipt (lines, totals, seats, Slips) | `shared/live-receipt.ts` → `HostBillView`; `useGuestLiveReceipt` (claim and pay pages) |
 | Claim actions (take / release / share) | `shared/unit-claim-plan.ts` → `convex/assignments.ts` |
 | Guest journey (join → claim → pay) | `shared/guest-flow-session.ts` → `useGuestJoinFlow`, `useGuestBillSession` |
 | Covered seats | `shared/guest-seat-selection.ts` |

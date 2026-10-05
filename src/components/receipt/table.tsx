@@ -6,9 +6,11 @@ import type { Seat } from '#/components/receipt/seats.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { cn } from '#/lib/utils.ts'
 import type { ActivityEvent } from '#/lib/bill-activity.ts'
-
-/** Where a seat stands on the bill. */
-export type SeatStatus = 'host' | 'paid' | 'pending' | 'owes' | 'empty'
+import { seatPresenceLabel } from '../../../shared/live-receipt.ts'
+import type {
+  LiveReceiptSeat,
+  SeatStatus,
+} from '../../../shared/live-receipt.ts'
 
 export interface RailSeat {
   seat: Seat
@@ -17,6 +19,25 @@ export interface RailSeat {
   status: SeatStatus
   /** One short line: „на масата, 3 бр.“, „чака потвърждение“. */
   presence: string
+}
+
+/** The receipt's seats as the rail draws them. */
+export function toRailSeats(
+  seats: LiveReceiptSeat[],
+  seatOf: (id: string) => Seat | undefined,
+): RailSeat[] {
+  return seats.map((seat) => ({
+    seat: seatOf(seat.id) ?? {
+      id: seat.id,
+      label: seat.name,
+      initials: '?',
+      hue: 0,
+      isHost: false,
+    },
+    joined: seat.joined,
+    status: seat.status,
+    presence: seatPresenceLabel(seat),
+  }))
 }
 
 /**

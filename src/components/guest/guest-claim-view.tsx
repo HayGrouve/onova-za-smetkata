@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
-import { useMutation, useQuery } from 'convex/react'
+import { useMutation } from 'convex/react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useMemo, useRef, useState } from 'react'
 import { ScissorsIcon, UserPlusIcon } from 'lucide-react'
@@ -34,6 +34,7 @@ import {
   SeatsRail,
   TransientTicker,
   UndoRow,
+  toRailSeats,
   useUndo,
 } from '#/components/receipt/table.tsx'
 import type { RailSeat, UndoEntry } from '#/components/receipt/table.tsx'
@@ -41,24 +42,15 @@ import { Timeline } from '#/components/receipt/timeline.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { useBillActivity } from '#/hooks/use-bill-activity.ts'
 import { useClaimActions } from '#/hooks/use-claim-actions.ts'
+import { useGuestLiveReceipt } from '#/hooks/use-guest-live-receipt.ts'
 import { buildCoveredSeatCandidates } from '#/lib/covered-seat-candidates.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { joinLabels } from '#/lib/participant-labels.ts'
 import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
 import { cn } from '#/lib/utils.ts'
-import { calculateBillTotals } from '../../../shared/bill-calculations.ts'
-import { toBillCalculationSnapshot } from '../../../shared/bill-calculation-snapshot.ts'
-import {
-  buildClaimGroupSeatView,
-  groupClaimItems,
-  indexUnitMembers,
-  unitKey,
-} from '../../../shared/claim-groups.ts'
 import type { ClaimGroup, UnitRef } from '../../../shared/claim-groups.ts'
-import {
-  buildTakenSeats,
-  mapGuestBillToClaimSessionInput,
-} from '../../../shared/guest-flow-session.ts'
+import { buildTakenSeats } from '../../../shared/guest-flow-session.ts'
+import type { LiveReceiptSeat } from '../../../shared/live-receipt.ts'
 import type { FunctionReturnType } from 'convex/server'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -135,94 +127,15 @@ function GuestClaimTable({
   const [dockCollapsed, toggleDock] = useDockCollapsed()
   const actions = useClaimActions({ seatId: actorId, sessionToken })
   const leaveUnit = useMutation(api.assignments.leaveUnit)
-  const pending = useQuery(api.combinedPayments.getPendingForGuest, {
-    billId,
-    sessionToken,
-  })
-
-  const claimInput = useMemo(
-    () => mapGuestBillToClaimSessionInput(data),
-    [data],
-  )
-  const groups = useMemo(() => groupClaimItems(claimInput.items), [claimInput])
-  const membersByUnit = useMemo(
-    () => indexUnitMembers(claimInput.assignments),
-    [claimInput],
-  )
-  const membersOf = (unit: UnitRef) => membersByUnit.get(unitKey(unit)) ?? []
-  const viewFor = (group: ClaimGroup, seatId: string) =>
-    buildClaimGroupSeatView({
-      group,
-      assignments: claimInput.assignments,
-      seatId,
-      participants: claimInput.participants,
-    })
-
-  const totals = useMemo(() => {
-    const snapshot = toBillCalculationSnapshot(
-      claimInput.billRelations,
-      claimInput.billContext,
-    )
-    return calculateBillTotals(snapshot.calculationInput)
-  }, [claimInput])
-
-  const owedOf = (id: string) =>
-    id in totals.byParticipant ? totals.byParticipant[id].owedCents : 0
-  const remainingOf = (id: string) =>
-    data.participantBalances.find((b) => b.participantId === id)
-      ?.remainingCents ?? 0
   const activeIds = useMemo(
     () => (activeSeats ?? []).map((seat) => seat.participantId as string),
     [activeSeats],
   )
-  const unitsOf = (seatId: string) =>
-    claimInput.assignments.filter((a) => a.participantId === seatId).length
-  const pendingSeatIds = new Set<string>(
-    pending && pending.transferInitiatedAt != null
-      ? [pending.payerParticipantId, ...(pending.coveredParticipantIds ?? [])]
-      : [],
-  )
-
-  const railSeats: RailSeat[] = data.participants
-    .slice()
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((participant) => {
-      const seat = seatOf(participant._id)
-      const owed = owedOf(participant._id)
-      const remaining = remainingOf(participant._id)
-      const status: RailSeat['status'] =
-        participant._id === data.hostParticipantId
-          ? 'host'
-          : pendingSeatIds.has(participant._id)
-            ? 'pending'
-            : owed > 0 && remaining === 0
-              ? 'paid'
-              : remaining > 0
-                ? 'owes'
-                : 'empty'
-      const joined = activeIds.includes(participant._id)
-      return {
-        seat: seat ?? {
-          id: participant._id,
-          label: participant.name,
-          initials: '?',
-          hue: 0,
-          isHost: false,
-        },
-        joined,
-        status,
-        presence:
-          status === 'host'
-            ? 'домакин'
-            : status === 'paid'
-              ? 'платено'
-              : status === 'pending'
-                ? 'чака потвърждение'
-                : joined
-                  ? `на масата, ${unitsOf(participant._id)} бр.`
-                  : 'не е отворил линка',
-      }
-    })
+  const receipt = useGuestLiveReceipt(data, activeSeats)
+  const { lines: groups, membersOf, freeUnits, freeCents } = receipt
+  const viewFor = receipt.lineFor
+  const railSeats: RailSeat[] = toRailSeats(receipt.seats, seatOf)
+  const transferSent = mySeatIds.some((id) => receipt.seat(id)?.sent)
 
   const events = useBillActivity({
     items: data.items,
@@ -318,23 +231,6 @@ function GuestClaimTable({
     labels,
   })
 
-  const subtotalCents = claimInput.items.reduce(
-    (sum, item) => sum + item.unitPriceCents * item.quantity,
-    0,
-  )
-  const tipCents = data.bill.tipCents ?? 0
-  const freeUnits = groups.reduce(
-    (sum, group) =>
-      sum + group.units.filter((unit) => membersOf(unit).length === 0).length,
-    0,
-  )
-  const freeCents = groups.reduce(
-    (sum, group) =>
-      sum +
-      group.units.filter((unit) => membersOf(unit).length === 0).length *
-        group.unitPriceCents,
-    0,
-  )
   const meLabel = labels[participantId] ?? 'Участник'
 
   const slip = (
@@ -343,10 +239,8 @@ function GuestClaimTable({
       mySeatIds={mySeatIds}
       activeId={actorId}
       setActiveId={setActiveId}
-      owedOf={owedOf}
-      remainingOf={remainingOf}
-      unitsOf={unitsOf}
-      pending={pendingSeatIds.size > 0}
+      seatOf={receipt.seat}
+      pending={transferSent}
       readOnly={readOnly}
       canCover={!readOnly && coveredCandidates.length > 0}
       hasCovered={coveredIds.length > 0}
@@ -471,7 +365,7 @@ function GuestClaimTable({
                                 ? group.name
                                 : `${group.name}, за ${labels[actorId] ?? 'друг'}`
                             }
-                            participants={claimInput.participants}
+                            participants={receipt.seatOrder}
                             labels={labels}
                             actions={lineActions(group)}
                             onClose={() => setOpenKey(null)}
@@ -484,7 +378,10 @@ function GuestClaimTable({
               </ul>
             )}
             <Rule />
-            <ReceiptTotals subtotalCents={subtotalCents} tipCents={tipCents}>
+            <ReceiptTotals
+              subtotalCents={receipt.subtotalCents}
+              tipCents={receipt.tipCents}
+            >
               {freeUnits > 0 ? (
                 <LeaderRow
                   className="text-ink-muted"
@@ -533,9 +430,7 @@ function MySlip({
   mySeatIds,
   activeId,
   setActiveId,
-  owedOf,
-  remainingOf,
-  unitsOf,
+  seatOf: moneyOf,
   pending,
   readOnly,
   canCover,
@@ -549,9 +444,8 @@ function MySlip({
   mySeatIds: string[]
   activeId: string
   setActiveId: (id: string) => void
-  owedOf: (id: string) => number
-  remainingOf: (id: string) => number
-  unitsOf: (id: string) => number
+  /** Each of this phone's seats on the receipt: Share, what is left, Units. */
+  seatOf: (id: string) => LiveReceiptSeat | undefined
   pending: boolean
   readOnly: boolean
   canCover: boolean
@@ -564,9 +458,14 @@ function MySlip({
   const reduce = useReducedMotion()
   const seatOf = useSeatLookup()
   const [tearing, setTearing] = useState(false)
-  const owed = mySeatIds.reduce((sum, id) => sum + owedOf(id), 0)
-  const remaining = mySeatIds.reduce((sum, id) => sum + remainingOf(id), 0)
-  const units = mySeatIds.reduce((sum, id) => sum + unitsOf(id), 0)
+  const sum = (pick: (seat: LiveReceiptSeat) => number) =>
+    mySeatIds.reduce((total, id) => {
+      const seat = moneyOf(id)
+      return seat ? total + pick(seat) : total
+    }, 0)
+  const owed = sum((seat) => seat.owedCents)
+  const remaining = sum((seat) => seat.remainingCents)
+  const units = sum((seat) => seat.unitCount)
   const settled = owed > 0 && remaining === 0
   const anyPaid = remaining < owed && remaining > 0
   const activeSeat = seatOf(activeId)
