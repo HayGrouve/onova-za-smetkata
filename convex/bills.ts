@@ -23,6 +23,7 @@ import {
 } from './lib/homeOverview'
 import type { HomeOverviewDraft } from './lib/homeOverview'
 import {
+  assertFreshUpload,
   cleanupBillReceiptStorage,
   deleteReceiptScansForBill,
   deleteReceiptStorageFile,
@@ -233,6 +234,14 @@ export const update = mutation({
 
     const bill = await requireBillOwner(ctx, billId)
     assertBillDraft(bill)
+    // Saving the bill with its own photo again is fine; a new one must be a
+    // fresh upload, not a photo some other bill or scan holds.
+    if (
+      receiptStorageId !== undefined &&
+      receiptStorageId !== bill.receiptStorageId
+    ) {
+      await assertFreshUpload(ctx, receiptStorageId, Date.now())
+    }
 
     const rawPatch = {
       ...(restaurantName !== undefined ? { restaurantName } : {}),

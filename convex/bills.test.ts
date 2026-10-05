@@ -2,6 +2,7 @@
 import type { FunctionReturnType } from 'convex/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { api } from './_generated/api'
+import type { Id } from './_generated/dataModel'
 import { GUEST_FLOW_MESSAGES } from '../shared/guest-flow-messages'
 import { SUBSCRIPTION_MESSAGES } from '../shared/subscription-messages'
 import { COMBINED_PAYMENT_MESSAGES } from '../shared/combined-payment-messages'
@@ -437,6 +438,122 @@ describe('deleting a bill', () => {
       guestSessions: 0,
       combinedPaymentRequests: 0,
     })
+  })
+})
+
+describe("a bill's receipt photo", () => {
+  const MINUTE_MS = 60 * 1000
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.useRealTimers()
+  })
+
+  async function storePhoto(t: TestConvex) {
+    return await t.run((ctx) =>
+      ctx.storage.store(new Blob(['receipt'], { type: 'image/jpeg' })),
+    )
+  }
+
+  async function photoExists(t: TestConvex, storageId: Id<'_storage'>) {
+    return await t.run(
+      async (ctx) => (await ctx.db.system.get('_storage', storageId)) !== null,
+    )
+  }
+
+  async function receiptOf(t: TestConvex, billId: Id<'bills'>) {
+    return await t.run(
+      async (ctx) => (await ctx.db.get(billId))?.receiptStorageId ?? null,
+    )
+  }
+
+  it('is a fresh upload, kept when the bill is saved with it again', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const host = t.withIdentity(HOST_IDENTITY)
+    const billId = await host.mutation(api.bills.create, {})
+    const photo = await storePhoto(t)
+    await host.mutation(api.bills.update, { billId, receiptStorageId: photo })
+
+    // Saving the bill later with its own photo is no new upload.
+    vi.setSystemTime(Date.now() + 60 * MINUTE_MS)
+    await host.mutation(api.bills.update, {
+      billId,
+      restaurantName: 'Механа',
+      receiptStorageId: photo,
+    })
+
+    expect(await receiptOf(t, billId)).toBe(photo)
+    expect(await photoExists(t, photo)).toBe(true)
+  })
+
+  it('is never a photo another bill holds', async () => {
+    const t = setupConvex()
+    const owner = t.withIdentity(HOST_IDENTITY)
+    const ownersBill = await owner.mutation(api.bills.create, {})
+    const photo = await storePhoto(t)
+    await owner.mutation(api.bills.update, {
+      billId: ownersBill,
+      receiptStorageId: photo,
+    })
+
+    const stranger = t.withIdentity(STRANGER)
+    const strangersBill = await stranger.mutation(api.bills.create, {})
+    await expect(
+      stranger.mutation(api.bills.update, {
+        billId: strangersBill,
+        receiptStorageId: photo,
+      }),
+    ).rejects.toThrow()
+
+    // Deleting the stranger's bill must not take the owner's photo with it.
+    await stranger.mutation(api.bills.remove, { billId: strangersBill })
+    expect(await receiptOf(t, ownersBill)).toBe(photo)
+    expect(await photoExists(t, photo)).toBe(true)
+  })
+
+  it('is never a photo a quick scan is reading', async () => {
+    // The scheduled read must not run (and delete the photo) mid-test.
+    vi.stubEnv('GEMINI_API_KEY', '')
+    vi.useFakeTimers()
+    const t = setupConvex()
+    const host = t.withIdentity(HOST_IDENTITY)
+    const photo = await storePhoto(t)
+    const started = await host.mutation(api.quickScan.start, {
+      storageId: photo,
+    })
+    expect(started.ok).toBe(true)
+
+    const billId = await host.mutation(api.bills.create, {})
+    await expect(
+      host.mutation(api.bills.update, { billId, receiptStorageId: photo }),
+    ).rejects.toThrow()
+    expect(await receiptOf(t, billId)).toBeNull()
+  })
+
+  it('is never an old upload or a missing one, and a refusal keeps the current photo', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const host = t.withIdentity(HOST_IDENTITY)
+    const billId = await host.mutation(api.bills.create, {})
+    const current = await storePhoto(t)
+    await host.mutation(api.bills.update, { billId, receiptStorageId: current })
+
+    const old = await storePhoto(t)
+    vi.setSystemTime(Date.now() + 11 * MINUTE_MS)
+    await expect(
+      host.mutation(api.bills.update, { billId, receiptStorageId: old }),
+    ).rejects.toThrow()
+    expect(await photoExists(t, old)).toBe(true)
+
+    const gone = await storePhoto(t)
+    await t.run((ctx) => ctx.storage.delete(gone))
+    await expect(
+      host.mutation(api.bills.update, { billId, receiptStorageId: gone }),
+    ).rejects.toThrow()
+
+    expect(await receiptOf(t, billId)).toBe(current)
+    expect(await photoExists(t, current)).toBe(true)
   })
 })
 
