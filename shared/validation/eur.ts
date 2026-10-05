@@ -7,7 +7,8 @@ const INVALID_AMOUNT_MESSAGE = 'Невалидна сума.'
  * optional `,` or `.` with up to two cent digits. Anything else is refused
  * rather than read in part — `12 345,67` must never become 12,00 €.
  */
-const EUR_INPUT_PATTERN = /^(\d{1,3}(?:[   ]\d{3})+|\d+)(?:[.,](\d{0,2}))?$/
+const EUR_INPUT_PATTERN =
+  /^(\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)(?:[.,](\d{0,2}))?$/
 
 export function parseEurInputStrict(
   value: string,
@@ -17,8 +18,8 @@ export function parseEurInputStrict(
     return { ok: false, message: INVALID_AMOUNT_MESSAGE }
   }
 
-  const euros = Number(match[1].replace(/[   ]/g, ''))
-  const cents = euros * 100 + Number((match[2] ?? '').padEnd(2, '0'))
+  const euros = Number(match[1].replace(/[ \u00a0\u202f]/g, ''))
+  const cents = euros * 100 + Number((match.at(2) ?? '').padEnd(2, '0'))
   if (!Number.isSafeInteger(cents) || cents > EUR_CENTS_MAX) {
     return { ok: false, message: INVALID_AMOUNT_MESSAGE }
   }

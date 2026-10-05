@@ -1,6 +1,7 @@
 import { Component } from 'react'
 import type { ReactNode } from 'react'
 import { QueryErrorPanel } from '#/components/ui/query-error-panel.tsx'
+import { getConvexErrorData } from '#/lib/guest-participant-session.ts'
 
 interface QueryErrorBoundaryProps {
   children: ReactNode
@@ -31,7 +32,10 @@ export class QueryErrorBoundary extends Component<
     if (this.state.error) {
       return (
         <div className="page-container py-10">
-          <QueryErrorPanel onRetry={() => this.setState({ error: null })} />
+          <QueryErrorPanel
+            message={getConvexErrorData(this.state.error) ?? undefined}
+            onRetry={() => this.setState({ error: null })}
+          />
         </div>
       )
     }

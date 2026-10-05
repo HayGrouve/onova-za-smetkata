@@ -146,6 +146,74 @@ describe('paying for others', () => {
     )
   })
 
+  it('a Guest whose own transfer is on its way cannot be paid for again', async () => {
+    const t = setupConvex()
+    const bill = await seedClaimedBill(t)
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+    const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
+    await t.mutation(api.combinedPayments.createSolo, {
+      billId: bill.billId,
+      shareToken: bill.shareToken,
+      sessionToken: bobi.sessionToken,
+    })
+
+    await expect(
+      t.mutation(api.combinedPayments.create, {
+        billId: bill.billId,
+        shareToken: bill.shareToken,
+        sessionToken: ani.sessionToken,
+        coveredParticipantIds: [bill.seats['Боби']],
+      }),
+    ).rejects.toThrow(COMBINED_PAYMENT_MESSAGES.coveredPendingExists)
+
+    // Switching an existing pick over to Боби is refused the same way.
+    const { requestId } = await t.mutation(api.combinedPayments.create, {
+      billId: bill.billId,
+      shareToken: bill.shareToken,
+      sessionToken: ani.sessionToken,
+      coveredParticipantIds: [bill.seats['Вики']],
+    })
+    await expect(
+      t.mutation(api.combinedPayments.updateCovered, {
+        billId: bill.billId,
+        sessionToken: ani.sessionToken,
+        requestId,
+        coveredParticipantIds: [bill.seats['Боби']],
+      }),
+    ).rejects.toThrow(COMBINED_PAYMENT_MESSAGES.coveredPendingExists)
+  })
+
+  it('a Guest someone else is paying for cannot send their own transfer', async () => {
+    const t = setupConvex()
+    const bill = await seedClaimedBill(t)
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+    const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
+    await t.mutation(api.combinedPayments.create, {
+      billId: bill.billId,
+      shareToken: bill.shareToken,
+      sessionToken: ani.sessionToken,
+      coveredParticipantIds: [bill.seats['Боби']],
+    })
+
+    for (const attempt of [
+      t.mutation(api.combinedPayments.createSolo, {
+        billId: bill.billId,
+        shareToken: bill.shareToken,
+        sessionToken: bobi.sessionToken,
+      }),
+      t.mutation(api.combinedPayments.create, {
+        billId: bill.billId,
+        shareToken: bill.shareToken,
+        sessionToken: bobi.sessionToken,
+        coveredParticipantIds: [bill.seats['Вики']],
+      }),
+    ]) {
+      await expect(attempt).rejects.toThrow(
+        COMBINED_PAYMENT_MESSAGES.payerCoveredByOther,
+      )
+    }
+  })
+
   it('confirm refuses when the covered Guest paid in the meantime', async () => {
     const t = setupConvex()
     const bill = await seedClaimedBill(t)

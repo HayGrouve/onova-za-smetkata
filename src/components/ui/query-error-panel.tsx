@@ -13,7 +13,9 @@ export function QueryErrorPanel({
 }: QueryErrorPanelProps) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-6 text-center">
-      <p className="text-sm text-muted-foreground">{message}</p>
+      <p className="text-sm text-muted-foreground" role="alert">
+        {message}
+      </p>
       <Button
         type="button"
         variant="outline"

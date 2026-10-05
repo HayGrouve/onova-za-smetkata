@@ -46,6 +46,10 @@ async function loadBillTotalsForCombinedPay(
   return calculateBillTotals(calculationInput)
 }
 
+/**
+ * Seats another live request already pays for — as a Covered seat or as its
+ * payer. Covering any of them would send the same Share twice.
+ */
 function buildCoveredPendingIds(
   pending: Doc<'combinedPaymentRequests'>[],
   excludeRequestId?: Id<'combinedPaymentRequests'>,
@@ -54,11 +58,28 @@ function buildCoveredPendingIds(
   for (const request of pending) {
     if (excludeRequestId && request._id === excludeRequestId) continue
     if (request.status !== 'pending') continue
+    ids.add(request.payerParticipantId)
     for (const id of getCoveredParticipantIds(request)) {
       ids.add(id)
     }
   }
   return ids
+}
+
+/** Another phone has already picked this payer's seat to pay for. */
+function assertPayerNotCoveredElsewhere(
+  holding: Doc<'combinedPaymentRequests'>[],
+  payerParticipantId: Id<'participants'>,
+  sessionId: Id<'guestSessions'>,
+) {
+  const coveredElsewhere = holding.some(
+    (request) =>
+      request.guestSessionId !== sessionId &&
+      getCoveredParticipantIds(request).includes(payerParticipantId),
+  )
+  if (coveredElsewhere) {
+    throw new ConvexError(COMBINED_PAYMENT_MESSAGES.payerCoveredByOther)
+  }
 }
 
 async function validateCoveredParticipantsOnBill(
@@ -203,6 +224,11 @@ export const create = mutation({
     )
 
     const billPending = await loadSeatHoldingRequests(ctx, args.billId)
+    assertPayerNotCoveredElsewhere(
+      billPending,
+      session.participantId,
+      sessionId,
+    )
     const coveredPendingIds = buildCoveredPendingIds(billPending)
 
     const validated = validateCombinedPaymentCreate(
@@ -357,6 +383,11 @@ export const createSolo = mutation({
       .collect()
     const hasPendingForSession = existingForSession.some(
       (r) => r.billId === args.billId && r.status === 'pending',
+    )
+    assertPayerNotCoveredElsewhere(
+      await loadSeatHoldingRequests(ctx, args.billId),
+      session.participantId,
+      sessionId,
     )
 
     const validated = validateSoloPaymentCreate({

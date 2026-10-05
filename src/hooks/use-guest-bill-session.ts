@@ -71,13 +71,16 @@ export function useGuestBillSession(
   const executeRecovery = useCallback(
     (plan: FlowRecoveryPlan, sessionToken?: string) => {
       if (plan.releaseSession && sessionToken && plan.redirectShareToken) {
-        void releaseSession({
+        // Best effort: a rotated link or a deleted bill refuses the release.
+        releaseSession({
           billId,
           shareToken: plan.redirectShareToken,
           sessionToken,
-        })
+        }).catch(() => undefined)
       }
-      clearStoredGuestParticipant(billId)
+      if (plan.clearStorage) {
+        clearStoredGuestParticipant(billId)
+      }
       if (plan.toastMessage) {
         toast.error(plan.toastMessage)
       }
@@ -87,14 +90,8 @@ export function useGuestBillSession(
   )
 
   const handleSessionLost = useCallback(() => {
-    executeRecovery(
-      planSessionLostRecovery({
-        shareToken,
-        storedSession,
-      }),
-      storedSession?.sessionToken,
-    )
-  }, [executeRecovery, shareToken, storedSession])
+    executeRecovery(planSessionLostRecovery({ shareToken }))
+  }, [executeRecovery, shareToken])
 
   useGuestSessionHeartbeat(
     data?.bill.status === 'final' ? null : storedSession,

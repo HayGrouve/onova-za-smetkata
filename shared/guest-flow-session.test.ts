@@ -270,28 +270,11 @@ describe('mapGuestBillToClaimSessionInput', () => {
 })
 
 describe('planSessionLostRecovery', () => {
-  it('always clears storage and redirects with toast', () => {
-    expect(
-      planSessionLostRecovery({
-        shareToken: 'share-token',
-        storedSession,
-      }),
-    ).toEqual({
-      clearStorage: true,
-      releaseSession: true,
-      toastMessage: expect.any(String),
-      redirectShareToken: 'share-token',
-    })
-  })
-
-  it('skips release when session is missing', () => {
-    expect(
-      planSessionLostRecovery({
-        shareToken: 'share-token',
-        storedSession: null,
-      }),
-    ).toMatchObject({
+  it('keeps the stored session so the join page can resume the same seat', () => {
+    expect(planSessionLostRecovery({ shareToken: 'share-token' })).toEqual({
+      clearStorage: false,
       releaseSession: false,
+      redirectShareToken: 'share-token',
     })
   })
 })

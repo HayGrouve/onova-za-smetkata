@@ -1,12 +1,13 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import {
   buildTakenSeats,
   resolveJoinPageGate,
   shouldAttemptJoinResume,
 } from '../../shared/guest-flow-session'
+import { GUEST_FLOW_MESSAGES } from '../../shared/guest-flow-messages'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import {
@@ -30,6 +31,8 @@ export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
   const [resuming, setResuming] = useState(() =>
     shouldAttemptJoinResume(getStoredGuestSession(billId), shareToken),
   )
+  /** After a rate limit, stop resuming on every seat update; a tap retries. */
+  const resumeRateLimitedRef = useRef(false)
 
   const storedSession = useMemo(
     () => getStoredGuestSession(billId),
@@ -48,16 +51,22 @@ export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
   })
 
   function goToClaim() {
+    // Replace: Back from the claim page must not land on join, which would
+    // resume and bounce forward again.
     void navigate({
       to: '/bills/$billId/claim',
       params: { billId },
       search: { t: shareToken },
+      replace: true,
     })
   }
 
   useEffect(() => {
     if (data === undefined || activeSeats === undefined) return
-    if (!shouldAttemptJoinResume(getStoredGuestSession(billId), shareToken)) {
+    if (
+      resumeRateLimitedRef.current ||
+      !shouldAttemptJoinResume(getStoredGuestSession(billId), shareToken)
+    ) {
       setResuming(false)
       return
     }
@@ -69,21 +78,39 @@ export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
     }
 
     const cancelledRef = { current: false }
+    const resume = (coveredParticipantIds: string[] | undefined) =>
+      claimSession({
+        billId,
+        shareToken,
+        participantId: stored.participantId as Id<'participants'>,
+        sessionToken: stored.sessionToken,
+        deviceId: getOrCreateGuestDeviceId(),
+        coveredParticipantIds: coveredParticipantIds as
+          Id<'participants'>[] | undefined,
+      })
     void (async () => {
       try {
-        await claimSession({
-          billId,
-          shareToken,
-          participantId: stored.participantId as Id<'participants'>,
-          sessionToken: stored.sessionToken,
-          deviceId: getOrCreateGuestDeviceId(),
-          coveredParticipantIds: stored.coveredParticipantIds as
-            Id<'participants'>[] | undefined,
-        })
+        try {
+          await resume(stored.coveredParticipantIds)
+        } catch (error) {
+          if (!stored.coveredParticipantIds?.length || isRateLimit(error)) {
+            throw error
+          }
+          // A Covered seat may be gone or taken meanwhile; keep the own seat.
+          await resume([])
+          setStoredGuestSession({ ...stored, coveredParticipantIds: undefined })
+        }
         if (cancelledRef.current) return
         goToClaim()
-      } catch {
-        clearStoredGuestParticipant(billId)
+      } catch (error) {
+        if (isRateLimit(error)) {
+          // Not a lost seat: keep the stored session; tapping the seat retries.
+          resumeRateLimitedRef.current = true
+          toast.error(getConvexErrorMessage(error))
+        } else {
+          clearStoredGuestParticipant(billId)
+          toast.error(GUEST_FLOW_MESSAGES.sessionLostRedirect)
+        }
         if (!cancelledRef.current) setResuming(false)
       }
     })()
@@ -100,7 +127,15 @@ export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
   async function join(participantId: Id<'participants'>) {
     if (takenSeats.has(participantId)) return
 
-    const sessionToken = createGuestSessionToken()
+    // This phone picking its own seat again keeps its session (and Covered
+    // seats); its old session may still hold the seat for a while.
+    const stored = getStoredGuestSession(billId)
+    const ownSeatAgain =
+      stored?.participantId === participantId &&
+      stored.shareToken === shareToken
+    const sessionToken = ownSeatAgain
+      ? stored.sessionToken
+      : createGuestSessionToken()
     setJoining(true)
     try {
       await claimSession({
@@ -109,9 +144,13 @@ export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
         participantId,
         sessionToken,
         deviceId: getOrCreateGuestDeviceId(),
-        coveredParticipantIds: [],
+        coveredParticipantIds: ownSeatAgain ? undefined : [],
       })
-      setStoredGuestSession({ billId, participantId, sessionToken, shareToken })
+      setStoredGuestSession(
+        ownSeatAgain
+          ? stored
+          : { billId, participantId, sessionToken, shareToken },
+      )
       goToClaim()
     } catch (error) {
       toast.error(getConvexErrorMessage(error))
@@ -127,4 +166,12 @@ export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
     joining,
     join,
   }
+}
+
+function isRateLimit(error: unknown): boolean {
+  const message = getConvexErrorMessage(error)
+  return (
+    message === GUEST_FLOW_MESSAGES.claimRateLimitActor ||
+    message === GUEST_FLOW_MESSAGES.claimRateLimitBill
+  )
 }

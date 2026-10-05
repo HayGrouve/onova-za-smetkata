@@ -5,7 +5,6 @@ import type {
 import type { GuestItemAssignment } from './guest-claim-items'
 import type { GuestClaimSessionItem } from './guest-claim-session'
 import type { ParticipantInput } from './bill-calculations'
-import { GUEST_FLOW_MESSAGES } from './guest-flow-messages'
 
 export type StoredGuestSessionRef = {
   billId: string
@@ -80,7 +79,7 @@ export type ClaimPageGate =
     }
 
 export type FlowRecoveryPlan = {
-  clearStorage: true
+  clearStorage: boolean
   releaseSession: boolean
   toastMessage?: string
   redirectShareToken: string
@@ -214,14 +213,19 @@ export function mapGuestBillToClaimSessionInput(
   }
 }
 
+/**
+ * The claim or pay page lost its session (the phone slept past the TTL, the
+ * link changed, the seat went away). Hand over to the join page with the
+ * stored session intact: its resume re-claims the same seat silently when it
+ * is still free — as opening the join link does — and only falls back to the
+ * seat picker (with a toast) when it is not.
+ */
 export function planSessionLostRecovery(input: {
   shareToken: string
-  storedSession: StoredGuestSessionRef | null
 }): FlowRecoveryPlan {
   return {
-    clearStorage: true,
-    releaseSession: Boolean(input.storedSession && input.shareToken),
-    toastMessage: GUEST_FLOW_MESSAGES.sessionLostRedirect,
+    clearStorage: false,
+    releaseSession: false,
     redirectShareToken: input.shareToken,
   }
 }

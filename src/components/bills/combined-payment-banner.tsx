@@ -113,9 +113,9 @@ export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
   return (
     <div className="flex flex-col gap-2">
       {pending.map((request) => {
-        const payerName = labels[request.payerParticipantId]
+        const payerName = labels[request.payerParticipantId] ?? 'Участник'
         const coveredIds = getCoveredParticipantIds(request)
-        const coveredNames = coveredIds.map((id) => labels[id])
+        const coveredNames = coveredIds.map((id) => labels[id] ?? 'Участник')
         const copy = formatCombinedCopy(
           payerName,
           coveredNames,

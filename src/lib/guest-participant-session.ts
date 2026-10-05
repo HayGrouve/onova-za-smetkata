@@ -101,6 +101,21 @@ export function clearStoredGuestParticipant(billId: string): void {
   }
 }
 
+/**
+ * The message a Convex function threw on purpose (`ConvexError`), or null for
+ * anything else (network, validator, crash) — those keep a generic message.
+ */
+export function getConvexErrorData(error: unknown): string | null {
+  if (!error || typeof error !== 'object' || !('data' in error)) return null
+  const data = Reflect.get(error, 'data')
+  if (typeof data === 'string' && data.trim()) return data
+  if (data && typeof data === 'object') {
+    const message = Reflect.get(data, 'message')
+    if (typeof message === 'string' && message.trim()) return message
+  }
+  return null
+}
+
 export function getConvexErrorMessage(error: unknown): string {
   if (error && typeof error === 'object' && 'data' in error) {
     const data = Reflect.get(error, 'data')
