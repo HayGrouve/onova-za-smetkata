@@ -8,6 +8,7 @@ import {
   billDateSchema,
   deviceIdSchema,
   groupNameSchema,
+  itemNameSchema,
   nonNegativeCentsSchema,
   optionalNoteSchema,
   personNameSchema,
@@ -129,6 +130,34 @@ describe('deviceIdSchema', () => {
     if (result.success) {
       expect(result.data).toBe('device-1')
     }
+  })
+})
+
+describe('names that render as nothing', () => {
+  const invisible = [
+    '\u200b',
+    '\u200e\u200f',
+    '\u202e',
+    '\u2060',
+    '\u00ad',
+    '\u3164',
+    '\ufeff\u200b',
+    '\u0085',
+  ]
+
+  it('are refused for people, lines, groups and restaurants', () => {
+    for (const name of invisible) {
+      expect(personNameSchema.safeParse(name).success).toBe(false)
+      expect(itemNameSchema.safeParse(name).success).toBe(false)
+      expect(groupNameSchema().safeParse(name).success).toBe(false)
+      expect(
+        restaurantNameSchema({ required: true }).safeParse(name).success,
+      ).toBe(false)
+    }
+  })
+
+  it('still allow names with emoji and joined characters', () => {
+    expect(personNameSchema.safeParse('Мама 👩\u200d👧').success).toBe(true)
   })
 })
 

@@ -106,8 +106,13 @@ export const undoLast = mutation({
       throw new ConvexError('Няма плащания за отмяна.')
     }
 
+    // Same paidAt (one confirm records several rows at once): newest row wins.
     const lastPayment = payments.reduce((latest, payment) =>
-      payment.paidAt > latest.paidAt ? payment : latest,
+      payment.paidAt > latest.paidAt ||
+      (payment.paidAt === latest.paidAt &&
+        payment._creationTime > latest._creationTime)
+        ? payment
+        : latest,
     )
 
     await ctx.db.delete(lastPayment._id)

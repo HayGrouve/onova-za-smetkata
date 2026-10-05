@@ -18,6 +18,7 @@ import { requireGuestSession } from './lib/requireGuestSession'
 import {
   adoptSeatRequests,
   cancelReservationsForSession,
+  hasTransferAwaitingHost,
 } from './lib/paymentReservations'
 import { assertRateLimit } from './lib/rateLimit'
 import { assertShareToken } from './lib/guestAccess'
@@ -208,11 +209,14 @@ export const claim = mutation({
           })
 
     if (holder && holder.participantId === args.participantId) {
+      // Covered seats lock once a transfer for them is sent — re-joining must
+      // not slip past the lock `updateCoveredSeats` enforces.
+      const changeCovered =
+        coveredParticipantIds !== undefined &&
+        !(await hasTransferAwaitingHost(ctx, holder._id))
       await ctx.db.patch(holder._id, {
         lastSeenAt: now,
-        ...(coveredParticipantIds !== undefined
-          ? { coveredParticipantIds }
-          : {}),
+        ...(changeCovered ? { coveredParticipantIds } : {}),
       })
       return { ok: true as const }
     }

@@ -30,6 +30,13 @@ describe('isDevModeEnabled', () => {
     expect(isDevModeEnabled()).toBe(false)
   })
 
+  it('returns false for the prod slug written as a CLI deployment name', () => {
+    vi.stubEnv('DEV_MODE', 'true')
+    vi.stubEnv('CONVEX_DEPLOYMENT', 'prod:coordinated-warbler-782')
+    vi.stubEnv('CONVEX_DEV_DEPLOYMENTS', 'prod:coordinated-warbler-782')
+    expect(isDevModeEnabled()).toBe(false)
+  })
+
   it('honors CONVEX_DEV_DEPLOYMENTS env extension', () => {
     vi.stubEnv('DEV_MODE', 'true')
     vi.stubEnv('CONVEX_DEPLOYMENT', 'my-custom-dev')

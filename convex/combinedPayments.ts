@@ -27,6 +27,15 @@ import type { BillTotals } from '../shared/bill-calculations'
 import { toBillCalculationSnapshot } from '../shared/bill-calculation-snapshot'
 import { loadBillRelations } from './lib/billListSummary'
 import { loadSeatHoldingRequests } from './lib/paymentReservations'
+import { assertRateLimit } from './lib/rateLimit'
+
+/** Pay requests are rows: one phone must not grow them without bound. */
+async function assertPayRequestRateLimit(
+  ctx: MutationCtx,
+  sessionToken: string,
+) {
+  await assertRateLimit(ctx, `payRequest:${sessionToken}`, 30, 60_000)
+}
 
 async function loadBillTotalsForCombinedPay(
   ctx: QueryCtx | MutationCtx,
@@ -200,6 +209,7 @@ export const create = mutation({
       participantId: session.participantId,
       sessionToken: args.sessionToken,
     })
+    await assertPayRequestRateLimit(ctx, args.sessionToken)
 
     const bill = await ctx.db.get(args.billId)
     if (!bill) {
@@ -283,6 +293,7 @@ export const updateCovered = mutation({
       participantId: session.participantId,
       sessionToken: args.sessionToken,
     })
+    await assertPayRequestRateLimit(ctx, args.sessionToken)
 
     const bill = await ctx.db.get(args.billId)
     if (!bill) {
@@ -369,6 +380,7 @@ export const createSolo = mutation({
       participantId: session.participantId,
       sessionToken: args.sessionToken,
     })
+    await assertPayRequestRateLimit(ctx, args.sessionToken)
 
     const bill = await ctx.db.get(args.billId)
     if (!bill) {
@@ -437,6 +449,7 @@ export const initiateTransfer = mutation({
       participantId: session.participantId,
       sessionToken: args.sessionToken,
     })
+    await assertPayRequestRateLimit(ctx, args.sessionToken)
 
     const bill = await ctx.db.get(args.billId)
     if (!bill) {
@@ -483,6 +496,7 @@ export const cancel = mutation({
       participantId: session.participantId,
       sessionToken: args.sessionToken,
     })
+    await assertPayRequestRateLimit(ctx, args.sessionToken)
 
     const bill = await ctx.db.get(args.billId)
     if (!bill) {

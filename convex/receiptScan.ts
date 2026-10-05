@@ -40,6 +40,16 @@ export const startScan = mutation({
       throw new ConvexError('Потребителят не е намерен.')
     }
 
+    const latest = await ctx.db
+      .query('receiptScans')
+      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
+      .order('desc')
+      .first()
+    if (latest?.status === 'pending' || latest?.status === 'processing') {
+      // A second tap must not pay for (or count against quota) a second scan.
+      throw new ConvexError('Бележката вече се разпознава.')
+    }
+
     const now = Date.now()
     await assertOcrStartQuota(ctx, owner, bill.ownerId, now)
     await assertRateLimit(ctx, `ocr:${args.billId}`, 10, 3_600_000)
@@ -99,8 +109,10 @@ export const importScannedItems = mutation({
     items: v.optional(v.array(editedItemValidator)),
   },
   handler: async (ctx, args) => {
+    // The scan is consumed by its import: a second tap finds nothing, so the
+    // same lines cannot be added twice.
     const scan = await ctx.db.get(args.scanId)
-    if (!scan) throw new Error('Сканирането не е намерено')
+    if (!scan) throw new ConvexError('Сканирането не е намерено.')
 
     const bill = await requireBillOwner(ctx, scan.billId)
     assertBillDraft(bill)
@@ -111,6 +123,10 @@ export const importScannedItems = mutation({
       (scan.extractedItems ?? []).filter((_, index) =>
         selectedIndexSet.has(index),
       )
+    if (itemsToImport.length === 0) {
+      // „Замени“ with nothing selected would silently wipe every line.
+      throw new ConvexError('Изберете поне един артикул за импортиране.')
+    }
 
     const validated = validateReceiptImportItems(itemsToImport)
     if (!validated.ok) {
@@ -159,6 +175,7 @@ export const importScannedItems = mutation({
       }
     }
 
+    await ctx.db.delete(scan._id)
     await touchBill(ctx, scan.billId)
   },
 })
@@ -183,6 +200,8 @@ export const getScanInternal = internalQuery({
 export const markProcessing = internalMutation({
   args: { scanId: v.id('receiptScans') },
   handler: async (ctx, args) => {
+    // The Host may dismiss the scan (or replace the photo) mid-flight.
+    if (!(await ctx.db.get(args.scanId))) return
     await ctx.db.patch(args.scanId, { status: 'processing' })
   },
 })
@@ -198,6 +217,7 @@ export const markDone = internalMutation({
   },
   handler: async (ctx, args) => {
     const { scanId, ...rest } = args
+    if (!(await ctx.db.get(scanId))) return
     await ctx.db.patch(scanId, { status: 'done', ...rest })
   },
 })
@@ -208,6 +228,7 @@ export const markFailed = internalMutation({
     errorMessage: v.string(),
   },
   handler: async (ctx, args) => {
+    if (!(await ctx.db.get(args.scanId))) return
     await ctx.db.patch(args.scanId, {
       status: 'failed',
       errorMessage: args.errorMessage,

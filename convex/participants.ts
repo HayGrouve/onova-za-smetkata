@@ -2,7 +2,10 @@ import { mutation, query } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
 import { assertBillDraft } from './lib/assertBillDraft'
 import { requireAuth, requireBillOwner } from './lib/auth'
-import { validateParticipantAdd } from '../shared/participant-schema'
+import {
+  participantNameKey,
+  validateParticipantAdd,
+} from '../shared/participant-schema'
 import { touchBill } from './lib/touchBill'
 import { deleteGuestSessionsForParticipant } from './guestSessions'
 import { cancelRequestsForParticipant } from './lib/paymentReservations'
@@ -59,7 +62,7 @@ export const listRecentNames = query({
         .withIndex('by_billId', (q) => q.eq('billId', bill._id))
         .collect()
       for (const p of participants) {
-        const key = p.name.trim().toLowerCase()
+        const key = participantNameKey(p.name)
         if (!key || seen.has(key)) continue
         seen.add(key)
         names.push(p.name.trim())

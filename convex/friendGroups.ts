@@ -183,7 +183,7 @@ export const addToBill = mutation({
       .withIndex('by_billId', (q) => q.eq('billId', args.billId))
       .collect()
     const existingKeys = new Set(
-      existing.map((p) => p.name.trim().toLowerCase()),
+      existing.map((p) => participantNameKey(p.name)),
     )
 
     let added = 0

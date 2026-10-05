@@ -63,6 +63,18 @@ export async function adoptSeatRequests(
   }
 }
 
+/** This phone has sent a transfer the Host has not confirmed or rejected yet. */
+export async function hasTransferAwaitingHost(
+  ctx: QueryCtx | MutationCtx,
+  sessionId: Id<'guestSessions'>,
+): Promise<boolean> {
+  const requests = await ctx.db
+    .query('combinedPaymentRequests')
+    .withIndex('by_guestSessionId', (q) => q.eq('guestSessionId', sessionId))
+    .collect()
+  return requests.some((request) => isAwaitingHostConfirmation(request))
+}
+
 /** Delete every pay request of a bill that is being deleted. */
 export async function deleteRequestsForBill(
   ctx: MutationCtx,

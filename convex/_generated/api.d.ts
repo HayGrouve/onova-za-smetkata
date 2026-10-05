@@ -30,6 +30,7 @@ import type * as lib_billListSearch from "../lib/billListSearch.js";
 import type * as lib_billListSummary from "../lib/billListSummary.js";
 import type * as lib_bill_ownership from "../lib/bill_ownership.js";
 import type * as lib_billingEnv from "../lib/billingEnv.js";
+import type * as lib_createBill from "../lib/createBill.js";
 import type * as lib_devMode from "../lib/devMode.js";
 import type * as lib_geminiReceipt from "../lib/geminiReceipt.js";
 import type * as lib_guestAccess from "../lib/guestAccess.js";
@@ -84,6 +85,7 @@ declare const fullApi: ApiFromModules<{
   "lib/billListSummary": typeof lib_billListSummary;
   "lib/bill_ownership": typeof lib_bill_ownership;
   "lib/billingEnv": typeof lib_billingEnv;
+  "lib/createBill": typeof lib_createBill;
   "lib/devMode": typeof lib_devMode;
   "lib/geminiReceipt": typeof lib_geminiReceipt;
   "lib/guestAccess": typeof lib_guestAccess;

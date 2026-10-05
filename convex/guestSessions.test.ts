@@ -226,6 +226,47 @@ describe('Covered seats', () => {
     ).rejects.toThrow(GUEST_FLOW_MESSAGES.coveredSeatsLocked)
   })
 
+  it('re-joining cannot change Covered seats after the transfer was sent', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t, {
+      guests: ['Ани', 'Боби', 'Вики'],
+      items: [{ name: 'Бира', unitPriceCents: 300, quantity: 3 }],
+    })
+    await hostTakesUnits(bill, bill.itemIds[0], Object.values(bill.seats))
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'], [
+      bill.seats['Боби'],
+    ])
+    const { requestId } = await t.mutation(api.combinedPayments.create, {
+      billId: bill.billId,
+      shareToken: bill.shareToken,
+      sessionToken: ani.sessionToken,
+      coveredParticipantIds: [bill.seats['Боби']],
+    })
+    await t.mutation(api.combinedPayments.initiateTransfer, {
+      billId: bill.billId,
+      sessionToken: ani.sessionToken,
+      requestId,
+    })
+
+    await t.mutation(api.guestSessions.claim, {
+      billId: bill.billId,
+      shareToken: bill.shareToken,
+      participantId: bill.seats['Ани'],
+      sessionToken: ani.sessionToken,
+      coveredParticipantIds: [bill.seats['Вики']],
+    })
+
+    expect(await activeSeats(t, bill)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          participantId: bill.seats['Боби'],
+          heldByParticipantId: bill.seats['Ани'],
+        }),
+      ]),
+    )
+    await expect(joinAsGuest(t, bill, bill.seats['Вики'])).resolves.toBeTruthy()
+  })
+
   it('removing a Participant drops them from every phone’s Covered seats', async () => {
     const t = setupConvex()
     const bill = await seedBill(t, { guests: ['Ани', 'Боби', 'Вики'] })

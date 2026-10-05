@@ -13,7 +13,18 @@ import {
 } from './constants'
 
 // eslint-disable-next-line no-control-regex -- reject control characters in user-facing names
-const CONTROL_CHAR_PATTERN = /[\x00-\x1f]/
+const CONTROL_CHAR_PATTERN = /[\x00-\x1f\x7f-\x9f]/
+
+/**
+ * Characters that render as nothing: controls, format marks (zero-width,
+ * direction, soft hyphen), separators and the blank fillers some keyboards
+ * offer. A name made only of these looks empty on every phone.
+ */
+const INVISIBLE_PATTERN = /[\p{Cc}\p{Cf}\p{Z}\u115f\u1160\u3164\uffa0\u2800]/gu
+
+export function hasVisibleText(value: string): boolean {
+  return value.replace(INVISIBLE_PATTERN, '').length > 0
+}
 
 export const personNameSchema = z
   .string()
@@ -24,6 +35,7 @@ export const personNameSchema = z
     (value) => !CONTROL_CHAR_PATTERN.test(value),
     'Името съдържа невалидни символи',
   )
+  .refine(hasVisibleText, 'Името не може да е празно')
 
 export function groupNameSchema() {
   return z
@@ -34,6 +46,7 @@ export function groupNameSchema() {
       GROUP_NAME_MAX,
       `Името на групата може да е до ${GROUP_NAME_MAX} символа`,
     )
+    .refine(hasVisibleText, 'Името на групата е задължително')
 }
 
 export function restaurantNameSchema(options: { required?: boolean } = {}) {
@@ -44,9 +57,11 @@ export function restaurantNameSchema(options: { required?: boolean } = {}) {
       RESTAURANT_NAME_MAX,
       `Името може да е до ${RESTAURANT_NAME_MAX} символа`,
     )
+    // Invisible-only text counts as no name (readiness checks look at it).
+    .transform((value) => (hasVisibleText(value) ? value : ''))
 
   if (options.required) {
-    return base.min(1, 'Въведете име на ресторант.')
+    return base.pipe(z.string().min(1, 'Въведете име на ресторант.'))
   }
 
   return base
@@ -57,6 +72,7 @@ export const itemNameSchema = z
   .trim()
   .min(1, 'Наименованието не може да е празно')
   .max(ITEM_NAME_MAX, `Наименованието може да е до ${ITEM_NAME_MAX} символа`)
+  .refine(hasVisibleText, 'Наименованието не може да е празно')
 
 export function optionalNoteSchema(max = NOTE_MAX) {
   return z

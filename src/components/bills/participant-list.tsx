@@ -31,7 +31,10 @@ import { sortFriendGroupsWithPinned } from '#/lib/sort-friend-groups-with-pinned
 import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
 import type { GuidanceFocusHandle } from '#/lib/guidance-focus/use-guidance-focus.ts'
 import { cn } from '#/lib/utils.ts'
-import { validateParticipantAdd } from '../../../shared/participant-schema.ts'
+import {
+  participantNameKey,
+  validateParticipantAdd,
+} from '../../../shared/participant-schema.ts'
 import { Input } from '#/components/ui/input.tsx'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
@@ -81,14 +84,14 @@ export function ParticipantList({
   const { confirm } = useConfirmAction()
 
   const currentNames = new Set(
-    participants.map((p) => p.name.trim().toLowerCase()),
+    participants.map((p) => participantNameKey(p.name)),
   )
   const guestParticipants = participants.filter(
     (participant) => !isHostParticipant(participant._id, hostParticipantId),
   )
   const quickAddNames =
     recentNames?.filter(
-      (recentName) => !currentNames.has(recentName.trim().toLowerCase()),
+      (recentName) => !currentNames.has(participantNameKey(recentName)),
     ) ?? []
 
   async function handleAdd(participantName?: string) {

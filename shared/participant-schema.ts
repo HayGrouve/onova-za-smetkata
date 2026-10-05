@@ -12,8 +12,17 @@ export type ParticipantAddContext = {
 const DUPLICATE_MESSAGE = 'Този участник вече е на сметката'
 const CAP_MESSAGE = `Максимум ${BILL_PARTICIPANTS_MAX} участника на сметка`
 
+/**
+ * Duplicate check key: names that look the same on a phone — differing only
+ * in spacing, invisible format marks or Unicode composition — are one name.
+ */
 export function participantNameKey(name: string): string {
-  return name.trim().toLowerCase()
+  return name
+    .normalize('NFC')
+    .replace(/\p{Cf}/gu, '')
+    .replace(/\s+/gu, ' ')
+    .trim()
+    .toLowerCase()
 }
 
 export function parseParticipantName(name: string) {
