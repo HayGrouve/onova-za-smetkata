@@ -48,12 +48,8 @@ export function useGuestBillSession(
   )
   const pendingCover = useQuery(
     api.combinedPayments.getPendingCoverForGuest,
-    shareToken && storedSession
-      ? {
-          billId,
-          shareToken,
-          sessionToken: storedSession.sessionToken,
-        }
+    storedSession
+      ? { billId, sessionToken: storedSession.sessionToken }
       : 'skip',
   )
   const releaseSession = useMutation(api.guestSessions.release)
@@ -71,13 +67,9 @@ export function useGuestBillSession(
 
   const executeRecovery = useCallback(
     (plan: FlowRecoveryPlan, sessionToken?: string) => {
-      if (plan.releaseSession && sessionToken && plan.redirectShareToken) {
-        // Best effort: a rotated link or a deleted bill refuses the release.
-        releaseSession({
-          billId,
-          shareToken: plan.redirectShareToken,
-          sessionToken,
-        }).catch(() => undefined)
+      if (plan.releaseSession && sessionToken) {
+        // Best effort: the phone may be offline; the TTL frees the seat anyway.
+        releaseSession({ billId, sessionToken }).catch(() => undefined)
       }
       if (plan.clearStorage) {
         clearStoredGuestParticipant(billId)

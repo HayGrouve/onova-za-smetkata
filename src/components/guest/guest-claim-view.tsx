@@ -137,7 +137,6 @@ function GuestClaimTable({
   const leaveUnit = useMutation(api.assignments.leaveUnit)
   const pending = useQuery(api.combinedPayments.getPendingForGuest, {
     billId,
-    shareToken,
     sessionToken,
   })
 
@@ -520,7 +519,6 @@ function GuestClaimTable({
         open={coveredOpen}
         onOpenChange={setCoveredOpen}
         billId={billId}
-        shareToken={shareToken}
         sessionToken={sessionToken}
         candidates={coveredCandidates}
         coveredIds={coveredIds}

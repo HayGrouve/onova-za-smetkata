@@ -58,7 +58,6 @@ export function useGuestPayment({
   })
   const pending = useQuery(api.combinedPayments.getPendingForGuest, {
     billId,
-    shareToken,
     sessionToken,
   })
   const createCombined = useMutation(api.combinedPayments.create)
@@ -126,7 +125,6 @@ export function useGuestPayment({
         // Reserve the extra seats now so their phones show who is paying.
         await createCombined({
           billId,
-          shareToken,
           sessionToken,
           coveredParticipantIds: next as Id<'participants'>[],
         })
@@ -150,7 +148,7 @@ export function useGuestPayment({
         if (pending) {
           await cancelRequest({ billId, sessionToken, requestId: pending._id })
         }
-        await createSolo({ billId, shareToken, sessionToken })
+        await createSolo({ billId, sessionToken })
         return true
       }
       const requestId = pending
@@ -165,7 +163,6 @@ export function useGuestPayment({
         : (
             await createCombined({
               billId,
-              shareToken,
               sessionToken,
               coveredParticipantIds: covered,
             })

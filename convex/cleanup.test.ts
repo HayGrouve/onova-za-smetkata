@@ -30,13 +30,11 @@ describe('the cleanup cron', () => {
     const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
     const unsent = await t.mutation(api.combinedPayments.create, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: ani.sessionToken,
       coveredParticipantIds: [bill.seats['Вики']],
     })
     const sent = await t.mutation(api.combinedPayments.createSolo, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: bobi.sessionToken,
     })
     const storageId = await t.run((ctx) =>
@@ -69,7 +67,6 @@ describe('the cleanup cron', () => {
     vi.setSystemTime(Date.now() + GUEST_SESSION_TTL_MS - 1_000)
     await t.mutation(api.guestSessions.heartbeat, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       ...vicky,
     })
     vi.setSystemTime(Date.now() + 2_000)

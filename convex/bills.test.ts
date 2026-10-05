@@ -220,13 +220,11 @@ describe('finalizing', () => {
     // Ани sent a transfer; the Host took cash from everyone instead.
     const sent = await t.mutation(api.combinedPayments.createSolo, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: ani.sessionToken,
     })
     // Боби picked Вики to pay for but never opened Revolut.
     const unsent = await t.mutation(api.combinedPayments.create, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: bobi.sessionToken,
       coveredParticipantIds: [bill.seats['Вики']],
     })
@@ -366,7 +364,6 @@ describe('deleting a bill', () => {
     const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
     await t.mutation(api.combinedPayments.createSolo, {
       billId: bill.billId,
-      shareToken: bill.shareToken,
       sessionToken: bobi.sessionToken,
     })
 

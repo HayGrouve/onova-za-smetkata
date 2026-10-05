@@ -7,7 +7,7 @@ import {
   validateParticipantAdd,
 } from '../shared/participant-schema'
 import { touchBill } from './lib/touchBill'
-import { deleteGuestSessionsForParticipant } from './guestSessions'
+import { dropSeatFromGuestSessions } from './lib/guestSession'
 import { cancelRequestsForParticipant } from './lib/paymentReservations'
 import { shouldClearHostParticipantId } from '../shared/host-bill-participant'
 import { nextSortOrder } from '../shared/sort-order'
@@ -36,7 +36,7 @@ async function deleteParticipantWithRelations(
   }
 
   await cancelRequestsForParticipant(ctx, bill._id, participantId)
-  await deleteGuestSessionsForParticipant(ctx, bill._id, participantId)
+  await dropSeatFromGuestSessions(ctx, bill._id, participantId)
   await ctx.db.delete(participantId)
 
   if (shouldClearHostParticipantId(participantId, bill.hostParticipantId)) {
