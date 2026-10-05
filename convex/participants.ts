@@ -2,13 +2,15 @@ import { mutation, query } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
 import { assertBillDraft } from './lib/assertBillDraft'
 import { requireAuth, requireBillOwner } from './lib/auth'
-import { validateParticipantAdd } from '../shared/participant-schema'
+import {
+  participantNameKey,
+  validateParticipantAdd,
+} from '../shared/participant-schema'
 import { touchBill } from './lib/touchBill'
 import { deleteGuestSessionsForParticipant } from './guestSessions'
-import {
-  nextParticipantSortOrder,
-  shouldClearHostParticipantId,
-} from '../shared/host-bill-participant'
+import { cancelRequestsForParticipant } from './lib/paymentReservations'
+import { shouldClearHostParticipantId } from '../shared/host-bill-participant'
+import { nextSortOrder } from '../shared/sort-order'
 import type { Doc, Id } from './_generated/dataModel'
 import type { MutationCtx } from './_generated/server'
 
@@ -33,6 +35,7 @@ async function deleteParticipantWithRelations(
     await ctx.db.delete(p._id)
   }
 
+  await cancelRequestsForParticipant(ctx, bill._id, participantId)
   await deleteGuestSessionsForParticipant(ctx, bill._id, participantId)
   await ctx.db.delete(participantId)
 
@@ -59,7 +62,7 @@ export const listRecentNames = query({
         .withIndex('by_billId', (q) => q.eq('billId', bill._id))
         .collect()
       for (const p of participants) {
-        const key = p.name.trim().toLowerCase()
+        const key = participantNameKey(p.name)
         if (!key || seen.has(key)) continue
         seen.add(key)
         names.push(p.name.trim())
@@ -97,7 +100,7 @@ export const add = mutation({
     const id = await ctx.db.insert('participants', {
       billId: args.billId,
       name: validated.name,
-      sortOrder: nextParticipantSortOrder(existing.length),
+      sortOrder: nextSortOrder(existing),
     })
     await touchBill(ctx, args.billId)
     return id

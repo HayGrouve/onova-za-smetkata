@@ -10,6 +10,7 @@ import {
   resolveMySeatIds,
 } from '../../shared/guest-flow-session'
 import type { FlowRecoveryPlan } from '../../shared/guest-flow-session'
+import { GUEST_FLOW_MESSAGES } from '../../shared/guest-flow-messages'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import { useGuestSessionHeartbeat } from '#/hooks/use-guest-session-heartbeat.ts'
@@ -71,13 +72,16 @@ export function useGuestBillSession(
   const executeRecovery = useCallback(
     (plan: FlowRecoveryPlan, sessionToken?: string) => {
       if (plan.releaseSession && sessionToken && plan.redirectShareToken) {
-        void releaseSession({
+        // Best effort: a rotated link or a deleted bill refuses the release.
+        releaseSession({
           billId,
           shareToken: plan.redirectShareToken,
           sessionToken,
-        })
+        }).catch(() => undefined)
       }
-      clearStoredGuestParticipant(billId)
+      if (plan.clearStorage) {
+        clearStoredGuestParticipant(billId)
+      }
       if (plan.toastMessage) {
         toast.error(plan.toastMessage)
       }
@@ -87,14 +91,8 @@ export function useGuestBillSession(
   )
 
   const handleSessionLost = useCallback(() => {
-    executeRecovery(
-      planSessionLostRecovery({
-        shareToken,
-        storedSession,
-      }),
-      storedSession?.sessionToken,
-    )
-  }, [executeRecovery, shareToken, storedSession])
+    executeRecovery(planSessionLostRecovery({ shareToken }))
+  }, [executeRecovery, shareToken])
 
   useGuestSessionHeartbeat(
     data?.bill.status === 'final' ? null : storedSession,
@@ -121,6 +119,7 @@ export function useGuestBillSession(
       gate.reason === 'participant-not-found'
     ) {
       clearStoredGuestParticipant(billId)
+      toast.error(GUEST_FLOW_MESSAGES.seatRemoved)
       redirectToJoin(shareToken)
     }
   }, [billId, gate, redirectToJoin, shareToken])

@@ -27,6 +27,15 @@ import type { BillTotals } from '../shared/bill-calculations'
 import { toBillCalculationSnapshot } from '../shared/bill-calculation-snapshot'
 import { loadBillRelations } from './lib/billListSummary'
 import { loadSeatHoldingRequests } from './lib/paymentReservations'
+import { assertRateLimit } from './lib/rateLimit'
+
+/** Pay requests are rows: one phone must not grow them without bound. */
+async function assertPayRequestRateLimit(
+  ctx: MutationCtx,
+  sessionToken: string,
+) {
+  await assertRateLimit(ctx, `payRequest:${sessionToken}`, 30, 60_000)
+}
 
 async function loadBillTotalsForCombinedPay(
   ctx: QueryCtx | MutationCtx,
@@ -46,6 +55,10 @@ async function loadBillTotalsForCombinedPay(
   return calculateBillTotals(calculationInput)
 }
 
+/**
+ * Seats another live request already pays for — as a Covered seat or as its
+ * payer. Covering any of them would send the same Share twice.
+ */
 function buildCoveredPendingIds(
   pending: Doc<'combinedPaymentRequests'>[],
   excludeRequestId?: Id<'combinedPaymentRequests'>,
@@ -54,11 +67,28 @@ function buildCoveredPendingIds(
   for (const request of pending) {
     if (excludeRequestId && request._id === excludeRequestId) continue
     if (request.status !== 'pending') continue
+    ids.add(request.payerParticipantId)
     for (const id of getCoveredParticipantIds(request)) {
       ids.add(id)
     }
   }
   return ids
+}
+
+/** Another phone has already picked this payer's seat to pay for. */
+function assertPayerNotCoveredElsewhere(
+  holding: Doc<'combinedPaymentRequests'>[],
+  payerParticipantId: Id<'participants'>,
+  sessionId: Id<'guestSessions'>,
+) {
+  const coveredElsewhere = holding.some(
+    (request) =>
+      request.guestSessionId !== sessionId &&
+      getCoveredParticipantIds(request).includes(payerParticipantId),
+  )
+  if (coveredElsewhere) {
+    throw new ConvexError(COMBINED_PAYMENT_MESSAGES.payerCoveredByOther)
+  }
 }
 
 async function validateCoveredParticipantsOnBill(
@@ -179,6 +209,7 @@ export const create = mutation({
       participantId: session.participantId,
       sessionToken: args.sessionToken,
     })
+    await assertPayRequestRateLimit(ctx, args.sessionToken)
 
     const bill = await ctx.db.get(args.billId)
     if (!bill) {
@@ -203,6 +234,11 @@ export const create = mutation({
     )
 
     const billPending = await loadSeatHoldingRequests(ctx, args.billId)
+    assertPayerNotCoveredElsewhere(
+      billPending,
+      session.participantId,
+      sessionId,
+    )
     const coveredPendingIds = buildCoveredPendingIds(billPending)
 
     const validated = validateCombinedPaymentCreate(
@@ -252,6 +288,12 @@ export const updateCovered = mutation({
     if (!session || session.billId !== args.billId) {
       throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
     }
+    await requireGuestSession(ctx, {
+      billId: args.billId,
+      participantId: session.participantId,
+      sessionToken: args.sessionToken,
+    })
+    await assertPayRequestRateLimit(ctx, args.sessionToken)
 
     const bill = await ctx.db.get(args.billId)
     if (!bill) {
@@ -338,6 +380,7 @@ export const createSolo = mutation({
       participantId: session.participantId,
       sessionToken: args.sessionToken,
     })
+    await assertPayRequestRateLimit(ctx, args.sessionToken)
 
     const bill = await ctx.db.get(args.billId)
     if (!bill) {
@@ -352,6 +395,11 @@ export const createSolo = mutation({
       .collect()
     const hasPendingForSession = existingForSession.some(
       (r) => r.billId === args.billId && r.status === 'pending',
+    )
+    assertPayerNotCoveredElsewhere(
+      await loadSeatHoldingRequests(ctx, args.billId),
+      session.participantId,
+      sessionId,
     )
 
     const validated = validateSoloPaymentCreate({
@@ -396,6 +444,12 @@ export const initiateTransfer = mutation({
     if (!session || session.billId !== args.billId) {
       throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
     }
+    await requireGuestSession(ctx, {
+      billId: args.billId,
+      participantId: session.participantId,
+      sessionToken: args.sessionToken,
+    })
+    await assertPayRequestRateLimit(ctx, args.sessionToken)
 
     const bill = await ctx.db.get(args.billId)
     if (!bill) {
@@ -437,6 +491,12 @@ export const cancel = mutation({
     if (!session || session.billId !== args.billId) {
       throw new ConvexError(GUEST_FLOW_MESSAGES.sessionExpired)
     }
+    await requireGuestSession(ctx, {
+      billId: args.billId,
+      participantId: session.participantId,
+      sessionToken: args.sessionToken,
+    })
+    await assertPayRequestRateLimit(ctx, args.sessionToken)
 
     const bill = await ctx.db.get(args.billId)
     if (!bill) {

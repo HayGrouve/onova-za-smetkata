@@ -1,8 +1,10 @@
 // @vitest-environment edge-runtime
+import type { FunctionReturnType } from 'convex/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { api } from './_generated/api'
 import { GUEST_FLOW_MESSAGES } from '../shared/guest-flow-messages'
 import { SUBSCRIPTION_MESSAGES } from '../shared/subscription-messages'
+import { COMBINED_PAYMENT_MESSAGES } from '../shared/combined-payment-messages'
 import {
   HOST_IDENTITY,
   hostTakesUnits,
@@ -58,6 +60,12 @@ async function rowsOnBill(t: TestConvex, billId: SeededBill['billId']) {
           .withIndex('by_billId', (q) => q.eq('billId', billId))
           .collect(),
       ),
+      combinedPaymentRequests: await count(
+        ctx.db
+          .query('combinedPaymentRequests')
+          .withIndex('by_billId_status', (q) => q.eq('billId', billId))
+          .collect(),
+      ),
     }
   })
 }
@@ -100,6 +108,35 @@ describe('creating a bill', () => {
     })
   })
 
+  it('bills started from Напътствия count against the same monthly quota', async () => {
+    vi.stubEnv('BILLING_ENABLED', 'true')
+    const t = setupConvex()
+    const host = t.withIdentity(HOST_IDENTITY)
+    const firstBillId = await host.mutation(
+      api.hostOnboarding.createFirstBill,
+      {},
+    )
+    for (let index = 0; index < 3; index++) {
+      await host.mutation(api.bills.create, {})
+    }
+    await host.mutation(api.hostOnboarding.clearGuidedBill, {
+      billId: firstBillId,
+    })
+    await host.mutation(api.hostOnboarding.startAnotherGuidedBill, {})
+
+    const overQuota = { data: { code: 'QUOTA_BILLS' } }
+    await expect(host.mutation(api.bills.create, {})).rejects.toMatchObject(
+      overQuota,
+    )
+    const guided = await host.query(api.hostOnboarding.getForViewer, {})
+    await host.mutation(api.hostOnboarding.clearGuidedBill, {
+      billId: guided.guidedBillId!,
+    })
+    await expect(
+      host.mutation(api.hostOnboarding.startAnotherGuidedBill, {}),
+    ).rejects.toMatchObject(overQuota)
+  })
+
   it('while Host Pro billing is off, a Host has no monthly cap', async () => {
     const t = setupConvex()
     const host = t.withIdentity(HOST_IDENTITY)
@@ -108,6 +145,41 @@ describe('creating a bill', () => {
     }
 
     await expect(host.mutation(api.bills.create, {})).resolves.toBeTruthy()
+  })
+})
+
+describe('editing seats and lines', () => {
+  it('a seat or line added after a removal never shares a sort order', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t, {
+      guests: ['Ани', 'Боби', 'Вики'],
+      items: [
+        { name: 'Бира', unitPriceCents: 300 },
+        { name: 'Вода', unitPriceCents: 150 },
+      ],
+    })
+    await bill.host.mutation(api.participants.remove, {
+      participantId: bill.seats['Боби'],
+    })
+    await bill.host.mutation(api.items.remove, { itemId: bill.itemIds[0] })
+
+    await bill.host.mutation(api.participants.add, {
+      billId: bill.billId,
+      name: 'Гошо',
+    })
+    await bill.host.mutation(api.items.add, {
+      billId: bill.billId,
+      name: 'Хляб',
+      unitPriceCents: 200,
+    })
+
+    const { participants, items } = await bill.host.query(api.bills.get, {
+      billId: bill.billId,
+    })
+    for (const rows of [participants, items]) {
+      const orders = rows.map((row) => row.sortOrder)
+      expect(new Set(orders).size).toBe(orders.length)
+    }
   })
 })
 
@@ -134,6 +206,51 @@ describe('finalizing', () => {
     expect(await t.run((ctx) => ctx.db.get(bill.billId))).toMatchObject({
       status: 'final',
     })
+  })
+
+  it('waits for the Host to settle sent transfers and drops unsent ones', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t, {
+      guests: ['Ани', 'Боби', 'Вики'],
+      items: [{ name: 'Бира', unitPriceCents: 300, quantity: 3 }],
+    })
+    await hostTakesUnits(bill, bill.itemIds[0], Object.values(bill.seats))
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+    const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
+    // Ани sent a transfer; the Host took cash from everyone instead.
+    const sent = await t.mutation(api.combinedPayments.createSolo, {
+      billId: bill.billId,
+      shareToken: bill.shareToken,
+      sessionToken: ani.sessionToken,
+    })
+    // Боби picked Вики to pay for but never opened Revolut.
+    const unsent = await t.mutation(api.combinedPayments.create, {
+      billId: bill.billId,
+      shareToken: bill.shareToken,
+      sessionToken: bobi.sessionToken,
+      coveredParticipantIds: [bill.seats['Вики']],
+    })
+    await payEveryGuest(bill, 300)
+    const finalize = () =>
+      bill.host.mutation(api.bills.finalize, { billId: bill.billId })
+
+    await expect(finalize()).rejects.toThrow(
+      COMBINED_PAYMENT_MESSAGES.transfersAwaitingHost,
+    )
+    await bill.host.mutation(api.combinedPayments.reject, {
+      billId: bill.billId,
+      requestId: sent.requestId,
+    })
+    await finalize()
+
+    expect(await t.run((ctx) => ctx.db.get(unsent.requestId))).toMatchObject({
+      status: 'cancelled',
+    })
+    expect(
+      await bill.host.query(api.combinedPayments.listPendingForBill, {
+        billId: bill.billId,
+      }),
+    ).toEqual([])
   })
 
   it('locks every edit and logs the Guests’ phones out', async () => {
@@ -246,7 +363,12 @@ describe('deleting a bill', () => {
       participantId: bill.seats['Ани'],
       amountCents: 300,
     })
-    await joinAsGuest(t, bill, bill.seats['Боби'])
+    const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
+    await t.mutation(api.combinedPayments.createSolo, {
+      billId: bill.billId,
+      shareToken: bill.shareToken,
+      sessionToken: bobi.sessionToken,
+    })
 
     await bill.host.mutation(api.bills.remove, { billId: bill.billId })
 
@@ -257,6 +379,58 @@ describe('deleting a bill', () => {
       itemAssignments: 0,
       payments: 0,
       guestSessions: 0,
+      combinedPaymentRequests: 0,
     })
+  })
+})
+
+describe('searching the bill archive', () => {
+  it('finds an older bill on the first page, past twenty newer ones', async () => {
+    const t = setupConvex()
+    const old = await seedBill(t, {
+      restaurantName: 'Механа Старата',
+      guests: [],
+    })
+    for (let i = 0; i < 25; i++) {
+      await old.host.mutation(api.bills.create, {})
+    }
+
+    const firstPage = await old.host.query(api.bills.listWithSummary, {
+      paginationOpts: { numItems: 20, cursor: null },
+      search: 'механа',
+    })
+
+    expect(firstPage.page.map((row) => row.bill._id)).toEqual([old.billId])
+    expect(firstPage.isDone).toBe(true)
+  })
+
+  it('pages through matches without skipping or repeating any', async () => {
+    const t = setupConvex()
+    const first = await seedBill(t, { restaurantName: 'Кафе 0', guests: [] })
+    const ids = [first.billId]
+    for (let i = 1; i < 5; i++) {
+      const billId = await first.host.mutation(api.bills.create, {})
+      await first.host.mutation(api.bills.update, {
+        billId,
+        restaurantName: `Кафе ${i}`,
+      })
+      await first.host.mutation(api.bills.create, {})
+      ids.push(billId)
+    }
+
+    const seen: string[] = []
+    let cursor: string | null = null
+    for (let pages = 0; pages < 10; pages++) {
+      const result: FunctionReturnType<typeof api.bills.listWithSummary> =
+        await first.host.query(api.bills.listWithSummary, {
+          paginationOpts: { numItems: 2, cursor },
+          search: 'кафе',
+        })
+      seen.push(...result.page.map((row) => row.bill._id))
+      if (result.isDone) break
+      cursor = result.continueCursor
+    }
+
+    expect(seen).toEqual([...ids].reverse())
   })
 })

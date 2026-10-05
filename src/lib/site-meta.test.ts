@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   absoluteSiteUrl,
+  buildHomeHead,
   buildJoinShareHead,
+  buildNoIndexHead,
+  buildPageTitle,
   buildOpenGraphMeta,
   DEFAULT_SITE_ORIGIN,
   JOIN_OG_DESCRIPTION,
@@ -54,7 +57,7 @@ describe('buildJoinShareHead', () => {
     const head = buildJoinShareHead('bill123', 'https://example.com')
     const meta = head.meta
 
-    expect(head.title).toContain(JOIN_OG_TITLE)
+    expect(meta).toContainEqual({ title: buildPageTitle(JOIN_OG_TITLE) })
     expect(meta).toContainEqual({
       name: 'robots',
       content: 'noindex, nofollow',
@@ -67,6 +70,18 @@ describe('buildJoinShareHead', () => {
       property: 'og:description',
       content: JOIN_OG_DESCRIPTION,
     })
+  })
+})
+
+describe('page titles', () => {
+  it('reach the document through the meta array that HeadContent reads', () => {
+    expect(buildHomeHead('https://example.com').meta).toContainEqual({
+      title: SITE_NAME,
+    })
+    expect(buildNoIndexHead('Вход').meta).toContainEqual({
+      title: buildPageTitle('Вход'),
+    })
+    expect(buildNoIndexHead('Вход')).not.toHaveProperty('title')
   })
 })
 

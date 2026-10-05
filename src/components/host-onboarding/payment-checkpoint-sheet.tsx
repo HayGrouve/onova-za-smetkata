@@ -74,6 +74,14 @@ export function PaymentCheckpointSheet({
   }, [open, settings])
 
   async function handleSaveAndShare() {
+    // „Настрой плащане“ with both fields empty would share with no way to
+    // pay; „Сподели без начин на плащане“ is the button for that.
+    if (!revolutUsername.trim() && !iban.trim()) {
+      setFieldErrors({
+        revolutUsername: HOST_ONBOARDING_PAYMENT_CHECKPOINT.needOneMethod,
+      })
+      return
+    }
     const parsed = parsePaymentSettingsInput({ revolutUsername, iban })
     if (!parsed.success) {
       setFieldErrors(formatPaymentSettingsErrors(parsed.error))

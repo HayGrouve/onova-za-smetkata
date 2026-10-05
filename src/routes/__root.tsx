@@ -21,19 +21,24 @@ import { ThemeColorMeta } from '../components/theme-color-meta.tsx'
 import { Toaster } from '../components/ui/sonner'
 import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
+import { isDefiniteErrorReason } from '#/lib/definite-error-reason.ts'
+import { getConvexErrorData } from '#/lib/guest-participant-session.ts'
 
 import { SentryInit } from '../components/sentry-init.tsx'
 import { ServiceWorkerRegister } from '../components/service-worker-register.tsx'
-import { SITE_NAME } from '#/lib/site-meta.ts'
+import { SITE_NAME, titleMeta } from '#/lib/site-meta.ts'
 import appCss from '../styles.css?url'
 
 function RootError({ error }: ErrorComponentProps) {
+  // A reason the server gave on purpose („Сметката не е намерена“) beats a
+  // generic one; a reload cannot fix it, so offer the way home as well.
+  const reason = getConvexErrorData(error)
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col items-center justify-center gap-4 px-4 text-center">
       <div>
         <h1 className="text-lg font-semibold">Нещо се обърка</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Опитайте да презаредите страницата.
+        <p className="mt-2 text-sm text-muted-foreground" role="alert">
+          {reason ?? 'Опитайте да презаредите страницата.'}
         </p>
         {import.meta.env.DEV && error instanceof Error ? (
           <p className="mt-3 text-left text-xs text-destructive">
@@ -41,13 +46,18 @@ function RootError({ error }: ErrorComponentProps) {
           </p>
         ) : null}
       </div>
-      <Button
-        type="button"
-        className="h-11"
-        onClick={() => window.location.reload()}
-      >
-        <RefreshCwIcon className={ICON.button} aria-hidden />
-        Опитай отново
+      {isDefiniteErrorReason(reason) ? null : (
+        <Button
+          type="button"
+          className="h-11"
+          onClick={() => window.location.reload()}
+        >
+          <RefreshCwIcon className={ICON.button} aria-hidden />
+          Опитай отново
+        </Button>
+      )}
+      <Button asChild variant="outline" className="h-11">
+        <a href="/">Към началото</a>
       </Button>
     </div>
   )
@@ -55,8 +65,8 @@ function RootError({ error }: ErrorComponentProps) {
 
 export const Route = createRootRoute({
   head: () => ({
-    title: SITE_NAME,
     meta: [
+      titleMeta(SITE_NAME),
       {
         charSet: 'utf-8',
       },

@@ -113,4 +113,11 @@ describe('validateIban', () => {
       message: 'Невалиден български IBAN',
     })
   })
+
+  it('rejects a foreign IBAN whose check digits do not add up', () => {
+    // Guests copy this IBAN to pay; a typo must not reach them.
+    expect(validateIban('DE00 1234 5678 9012 3456 78').ok).toBe(false)
+    expect(validateIban('DE88370400440532013000').ok).toBe(false)
+    expect(validateIban('DE89370400440532013000').ok).toBe(true)
+  })
 })

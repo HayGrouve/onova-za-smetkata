@@ -82,6 +82,28 @@ describe('the Host recording payments', () => {
     ])
   })
 
+  it('undo picks the newest payment even when two share a timestamp', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedClaimedBill(t)
+    for (const amountCents of [100, 150]) {
+      await bill.host.mutation(api.payments.add, {
+        billId: bill.billId,
+        participantId: bill.seats['Ани'],
+        amountCents,
+      })
+    }
+
+    await bill.host.mutation(api.payments.undoLast, {
+      billId: bill.billId,
+      participantId: bill.seats['Ани'],
+    })
+
+    expect(await paymentsFor(t, bill.seats['Ани'])).toEqual([
+      expect.objectContaining({ amountCents: 100 }),
+    ])
+  })
+
   it('only the owner records payments, and only on a draft bill', async () => {
     const t = setupConvex()
     const bill = await seedClaimedBill(t)

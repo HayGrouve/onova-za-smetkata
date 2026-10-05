@@ -1,4 +1,4 @@
-import { useNavigate } from '@tanstack/react-router'
+import { useCanGoBack, useNavigate, useRouter } from '@tanstack/react-router'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import {
@@ -65,6 +65,8 @@ export function GuestPayView({
   heldElsewhereIds,
 }: GuestPayViewProps) {
   const navigate = useNavigate()
+  const router = useRouter()
+  const canGoBack = useCanGoBack()
   const [showLines, setShowLines] = useState(false)
   const payment = useGuestPayment({
     billId,
@@ -95,10 +97,17 @@ export function GuestPayView({
     : 'Домакинът'
 
   function backToReceipt() {
+    // The slip was torn off the receipt: step back to it rather than stacking
+    // another claim entry, so the phone's Back button then leaves the bill.
+    if (canGoBack && router.state.location.state.fromReceipt) {
+      router.history.back()
+      return
+    }
     void navigate({
       to: '/bills/$billId/claim',
       params: { billId },
       search: { t: shareToken },
+      replace: true,
     })
   }
 

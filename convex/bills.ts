@@ -1,6 +1,7 @@
 import { paginationOptsValidator } from 'convex/server'
-import { filter } from 'convex-helpers/server/filter'
+import { stream } from 'convex-helpers/server/stream'
 import { mutation, query } from './_generated/server'
+import schema from './schema'
 import type { Id } from './_generated/dataModel'
 import { ConvexError, v } from 'convex/values'
 import { assertBillDraft } from './lib/assertBillDraft'
@@ -8,6 +9,7 @@ import { requireAuth, requireBillOwner } from './lib/auth'
 import { assertBillCanFinalize } from './lib/validateBillForFinalize'
 import {
   billMatchesHomeSearch,
+  HOME_BILL_SEARCH_MAX_ROWS_READ,
   normalizeHomeBillSearch,
 } from './lib/billListSearch'
 import {
@@ -28,6 +30,10 @@ import {
   shouldDeleteReplacedReceiptStorage,
 } from './lib/receiptStorage'
 import { deleteGuestSessionsForBill } from './guestSessions'
+import {
+  deleteRequestsForBill,
+  settleRequestsForFinalize,
+} from './lib/paymentReservations'
 import { isGuestSessionActive } from './lib/guestSession'
 import { assertShareToken, toGuestVisibleBill } from './lib/guestAccess'
 import { firstZodIssueMessage } from '../shared/validation/errors'
@@ -36,15 +42,9 @@ import { createShareToken } from './lib/shareToken'
 import { sessionSeatIds } from '../shared/guest-seat-selection'
 import { calculateBillTotals } from '../shared/bill-calculations'
 import { toBillCalculationSnapshot } from '../shared/bill-calculation-snapshot'
-import { planHostParticipantOnBillCreate } from '../shared/host-bill-participant'
 import { touchBill } from './lib/touchBill'
 import { clearGuidedBillReference } from './lib/hostOnboardingBillHooks'
-import {
-  assertBillCreateQuota,
-  formatUsageMonthKey,
-  incrementUsageCount,
-  usageCounterKey,
-} from './lib/hostTier'
+import { createBillForOwner } from './lib/createBill'
 
 export const list = query({
   args: {},
@@ -69,24 +69,30 @@ export const listWithSummary = query({
     const normalizedSearch = normalizeHomeBillSearch(args.search)
 
     const status = args.status
+    // A stream filters before paginating, so a search page holds matches
+    // rather than whichever twenty bills happened to be newest.
+    const bills = stream(ctx.db, schema).query('bills')
     const ordered =
       status === undefined
-        ? ctx.db
-            .query('bills')
+        ? bills
             .withIndex('by_ownerId_updatedAt', (q) => q.eq('ownerId', userId))
             .order('desc')
-        : ctx.db
-            .query('bills')
+        : bills
             .withIndex('by_ownerId_status_updatedAt', (q) =>
               q.eq('ownerId', userId).eq('status', status),
             )
             .order('desc')
 
-    const filtered = normalizedSearch
-      ? filter(ordered, (bill) => billMatchesHomeSearch(bill, normalizedSearch))
-      : ordered
-
-    const result = await filtered.paginate(args.paginationOpts)
+    const result = normalizedSearch
+      ? await ordered
+          .filterWith(async (bill) =>
+            billMatchesHomeSearch(bill, normalizedSearch),
+          )
+          .paginate({
+            ...args.paginationOpts,
+            maximumRowsRead: HOME_BILL_SEARCH_MAX_ROWS_READ,
+          })
+      : await ordered.paginate(args.paginationOpts)
 
     return {
       ...result,
@@ -208,41 +214,7 @@ export const create = mutation({
     if (!owner) {
       throw new ConvexError('Потребителят не е намерен.')
     }
-
-    const now = Date.now()
-    await assertBillCreateQuota(ctx, owner, ownerId, now)
-
-    const billId = await ctx.db.insert('bills', {
-      ownerId,
-      restaurantName: '',
-      date: now,
-      status: 'draft',
-      shareToken: createShareToken(),
-      listBillTotalCents: 0,
-      listParticipantNames: [],
-      createdAt: now,
-      updatedAt: now,
-    })
-
-    const hostPlan = planHostParticipantOnBillCreate({
-      authName: owner.name,
-    })
-    const hostParticipantId = await ctx.db.insert('participants', {
-      billId,
-      name: hostPlan.name,
-      sortOrder: hostPlan.sortOrder,
-    })
-    await ctx.db.patch(billId, { hostParticipantId })
-    await touchBill(ctx, billId)
-
-    const monthKey = formatUsageMonthKey(now)
-    await incrementUsageCount(
-      ctx,
-      usageCounterKey(ownerId, 'bills', monthKey),
-      now,
-    )
-
-    return billId
+    return await createBillForOwner(ctx, owner)
   },
 })
 
@@ -325,6 +297,7 @@ export const finalize = mutation({
       restaurantName: bill.restaurantName,
       ...calculationInput,
     })
+    await settleRequestsForFinalize(ctx, args.billId)
 
     await ctx.db.patch(args.billId, {
       status: 'final',
@@ -345,6 +318,8 @@ export const rotateShareToken = mutation({
       shareToken,
       updatedAt: Date.now(),
     })
+    // The old link is revoked now, not when the phones' heartbeats lapse.
+    await deleteGuestSessionsForBill(ctx, args.billId)
     return { shareToken }
   },
 })
@@ -358,6 +333,7 @@ export const remove = mutation({
 
     await deleteReceiptScansForBill(ctx, args.billId)
     await deleteGuestSessionsForBill(ctx, args.billId)
+    await deleteRequestsForBill(ctx, args.billId)
 
     const { participants, items, payments } = await loadBillRelations(
       ctx,

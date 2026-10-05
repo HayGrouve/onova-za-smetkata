@@ -72,16 +72,26 @@ export function buildPageTitle(pageTitle: string): string {
   return `${pageTitle} · ${SITE_NAME}`
 }
 
+/**
+ * The document `<title>`. TanStack's `HeadContent` only reads titles from the
+ * route's `meta` array; a top-level `title` on `head()` is silently dropped.
+ */
+export function titleMeta(title: string) {
+  return { title }
+}
+
 export function buildHomeHead(origin?: string) {
   const resolvedOrigin = origin ?? resolveSiteOrigin()
   return {
-    title: SITE_NAME,
-    meta: buildOpenGraphMeta({
-      title: SITE_NAME,
-      description: SITE_DESCRIPTION,
-      path: '/',
-      origin: resolvedOrigin,
-    }),
+    meta: [
+      titleMeta(SITE_NAME),
+      ...buildOpenGraphMeta({
+        title: SITE_NAME,
+        description: SITE_DESCRIPTION,
+        path: '/',
+        origin: resolvedOrigin,
+      }),
+    ],
     links: [{ rel: 'canonical', href: absoluteSiteUrl('/', resolvedOrigin) }],
   }
 }
@@ -89,8 +99,8 @@ export function buildHomeHead(origin?: string) {
 export function buildJoinShareHead(billId: string, origin?: string) {
   const resolvedOrigin = origin ?? resolveSiteOrigin()
   return {
-    title: buildPageTitle(JOIN_OG_TITLE),
     meta: [
+      titleMeta(buildPageTitle(JOIN_OG_TITLE)),
       robotsNoIndexMeta(),
       ...buildOpenGraphMeta({
         title: JOIN_OG_TITLE,
@@ -104,7 +114,6 @@ export function buildJoinShareHead(billId: string, origin?: string) {
 
 export function buildNoIndexHead(pageTitle: string) {
   return {
-    title: buildPageTitle(pageTitle),
-    meta: [robotsNoIndexMeta()],
+    meta: [titleMeta(buildPageTitle(pageTitle)), robotsNoIndexMeta()],
   }
 }

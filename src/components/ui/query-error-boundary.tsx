@@ -1,6 +1,8 @@
 import { Component } from 'react'
 import type { ReactNode } from 'react'
 import { QueryErrorPanel } from '#/components/ui/query-error-panel.tsx'
+import { getConvexErrorData } from '#/lib/guest-participant-session.ts'
+import { isDefiniteErrorReason } from '#/lib/definite-error-reason.ts'
 
 interface QueryErrorBoundaryProps {
   children: ReactNode
@@ -29,9 +31,18 @@ export class QueryErrorBoundary extends Component<
 
   render() {
     if (this.state.error) {
+      // An invalid link or a bill that is gone does not come back on retry;
+      // anything else (including other server reasons) still offers one.
+      const reason = getConvexErrorData(this.state.error)
+      const definite = isDefiniteErrorReason(reason)
       return (
         <div className="page-container py-10">
-          <QueryErrorPanel onRetry={() => this.setState({ error: null })} />
+          <QueryErrorPanel
+            message={reason ?? undefined}
+            onRetry={
+              definite ? undefined : () => this.setState({ error: null })
+            }
+          />
         </div>
       )
     }

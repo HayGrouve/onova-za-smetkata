@@ -5,18 +5,21 @@ import {
   buildOpenGraphMeta,
   resolveSiteOrigin,
   absoluteSiteUrl,
+  titleMeta,
 } from '#/lib/site-meta.ts'
 
 export function buildLegalPageHead(pageTitle: string, path: string) {
   const origin = resolveSiteOrigin()
   return {
-    title: buildPageTitle(pageTitle),
-    meta: buildOpenGraphMeta({
-      title: pageTitle,
-      description: `${pageTitle} — Онова за сметката`,
-      path,
-      origin,
-    }),
+    meta: [
+      titleMeta(buildPageTitle(pageTitle)),
+      ...buildOpenGraphMeta({
+        title: pageTitle,
+        description: `${pageTitle} — Онова за сметката`,
+        path,
+        origin,
+      }),
+    ],
     links: [{ rel: 'canonical', href: absoluteSiteUrl(path, origin) }],
   }
 }

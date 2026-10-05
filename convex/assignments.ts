@@ -7,7 +7,6 @@ import { assertCanMutateAssignment } from './lib/assertCanMutateAssignment'
 import { requireBillOwner } from './lib/auth'
 import { touchBill } from './lib/touchBill'
 import { assertRateLimit } from './lib/rateLimit'
-import { itemHasEmptyUnit } from '../shared/unit-coverage'
 import { CLAIM_MESSAGES } from '../shared/claim-messages'
 import {
   planReleaseUnit,
@@ -486,29 +485,28 @@ export const assignAll = mutation({
       .map((participant) => participant._id)
 
     for (const item of items) {
+      if (args.mode === 'all_items') {
+        await applyEvenSplitToItem(ctx, item, participantIds)
+        continue
+      }
+      // „Раздели неразпределеното поравно“: only free Units get everyone;
+      // Units someone already took stay exactly as they are.
       const existing = await ctx.db
         .query('itemAssignments')
         .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
         .collect()
-      if (
-        args.mode === 'unassigned_only' &&
-        !itemHasEmptyUnit(
-          {
-            id: item._id,
-            unitPriceCents: item.unitPriceCents,
-            quantity: item.quantity,
-          },
-          existing.map((assignment) => ({
-            itemId: assignment.itemId,
-            participantId: assignment.participantId,
-            unitIndex: assignment.unitIndex,
-          })),
-        )
-      ) {
-        continue
+      const takenUnits = new Set(existing.map((row) => row.unitIndex))
+      for (let unitIndex = 0; unitIndex < item.quantity; unitIndex++) {
+        if (takenUnits.has(unitIndex)) continue
+        for (const participantId of participantIds) {
+          await insertUnitMembership(ctx, {
+            billId: args.billId,
+            itemId: item._id,
+            participantId,
+            unitIndex,
+          })
+        }
       }
-
-      await applyEvenSplitToItem(ctx, item, participantIds)
     }
     await touchBill(ctx, args.billId)
   },

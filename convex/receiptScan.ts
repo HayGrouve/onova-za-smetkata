@@ -13,12 +13,18 @@ import { restaurantNameSchema } from '../shared/validation/fields'
 import { validateReceiptImportItems } from '../shared/receipt-import-schema'
 import { assertRateLimit } from './lib/rateLimit'
 import { touchBill } from './lib/touchBill'
+import { nextSortOrder } from '../shared/sort-order'
 import {
   assertOcrStartQuota,
   formatUsageMonthKey,
   incrementUsageCount,
   usageCounterKey,
 } from './lib/hostTier'
+
+const OCR_SCANS_PER_HOST_PER_HOUR = 20
+
+/** A scan still pending/processing after this long is treated as dead. */
+const SCAN_IN_FLIGHT_MS = 3 * 60 * 1000
 
 const editedItemValidator = v.object({
   name: v.string(),
@@ -37,9 +43,31 @@ export const startScan = mutation({
       throw new ConvexError('Потребителят не е намерен.')
     }
 
+    const latest = await ctx.db
+      .query('receiptScans')
+      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
+      .order('desc')
+      .first()
+    const inFlight =
+      (latest?.status === 'pending' || latest?.status === 'processing') &&
+      Date.now() - latest.createdAt < SCAN_IN_FLIGHT_MS
+    if (inFlight) {
+      // A second tap must not pay for (or count against quota) a second scan.
+      // A scan whose action died is stale after a while and blocks nothing.
+      throw new ConvexError('Бележката вече се разпознава.')
+    }
+
     const now = Date.now()
     await assertOcrStartQuota(ctx, owner, bill.ownerId, now)
     await assertRateLimit(ctx, `ocr:${args.billId}`, 10, 3_600_000)
+    // Per Host too: bills are free to create, so a per-bill cap alone does not
+    // bound Gemini spend while every Host has Pro limits.
+    await assertRateLimit(
+      ctx,
+      `ocr:user:${bill.ownerId}`,
+      OCR_SCANS_PER_HOST_PER_HOUR,
+      3_600_000,
+    )
     if (!bill.receiptStorageId) {
       throw new Error('Няма прикачена снимка на бележка за тази сметка')
     }
@@ -88,8 +116,10 @@ export const importScannedItems = mutation({
     items: v.optional(v.array(editedItemValidator)),
   },
   handler: async (ctx, args) => {
+    // The scan is consumed by its import: a second tap finds nothing, so the
+    // same lines cannot be added twice.
     const scan = await ctx.db.get(args.scanId)
-    if (!scan) throw new Error('Сканирането не е намерено')
+    if (!scan) throw new ConvexError('Сканирането не е намерено.')
 
     const bill = await requireBillOwner(ctx, scan.billId)
     assertBillDraft(bill)
@@ -100,6 +130,10 @@ export const importScannedItems = mutation({
       (scan.extractedItems ?? []).filter((_, index) =>
         selectedIndexSet.has(index),
       )
+    if (itemsToImport.length === 0) {
+      // „Замени“ with nothing selected would silently wipe every line.
+      throw new ConvexError('Изберете поне един артикул за импортиране.')
+    }
 
     const validated = validateReceiptImportItems(itemsToImport)
     if (!validated.ok) {
@@ -111,7 +145,7 @@ export const importScannedItems = mutation({
       .withIndex('by_billId', (q) => q.eq('billId', scan.billId))
       .collect()
 
-    let sortOrderOffset = existing.length
+    let sortOrderOffset = nextSortOrder(existing)
 
     if (args.mode === 'replace') {
       for (const item of existing) {
@@ -148,6 +182,7 @@ export const importScannedItems = mutation({
       }
     }
 
+    await ctx.db.delete(scan._id)
     await touchBill(ctx, scan.billId)
   },
 })
@@ -165,13 +200,24 @@ export const dismissScan = mutation({
 export const getScanInternal = internalQuery({
   args: { scanId: v.id('receiptScans') },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.scanId)
+    const scan = await ctx.db.get(args.scanId)
+    if (!scan) return null
+    // Size and type let the action refuse a photo without downloading it.
+    const photo = await ctx.db.system.get('_storage', scan.storageId)
+    return {
+      ...scan,
+      photo: photo
+        ? { size: photo.size, contentType: photo.contentType }
+        : null,
+    }
   },
 })
 
 export const markProcessing = internalMutation({
   args: { scanId: v.id('receiptScans') },
   handler: async (ctx, args) => {
+    // The Host may dismiss the scan (or replace the photo) mid-flight.
+    if (!(await ctx.db.get(args.scanId))) return
     await ctx.db.patch(args.scanId, { status: 'processing' })
   },
 })
@@ -187,6 +233,7 @@ export const markDone = internalMutation({
   },
   handler: async (ctx, args) => {
     const { scanId, ...rest } = args
+    if (!(await ctx.db.get(scanId))) return
     await ctx.db.patch(scanId, { status: 'done', ...rest })
   },
 })
@@ -197,6 +244,7 @@ export const markFailed = internalMutation({
     errorMessage: v.string(),
   },
   handler: async (ctx, args) => {
+    if (!(await ctx.db.get(args.scanId))) return
     await ctx.db.patch(args.scanId, {
       status: 'failed',
       errorMessage: args.errorMessage,

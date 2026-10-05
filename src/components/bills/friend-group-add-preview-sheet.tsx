@@ -18,6 +18,8 @@ import { summarizeAddMembersToBill } from '../../../shared/friend-group-schema.t
 import { writeLastFriendGroupId } from '#/lib/last-friend-group-storage.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
+import { focusContentInsteadOfField } from '#/lib/dialog-focus.ts'
+import { participantNameKey } from '../../../shared/participant-schema.ts'
 
 export interface FriendGroupPreview {
   _id: Id<'friendGroups'>
@@ -45,14 +47,14 @@ export function FriendGroupAddPreviewSheet({
   const [adding, setAdding] = useState(false)
 
   const currentNames = useMemo(
-    () => new Set(participants.map((p) => p.name.trim().toLowerCase())),
+    () => new Set(participants.map((p) => participantNameKey(p.name))),
     [participants],
   )
 
   const rows = useMemo(() => {
     if (!group) return []
     return group.memberNames.map((name) => {
-      const key = name.trim().toLowerCase()
+      const key = participantNameKey(name)
       return {
         name,
         key,
@@ -101,7 +103,7 @@ export function FriendGroupAddPreviewSheet({
       <SheetContent
         side="bottom"
         className="mx-auto max-w-lg rounded-t-xl"
-        onOpenAutoFocus={(event) => event.preventDefault()}
+        onOpenAutoFocus={focusContentInsteadOfField}
       >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">

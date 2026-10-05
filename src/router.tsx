@@ -16,4 +16,8 @@ declare module '@tanstack/react-router' {
   interface Register {
     router: ReturnType<typeof getRouter>
   }
+  interface HistoryState {
+    /** The pay slip was torn off the receipt: Back returns to it. */
+    fromReceipt?: boolean
+  }
 }

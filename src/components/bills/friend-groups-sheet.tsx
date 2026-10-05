@@ -12,6 +12,7 @@ import { ICON } from '#/lib/app-icons.ts'
 import { FriendGroupEditorSheet } from '#/components/bills/friend-group-editor-sheet.tsx'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
+import { focusContentInsteadOfField } from '#/lib/dialog-focus.ts'
 
 export interface FriendGroupsSheetProps {
   open: boolean
@@ -57,7 +58,7 @@ export function FriendGroupsSheet({
         <SheetContent
           side="bottom"
           className="mx-auto max-w-lg rounded-t-xl"
-          onOpenAutoFocus={(event) => event.preventDefault()}
+          onOpenAutoFocus={focusContentInsteadOfField}
         >
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">

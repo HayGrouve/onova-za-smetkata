@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { FRIEND_GROUP_MAX_MEMBERS } from './validation/constants'
 import { groupNameSchema, personNameSchema } from './validation/fields'
+import { participantNameKey } from './participant-schema'
 
 const friendGroupFormSchema = z.object({
   name: groupNameSchema(),
@@ -13,7 +14,7 @@ const friendGroupFormSchema = z.object({
     .superRefine((names, ctx) => {
       const seen = new Set<string>()
       for (const [index, name] of names.entries()) {
-        const key = name.trim().toLowerCase()
+        const key = participantNameKey(name)
         if (seen.has(key)) {
           ctx.addIssue({
             code: 'custom',

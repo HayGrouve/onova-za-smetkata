@@ -27,6 +27,11 @@ import {
 } from '../../../shared/friend-group-schema.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
+import { focusContentInsteadOfField } from '#/lib/dialog-focus.ts'
+import {
+  parseParticipantName,
+  participantNameKey,
+} from '../../../shared/participant-schema.ts'
 
 const EMPTY_MEMBER_NAMES: string[] = []
 
@@ -105,8 +110,16 @@ export function FriendGroupEditorSheet({
   function addMember(rawName?: string) {
     const trimmed = (rawName ?? memberInput).trim()
     if (!trimmed) return
-    const key = trimmed.toLowerCase()
-    if (memberNames.some((member) => member.toLowerCase() === key)) {
+    const parsedName = parseParticipantName(trimmed)
+    if (!parsedName.success) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        memberNames: parsedName.error.issues[0]?.message ?? 'Невалидно име',
+      }))
+      return
+    }
+    const key = participantNameKey(trimmed)
+    if (memberNames.some((member) => participantNameKey(member) === key)) {
       setFieldErrors((prev) => ({
         ...prev,
         memberNames: 'Името вече е в групата',
@@ -138,7 +151,19 @@ export function FriendGroupEditorSheet({
   async function handleSave() {
     const parsed = parseFriendGroupInput({ name, memberNames })
     if (!parsed.success) {
-      setFieldErrors(formatFriendGroupErrors(parsed.error))
+      // Per-member errors have no field of their own: name the member in the
+      // list's message, or Запази would silently do nothing.
+      const errors = formatFriendGroupErrors(parsed.error)
+      const [badIndex, badMessage] =
+        Object.entries(errors.memberNameAt ?? {})[0] ?? []
+      setFieldErrors({
+        name: errors.name,
+        memberNames:
+          errors.memberNames ??
+          (badMessage
+            ? `„${memberNames[Number(badIndex)]}“: ${badMessage}`
+            : undefined),
+      })
       return
     }
 
@@ -199,7 +224,7 @@ export function FriendGroupEditorSheet({
       <SheetContent
         side="bottom"
         className="mx-auto max-w-lg rounded-t-xl"
-        onOpenAutoFocus={(event) => event.preventDefault()}
+        onOpenAutoFocus={focusContentInsteadOfField}
       >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">

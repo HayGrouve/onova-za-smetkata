@@ -4,8 +4,9 @@ const PROD_DEPLOYMENT_SLUGS = ['coordinated-warbler-782'] as const
 /** Known dev deployments where dev-only flags are allowed when DEV_MODE=true. */
 const DEV_DEPLOYMENT_SLUGS = ['striped-shepherd-984'] as const
 
+/** `dev:slug`, `prod:slug`, … → `slug`, so the prod deny-list always matches. */
 function normalizeDeploymentName(deployment: string): string {
-  return deployment.replace(/^dev:/, '').trim()
+  return deployment.replace(/^[a-z]+:/, '').trim()
 }
 
 /** Slug from CLI env or from Convex runtime `CONVEX_CLOUD_URL`. */

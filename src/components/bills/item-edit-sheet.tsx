@@ -52,6 +52,12 @@ export function ItemEditSheet({
   const [quantity, setQuantity] = useState('1')
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [saving, setSaving] = useState(false)
+  /** The line as this sheet first showed it; only edited fields are saved. */
+  const openedWithRef = useRef<{
+    name: string
+    unitPriceCents: number
+    quantity: number
+  } | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -59,6 +65,13 @@ export function ItemEditSheet({
     setPrice(item ? formatEurInputValue(item.unitPriceCents) : '')
     setQuantity(String(item?.quantity ?? 1))
     setFieldErrors({})
+    openedWithRef.current = item
+      ? {
+          name: item.name,
+          unitPriceCents: item.unitPriceCents,
+          quantity: item.quantity,
+        }
+      : null
     // Reset only when the sheet opens for an item (or for adding).
   }, [open, item?._id])
 
@@ -87,11 +100,20 @@ export function ItemEditSheet({
     setSaving(true)
     try {
       if (item) {
+        // Send only what was edited here: another tab or phone may have
+        // changed the rest since, and a stale quantity would drop claims.
+        const openedWith = openedWithRef.current
         await updateItem({
           itemId: item._id,
-          name: validated.data.name,
-          unitPriceCents: validated.data.unitPriceCents,
-          quantity: validated.data.quantity,
+          ...(validated.data.name !== openedWith?.name
+            ? { name: validated.data.name }
+            : {}),
+          ...(validated.data.unitPriceCents !== openedWith?.unitPriceCents
+            ? { unitPriceCents: validated.data.unitPriceCents }
+            : {}),
+          ...(validated.data.quantity !== openedWith?.quantity
+            ? { quantity: validated.data.quantity }
+            : {}),
         })
       } else {
         await addItem({

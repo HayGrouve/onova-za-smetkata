@@ -1,11 +1,7 @@
 import { ConvexError, v } from 'convex/values'
 import { mutation, query } from './_generated/server'
-import type { Doc, Id } from './_generated/dataModel'
-import type { MutationCtx } from './_generated/server'
 import { requireAuth } from './lib/auth'
-import { createShareToken } from './lib/shareToken'
-import { touchBill } from './lib/touchBill'
-import { planHostParticipantOnBillCreate } from '../shared/host-bill-participant'
+import { createBillForOwner } from './lib/createBill'
 import {
   countOwnedBills,
   ensureHostOnboarding,
@@ -71,34 +67,11 @@ export const createFirstBill = mutation({
       throw new ConvexError('Напътствията вече са приключили.')
     }
 
-    const now = Date.now()
-    const billId = await ctx.db.insert('bills', {
-      ownerId: userId,
-      restaurantName: '',
-      date: now,
-      status: 'draft',
-      shareToken: createShareToken(),
-      listBillTotalCents: 0,
-      listParticipantNames: [],
-      createdAt: now,
-      updatedAt: now,
-    })
-
-    const hostPlan = planHostParticipantOnBillCreate({
-      authName: owner.name,
-    })
-    const hostParticipantId = await ctx.db.insert('participants', {
-      billId,
-      name: hostPlan.name,
-      sortOrder: hostPlan.sortOrder,
-    })
-    await ctx.db.patch(billId, { hostParticipantId })
-    await touchBill(ctx, billId)
-
+    const billId = await createBillForOwner(ctx, owner)
     await ctx.db.patch(onboarding._id, {
       lifecycle: 'active',
       guidedBillId: billId,
-      updatedAt: now,
+      updatedAt: Date.now(),
     })
 
     return billId
@@ -247,38 +220,6 @@ export const clearGuidedBill = mutation({
   },
 })
 
-async function insertGuidedBillForOwner(
-  ctx: MutationCtx,
-  userId: Id<'users'>,
-  owner: Doc<'users'>,
-) {
-  const now = Date.now()
-  const billId = await ctx.db.insert('bills', {
-    ownerId: userId,
-    restaurantName: '',
-    date: now,
-    status: 'draft',
-    shareToken: createShareToken(),
-    listBillTotalCents: 0,
-    listParticipantNames: [],
-    createdAt: now,
-    updatedAt: now,
-  })
-
-  const hostPlan = planHostParticipantOnBillCreate({
-    authName: owner.name,
-  })
-  const hostParticipantId = await ctx.db.insert('participants', {
-    billId,
-    name: hostPlan.name,
-    sortOrder: hostPlan.sortOrder,
-  })
-  await ctx.db.patch(billId, { hostParticipantId })
-  await touchBill(ctx, billId)
-
-  return billId
-}
-
 export const startGuidedBillWithExistingBills = mutation({
   args: {},
   handler: async (ctx) => {
@@ -303,7 +244,7 @@ export const startGuidedBillWithExistingBills = mutation({
       throw new ConvexError('Вече имате активна сметка с напътствия.')
     }
 
-    const billId = await insertGuidedBillForOwner(ctx, userId, owner)
+    const billId = await createBillForOwner(ctx, owner)
     const now = Date.now()
     await ctx.db.patch(onboarding._id, {
       lifecycle: 'active',
@@ -333,7 +274,7 @@ export const startAnotherGuidedBill = mutation({
       throw new ConvexError('Вече имате активна сметка с напътствия.')
     }
 
-    const billId = await insertGuidedBillForOwner(ctx, userId, owner)
+    const billId = await createBillForOwner(ctx, owner)
     const now = Date.now()
     await ctx.db.patch(onboarding._id, {
       guidedBillId: billId,

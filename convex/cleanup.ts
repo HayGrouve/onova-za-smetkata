@@ -1,52 +1,128 @@
+import { v } from 'convex/values'
+import { internal } from './_generated/api'
 import { internalMutation } from './_generated/server'
+import type { MutationCtx } from './_generated/server'
 import { GUEST_SESSION_TTL_MS } from './lib/guestSession'
 import { cancelReservationsForSession } from './lib/paymentReservations'
 
 /** Buckets older than this are stale (longest app rate-limit window is 1 hour). */
 const RATE_LIMIT_MAX_AGE_MS = 2 * 60 * 60 * 1000
 
-/** Terminal receipt scans kept for 30 days. */
+/**
+ * Monthly usage counters (`usage:…`) only matter for their own month; the
+ * quota reads the current month's key. Keep two months for safety.
+ */
+const USAGE_COUNTER_MAX_AGE_MS = 62 * 24 * 60 * 60 * 1000
+
+/** Receipt scans kept for 30 days, finished or not. */
 const RECEIPT_SCAN_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
 
 /** Stripe stops retrying a webhook after three days; keep event ids for 30. */
 const WEBHOOK_EVENT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
 
-const BATCH_SIZE = 200
+/** Rows deleted per table per run; a full batch schedules another run. */
+export const CLEANUP_BATCH_SIZE = 200
 
+/** Buckets read per run (live usage counters are read but kept). */
+const BUCKET_SCAN_LIMIT = 2_000
+
+const bucketCursorValidator = v.object({
+  windowStart: v.number(),
+  creationTime: v.number(),
+})
+
+/** A position in `rateLimitBuckets.by_windowStart` (`windowStart, _creationTime`). */
+type BucketCursor = { windowStart: number; creationTime: number }
+
+/**
+ * Buckets strictly before `cursor` in index order, newest first: the rest of
+ * the cursor's millisecond, then everything older. A plain `windowStart`
+ * cursor would either skip rows sharing that millisecond or reread them
+ * forever when more than a scan's worth share it.
+ */
+async function* staleBucketsNewestFirst(
+  ctx: MutationCtx,
+  cursor: BucketCursor,
+) {
+  yield* ctx.db
+    .query('rateLimitBuckets')
+    .withIndex('by_windowStart', (q) =>
+      q
+        .eq('windowStart', cursor.windowStart)
+        .lt('_creationTime', cursor.creationTime),
+    )
+    .order('desc')
+  yield* ctx.db
+    .query('rateLimitBuckets')
+    .withIndex('by_windowStart', (q) => q.lt('windowStart', cursor.windowStart))
+    .order('desc')
+}
+
+/**
+ * Purge stale rows through indexes, a bounded batch at a time. Reading whole
+ * tables would eventually exceed Convex's per-transaction read limit and stop
+ * the cleanup for good, so a busy table is worked off over follow-up runs.
+ */
 export const run = internalMutation({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    /** Follow-up runs resume the bucket scan strictly below this index key. */
+    bucketsBefore: v.optional(bucketCursorValidator),
+  },
+  handler: async (ctx, args) => {
     const now = Date.now()
-    let purgedSessions = 0
-    let purgedBuckets = 0
-    let purgedScans = 0
-    let purgedWebhookEvents = 0
 
-    const sessions = await ctx.db.query('guestSessions').collect()
+    const sessions = await ctx.db
+      .query('guestSessions')
+      .withIndex('by_lastSeenAt', (q) =>
+        q.lte('lastSeenAt', now - GUEST_SESSION_TTL_MS),
+      )
+      .take(CLEANUP_BATCH_SIZE)
     for (const session of sessions) {
-      if (!isGuestSessionExpired(session.lastSeenAt, now)) continue
       await cancelReservationsForSession(ctx, session._id)
       await ctx.db.delete(session._id)
-      purgedSessions++
-      if (purgedSessions >= BATCH_SIZE) break
     }
 
-    const buckets = await ctx.db.query('rateLimitBuckets').collect()
-    for (const bucket of buckets) {
-      if (bucket.key.startsWith('usage:')) continue
-      if (now - bucket.windowStart < RATE_LIMIT_MAX_AGE_MS) continue
-      await ctx.db.delete(bucket._id)
-      purgedBuckets++
-      if (purgedBuckets >= BATCH_SIZE) break
+    // Live usage counters share the index with stale rate-limit buckets and
+    // are skipped, so a run that stops early hands its position to the next
+    // one instead of rescanning the same rows forever.
+    let purgedBuckets = 0
+    let scannedBuckets = 0
+    let bucketCursor: BucketCursor | undefined
+    for await (const bucket of staleBucketsNewestFirst(
+      ctx,
+      args.bucketsBefore ?? {
+        windowStart: now - RATE_LIMIT_MAX_AGE_MS,
+        creationTime: 0,
+      },
+    )) {
+      scannedBuckets++
+      const maxAgeMs = bucket.key.startsWith('usage:')
+        ? USAGE_COUNTER_MAX_AGE_MS
+        : RATE_LIMIT_MAX_AGE_MS
+      if (now - bucket.windowStart >= maxAgeMs) {
+        await ctx.db.delete(bucket._id)
+        purgedBuckets++
+      }
+      if (
+        purgedBuckets >= CLEANUP_BATCH_SIZE ||
+        scannedBuckets >= BUCKET_SCAN_LIMIT
+      ) {
+        bucketCursor = {
+          windowStart: bucket.windowStart,
+          creationTime: bucket._creationTime,
+        }
+        break
+      }
     }
 
-    const scans = await ctx.db.query('receiptScans').collect()
+    const scans = await ctx.db
+      .query('receiptScans')
+      .withIndex('by_createdAt', (q) =>
+        q.lt('createdAt', now - RECEIPT_SCAN_RETENTION_MS),
+      )
+      .take(CLEANUP_BATCH_SIZE)
     for (const scan of scans) {
-      if (scan.status !== 'done' && scan.status !== 'failed') continue
-      if (now - scan.createdAt < RECEIPT_SCAN_RETENTION_MS) continue
       await ctx.db.delete(scan._id)
-      purgedScans++
-      if (purgedScans >= BATCH_SIZE) break
     }
 
     const webhookEvents = await ctx.db
@@ -54,16 +130,27 @@ export const run = internalMutation({
       .withIndex('by_processedAt', (q) =>
         q.lt('processedAt', now - WEBHOOK_EVENT_RETENTION_MS),
       )
-      .take(BATCH_SIZE)
+      .take(CLEANUP_BATCH_SIZE)
     for (const event of webhookEvents) {
       await ctx.db.delete(event._id)
-      purgedWebhookEvents++
     }
 
-    return { purgedSessions, purgedBuckets, purgedScans, purgedWebhookEvents }
+    const moreLeft =
+      sessions.length === CLEANUP_BATCH_SIZE ||
+      bucketCursor !== undefined ||
+      scans.length === CLEANUP_BATCH_SIZE ||
+      webhookEvents.length === CLEANUP_BATCH_SIZE
+    if (moreLeft) {
+      await ctx.scheduler.runAfter(0, internal.cleanup.run, {
+        ...(bucketCursor !== undefined ? { bucketsBefore: bucketCursor } : {}),
+      })
+    }
+
+    return {
+      purgedSessions: sessions.length,
+      purgedBuckets,
+      purgedScans: scans.length,
+      purgedWebhookEvents: webhookEvents.length,
+    }
   },
 })
-
-function isGuestSessionExpired(lastSeenAt: number, now: number): boolean {
-  return now - lastSeenAt >= GUEST_SESSION_TTL_MS
-}

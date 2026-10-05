@@ -31,7 +31,10 @@ import { sortFriendGroupsWithPinned } from '#/lib/sort-friend-groups-with-pinned
 import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
 import type { GuidanceFocusHandle } from '#/lib/guidance-focus/use-guidance-focus.ts'
 import { cn } from '#/lib/utils.ts'
-import { validateParticipantAdd } from '../../../shared/participant-schema.ts'
+import {
+  participantNameKey,
+  validateParticipantAdd,
+} from '../../../shared/participant-schema.ts'
 import { Input } from '#/components/ui/input.tsx'
 import { api } from '../../../convex/_generated/api'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
@@ -81,14 +84,14 @@ export function ParticipantList({
   const { confirm } = useConfirmAction()
 
   const currentNames = new Set(
-    participants.map((p) => p.name.trim().toLowerCase()),
+    participants.map((p) => participantNameKey(p.name)),
   )
   const guestParticipants = participants.filter(
     (participant) => !isHostParticipant(participant._id, hostParticipantId),
   )
   const quickAddNames =
     recentNames?.filter(
-      (recentName) => !currentNames.has(recentName.trim().toLowerCase()),
+      (recentName) => !currentNames.has(participantNameKey(recentName)),
     ) ?? []
 
   async function handleAdd(participantName?: string) {
@@ -153,7 +156,11 @@ export function ParticipantList({
         action: {
           label: 'Отмени',
           onClick: () => {
-            void handleAdd(participant.name)
+            // Not handleAdd: this closure's participant list still holds the
+            // removed seat, so its duplicate check would always refuse.
+            addParticipant({ billId, name: participant.name }).catch(
+              (error: unknown) => toast.error(getConvexErrorMessage(error)),
+            )
           },
         },
       })
@@ -265,10 +272,12 @@ export function ParticipantList({
                 return (
                   <span
                     key={participant._id}
-                    className="flex min-h-11 items-center gap-1.5 rounded-full border-2 border-ink py-1 pr-0.5 pl-1 text-[12px] font-semibold"
+                    className="flex min-h-11 max-w-full items-center gap-1.5 rounded-full border-2 border-ink py-1 pr-0.5 pl-1 text-[12px] font-semibold"
                   >
                     {seat ? <SeatAvatar seat={seat} size="sm" /> : null}
-                    {labels[participant._id] ?? participant.name}
+                    <span className="min-w-0 wrap-anywhere">
+                      {labels[participant._id] ?? participant.name}
+                    </span>
                     {!readOnly ? (
                       <button
                         type="button"
@@ -320,10 +329,10 @@ export function ParticipantList({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="border-dashed"
+                        className="max-w-full border-dashed"
                         onClick={() => void handleAdd(recentName)}
                       >
-                        + {recentName}
+                        <span className="truncate">+ {recentName}</span>
                       </Button>
                     ))}
                   </div>

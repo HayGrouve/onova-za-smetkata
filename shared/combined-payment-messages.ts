@@ -7,7 +7,9 @@ export const COMBINED_PAYMENT_MESSAGES = {
   requestNotFound: 'Заявката не е намерена.',
   requestNotPending: 'Заявката вече е обработена.',
   coveredPaidBeforeConfirm: 'Дялът на {name} вече е платен.',
-  payerOverRemaining: 'Вашият дял се е променил. Отменете и опитайте отново.',
+  /** Shown to the Host: the Share shrank after the guest sent the money. */
+  payerOverRemaining:
+    'Дялът се промени след превода и сумата вече не съвпада. Отбележете полученото ръчно и натиснете „Не виждам превода“.',
   statusPending: 'Чака потвърждение от домакина',
   payForLabel: 'Плати и за',
   combinedTotalLabel: 'Общо за плащане',
@@ -27,4 +29,9 @@ export const COMBINED_PAYMENT_MESSAGES = {
     'Не можете да промените избора след изпращане на плащането.',
   duplicateCovered: 'Избран е един и същ участник повече от веднъж.',
   noCoveredSelected: 'Изберете поне един участник.',
+  payerCoveredByOther: 'Друг гост вече плаща за вас.',
+  participantHasTransfer:
+    'За този участник има изпратен превод. Потвърдете го или го отхвърлете първо.',
+  transfersAwaitingHost:
+    'Има изпратени преводи, които чакат потвърждение. Потвърдете ги или ги отхвърлете преди да приключите.',
 } as const

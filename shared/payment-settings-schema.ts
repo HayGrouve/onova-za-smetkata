@@ -49,6 +49,9 @@ export function validateIban(
     return { ok: true, value: normalized }
   }
 
+  if (!isValidIbanChecksum(normalized)) {
+    return { ok: false, message: 'Невалиден IBAN' }
+  }
   return { ok: true, value: normalized }
 }
 

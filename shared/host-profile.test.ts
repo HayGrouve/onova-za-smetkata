@@ -18,6 +18,18 @@ describe('resolveHostParticipantName', () => {
     ).toBe('Иван Петров')
   })
 
+  it('keeps the Host seat within participant name bounds', () => {
+    expect(
+      resolveHostParticipantName({ authName: `Иван\u0007${'я'.repeat(80)}` }),
+    ).toBe(`Иван${'я'.repeat(46)}`)
+  })
+
+  it('falls back to „домакин“ for an Auth name nobody could see', () => {
+    expect(resolveHostParticipantName({ authName: '\u200b\u3164' })).toBe(
+      'домакин',
+    )
+  })
+
   it('falls back to „домакин“ when Auth name is missing or blank', () => {
     expect(resolveHostParticipantName({})).toBe('домакин')
     expect(resolveHostParticipantName({ authName: null })).toBe('домакин')
