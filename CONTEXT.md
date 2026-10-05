@@ -143,8 +143,8 @@ A Guest phone's journey on one bill — resume its seat when the join link opens
 _Avoid_: duplicating redirect/resume logic in routes; conflating with the Guest session it keeps alive
 
 **Quick bill**:
-A throwaway split on the Host's phone (product UI **Бърза сметка**). Seats start as „Човек 1…N“; one phone takes Units for every seat in turn; totals are information only. It lives in the phone's storage until the Host closes it or it sits untouched for 12 hours. The receipt scan is the only server call (`quickScans`, photo deleted once read): it counts against the monthly OCR quota but never as a bill. Rules: `shared/quick-bill.ts`.
-_Avoid_: draft (a draft is a real bill's **Bill status**), Guests or Participants for its seats, Outstanding or payments for its totals
+A throwaway split on the Host's phone (product UI **Бърза сметка**). Seats start as „Човек 1…N“; one phone takes Units for every seat in turn, on the same Live receipt lines a bill shows (`quickBillReceipt`); totals are information only. It lives in the phone's storage until the Host closes it or it sits untouched for 12 hours. The receipt scan is the only server call (`quickScans`, photo deleted once read): it counts against the monthly OCR quota but never as a bill. Rules: `shared/quick-bill.ts`.
+_Avoid_: draft (a draft is a real bill's **Bill status**), Guests or Participants for its seats, Outstanding, Slips or Pay requests for its totals
 
 **Host Pro**:
 The paid SaaS tier that lifts Free-tier limits (bills per month, OCR scans, friend groups). The Host pays the product, not the restaurant: €2.99/month or €29/year through Stripe Managed Payments (Link is the seller).

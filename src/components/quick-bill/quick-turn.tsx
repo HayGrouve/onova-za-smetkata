@@ -18,16 +18,11 @@ import { Button } from '#/components/ui/button.tsx'
 import { Input } from '#/components/ui/input.tsx'
 import { formatEur } from '#/lib/format-currency.ts'
 import { editQuickBill } from '#/lib/quick-bill-storage.ts'
-import {
-  buildClaimGroupSeatView,
-  indexUnitMembers,
-  unitKey,
-} from '../../../shared/claim-groups.ts'
-import type { ClaimGroup, UnitRef } from '../../../shared/claim-groups.ts'
+import type { ClaimGroup } from '../../../shared/claim-groups.ts'
 import {
   joinQuickBillUnit,
   leaveQuickBillUnit,
-  quickBillClaimGroups,
+  quickBillReceipt,
   releaseQuickBillUnit,
   renameQuickBillSeat,
   setQuickBillLineForEveryone,
@@ -66,23 +61,8 @@ export function QuickTurn({
   const errorTimer = useRef<number | undefined>(undefined)
   const [undo, pushUndo, clearUndo] = useUndo()
 
-  const groups = useMemo(() => quickBillClaimGroups(bill), [bill])
-  const membersByUnit = useMemo(
-    () => indexUnitMembers(bill.claims),
-    [bill.claims],
-  )
-  const membersOf = (unit: UnitRef) => membersByUnit.get(unitKey(unit)) ?? []
-  const participants = bill.seats.map((s, index) => ({
-    id: s.id,
-    sortOrder: index,
-  }))
-  const viewFor = (group: ClaimGroup) =>
-    buildClaimGroupSeatView({
-      group,
-      assignments: bill.claims,
-      seatId,
-      participants,
-    })
+  const receipt = useMemo(() => quickBillReceipt(bill), [bill])
+  const { lines: groups, membersOf } = receipt
 
   const summary = summarizeQuickBill(bill)
   const mine = summary.seats.find((s) => s.id === seatId)
@@ -246,10 +226,10 @@ export function QuickTurn({
                         <div key={`drawer-${seatId}`}>
                           <ClaimLineDrawer
                             group={group}
-                            view={viewFor(group)}
+                            view={receipt.lineFor(group, seatId)}
                             actorId={seatId}
                             title={group.name}
-                            participants={participants}
+                            participants={receipt.seatOrder}
                             labels={labels}
                             actions={lineActions(group)}
                             onClose={() => setOpenKey(null)}

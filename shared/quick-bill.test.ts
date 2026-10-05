@@ -11,7 +11,7 @@ import {
   joinQuickBillUnit,
   leaveQuickBillUnit,
   parseQuickBill,
-  quickBillClaimGroups,
+  quickBillReceipt,
   quickBillSeatLabel,
   releaseQuickBillUnit,
   removeQuickBillLine,
@@ -161,7 +161,7 @@ describe('claiming on the passed phone', () => {
       { name: 'Бира', unitPriceCents: 300, quantity: 1 },
       { name: 'бира ', unitPriceCents: 300, quantity: 1 },
     ])
-    const [group] = quickBillClaimGroups(bill)
+    const [group] = quickBillReceipt(bill).lines
     const [a, b] = seatIds(bill)
     const twice = take(take(bill, group.itemIds, a), group.itemIds, b)
     expect(shareOf(twice, a)).toBe(300)
@@ -221,7 +221,7 @@ describe('„За всички“', () => {
     const taken = take(bill, [bill.lines[0].id], seatIds(bill)[0])
     const shared = setQuickBillLineForEveryone(taken, bill.lines[0].id, true)
     expect(shared.claims).toEqual([])
-    expect(quickBillClaimGroups(shared)).toEqual([])
+    expect(quickBillReceipt(shared).lines).toEqual([])
   })
 
   it('turns back into a free line when switched off', () => {
@@ -340,7 +340,7 @@ describe('summary', () => {
               )
             }
           })
-          const groups = quickBillClaimGroups(bill)
+          const groups = quickBillReceipt(bill).lines
           for (const pick of picks) {
             if (groups.length === 0) break
             const group = groups[pick % groups.length]

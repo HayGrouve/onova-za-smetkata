@@ -1,8 +1,9 @@
 import { z } from 'zod'
 import { calculateBillTotals } from './bill-calculations'
 import type { AssignmentInput } from './bill-calculations'
-import { groupClaimItems, indexUnitMembers, unitKey } from './claim-groups'
-import type { ClaimGroup, UnitRef } from './claim-groups'
+import type { UnitRef } from './claim-groups'
+import { buildLiveReceipt } from './live-receipt'
+import type { LiveReceipt } from './live-receipt'
 import { TIP_PRESETS, tipCentsFromPercent } from './tip-calculations'
 import type { TipPercent } from './tip-calculations'
 import { planReleaseUnit, planShareUnit, planTakeUnit } from './unit-claim-plan'
@@ -268,13 +269,25 @@ export function setQuickBillLineForEveryone(
   }
 }
 
-/** Claim groups for the lines people still mark one by one. */
-export function quickBillClaimGroups(bill: QuickBill): ClaimGroup[] {
-  return groupClaimItems(
-    bill.lines.flatMap((line, index) =>
-      line.forEveryone ? [] : [{ ...line, sortOrder: index }],
+/**
+ * The lines people still mark one by one, as the Live receipt every bill phone
+ * reads: Claim groups, who is on a Unit, free Units. Seats carry no money: a
+ * quick bill tracks no payments.
+ */
+export function quickBillReceipt(bill: QuickBill): LiveReceipt {
+  return buildLiveReceipt({
+    participants: bill.seats.map((s, index) => ({
+      _id: s.id,
+      name: quickBillSeatLabel(s),
+      sortOrder: index,
+    })),
+    items: bill.lines.flatMap((line, index) =>
+      line.forEveryone ? [] : [{ ...line, _id: line.id, sortOrder: index }],
     ),
-  )
+    assignments: bill.claims,
+    seatMoney: {},
+    joinedSeatIds: [],
+  })
 }
 
 function participantsOf(bill: QuickBill) {
@@ -385,10 +398,10 @@ export function leaveQuickBillUnit(
 
 /** „Раздели по равно“: every Unit nobody took goes to every seat. */
 export function splitQuickBillLeftovers(bill: QuickBill): QuickBill {
-  const members = indexUnitMembers(bill.claims)
-  const free = quickBillClaimGroups(bill)
+  const receipt = quickBillReceipt(bill)
+  const free = receipt.lines
     .flatMap((group) => group.units)
-    .filter((unit) => (members.get(unitKey(unit)) ?? []).length === 0)
+    .filter((unit) => receipt.membersOf(unit).length === 0)
   return {
     ...bill,
     claims: [
@@ -465,13 +478,7 @@ export function summarizeQuickBill(bill: QuickBill): QuickBillSummary {
     }
   })
 
-  const members = indexUnitMembers(bill.claims)
-  const free = quickBillClaimGroups(bill).flatMap((group) =>
-    group.units
-      .filter((unit) => (members.get(unitKey(unit)) ?? []).length === 0)
-      .map(() => group.unitPriceCents),
-  )
-
+  const { freeUnits, freeCents } = quickBillReceipt(bill)
   const receiptCents = bill.receiptTotalCents
   return {
     seats,
@@ -479,8 +486,8 @@ export function summarizeQuickBill(bill: QuickBill): QuickBillSummary {
     tipCents,
     totalCents: linesCents + tipCents,
     amountsTotalCents: seats.reduce((sum, s) => sum + s.amountCents, 0),
-    unassignedUnits: free.length,
-    unassignedCents: free.reduce((sum, cents) => sum + cents, 0),
+    unassignedUnits: freeUnits,
+    unassignedCents: freeCents,
     receiptMismatch:
       receiptCents !== null && Math.abs(linesCents - receiptCents) > 1
         ? { linesCents, receiptCents }
