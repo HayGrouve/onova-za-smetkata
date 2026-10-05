@@ -21,9 +21,10 @@ import {
   requireGuest,
 } from './lib/guestSession'
 import {
-  adoptSeatRequests,
-  hasTransferAwaitingHost,
-} from './lib/paymentReservations'
+  hasSentPayRequest,
+  onCoveredSeatsChanging,
+  onSeatClaimed,
+} from './lib/payRequest'
 import { assertRateLimit } from './lib/rateLimit'
 import { assertShareToken } from './lib/guestAccess'
 
@@ -200,7 +201,7 @@ export const claim = mutation({
       // not slip past the lock `updateCoveredSeats` enforces.
       const changeCovered =
         coveredParticipantIds !== undefined &&
-        !(await hasTransferAwaitingHost(ctx, holder._id))
+        !(await hasSentPayRequest(ctx, holder))
       await ctx.db.patch(holder._id, {
         lastSeenAt: now,
         ...(changeCovered ? { coveredParticipantIds } : {}),
@@ -228,7 +229,7 @@ export const claim = mutation({
       lastSeenAt: now,
       createdAt: now,
     })
-    await adoptSeatRequests(ctx, {
+    await onSeatClaimed(ctx, {
       billId: args.billId,
       participantId: args.participantId,
       sessionId,
@@ -251,22 +252,8 @@ export const updateCoveredSeats = mutation({
     assertBillDraft(bill)
     await assertRateLimit(ctx, `coveredSeats:${args.sessionToken}`, 30, 60_000)
 
-    const pendingRequests = (
-      await ctx.db
-        .query('combinedPaymentRequests')
-        .withIndex('by_guestSessionId', (q) =>
-          q.eq('guestSessionId', session._id),
-        )
-        .collect()
-    ).filter(
-      (request) =>
-        request.billId === args.billId && request.status === 'pending',
-    )
-    if (
-      pendingRequests.some((request) => request.transferInitiatedAt != null)
-    ) {
-      throw new ConvexError(GUEST_FLOW_MESSAGES.coveredSeatsLocked)
-    }
+    // The Pay step prices a new request for the new set of seats.
+    await onCoveredSeatsChanging(ctx, session)
 
     const now = Date.now()
     const sessions = await ctx.db
@@ -284,10 +271,6 @@ export const updateCoveredSeats = mutation({
       ),
     })
 
-    // The pay step rebuilds a draft request for the new set of seats.
-    for (const request of pendingRequests) {
-      await ctx.db.patch(request._id, { status: 'cancelled', resolvedAt: now })
-    }
     await ctx.db.patch(session._id, { coveredParticipantIds, lastSeenAt: now })
     return { coveredParticipantIds }
   },

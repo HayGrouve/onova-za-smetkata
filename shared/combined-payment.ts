@@ -6,18 +6,8 @@ export type CoveredPaymentRequest = {
   coveredParticipantId?: string
 }
 
-export type CombinedPaymentCreateInput = {
-  coveredParticipantIds: string[]
-}
-
-export type CombinedPaymentCreateContext = {
-  payerParticipantId: string
-  hasPendingForSession: boolean
-  coveredPendingIds: Set<string>
-  totals: BillTotals
-}
-
-export type CombinedPaymentCreateResult = {
+/** What a Pay request asks for: what the payer has left plus each covered seat's. */
+export type PayRequestPrice = {
   payerAmountCents: number
   coveredAmountsByParticipant: Record<string, number>
   coveredAmountCents: number
@@ -32,24 +22,6 @@ export type CombinedPaymentConfirmInput = {
 export type CombinedPaymentConfirmContext = {
   payerRemainingCents: number
   coveredRemainingsByParticipant: Record<string, number>
-}
-
-export type CombinedPaymentUpdateContext = Omit<
-  CombinedPaymentCreateContext,
-  'hasPendingForSession'
-> & {
-  transferInitiatedAt?: number
-}
-
-export type SoloPaymentCreateContext = {
-  payerParticipantId: string
-  hasPendingForSession: boolean
-  totals: BillTotals
-}
-
-export type PaymentRequestTransferState = CoveredPaymentRequest & {
-  status: string
-  transferInitiatedAt?: number
 }
 
 export function getCoveredParticipantIds(
@@ -96,45 +68,6 @@ export function holdsCoveredSeats(
   return isAwaitingHostConfirmation(request) || payerSessionAlive
 }
 
-export function validateSoloPaymentCreate(
-  ctx: SoloPaymentCreateContext,
-):
-  | { ok: true; payerAmountCents: number; totalCents: number }
-  | { ok: false; message: string } {
-  if (ctx.hasPendingForSession) {
-    return { ok: false, message: COMBINED_PAYMENT_MESSAGES.pendingExists }
-  }
-  const payerAmountCents = participantRemainingCents(
-    ctx.totals,
-    ctx.payerParticipantId,
-  )
-  if (payerAmountCents <= 0) {
-    return { ok: false, message: COMBINED_PAYMENT_MESSAGES.payerNothingOwed }
-  }
-  return { ok: true, payerAmountCents, totalCents: payerAmountCents }
-}
-
-export function validateInitiateTransfer(
-  request: PaymentRequestTransferState,
-): { ok: true } | { ok: false; message: string } {
-  if (request.status !== 'pending') {
-    return { ok: false, message: COMBINED_PAYMENT_MESSAGES.requestNotPending }
-  }
-  if (isSoloPaymentRequest(request)) {
-    return {
-      ok: false,
-      message: COMBINED_PAYMENT_MESSAGES.transferNotInitiated,
-    }
-  }
-  if (request.transferInitiatedAt != null) {
-    return {
-      ok: false,
-      message: COMBINED_PAYMENT_MESSAGES.transferAlreadyInitiated,
-    }
-  }
-  return { ok: true }
-}
-
 export function participantRemainingCents(
   totals: BillTotals,
   participantId: string,
@@ -151,10 +84,6 @@ function validateCoveredParticipantIds(
 ):
   | { ok: true; coveredAmountsByParticipant: Record<string, number> }
   | { ok: false; message: string } {
-  if (coveredParticipantIds.length === 0) {
-    return { ok: false, message: COMBINED_PAYMENT_MESSAGES.noCoveredSelected }
-  }
-
   const uniqueIds = [...new Set(coveredParticipantIds)]
   if (uniqueIds.length !== coveredParticipantIds.length) {
     return { ok: false, message: COMBINED_PAYMENT_MESSAGES.duplicateCovered }
@@ -186,70 +115,52 @@ function validateCoveredParticipantIds(
 }
 
 /**
- * Payer's remaining share plus each covered seat's remaining share. The payer may
- * owe nothing themselves (e.g. already paid) while still covering others.
+ * Price a Pay request from the bill's current totals. Paying only for oneself,
+ * the payer must still owe something; covering others, the payer may owe
+ * nothing (e.g. already paid) and still pay for them.
  */
-function buildCombinedAmounts(
-  input: CombinedPaymentCreateInput,
-  ctx: Pick<
-    CombinedPaymentCreateContext,
-    'payerParticipantId' | 'coveredPendingIds' | 'totals'
-  >,
-):
-  | ({ ok: true } & CombinedPaymentCreateResult)
-  | { ok: false; message: string } {
-  const coveredValidated = validateCoveredParticipantIds(
-    input.coveredParticipantIds,
-    ctx.payerParticipantId,
-    ctx.coveredPendingIds,
-    ctx.totals,
+export function pricePayRequest(input: {
+  payerParticipantId: string
+  coveredParticipantIds: string[]
+  /** Seats another live Pay request already pays for. */
+  coveredPendingIds: Set<string>
+  totals: BillTotals
+}): ({ ok: true } & PayRequestPrice) | { ok: false; message: string } {
+  const payerAmountCents = participantRemainingCents(
+    input.totals,
+    input.payerParticipantId,
   )
-  if (!coveredValidated.ok) {
-    return coveredValidated
+  if (input.coveredParticipantIds.length === 0) {
+    if (payerAmountCents <= 0) {
+      return { ok: false, message: COMBINED_PAYMENT_MESSAGES.payerNothingOwed }
+    }
+    return {
+      ok: true,
+      payerAmountCents,
+      coveredAmountsByParticipant: {},
+      coveredAmountCents: 0,
+      totalCents: payerAmountCents,
+    }
   }
 
-  const payerAmountCents = participantRemainingCents(
-    ctx.totals,
-    ctx.payerParticipantId,
+  const covered = validateCoveredParticipantIds(
+    input.coveredParticipantIds,
+    input.payerParticipantId,
+    input.coveredPendingIds,
+    input.totals,
   )
-  const coveredAmountCents = Object.values(
-    coveredValidated.coveredAmountsByParticipant,
-  ).reduce((sum, amount) => sum + amount, 0)
+  if (!covered.ok) return covered
 
+  const coveredAmountCents = Object.values(
+    covered.coveredAmountsByParticipant,
+  ).reduce((sum, amount) => sum + amount, 0)
   return {
     ok: true,
     payerAmountCents,
-    coveredAmountsByParticipant: coveredValidated.coveredAmountsByParticipant,
+    coveredAmountsByParticipant: covered.coveredAmountsByParticipant,
     coveredAmountCents,
     totalCents: payerAmountCents + coveredAmountCents,
   }
-}
-
-export function validateCombinedPaymentCreate(
-  input: CombinedPaymentCreateInput,
-  ctx: CombinedPaymentCreateContext,
-):
-  | ({ ok: true } & CombinedPaymentCreateResult)
-  | { ok: false; message: string } {
-  if (ctx.hasPendingForSession) {
-    return { ok: false, message: COMBINED_PAYMENT_MESSAGES.pendingExists }
-  }
-  return buildCombinedAmounts(input, ctx)
-}
-
-export function validateUpdateCovered(
-  input: CombinedPaymentCreateInput,
-  ctx: CombinedPaymentUpdateContext,
-):
-  | ({ ok: true } & CombinedPaymentCreateResult)
-  | { ok: false; message: string } {
-  if (ctx.transferInitiatedAt != null) {
-    return {
-      ok: false,
-      message: COMBINED_PAYMENT_MESSAGES.selectionLockedAfterTransfer,
-    }
-  }
-  return buildCombinedAmounts(input, ctx)
 }
 
 export function validateCombinedPaymentConfirm(

@@ -9,6 +9,7 @@ import {
   HOST_IDENTITY,
   hostTakesUnits,
   joinAsGuest,
+  reserve,
   seedBill,
   setupConvex,
 } from './test.setup'
@@ -218,15 +219,16 @@ describe('finalizing', () => {
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
     const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
     // Ани sent a transfer; the Host took cash from everyone instead.
-    const sent = await t.mutation(api.combinedPayments.createSolo, {
+    const sent = await t.mutation(api.combinedPayments.recordTransfer, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
+      otherParticipantIds: [],
     })
     // Боби picked Вики to pay for but never opened Revolut.
-    const unsent = await t.mutation(api.combinedPayments.create, {
+    const unsent = await reserve(t, {
       billId: bill.billId,
       sessionToken: bobi.sessionToken,
-      coveredParticipantIds: [bill.seats['Вики']],
+      otherParticipantIds: [bill.seats['Вики']],
     })
     await payEveryGuest(bill, 300)
     const finalize = () =>
@@ -362,9 +364,10 @@ describe('deleting a bill', () => {
       amountCents: 300,
     })
     const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
-    await t.mutation(api.combinedPayments.createSolo, {
+    await t.mutation(api.combinedPayments.recordTransfer, {
       billId: bill.billId,
       sessionToken: bobi.sessionToken,
+      otherParticipantIds: [],
     })
 
     await bill.host.mutation(api.bills.remove, { billId: bill.billId })

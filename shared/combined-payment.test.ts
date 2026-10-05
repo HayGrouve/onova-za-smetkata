@@ -1,15 +1,14 @@
 // shared/combined-payment.test.ts
+import fc from 'fast-check'
 import { describe, expect, it } from 'vitest'
+import { COMBINED_PAYMENT_MESSAGES } from './combined-payment-messages'
 import {
   participantRemainingCents,
-  validateCombinedPaymentCreate,
+  pricePayRequest,
   validateCombinedPaymentConfirm,
-  validateUpdateCovered,
   isAwaitingHostConfirmation,
   holdsCoveredSeats,
   isSoloPaymentRequest,
-  validateInitiateTransfer,
-  validateSoloPaymentCreate,
   getCoveredParticipantIds,
   getCoveredAmountsFromRequest,
 } from './combined-payment'
@@ -46,94 +45,9 @@ describe('participantRemainingCents', () => {
   })
 })
 
-describe('validateCombinedPaymentCreate', () => {
-  const baseCtx = {
+describe('pricePayRequest', () => {
+  const base = {
     payerParticipantId: 'p1',
-    hasPendingForSession: false,
-    coveredPendingIds: new Set<string>(),
-    totals: totals({
-      p1: { owedCents: 1250, paidCents: 0 },
-      p2: { owedCents: 920, paidCents: 0 },
-    }),
-  }
-
-  it('accepts valid payer + one covered', () => {
-    const result = validateCombinedPaymentCreate(
-      { coveredParticipantIds: ['p2'] },
-      baseCtx,
-    )
-    expect(result).toEqual({
-      ok: true,
-      payerAmountCents: 1250,
-      coveredAmountsByParticipant: { p2: 920 },
-      coveredAmountCents: 920,
-      totalCents: 2170,
-    })
-  })
-
-  it('lets a payer who owes nothing cover someone else', () => {
-    const result = validateCombinedPaymentCreate(
-      { coveredParticipantIds: ['p2'] },
-      {
-        ...baseCtx,
-        totals: totals({
-          p1: { owedCents: 1250, paidCents: 1250 },
-          p2: { owedCents: 920, paidCents: 0 },
-        }),
-      },
-    )
-    expect(result).toEqual({
-      ok: true,
-      payerAmountCents: 0,
-      coveredAmountsByParticipant: { p2: 920 },
-      coveredAmountCents: 920,
-      totalCents: 920,
-    })
-  })
-
-  it('rejects covered same as payer', () => {
-    const result = validateCombinedPaymentCreate(
-      { coveredParticipantIds: ['p1'] },
-      baseCtx,
-    )
-    expect(result.ok).toBe(false)
-  })
-
-  it('rejects zero remaining on covered', () => {
-    const result = validateCombinedPaymentCreate(
-      { coveredParticipantIds: ['p2'] },
-      {
-        ...baseCtx,
-        totals: totals({
-          p1: { owedCents: 1250, paidCents: 0 },
-          p2: { owedCents: 920, paidCents: 920 },
-        }),
-      },
-    )
-    expect(result.ok).toBe(false)
-  })
-
-  it('rejects duplicate pending for session', () => {
-    const result = validateCombinedPaymentCreate(
-      { coveredParticipantIds: ['p2'] },
-      { ...baseCtx, hasPendingForSession: true },
-    )
-    expect(result.ok).toBe(false)
-  })
-
-  it('rejects when covered already has pending', () => {
-    const result = validateCombinedPaymentCreate(
-      { coveredParticipantIds: ['p2'] },
-      { ...baseCtx, coveredPendingIds: new Set(['p2']) },
-    )
-    expect(result.ok).toBe(false)
-  })
-})
-
-describe('validateCombinedPaymentCreate (multi-cover)', () => {
-  const baseCtx = {
-    payerParticipantId: 'p1',
-    hasPendingForSession: false,
     coveredPendingIds: new Set<string>(),
     totals: totals({
       p1: { owedCents: 850, paidCents: 0 },
@@ -141,34 +55,99 @@ describe('validateCombinedPaymentCreate (multi-cover)', () => {
       p3: { owedCents: 650, paidCents: 0 },
     }),
   }
+  const price = (input: Partial<Parameters<typeof pricePayRequest>[0]>) =>
+    pricePayRequest({ ...base, coveredParticipantIds: [], ...input })
+  const refusal = (message: string) => ({ ok: false, message })
 
-  it('accepts payer + two covered', () => {
-    const result = validateCombinedPaymentCreate(
-      { coveredParticipantIds: ['p2', 'p3'] },
-      baseCtx,
-    )
-    expect(result.ok).toBe(true)
-    if (!result.ok) return
-    expect(result.payerAmountCents).toBe(850)
-    expect(result.coveredAmountsByParticipant).toEqual({ p2: 1200, p3: 650 })
-    expect(result.coveredAmountCents).toBe(1850)
-    expect(result.totalCents).toBe(2700)
+  it('prices a payer alone at what they have left', () => {
+    expect(price({})).toEqual({
+      ok: true,
+      payerAmountCents: 850,
+      coveredAmountsByParticipant: {},
+      coveredAmountCents: 0,
+      totalCents: 850,
+    })
   })
 
-  it('rejects duplicate covered ids', () => {
-    const result = validateCombinedPaymentCreate(
-      { coveredParticipantIds: ['p2', 'p2'] },
-      baseCtx,
-    )
-    expect(result.ok).toBe(false)
+  it('refuses a payer alone with nothing left', () => {
+    expect(
+      price({ totals: totals({ p1: { owedCents: 850, paidCents: 850 } }) }),
+    ).toEqual(refusal(COMBINED_PAYMENT_MESSAGES.payerNothingOwed))
   })
 
-  it('rejects when any covered has pending', () => {
-    const result = validateCombinedPaymentCreate(
-      { coveredParticipantIds: ['p2', 'p3'] },
-      { ...baseCtx, coveredPendingIds: new Set(['p3']) },
+  it('adds each covered seat at what it has left', () => {
+    expect(price({ coveredParticipantIds: ['p2', 'p3'] })).toEqual({
+      ok: true,
+      payerAmountCents: 850,
+      coveredAmountsByParticipant: { p2: 1200, p3: 650 },
+      coveredAmountCents: 1850,
+      totalCents: 2700,
+    })
+  })
+
+  it('lets a payer who owes nothing cover someone else', () => {
+    expect(
+      price({
+        coveredParticipantIds: ['p2'],
+        totals: totals({
+          p1: { owedCents: 850, paidCents: 850 },
+          p2: { owedCents: 1200, paidCents: 0 },
+        }),
+      }),
+    ).toMatchObject({ ok: true, payerAmountCents: 0, totalCents: 1200 })
+  })
+
+  it('refuses covering oneself, twice, a paid seat, or one paid elsewhere', () => {
+    const paidP2 = totals({
+      p1: { owedCents: 850, paidCents: 0 },
+      p2: { owedCents: 1200, paidCents: 1200 },
+    })
+    expect(price({ coveredParticipantIds: ['p1'] })).toEqual(
+      refusal(COMBINED_PAYMENT_MESSAGES.sameParticipant),
     )
-    expect(result.ok).toBe(false)
+    expect(price({ coveredParticipantIds: ['p2', 'p2'] })).toEqual(
+      refusal(COMBINED_PAYMENT_MESSAGES.duplicateCovered),
+    )
+    expect(price({ coveredParticipantIds: ['p2'], totals: paidP2 })).toEqual(
+      refusal(COMBINED_PAYMENT_MESSAGES.coveredAlreadyPaid),
+    )
+    expect(
+      price({
+        coveredParticipantIds: ['p2', 'p3'],
+        coveredPendingIds: new Set(['p3']),
+      }),
+    ).toEqual(refusal(COMBINED_PAYMENT_MESSAGES.coveredPendingExists))
+  })
+
+  it('a priced request is exactly what its seats have left, to the cent', () => {
+    const seat = fc.record({
+      owedCents: fc.integer({ min: 1, max: 50_000 }),
+      paidFraction: fc.double({ min: 0, max: 0.99, noNaN: true }),
+    })
+    fc.assert(
+      fc.property(seat, fc.array(seat, { maxLength: 6 }), (payer, others) => {
+        const seats = [payer, ...others].map((entry, index) => ({
+          id: `p${index}`,
+          owedCents: entry.owedCents,
+          paidCents: Math.floor(entry.owedCents * entry.paidFraction),
+        }))
+        const result = pricePayRequest({
+          payerParticipantId: 'p0',
+          coveredParticipantIds: seats.slice(1).map((entry) => entry.id),
+          coveredPendingIds: new Set(),
+          totals: totals(Object.fromEntries(seats.map((s) => [s.id, s]))),
+        })
+        if (!result.ok) throw new Error(result.message)
+        const left = (s: { owedCents: number; paidCents: number }) =>
+          s.owedCents - s.paidCents
+        expect(result.totalCents).toBe(
+          seats.reduce((sum, entry) => sum + left(entry), 0),
+        )
+        expect(result.payerAmountCents + result.coveredAmountCents).toBe(
+          result.totalCents,
+        )
+      }),
+    )
   })
 })
 
@@ -229,109 +208,6 @@ describe('validateCombinedPaymentConfirm (multi-cover)', () => {
       },
     )
     expect(result.ok).toBe(false)
-  })
-})
-
-describe('validateUpdateCovered', () => {
-  const baseCtx = {
-    payerParticipantId: 'p1',
-    coveredPendingIds: new Set<string>(),
-    totals: totals({
-      p1: { owedCents: 850, paidCents: 0 },
-      p2: { owedCents: 1200, paidCents: 0 },
-      p3: { owedCents: 650, paidCents: 0 },
-    }),
-    transferInitiatedAt: undefined,
-  }
-
-  it('accepts updated covered set', () => {
-    const result = validateUpdateCovered(
-      { coveredParticipantIds: ['p2', 'p3'] },
-      baseCtx,
-    )
-    expect(result.ok).toBe(true)
-  })
-
-  it('rejects after transfer initiated', () => {
-    const result = validateUpdateCovered(
-      { coveredParticipantIds: ['p2'] },
-      { ...baseCtx, transferInitiatedAt: Date.now() },
-    )
-    expect(result.ok).toBe(false)
-  })
-})
-
-describe('validateSoloPaymentCreate', () => {
-  const baseCtx = {
-    payerParticipantId: 'p1',
-    hasPendingForSession: false,
-    totals: totals({ p1: { owedCents: 1250, paidCents: 0 } }),
-  }
-
-  it('accepts payer with remaining balance', () => {
-    expect(validateSoloPaymentCreate(baseCtx)).toEqual({
-      ok: true,
-      payerAmountCents: 1250,
-      totalCents: 1250,
-    })
-  })
-
-  it('rejects zero remaining', () => {
-    const result = validateSoloPaymentCreate({
-      ...baseCtx,
-      totals: totals({ p1: { owedCents: 1250, paidCents: 1250 } }),
-    })
-    expect(result.ok).toBe(false)
-  })
-
-  it('rejects duplicate pending for session', () => {
-    const result = validateSoloPaymentCreate({
-      ...baseCtx,
-      hasPendingForSession: true,
-    })
-    expect(result.ok).toBe(false)
-  })
-})
-
-describe('validateInitiateTransfer', () => {
-  it('accepts combined pending without transferInitiatedAt', () => {
-    expect(
-      validateInitiateTransfer({
-        status: 'pending',
-        coveredParticipantIds: ['p2'],
-        transferInitiatedAt: undefined,
-      }),
-    ).toEqual({ ok: true })
-  })
-
-  it('accepts legacy combined pending', () => {
-    expect(
-      validateInitiateTransfer({
-        status: 'pending',
-        coveredParticipantId: 'p2',
-        transferInitiatedAt: undefined,
-      }),
-    ).toEqual({ ok: true })
-  })
-
-  it('rejects solo request', () => {
-    expect(
-      validateInitiateTransfer({
-        status: 'pending',
-        coveredParticipantIds: [],
-        transferInitiatedAt: undefined,
-      }).ok,
-    ).toBe(false)
-  })
-
-  it('rejects already initiated', () => {
-    expect(
-      validateInitiateTransfer({
-        status: 'pending',
-        coveredParticipantIds: ['p2'],
-        transferInitiatedAt: 1,
-      }).ok,
-    ).toBe(false)
   })
 })
 

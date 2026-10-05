@@ -2,7 +2,6 @@ export const COMBINED_PAYMENT_MESSAGES = {
   sameParticipant: 'Не можете да платите за себе си.',
   coveredAlreadyPaid: 'Дялът на участника вече е платен.',
   payerNothingOwed: 'Нямате оставащ дял за плащане.',
-  pendingExists: 'Вече има чакащо плащане от вас.',
   coveredPendingExists: 'Вече има чакащо плащане за този участник.',
   requestNotFound: 'Заявката не е намерена.',
   requestNotPending: 'Заявката вече е обработена.',
@@ -24,11 +23,9 @@ export const COMBINED_PAYMENT_MESSAGES = {
   soloHostBanner: '{payer} плати {total}',
   soloHostConfirmPrompt: 'Маркира {payer} като платен?',
   transferNotInitiated: 'Първо отворете Revolut или копирайте IBAN.',
-  transferAlreadyInitiated: 'Плащането вече е изпратено.',
   selectionLockedAfterTransfer:
     'Не можете да промените избора след изпращане на плащането.',
   duplicateCovered: 'Избран е един и същ участник повече от веднъж.',
-  noCoveredSelected: 'Изберете поне един участник.',
   payerCoveredByOther: 'Друг гост вече плаща за вас.',
   participantHasTransfer:
     'За този участник има изпратен превод. Потвърдете го или го отхвърлете първо.',

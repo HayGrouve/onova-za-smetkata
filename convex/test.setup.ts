@@ -151,3 +151,19 @@ export async function paymentsFor(
       .collect(),
   )
 }
+
+/** The phone picks the other Guests it pays for, leaving a Reservation. */
+export async function reserve(
+  t: TestConvex,
+  args: {
+    billId: Id<'bills'>
+    sessionToken: string
+    otherParticipantIds: Id<'participants'>[]
+  },
+) {
+  const request = await t.mutation(api.combinedPayments.reserve, args)
+  if (!request) {
+    throw new Error('reserve: picking someone should leave a Reservation')
+  }
+  return request
+}

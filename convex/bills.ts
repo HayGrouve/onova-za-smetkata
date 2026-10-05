@@ -28,10 +28,7 @@ import {
   deleteReceiptStorageFile,
   shouldDeleteReplacedReceiptStorage,
 } from './lib/receiptStorage'
-import {
-  deleteRequestsForBill,
-  settleRequestsForFinalize,
-} from './lib/paymentReservations'
+import { onBillDeleted, onBillFinalizing } from './lib/payRequest'
 import { endGuestSessionsForBill, findGuest } from './lib/guestSession'
 import { assertShareToken, toGuestVisibleBill } from './lib/guestAccess'
 import { firstZodIssueMessage } from '../shared/validation/errors'
@@ -283,7 +280,7 @@ export const finalize = mutation({
       restaurantName: bill.restaurantName,
       ...calculationInput,
     })
-    await settleRequestsForFinalize(ctx, args.billId)
+    await onBillFinalizing(ctx, args.billId)
 
     await ctx.db.patch(args.billId, {
       status: 'final',
@@ -319,7 +316,7 @@ export const remove = mutation({
 
     await deleteReceiptScansForBill(ctx, args.billId)
     await endGuestSessionsForBill(ctx, args.billId)
-    await deleteRequestsForBill(ctx, args.billId)
+    await onBillDeleted(ctx, args.billId)
 
     const { participants, items, payments } = await loadBillRelations(
       ctx,

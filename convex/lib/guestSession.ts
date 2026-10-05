@@ -5,7 +5,7 @@ import { GUEST_FLOW_MESSAGES } from '../../shared/guest-flow-messages'
 import { sessionSeatIds } from '../../shared/guest-seat-selection'
 import { getOptionalAuthUserId } from './auth'
 import { isBillOwner } from './bill_ownership'
-import { cancelReservationsForSession } from './paymentReservations'
+import { onGuestSessionEnded } from './payRequest'
 
 /** Session expires if no heartbeat within this window. */
 export const GUEST_SESSION_TTL_MS = 90_000
@@ -121,7 +121,7 @@ export async function endGuestSession(
   ctx: MutationCtx,
   session: Doc<'guestSessions'>,
 ): Promise<void> {
-  await cancelReservationsForSession(ctx, session._id)
+  await onGuestSessionEnded(ctx, session._id)
   await ctx.db.delete(session._id)
 }
 

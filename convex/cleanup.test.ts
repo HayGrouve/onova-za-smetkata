@@ -6,6 +6,7 @@ import { GUEST_SESSION_TTL_MS } from './lib/guestSession'
 import {
   hostTakesUnits,
   joinAsGuest,
+  reserve,
   seedBill,
   setupConvex,
 } from './test.setup'
@@ -28,14 +29,15 @@ describe('the cleanup cron', () => {
     await hostTakesUnits(bill, bill.itemIds[0], Object.values(bill.seats))
     const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
     const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
-    const unsent = await t.mutation(api.combinedPayments.create, {
+    const unsent = await reserve(t, {
       billId: bill.billId,
       sessionToken: ani.sessionToken,
-      coveredParticipantIds: [bill.seats['Вики']],
+      otherParticipantIds: [bill.seats['Вики']],
     })
-    const sent = await t.mutation(api.combinedPayments.createSolo, {
+    const sent = await t.mutation(api.combinedPayments.recordTransfer, {
       billId: bill.billId,
       sessionToken: bobi.sessionToken,
+      otherParticipantIds: [],
     })
     const storageId = await t.run((ctx) =>
       ctx.storage.store(new Blob(['receipt'], { type: 'image/jpeg' })),
