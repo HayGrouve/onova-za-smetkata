@@ -1,6 +1,7 @@
 import { paginationOptsValidator } from 'convex/server'
-import { filter } from 'convex-helpers/server/filter'
+import { stream } from 'convex-helpers/server/stream'
 import { mutation, query } from './_generated/server'
+import schema from './schema'
 import type { Id } from './_generated/dataModel'
 import { ConvexError, v } from 'convex/values'
 import { assertBillDraft } from './lib/assertBillDraft'
@@ -8,6 +9,7 @@ import { requireAuth, requireBillOwner } from './lib/auth'
 import { assertBillCanFinalize } from './lib/validateBillForFinalize'
 import {
   billMatchesHomeSearch,
+  HOME_BILL_SEARCH_MAX_ROWS_READ,
   normalizeHomeBillSearch,
 } from './lib/billListSearch'
 import {
@@ -67,24 +69,30 @@ export const listWithSummary = query({
     const normalizedSearch = normalizeHomeBillSearch(args.search)
 
     const status = args.status
+    // A stream filters before paginating, so a search page holds matches
+    // rather than whichever twenty bills happened to be newest.
+    const bills = stream(ctx.db, schema).query('bills')
     const ordered =
       status === undefined
-        ? ctx.db
-            .query('bills')
+        ? bills
             .withIndex('by_ownerId_updatedAt', (q) => q.eq('ownerId', userId))
             .order('desc')
-        : ctx.db
-            .query('bills')
+        : bills
             .withIndex('by_ownerId_status_updatedAt', (q) =>
               q.eq('ownerId', userId).eq('status', status),
             )
             .order('desc')
 
-    const filtered = normalizedSearch
-      ? filter(ordered, (bill) => billMatchesHomeSearch(bill, normalizedSearch))
-      : ordered
-
-    const result = await filtered.paginate(args.paginationOpts)
+    const result = normalizedSearch
+      ? await ordered
+          .filterWith(async (bill) =>
+            billMatchesHomeSearch(bill, normalizedSearch),
+          )
+          .paginate({
+            ...args.paginationOpts,
+            maximumRowsRead: HOME_BILL_SEARCH_MAX_ROWS_READ,
+          })
+      : await ordered.paginate(args.paginationOpts)
 
     return {
       ...result,

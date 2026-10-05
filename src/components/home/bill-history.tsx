@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { usePaginatedQuery } from 'convex/react'
+import { usePaginatedQuery } from 'convex-helpers/react'
 import { Loader2Icon, SearchIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { BillCard } from '#/components/bills/bill-card.tsx'
@@ -49,6 +49,19 @@ export function BillHistory() {
     { initialNumItems: HOME_BILL_PAGE_SIZE },
   )
 
+  // A search page scans a bounded number of bills, so it can come back empty
+  // while older bills are still unchecked: keep going before saying „none“.
+  const searchingOlderBills =
+    debouncedSearch !== '' &&
+    results.length === 0 &&
+    (status === 'CanLoadMore' || status === 'LoadingMore')
+
+  useEffect(() => {
+    if (searchingOlderBills && status === 'CanLoadMore') {
+      loadMore(HOME_BILL_PAGE_SIZE)
+    }
+  }, [searchingOlderBills, status, loadMore])
+
   return (
     <section
       aria-labelledby="home-history-title"
@@ -77,7 +90,7 @@ export function BillHistory() {
         />
       </div>
 
-      {status === 'LoadingFirstPage' ? (
+      {status === 'LoadingFirstPage' || searchingOlderBills ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2" aria-busy>
           {Array.from({ length: 4 }).map((_, index) => (
             <Skeleton key={index} className="h-24 w-full" />
@@ -97,7 +110,8 @@ export function BillHistory() {
         </ul>
       )}
 
-      {status === 'CanLoadMore' || status === 'LoadingMore' ? (
+      {!searchingOlderBills &&
+      (status === 'CanLoadMore' || status === 'LoadingMore') ? (
         <Button
           type="button"
           variant="outline"

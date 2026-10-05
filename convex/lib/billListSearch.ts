@@ -1,3 +1,9 @@
+/**
+ * Bills one search page may scan. A Host with more bills than this keeps
+ * searching by loading the next page; the page just comes back short.
+ */
+export const HOME_BILL_SEARCH_MAX_ROWS_READ = 1000
+
 export function normalizeHomeBillSearch(search: string | undefined): string {
   return (search ?? '').trim().toLowerCase()
 }

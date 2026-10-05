@@ -1,4 +1,5 @@
 // @vitest-environment edge-runtime
+import type { FunctionReturnType } from 'convex/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { api } from './_generated/api'
 import { GUEST_FLOW_MESSAGES } from '../shared/guest-flow-messages'
@@ -380,5 +381,56 @@ describe('deleting a bill', () => {
       guestSessions: 0,
       combinedPaymentRequests: 0,
     })
+  })
+})
+
+describe('searching the bill archive', () => {
+  it('finds an older bill on the first page, past twenty newer ones', async () => {
+    const t = setupConvex()
+    const old = await seedBill(t, {
+      restaurantName: 'Механа Старата',
+      guests: [],
+    })
+    for (let i = 0; i < 25; i++) {
+      await old.host.mutation(api.bills.create, {})
+    }
+
+    const firstPage = await old.host.query(api.bills.listWithSummary, {
+      paginationOpts: { numItems: 20, cursor: null },
+      search: 'механа',
+    })
+
+    expect(firstPage.page.map((row) => row.bill._id)).toEqual([old.billId])
+    expect(firstPage.isDone).toBe(true)
+  })
+
+  it('pages through matches without skipping or repeating any', async () => {
+    const t = setupConvex()
+    const first = await seedBill(t, { restaurantName: 'Кафе 0', guests: [] })
+    const ids = [first.billId]
+    for (let i = 1; i < 5; i++) {
+      const billId = await first.host.mutation(api.bills.create, {})
+      await first.host.mutation(api.bills.update, {
+        billId,
+        restaurantName: `Кафе ${i}`,
+      })
+      await first.host.mutation(api.bills.create, {})
+      ids.push(billId)
+    }
+
+    const seen: string[] = []
+    let cursor: string | null = null
+    for (let pages = 0; pages < 10; pages++) {
+      const result: FunctionReturnType<typeof api.bills.listWithSummary> =
+        await first.host.query(api.bills.listWithSummary, {
+          paginationOpts: { numItems: 2, cursor },
+          search: 'кафе',
+        })
+      seen.push(...result.page.map((row) => row.bill._id))
+      if (result.isDone) break
+      cursor = result.continueCursor
+    }
+
+    expect(seen).toEqual([...ids].reverse())
   })
 })
