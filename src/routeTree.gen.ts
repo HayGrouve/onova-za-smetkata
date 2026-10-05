@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as QuickBillRouteImport } from './routes/quick-bill'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as UserProfileSplatRouteImport } from './routes/user-profile.$'
 import { Route as BillsBillIdIndexRouteImport } from './routes/bills/$billId/index'
@@ -39,6 +40,11 @@ const LoginRoute = LoginRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuickBillRoute = QuickBillRouteImport.update({
+  id: '/quick-bill',
+  path: '/quick-bill',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/$': typeof SplatRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/quick-bill': typeof QuickBillRoute
   '/terms': typeof TermsRoute
   '/user-profile/$': typeof UserProfileSplatRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/quick-bill': typeof QuickBillRoute
   '/terms': typeof TermsRoute
   '/user-profile/$': typeof UserProfileSplatRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   '/$': typeof SplatRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/quick-bill': typeof QuickBillRoute
   '/terms': typeof TermsRoute
   '/user-profile/$': typeof UserProfileSplatRoute
   '/bills/$billId/claim': typeof BillsBillIdClaimRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/login'
     | '/privacy'
+    | '/quick-bill'
     | '/terms'
     | '/user-profile/$'
     | '/bills/$billId/claim'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/login'
     | '/privacy'
+    | '/quick-bill'
     | '/terms'
     | '/user-profile/$'
     | '/bills/$billId/claim'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/login'
     | '/privacy'
+    | '/quick-bill'
     | '/terms'
     | '/user-profile/$'
     | '/bills/$billId/claim'
@@ -164,6 +176,7 @@ export interface RootRouteChildren {
   SplatRoute: typeof SplatRoute
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
+  QuickBillRoute: typeof QuickBillRoute
   TermsRoute: typeof TermsRoute
   UserProfileSplatRoute: typeof UserProfileSplatRoute
   BillsBillIdClaimRoute: typeof BillsBillIdClaimRoute
@@ -201,6 +214,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quick-bill': {
+      id: '/quick-bill'
+      path: '/quick-bill'
+      fullPath: '/quick-bill'
+      preLoaderRoute: typeof QuickBillRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -260,6 +280,7 @@ const rootRouteChildren: RootRouteChildren = {
   SplatRoute: SplatRoute,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
+  QuickBillRoute: QuickBillRoute,
   TermsRoute: TermsRoute,
   UserProfileSplatRoute: UserProfileSplatRoute,
   BillsBillIdClaimRoute: BillsBillIdClaimRoute,

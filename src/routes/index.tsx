@@ -4,7 +4,7 @@ import { ReceiptLoading } from '#/components/receipt/receipt-states.tsx'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
-import { Loader2Icon, PlusIcon } from 'lucide-react'
+import { CameraIcon, Loader2Icon, PlusIcon } from 'lucide-react'
 import {
   PaymentSettingsOpenButton,
   usePaymentSettingsStatus,
@@ -14,6 +14,8 @@ import { BillHistory } from '#/components/home/bill-history.tsx'
 import { DebtorsList } from '#/components/home/debtors-list.tsx'
 import { OpenBillsList } from '#/components/home/open-bills-list.tsx'
 import { OwedSummaryCard } from '#/components/home/owed-summary-card.tsx'
+import { QuickBillResume } from '#/components/quick-bill/quick-bill-resume.tsx'
+import { QuickCameraButton } from '#/components/quick-bill/quick-camera-button.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { QueryErrorPanel } from '#/components/ui/query-error-panel.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
@@ -199,6 +201,21 @@ function Home() {
         )}
         Нова сметка
       </Button>
+
+      <QuickBillResume />
+      <QuickCameraButton
+        mode="new"
+        size="lg"
+        variant="outline"
+        disabled={isCreating}
+        onStarted={() => void navigate({ to: '/quick-bill', search: {} })}
+      >
+        <CameraIcon strokeWidth={2} aria-hidden />
+        Бърза сметка
+      </QuickCameraButton>
+      <p className="-mt-1 text-[11px] leading-relaxed text-on-table-muted">
+        Снимате, подавате телефона и всеки вижда своята сума. Без запазване.
+      </p>
     </div>
   )
 

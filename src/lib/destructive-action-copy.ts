@@ -31,6 +31,15 @@ export function getBillDeleteCopy(): ConfirmOptions {
   })
 }
 
+export function getQuickBillCloseCopy(): ConfirmOptions {
+  return withDefaults({
+    title: 'Затваряне на бързата сметка?',
+    description:
+      'Тя не се пази никъде. Изпратете или копирайте сумите, ако ще ви трябват.',
+    confirmLabel: 'Затвори',
+  })
+}
+
 export function getItemDeleteCopy(name: string): ConfirmOptions {
   return withDefaults({
     title: 'Изтриване на артикул?',
