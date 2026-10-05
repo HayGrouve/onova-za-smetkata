@@ -3,6 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from './_generated/api'
 import type { Id } from './_generated/dataModel'
 import { HOST_IDENTITY, seedBill, setupConvex } from './test.setup'
+import {
+  RECEIPT_IMAGE_MAX_BYTES,
+  RECEIPT_IMAGE_MESSAGES,
+} from '../shared/receipt-image'
 import type { TestConvex } from './test.setup'
 
 beforeEach(() => {
@@ -132,5 +136,71 @@ describe('receipt scans', () => {
       billId: bill.billId,
     })
     expect(items).toHaveLength(1)
+  })
+})
+
+describe('reading a receipt photo', () => {
+  async function scanStoredPhoto(t: TestConvex, photo: Blob) {
+    const host = t.withIdentity(HOST_IDENTITY)
+    const billId = await host.mutation(api.bills.create, {})
+    const storageId = await t.run((ctx) => ctx.storage.store(photo))
+    await host.mutation(api.bills.update, {
+      billId,
+      receiptStorageId: storageId,
+    })
+    await host.mutation(api.receiptScan.startScan, { billId })
+    await t.finishAllScheduledFunctions(vi.runAllTimers)
+    return await host.query(api.receiptScan.getLatestScan, { billId })
+  }
+
+  it('turns down a photo Gemini cannot take without calling it', async () => {
+    vi.stubEnv('GEMINI_API_KEY', 'test-key')
+    const gemini = vi.fn()
+    vi.stubGlobal('fetch', gemini)
+    const t = setupConvex()
+
+    const huge = await scanStoredPhoto(
+      t,
+      new Blob([new Uint8Array(RECEIPT_IMAGE_MAX_BYTES + 1)], {
+        type: 'image/jpeg',
+      }),
+    )
+    const drawing = await scanStoredPhoto(
+      t,
+      new Blob(['<svg/>'], { type: 'image/svg+xml' }),
+    )
+
+    expect(huge).toMatchObject({
+      status: 'failed',
+      errorMessage: RECEIPT_IMAGE_MESSAGES.tooLarge,
+    })
+    expect(drawing).toMatchObject({
+      status: 'failed',
+      errorMessage: RECEIPT_IMAGE_MESSAGES.unsupported,
+    })
+    expect(gemini).not.toHaveBeenCalled()
+    vi.unstubAllGlobals()
+  })
+
+  it('tells the Host in Bulgarian when Gemini fails, not the raw API error', async () => {
+    vi.stubEnv('GEMINI_API_KEY', 'test-key')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () => new Response('{"error":{"code":400}}', { status: 400 }),
+      ),
+    )
+    const t = setupConvex()
+
+    const scan = await scanStoredPhoto(
+      t,
+      new Blob(['jpeg'], { type: 'image/jpeg' }),
+    )
+
+    expect(scan).toMatchObject({
+      status: 'failed',
+      errorMessage: RECEIPT_IMAGE_MESSAGES.scanFailed,
+    })
+    vi.unstubAllGlobals()
   })
 })

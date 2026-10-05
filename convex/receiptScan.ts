@@ -200,7 +200,16 @@ export const dismissScan = mutation({
 export const getScanInternal = internalQuery({
   args: { scanId: v.id('receiptScans') },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.scanId)
+    const scan = await ctx.db.get(args.scanId)
+    if (!scan) return null
+    // Size and type let the action refuse a photo without downloading it.
+    const photo = await ctx.db.system.get('_storage', scan.storageId)
+    return {
+      ...scan,
+      photo: photo
+        ? { size: photo.size, contentType: photo.contentType }
+        : null,
+    }
   },
 })
 

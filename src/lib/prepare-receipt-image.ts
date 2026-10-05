@@ -1,9 +1,12 @@
-const WEB_SAFE_IMAGE_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-])
+import {
+  RECEIPT_IMAGE_MESSAGES,
+  receiptImageProblem,
+} from '../../shared/receipt-image.ts'
+
+const WEB_SAFE_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
+
+/** Non-standard JPEG types some Android pickers still report. */
+const JPEG_ALIASES = new Set(['image/jpg', 'image/pjpeg'])
 
 const HEIC_TYPES = new Set([
   'image/heic',
@@ -27,16 +30,29 @@ export function needsHeicConversion(file: File): boolean {
 export async function prepareReceiptImage(
   file: File,
 ): Promise<{ blob: Blob; contentType: string }> {
+  const prepared = await toReadablePhoto(file)
+  // Refuse before uploading what the scanner would refuse anyway.
+  const problem = receiptImageProblem({
+    size: prepared.blob.size,
+    type: prepared.contentType,
+  })
+  if (problem) throw new Error(problem)
+  return prepared
+}
+
+async function toReadablePhoto(
+  file: File,
+): Promise<{ blob: Blob; contentType: string }> {
   if (WEB_SAFE_IMAGE_TYPES.has(file.type)) {
     return { blob: file, contentType: file.type }
   }
 
-  if (needsHeicConversion(file)) {
-    return convertHeicToJpeg(file)
+  if (JPEG_ALIASES.has(file.type)) {
+    return { blob: file, contentType: 'image/jpeg' }
   }
 
-  if (file.type.startsWith('image/')) {
-    return { blob: file, contentType: file.type }
+  if (needsHeicConversion(file)) {
+    return convertHeicToJpeg(file)
   }
 
   // Samsung/Android often omits MIME type for HEIC camera captures.
@@ -44,7 +60,7 @@ export async function prepareReceiptImage(
     return convertHeicToJpeg(file)
   }
 
-  throw new Error('Поддържат се само изображения (JPEG, PNG, HEIC).')
+  throw new Error(RECEIPT_IMAGE_MESSAGES.unsupported)
 }
 
 async function convertHeicToJpeg(
