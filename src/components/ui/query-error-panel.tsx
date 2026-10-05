@@ -4,7 +4,8 @@ import { ICON } from '#/lib/app-icons.ts'
 
 export interface QueryErrorPanelProps {
   message?: string
-  onRetry: () => void
+  /** Omit when retrying cannot help (the server gave a definite reason). */
+  onRetry?: () => void
 }
 
 export function QueryErrorPanel({
@@ -16,15 +17,17 @@ export function QueryErrorPanel({
       <p className="text-sm text-muted-foreground" role="alert">
         {message}
       </p>
-      <Button
-        type="button"
-        variant="outline"
-        className="h-10"
-        onClick={onRetry}
-      >
-        <RefreshCwIcon className={ICON.button} aria-hidden />
-        Опитай отново
-      </Button>
+      {onRetry ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10"
+          onClick={onRetry}
+        >
+          <RefreshCwIcon className={ICON.button} aria-hidden />
+          Опитай отново
+        </Button>
+      ) : null}
     </div>
   )
 }

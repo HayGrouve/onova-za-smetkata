@@ -30,11 +30,14 @@ export class QueryErrorBoundary extends Component<
 
   render() {
     if (this.state.error) {
+      // A reason the server gave on purpose (invalid link, bill gone) does not
+      // go away on retry; only unexplained failures offer one.
+      const reason = getConvexErrorData(this.state.error)
       return (
         <div className="page-container py-10">
           <QueryErrorPanel
-            message={getConvexErrorData(this.state.error) ?? undefined}
-            onRetry={() => this.setState({ error: null })}
+            message={reason ?? undefined}
+            onRetry={reason ? undefined : () => this.setState({ error: null })}
           />
         </div>
       )
