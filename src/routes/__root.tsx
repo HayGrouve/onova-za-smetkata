@@ -22,7 +22,7 @@ import { Toaster } from '../components/ui/sonner'
 import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 import { isDefiniteErrorReason } from '#/lib/definite-error-reason.ts'
-import { getConvexErrorData } from '#/lib/guest-participant-session.ts'
+import { getConvexErrorData } from '#/lib/convex-error.ts'
 
 import { SentryInit } from '../components/sentry-init.tsx'
 import { ServiceWorkerRegister } from '../components/service-worker-register.tsx'

@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu.tsx'
 import { ICON } from '#/lib/app-icons.ts'
-import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { getConvexErrorMessage } from '#/lib/convex-error.ts'
 import {
   getClearAllGuestsCopy,
   getParticipantRemoveCopy,

@@ -16,7 +16,7 @@ import {
 } from '#/components/ui/sheet.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 import { getItemDeleteCopy } from '#/lib/destructive-action-copy.ts'
-import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { getConvexErrorMessage } from '#/lib/convex-error.ts'
 import { validateItemAddForm } from '../../../shared/item-schema.ts'
 import type { ItemField } from '../../../shared/item-schema.ts'
 import { formatEurInputValue } from '../../../shared/tip-calculations.ts'

@@ -1,7 +1,7 @@
 import { useMutation } from 'convex/react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { getConvexErrorMessage } from '#/lib/convex-error.ts'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import type { UnitRef } from '../../shared/claim-groups'

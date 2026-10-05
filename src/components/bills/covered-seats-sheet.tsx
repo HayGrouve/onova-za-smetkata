@@ -12,11 +12,8 @@ import {
   SheetTitle,
 } from '#/components/ui/sheet.tsx'
 import type { CoveredSeatCandidate } from '#/lib/covered-seat-candidates.ts'
-import {
-  getConvexErrorMessage,
-  getStoredGuestSession,
-  setStoredGuestSession,
-} from '#/lib/guest-participant-session.ts'
+import { getConvexErrorMessage } from '#/lib/convex-error.ts'
+import { useGuestFlowSession } from '#/lib/guest-flow-session/use-guest-flow-session.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -39,6 +36,7 @@ export function CoveredSeatsSheet({
   coveredIds,
 }: CoveredSeatsSheetProps) {
   const updateCoveredSeats = useMutation(api.guestSessions.updateCoveredSeats)
+  const flow = useGuestFlowSession(billId)
   const [selected, setSelected] = useState<string[]>(coveredIds)
   const [saving, setSaving] = useState(false)
 
@@ -55,13 +53,7 @@ export function CoveredSeatsSheet({
         sessionToken,
         coveredParticipantIds: selected as Id<'participants'>[],
       })
-      const stored = getStoredGuestSession(billId)
-      if (stored) {
-        setStoredGuestSession({
-          ...stored,
-          coveredParticipantIds: result.coveredParticipantIds,
-        })
-      }
+      flow.rememberCoveredSeats(result.coveredParticipantIds)
       onOpenChange(false)
     } catch (error) {
       toast.error(getConvexErrorMessage(error))

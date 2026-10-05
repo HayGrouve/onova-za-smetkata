@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '#/components/ui/dialog.tsx'
 import { buildBillJoinUrl, resolveAppOrigin } from '#/lib/bill-join-url.ts'
-import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { getConvexErrorMessage } from '#/lib/convex-error.ts'
 import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
 import type { GuidanceFocusHandle } from '#/lib/guidance-focus/use-guidance-focus.ts'
 import { shareLink } from '#/lib/share-link.ts'

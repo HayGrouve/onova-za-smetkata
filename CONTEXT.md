@@ -137,7 +137,7 @@ Orchestration for the host bill editor — step clamp/redirect, metadata draft s
 _Avoid_: wiring OCR, guidance, and step completion ad hoc in the route file
 
 **Guest flow session**:
-Orchestration for the Guest journey — join resume, seat pick (own + Covered seats), claim/pay redirects, session-lost recovery. Pure module: `shared/guest-flow-session.ts`; React seams: `useGuestJoinFlow`, `useGuestBillSession` (shared by the claim and pay pages).
+A Guest phone's journey on one bill — resume its seat when the join link opens again, pick a seat, recover when the claim or pay page loses its Guest session, switch to another seat. It decides where the Guest goes next and what they are told; a lost seat and a passing failure (rate limit, dropped connection) are told apart so the phone only forgets a seat that is really gone. Module: `src/lib/guest-flow-session/`, with the phone's storage and the server calls as adapters; React seams: `useGuestJoinFlow`, `useGuestBillSession` (shared by the claim and pay pages).
 _Avoid_: duplicating redirect/resume logic in routes; conflating with the Guest session it keeps alive
 
 **Host Pro**:

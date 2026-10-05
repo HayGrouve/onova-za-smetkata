@@ -19,7 +19,7 @@ import {
   shouldResetBillEditorMetadata,
   shouldShowContentRouteChoice,
 } from '../../shared/bill-editing-controller.ts'
-import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { getConvexErrorMessage } from '#/lib/convex-error.ts'
 import { validateBillMetadataField } from '../../shared/bill-metadata-schema.ts'
 import type { BillMetadataPatchInput } from '../../shared/bill-metadata-schema.ts'
 import { readDismissedHintIds } from '#/lib/host-onboarding-session.ts'

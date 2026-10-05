@@ -46,10 +46,10 @@ import { useGuestLiveReceipt } from '#/hooks/use-guest-live-receipt.ts'
 import { buildCoveredSeatCandidates } from '#/lib/covered-seat-candidates.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { joinLabels } from '#/lib/participant-labels.ts'
-import { getConvexErrorMessage } from '#/lib/guest-participant-session.ts'
+import { getConvexErrorMessage } from '#/lib/convex-error.ts'
+import { takenSeats } from '#/lib/guest-flow-session/guest-flow-session.ts'
 import { cn } from '#/lib/utils.ts'
 import type { ClaimGroup, UnitRef } from '../../../shared/claim-groups.ts'
-import { buildTakenSeats } from '../../../shared/guest-flow-session.ts'
 import type { LiveReceiptSeat } from '../../../shared/live-receipt.ts'
 import type { FunctionReturnType } from 'convex/server'
 import { api } from '../../../convex/_generated/api'
@@ -227,7 +227,7 @@ function GuestClaimTable({
     participants: data.participants,
     hostParticipantId: data.hostParticipantId,
     ownParticipantId: participantId,
-    takenSeats: buildTakenSeats(activeSeats, participantId),
+    takenSeats: takenSeats(activeSeats, participantId),
     labels,
   })
 
