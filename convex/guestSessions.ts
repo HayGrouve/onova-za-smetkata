@@ -242,8 +242,6 @@ export const claim = mutation({
 export const updateCoveredSeats = mutation({
   args: {
     billId: v.id('bills'),
-    /** Ignored: older clients still send it; a live session implies the link. */
-    shareToken: v.optional(v.string()),
     sessionToken: v.string(),
     coveredParticipantIds: v.array(v.id('participants')),
   },
@@ -279,8 +277,6 @@ export const updateCoveredSeats = mutation({
 export const heartbeat = mutation({
   args: {
     billId: v.id('bills'),
-    /** Ignored: older clients still send it; a live session implies the link. */
-    shareToken: v.optional(v.string()),
     participantId: v.id('participants'),
     sessionToken: v.string(),
   },
@@ -299,8 +295,6 @@ export const heartbeat = mutation({
 export const release = mutation({
   args: {
     billId: v.id('bills'),
-    /** Ignored: older clients still send it; a live session implies the link. */
-    shareToken: v.optional(v.string()),
     sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
