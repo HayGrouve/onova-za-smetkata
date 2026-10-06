@@ -1,6 +1,5 @@
-import { ConvexError, v } from 'convex/values'
+import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
-import type { Id } from './_generated/dataModel'
 import { requireBillOwner } from './lib/auth'
 import { findGuest, requireGuest } from './lib/guestSession'
 import {
@@ -13,14 +12,7 @@ import {
   sendPayRequest,
   sentPayRequestsForBill,
 } from './lib/payRequest'
-import { COMBINED_PAYMENT_MESSAGES } from '../shared/combined-payment-messages'
-import {
-  getCoveredAmountsFromRequest,
-  getCoveredParticipantIds,
-} from '../shared/combined-payment'
-
-/** Ignored: older clients still send it; a live session implies the link. */
-const ignoredShareToken = v.optional(v.string())
+import { getCoveredAmountsFromRequest } from '../shared/combined-payment'
 
 const priced = v.object({
   requestId: v.id('combinedPaymentRequests'),
@@ -30,7 +22,6 @@ const priced = v.object({
 export const getPendingForGuest = query({
   args: {
     billId: v.id('bills'),
-    shareToken: ignoredShareToken,
     sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
@@ -51,7 +42,6 @@ export const listPendingForBill = query({
 export const getPendingCoverForGuest = query({
   args: {
     billId: v.id('bills'),
-    shareToken: ignoredShareToken,
     sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
@@ -144,83 +134,5 @@ export const confirm = mutation({
   handler: async (ctx, args) => {
     const bill = await requireBillOwner(ctx, args.billId)
     await confirmPayRequest(ctx, bill, args.requestId)
-  },
-})
-
-// ── Previous Pay step bundle ─────────────────────────────────────────────
-// Tabs opened before a deploy keep calling these until they reload. They map
-// onto `reserve` / `recordTransfer`; delete them in the next release.
-
-export const create = mutation({
-  args: {
-    billId: v.id('bills'),
-    shareToken: ignoredShareToken,
-    sessionToken: v.string(),
-    coveredParticipantIds: v.array(v.id('participants')),
-  },
-  handler: async (ctx, args) => {
-    const guest = await requireGuest(ctx, args)
-    const request = await reservePayRequest(
-      ctx,
-      guest,
-      args.coveredParticipantIds,
-    )
-    if (!request) {
-      throw new ConvexError(COMBINED_PAYMENT_MESSAGES.requestNotFound)
-    }
-    return { requestId: request._id, totalCents: request.totalCents }
-  },
-})
-
-export const updateCovered = mutation({
-  args: {
-    billId: v.id('bills'),
-    sessionToken: v.string(),
-    requestId: v.id('combinedPaymentRequests'),
-    coveredParticipantIds: v.array(v.id('participants')),
-  },
-  handler: async (ctx, args) => {
-    const guest = await requireGuest(ctx, args)
-    const request = await reservePayRequest(
-      ctx,
-      guest,
-      args.coveredParticipantIds,
-    )
-    return request
-      ? { requestId: request._id, totalCents: request.totalCents }
-      : { requestId: args.requestId, cancelled: true as const }
-  },
-})
-
-export const createSolo = mutation({
-  args: {
-    billId: v.id('bills'),
-    shareToken: ignoredShareToken,
-    sessionToken: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const guest = await requireGuest(ctx, args)
-    const request = await sendPayRequest(ctx, guest, [])
-    return { requestId: request._id, totalCents: request.totalCents }
-  },
-})
-
-export const initiateTransfer = mutation({
-  args: {
-    billId: v.id('bills'),
-    sessionToken: v.string(),
-    requestId: v.id('combinedPaymentRequests'),
-  },
-  handler: async (ctx, args) => {
-    const guest = await requireGuest(ctx, args)
-    const pending = await pendingPayRequestOf(ctx, guest.session)
-    if (!pending || pending._id !== args.requestId) {
-      throw new ConvexError(COMBINED_PAYMENT_MESSAGES.requestNotFound)
-    }
-    await sendPayRequest(
-      ctx,
-      guest,
-      getCoveredParticipantIds(pending) as Id<'participants'>[],
-    )
   },
 })

@@ -330,41 +330,6 @@ describe('one request per phone, priced when it is sent', () => {
       }),
     ])
   })
-
-  it('a tab still on the previous Pay step keeps working through the old calls', async () => {
-    const t = setupConvex()
-    const bill = await seedClaimedBill(t)
-    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
-    const vicky = await joinAsGuest(t, bill, bill.seats['Вики'])
-    const asAni = { billId: bill.billId, sessionToken: ani.sessionToken }
-
-    const { requestId } = await t.mutation(api.combinedPayments.create, {
-      ...asAni,
-      coveredParticipantIds: [bill.seats['Боби']],
-    })
-    await t.mutation(api.combinedPayments.updateCovered, {
-      ...asAni,
-      requestId,
-      coveredParticipantIds: [bill.seats['Боби']],
-    })
-    await t.mutation(api.combinedPayments.initiateTransfer, {
-      ...asAni,
-      requestId,
-    })
-    const solo = await t.mutation(api.combinedPayments.createSolo, {
-      billId: bill.billId,
-      sessionToken: vicky.sessionToken,
-    })
-
-    expect(
-      await bill.host.query(api.combinedPayments.listPendingForBill, {
-        billId: bill.billId,
-      }),
-    ).toEqual([
-      expect.objectContaining({ _id: requestId, totalCents: 600 }),
-      expect.objectContaining({ _id: solo.requestId, totalCents: 300 }),
-    ])
-  })
 })
 
 describe('when a seat leaves the bill', () => {
