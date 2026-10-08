@@ -156,3 +156,27 @@ export const syncCustomer = internalAction({
     return null
   },
 })
+
+/** The Host deleted their account: end every subscription that can still bill. */
+export const cancelCustomerSubscriptions = internalAction({
+  args: { customerId: v.string() },
+  returns: v.null(),
+  handler: async (_ctx, args) => {
+    const stripe = stripeClient(requireStripeSecretKey())
+    const subscriptions = await stripe.subscriptions.list({
+      customer: args.customerId,
+      status: 'all',
+      limit: 20,
+    })
+    for (const subscription of subscriptions.data) {
+      if (
+        subscription.status === 'canceled' ||
+        subscription.status === 'incomplete_expired'
+      ) {
+        continue
+      }
+      await stripe.subscriptions.cancel(subscription.id)
+    }
+    return null
+  },
+})
