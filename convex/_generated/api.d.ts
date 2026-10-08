@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as accountDeletion from "../accountDeletion.js";
 import type * as assignments from "../assignments.js";
 import type * as backfill from "../backfill.js";
 import type * as billing from "../billing.js";
@@ -29,7 +30,9 @@ import type * as lib_billListSearch from "../lib/billListSearch.js";
 import type * as lib_billListSummary from "../lib/billListSummary.js";
 import type * as lib_bill_ownership from "../lib/bill_ownership.js";
 import type * as lib_billingEnv from "../lib/billingEnv.js";
+import type * as lib_clerkWebhook from "../lib/clerkWebhook.js";
 import type * as lib_createBill from "../lib/createBill.js";
+import type * as lib_deleteBill from "../lib/deleteBill.js";
 import type * as lib_devMode from "../lib/devMode.js";
 import type * as lib_geminiReceipt from "../lib/geminiReceipt.js";
 import type * as lib_guestAccess from "../lib/guestAccess.js";
@@ -65,6 +68,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  accountDeletion: typeof accountDeletion;
   assignments: typeof assignments;
   backfill: typeof backfill;
   billing: typeof billing;
@@ -86,7 +90,9 @@ declare const fullApi: ApiFromModules<{
   "lib/billListSummary": typeof lib_billListSummary;
   "lib/bill_ownership": typeof lib_bill_ownership;
   "lib/billingEnv": typeof lib_billingEnv;
+  "lib/clerkWebhook": typeof lib_clerkWebhook;
   "lib/createBill": typeof lib_createBill;
+  "lib/deleteBill": typeof lib_deleteBill;
   "lib/devMode": typeof lib_devMode;
   "lib/geminiReceipt": typeof lib_geminiReceipt;
   "lib/guestAccess": typeof lib_guestAccess;

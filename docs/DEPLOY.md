@@ -14,29 +14,30 @@
 
 ## Environment variables
 
-| Variable                     | Where                           | Required                                                              |
-| ---------------------------- | ------------------------------- | --------------------------------------------------------------------- |
-| `VITE_CONVEX_URL`            | Vercel                          | Yes                                                                   |
-| `VITE_APP_ORIGIN`            | Vercel                          | Yes for production OG/share URLs (`https://onova-za-smetkata.com`)    |
-| `VITE_SENTRY_DSN`            | Vercel                          | No (Sentry client errors in production)                               |
-| `GEMINI_API_KEY`             | Convex Dashboard                | Yes (for OCR)                                                         |
-| `GEMINI_MODEL`               | Convex Dashboard                | No                                                                    |
-| `CLERK_JWT_ISSUER_DOMAIN`    | Convex Dashboard (dev + prod)   | Yes (Clerk JWT validation)                                            |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Vercel / `.env.local`           | Yes (Clerk client — **Vite** prefix, not `NEXT_PUBLIC_*`)             |
-| `CLERK_PUBLISHABLE_KEY`      | Vercel / `.env.local`           | Recommended (same `pk_live_…`; SSR middleware fallback)               |
-| `CLERK_SECRET_KEY`           | Vercel / `.env.local`           | Yes (TanStack Start `clerkMiddleware`)                                |
-| `DEV_MODE`                   | Convex Dashboard (**dev only**) | No — dev-only mutations (e.g. onboarding reset); **never production** |
-| `BILLING_ENABLED`            | Convex Dashboard                | No — `true` turns Host Pro billing on; unset = everyone free          |
-| `STRIPE_SECRET_KEY`          | Convex Dashboard                | When billing is on (restricted key recommended)                       |
-| `STRIPE_WEBHOOK_SECRET`      | Convex Dashboard                | When billing is on (`whsec_…` of the `/stripe/webhook` endpoint)      |
-| `STRIPE_PRICE_MONTHLY`       | Convex Dashboard                | When billing is on (`price_…`, €2.99/month, VAT-inclusive)            |
-| `STRIPE_PRICE_YEARLY`        | Convex Dashboard                | When billing is on (`price_…`, €29/year, VAT-inclusive)               |
-| `APP_ORIGIN`                 | Convex Dashboard                | When billing is on (Checkout/Portal return URL origin)                |
-| `CONVEX_DEPLOYMENT`          | Local `.env.local`              | Yes for local `npx convex` CLI                                        |
-| `CONVEX_DEPLOY_KEY`          | GitHub Actions secret           | Yes — production deploy key (`deployment:deploy`)                     |
-| `VERCEL_TOKEN`               | GitHub Actions secret           | Yes — Vercel access token for CLI deploys                             |
-| `VERCEL_ORG_ID`              | GitHub Actions secret           | Yes                                                                   |
-| `VERCEL_PROJECT_ID`          | GitHub Actions secret           | Yes                                                                   |
+| Variable                       | Where                           | Required                                                                  |
+| ------------------------------ | ------------------------------- | ------------------------------------------------------------------------- |
+| `VITE_CONVEX_URL`              | Vercel                          | Yes                                                                       |
+| `VITE_APP_ORIGIN`              | Vercel                          | Yes for production OG/share URLs (`https://onova-za-smetkata.com`)        |
+| `VITE_SENTRY_DSN`              | Vercel                          | No (Sentry client errors in production)                                   |
+| `GEMINI_API_KEY`               | Convex Dashboard                | Yes (for OCR)                                                             |
+| `GEMINI_MODEL`                 | Convex Dashboard                | No                                                                        |
+| `CLERK_JWT_ISSUER_DOMAIN`      | Convex Dashboard (dev + prod)   | Yes (Clerk JWT validation)                                                |
+| `VITE_CLERK_PUBLISHABLE_KEY`   | Vercel / `.env.local`           | Yes (Clerk client — **Vite** prefix, not `NEXT_PUBLIC_*`)                 |
+| `CLERK_PUBLISHABLE_KEY`        | Vercel / `.env.local`           | Recommended (same `pk_live_…`; SSR middleware fallback)                   |
+| `CLERK_SECRET_KEY`             | Vercel / `.env.local`           | Yes (TanStack Start `clerkMiddleware`)                                    |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | Convex Dashboard (dev + prod)   | Yes — `whsec_…` of the Clerk `/clerk/webhook` endpoint (account deletion) |
+| `DEV_MODE`                     | Convex Dashboard (**dev only**) | No — dev-only mutations (e.g. onboarding reset); **never production**     |
+| `BILLING_ENABLED`              | Convex Dashboard                | No — `true` turns Host Pro billing on; unset = everyone free              |
+| `STRIPE_SECRET_KEY`            | Convex Dashboard                | When billing is on (restricted key recommended)                           |
+| `STRIPE_WEBHOOK_SECRET`        | Convex Dashboard                | When billing is on (`whsec_…` of the `/stripe/webhook` endpoint)          |
+| `STRIPE_PRICE_MONTHLY`         | Convex Dashboard                | When billing is on (`price_…`, €2.99/month, VAT-inclusive)                |
+| `STRIPE_PRICE_YEARLY`          | Convex Dashboard                | When billing is on (`price_…`, €29/year, VAT-inclusive)                   |
+| `APP_ORIGIN`                   | Convex Dashboard                | When billing is on (Checkout/Portal return URL origin)                    |
+| `CONVEX_DEPLOYMENT`            | Local `.env.local`              | Yes for local `npx convex` CLI                                            |
+| `CONVEX_DEPLOY_KEY`            | GitHub Actions secret           | Yes — production deploy key (`deployment:deploy`)                         |
+| `VERCEL_TOKEN`                 | GitHub Actions secret           | Yes — Vercel access token for CLI deploys                                 |
+| `VERCEL_ORG_ID`                | GitHub Actions secret           | Yes                                                                       |
+| `VERCEL_PROJECT_ID`            | GitHub Actions secret           | Yes                                                                       |
 
 Never put `GEMINI_API_KEY`, Stripe keys, Clerk secrets, `DEV_MODE`, or deploy keys/tokens in the repo.
 
@@ -71,7 +72,8 @@ Local testing: use a Stripe sandbox and `stripe listen --forward-to https://<dev
 3. Create JWT template **`convex`** with `applicationID: convex`.
 4. **Do not** enable Clerk Billing. Host Pro is Stripe ([ADR 0003](./adr/0003-stripe-billing-beside-clerk.md)).
 5. Set on **production** Convex: `CLERK_JWT_ISSUER_DOMAIN`.
-6. Set on Vercel: `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` (optional duplicate: `CLERK_PUBLISHABLE_KEY`). **Do not** use `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` — this stack is Vite, not Next.js.
+6. **Webhooks** → Add endpoint `https://<deployment>.convex.site/clerk/webhook` (prod: `https://coordinated-warbler-782.convex.site/clerk/webhook`), event **`user.deleted`** only. Copy its signing secret to Convex: `npx convex env set CLERK_WEBHOOK_SIGNING_SECRET whsec_… --prod`. Then send a test `user.deleted` from the dashboard; the endpoint should answer 200. When a Host deletes their account, `accountDeletion.deleteHostData` erases their bills, seats, payments, payment settings, groups, counters and receipt photos, and cancels a live Stripe subscription. Until the secret is set the endpoint answers 503 and Clerk retries.
+7. Set on Vercel: `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` (optional duplicate: `CLERK_PUBLISHABLE_KEY`). **Do not** use `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` — this stack is Vite, not Next.js.
 
 See [ADR 0002](./adr/0002-clerk-auth-billing.md). Full Clerk + Google OAuth steps: **`docs/clerk-production-setup.md`** (prod auth verified 2026-08-11).
 
@@ -258,6 +260,7 @@ Complete once before calling production “solid”:
 | Google SSO                                       | Clerk Dashboard   | See `docs/clerk-production-setup.md` §1.8 — **no Clerk Billing**            |
 | Stripe Billing (Host Pro)                        | Stripe Dashboard  | When Host Pro ships — [ADR 0003](./adr/0003-stripe-billing-beside-clerk.md) |
 | `GEMINI_API_KEY`                                 | Convex prod       | Receipt OCR                                                                 |
+| Clerk `user.deleted` webhook                     | Clerk + Convex    | `/clerk/webhook` + `CLERK_WEBHOOK_SIGNING_SECRET` — erases deleted Hosts    |
 | `DEV_MODE`                                       | Convex prod       | Must **not** be `true`                                                      |
 | Backfill                                         | Convex prod       | Manual when needed (see release steps); not automated in Actions            |
 | Domain + SSL                                     | Vercel            | Custom domain active                                                        |

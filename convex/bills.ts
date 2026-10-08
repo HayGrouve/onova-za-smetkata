@@ -25,15 +25,9 @@ import type { HomeOverviewDraft } from './lib/homeOverview'
 import {
   assertFreshUpload,
   cleanupBillReceiptStorage,
-  deleteReceiptScansForBill,
-  deleteReceiptStorageFile,
   shouldDeleteReplacedReceiptStorage,
 } from './lib/receiptStorage'
-import {
-  onBillDeleted,
-  onBillFinalizing,
-  pendingPayRequestOf,
-} from './lib/payRequest'
+import { onBillFinalizing, pendingPayRequestOf } from './lib/payRequest'
 import { endGuestSessionsForBill, findGuest } from './lib/guestSession'
 import { assertShareToken, toGuestVisibleBill } from './lib/guestAccess'
 import { firstZodIssueMessage } from '../shared/validation/errors'
@@ -44,7 +38,7 @@ import { isAwaitingHostConfirmation } from '../shared/combined-payment'
 import { buildSeatLedger } from '../shared/live-receipt'
 import { toBillCalculationSnapshot } from '../shared/bill-calculation-snapshot'
 import { touchBill } from './lib/touchBill'
-import { clearGuidedBillReference } from './lib/hostOnboardingBillHooks'
+import { deleteBillWithRelations } from './lib/deleteBill'
 import { createBillForOwner } from './lib/createBill'
 
 export const list = query({
@@ -337,34 +331,6 @@ export const remove = mutation({
   args: { billId: v.id('bills') },
   handler: async (ctx, args) => {
     const bill = await requireBillOwner(ctx, args.billId)
-
-    const receiptStorageId = bill.receiptStorageId
-
-    await deleteReceiptScansForBill(ctx, args.billId)
-    await endGuestSessionsForBill(ctx, args.billId)
-    await onBillDeleted(ctx, args.billId)
-
-    const { participants, items, payments } = await loadBillRelations(
-      ctx,
-      args.billId,
-    )
-
-    for (const item of items) {
-      const assignments = await ctx.db
-        .query('itemAssignments')
-        .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
-        .collect()
-      for (const a of assignments) await ctx.db.delete(a._id)
-      await ctx.db.delete(item._id)
-    }
-    for (const p of participants) await ctx.db.delete(p._id)
-    for (const pay of payments) await ctx.db.delete(pay._id)
-    await ctx.db.delete(args.billId)
-
-    await clearGuidedBillReference(ctx, bill.ownerId, args.billId)
-
-    if (receiptStorageId) {
-      await deleteReceiptStorageFile(ctx, receiptStorageId)
-    }
+    await deleteBillWithRelations(ctx, bill)
   },
 })
