@@ -214,7 +214,7 @@ function Home() {
         Бърза сметка
       </QuickCameraButton>
       <p className="-mt-1 text-[11px] leading-relaxed text-on-table-muted">
-        Снимате, подавате телефона и всеки вижда своята сума. Без запазване.
+        Чисти сметки, добри приятели.
       </p>
     </div>
   )
@@ -261,11 +261,11 @@ function CollectionOverview({ actions }: { actions: ReactNode }) {
         ) : (
           <section aria-label="Онова за сметката">
             <p className="font-display text-[26px] leading-tight font-bold sm:text-[32px]">
-              Кой какво яде, кой колко дава.
+              Безплатен обяд няма!
             </p>
             <p className="mt-2 max-w-[36ch] text-[12px] leading-relaxed text-on-table-muted">
               Снимате бележката, пращате линка в групата, всеки отбелязва своето
-              и плаща с Revolut.
+              и плаща.
             </p>
           </section>
         )}

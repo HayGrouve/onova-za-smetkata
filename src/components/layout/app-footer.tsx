@@ -7,7 +7,7 @@ import { ICON } from '#/lib/app-icons.ts'
 import { usePwaInstall } from '#/components/pwa-install-provider.tsx'
 
 const VALUE_PROPS = [
-  'Снимате бележката и редовете се попълват сами.',
+  'Снимате бележката и продуктите се въвеждат сами.',
   'Линк и QR код за хората на масата.',
   'Плащане с Revolut или по IBAN.',
 ] as const
