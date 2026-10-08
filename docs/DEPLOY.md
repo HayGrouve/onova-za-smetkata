@@ -192,7 +192,8 @@ Canonical production path: **merge (or push) to `main` → GitHub Actions `prefl
    - [ ] Service worker registered (DevTools → Application → Service Workers)
    - [ ] No devtools panel visible
    - [ ] Summary bottom buttons not clipped on mobile
-   - [ ] 404 page on unknown routes
+   - [ ] Unknown routes show the 404 page and answer HTTP **404** (`curl -sI https://onova-za-smetkata.com/nope`)
+   - [ ] `https://www.onova-za-smetkata.com/…` redirects 308 to the apex, path and query kept
    - [ ] Network tab: `getForGuest` response has `myPayments`, not `payments`
    - [ ] Convex dashboard: `assignments.joinUnit` without `sessionToken` on guest bill → throws (unless bill owner)
 
@@ -207,7 +208,7 @@ Do this **after** smoke tests pass on `https://<project>.vercel.app`.
 
 ### Phase 2 — Attach `onova-za-smetkata.com`
 
-1. Vercel project → **Settings → Domains** → add `onova-za-smetkata.com` and `www.onova-za-smetkata.com`.
+1. Vercel project → **Settings → Domains** → add `onova-za-smetkata.com` and `www.onova-za-smetkata.com`. The apex is the primary domain; `www` redirects to it (308). Share links, QR codes, `og:url`, `sitemap.xml` and `robots.txt` all use the apex, so keep `VITE_APP_ORIGIN` on the apex too.
 2. In Vercel DNS, remove records pointing to Netlify (if present):
    - Delete **A** `@` → Netlify IP
    - Delete **CNAME** `www` → `*.netlify.app`
