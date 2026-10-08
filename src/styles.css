@@ -234,15 +234,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Inline text links. Links rendered as buttons keep their own colours. */
-a:not([data-slot='button']) {
+/* Inline text links. Links rendered as buttons or menu items keep their own colours. */
+a:not([data-slot='button'], [data-slot='dropdown-menu-item']) {
   color: var(--primary);
   text-decoration-color: color-mix(in oklab, var(--primary) 40%, transparent);
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
 }
 
-a:not([data-slot='button']):hover {
+a:not([data-slot='button'], [data-slot='dropdown-menu-item']):hover {
   color: color-mix(in oklab, var(--primary) 85%, var(--foreground));
 }
 

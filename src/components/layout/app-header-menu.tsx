@@ -4,6 +4,7 @@ import {
   ChevronDownIcon,
   CogIcon,
   Link2OffIcon,
+  MailIcon,
   MoreVerticalIcon,
   PencilIcon,
   Share2Icon,
@@ -41,6 +42,7 @@ import {
   TooltipTrigger,
 } from '#/components/ui/tooltip.tsx'
 import { ICON } from '#/lib/app-icons.ts'
+import { SUPPORT_EMAIL, mailtoHref } from '#/lib/contact.ts'
 import { cn } from '#/lib/utils.ts'
 import { ThemeRocker } from '#/components/layout/theme-rocker.tsx'
 
@@ -265,6 +267,13 @@ export function AppHeaderMenu({
               )}
             </>
           ) : null}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <a href={mailtoHref(SUPPORT_EMAIL, 'Онова за сметката')}>
+              <MailIcon className={ICON.button} aria-hidden />
+              Пишете ни
+            </a>
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       {billMenuDialogs}
