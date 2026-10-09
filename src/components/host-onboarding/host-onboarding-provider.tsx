@@ -309,7 +309,7 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
         'Onboarding е нулиран. Можете да започнете сметка с напътствия без да изтривате съществуващите.',
       )
     } else {
-      toast.message('First-run onboarding е готов за тест.')
+      toast.message('Напътствията са готови за тест.')
     }
   }, [onboarding, refreshBillSession, resetForDevTesting])
 
