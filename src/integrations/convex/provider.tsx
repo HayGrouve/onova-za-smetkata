@@ -34,8 +34,21 @@ const CLERK_APPEARANCE = {
   },
   elements: {
     card: { boxShadow: '0 22px 40px -18px rgba(20, 26, 36, 0.45)' },
-    formButtonPrimary: { borderRadius: '999px', fontWeight: 700 },
-    socialButtonsBlockButton: { borderRadius: '999px' },
+    // Sized for thumbs: iOS zooms into inputs under 16px, and Clerk's own
+    // fields and links are about 32px tall.
+    formFieldInput: { fontSize: '16px', minHeight: 44 },
+    formButtonPrimary: {
+      borderRadius: '999px',
+      fontWeight: 700,
+      minHeight: 44,
+    },
+    socialButtonsBlockButton: { borderRadius: '999px', minHeight: 44 },
+    footerAction: { alignItems: 'center' },
+    footerActionLink: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      minHeight: 44,
+    },
   },
 }
 const clerkPublishableKey = getClerkPublishableKey()
