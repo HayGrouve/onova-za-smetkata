@@ -12,6 +12,8 @@ import {
 } from './lib/stripeSubscription'
 
 const CHECKOUT_RATE_LIMIT = { max: 10, windowMs: 60 * 60 * 1000 }
+/** Each sync is two Stripe calls; a Host returns from Checkout a few times at most. */
+const CHECKOUT_SYNC_RATE_LIMIT = { max: 10, windowMs: 60 * 60 * 1000 }
 
 /** Host Pro state for the signed-in Host; `enabled` mirrors the billing switch. */
 export const status = query({
@@ -92,6 +94,26 @@ export const billingAccount = internalQuery({
   }),
   handler: async (ctx) => {
     const userId = await requireAuth(ctx)
+    const user = await ctx.db.get('users', userId)
+    return { userId, stripeCustomerId: user?.stripeCustomerId }
+  },
+})
+
+/** `billingAccount` for `billingStripe.syncAfterCheckout`, rate limited. */
+export const beginCheckoutSync = internalMutation({
+  args: {},
+  returns: v.object({
+    userId: v.id('users'),
+    stripeCustomerId: v.optional(v.string()),
+  }),
+  handler: async (ctx) => {
+    const userId = await requireAuth(ctx)
+    await assertRateLimit(
+      ctx,
+      `checkout-sync:${userId}`,
+      CHECKOUT_SYNC_RATE_LIMIT.max,
+      CHECKOUT_SYNC_RATE_LIMIT.windowMs,
+    )
     const user = await ctx.db.get('users', userId)
     return { userId, stripeCustomerId: user?.stripeCustomerId }
   },
