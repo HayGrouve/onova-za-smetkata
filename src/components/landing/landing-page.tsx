@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { motion } from 'motion/react'
+import { MotionConfig, motion } from 'motion/react'
 import {
   ArrowRightIcon,
   CameraIcon,
@@ -77,172 +77,176 @@ function StartButton({ className }: { className?: string }) {
  */
 export function LandingPage() {
   return (
-    <div className="mx-auto w-full max-w-[1180px] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+2rem)] sm:px-6">
-      <section className="grid gap-12 pt-6 pb-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-center lg:gap-20 lg:pt-6 lg:pb-24">
-        <div>
-          <h1 className="font-display text-[34px] leading-[1.08] font-extrabold tracking-[-0.03em] sm:text-5xl lg:text-[56px]">
-            Разделете сметката без{' '}
-            <span className="underline decoration-stamp decoration-[4px] [text-decoration-skip-ink:none] underline-offset-[7px]">
-              калкулатор
-            </span>
-          </h1>
-          <p className="mt-5 max-w-[46ch] text-[14px] leading-relaxed text-on-table-muted sm:text-[15px]">
-            Снимате бележката, пращате линка в групата, всеки отбелязва своето и
-            плаща с Revolut или по IBAN.
-          </p>
-          <StartButton className="mt-8 w-full sm:w-auto sm:min-w-56" />
-        </div>
-        <motion.div
-          initial={{ y: 28 }}
-          animate={{ y: 0 }}
-          transition={{ type: 'spring', stiffness: 80, damping: 18 }}
-          className="mx-auto w-full max-w-[400px] lg:rotate-[1.5deg]"
-        >
-          <LiveReceiptDemo />
-        </motion.div>
-      </section>
+    // Its own config, so the slide-ins respect reduced motion wherever the
+    // page is mounted.
+    <MotionConfig reducedMotion="user">
+      <div className="mx-auto w-full max-w-[1180px] px-4 pb-[calc(env(safe-area-inset-bottom,0px)+2rem)] sm:px-6">
+        <section className="grid gap-12 pt-6 pb-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-center lg:gap-20 lg:pt-6 lg:pb-24">
+          <div>
+            <h1 className="font-display text-[34px] leading-[1.08] font-extrabold tracking-[-0.03em] sm:text-5xl lg:text-[56px]">
+              Разделете сметката без{' '}
+              <span className="underline decoration-stamp decoration-[4px] [text-decoration-skip-ink:none] underline-offset-[7px]">
+                калкулатор
+              </span>
+            </h1>
+            <p className="mt-5 max-w-[46ch] text-[14px] leading-relaxed text-on-table-muted sm:text-[15px]">
+              Снимате бележката, пращате линка в групата, всеки отбелязва своето
+              и плаща с Revolut или по IBAN.
+            </p>
+            <StartButton className="mt-8 w-full sm:w-auto sm:min-w-56" />
+          </div>
+          <motion.div
+            initial={{ y: 28 }}
+            animate={{ y: 0 }}
+            transition={{ type: 'spring', stiffness: 80, damping: 18 }}
+            className="mx-auto w-full max-w-[400px] lg:rotate-[1.5deg]"
+          >
+            <LiveReceiptDemo />
+          </motion.div>
+        </section>
 
-      <section
-        aria-labelledby="landing-how"
-        className="grid gap-8 py-10 sm:py-14 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:gap-16 lg:py-20"
-      >
-        <h2
-          id="landing-how"
-          className="font-display text-[26px] leading-tight font-bold sm:text-[32px] lg:sticky lg:top-24 lg:self-start"
+        <section
+          aria-labelledby="landing-how"
+          className="grid gap-8 py-10 sm:py-14 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:gap-16 lg:py-20"
         >
-          Как работи
-        </h2>
-        <ol className="flex flex-col gap-5 lg:max-w-[640px]">
-          {STEPS.map((step, index) => (
-            <li
-              key={step.title}
-              className={cn(
-                index === 1 && 'lg:ml-14',
-                index === 2 && 'lg:ml-28',
-              )}
-            >
-              <Rise>
-                <div className="paper-lift">
-                  <div className="stub paper flex gap-4 p-5 sm:gap-5 sm:p-6">
-                    <span
-                      aria-hidden
-                      className="font-display text-[44px] leading-none font-extrabold text-stamp"
-                    >
-                      {index + 1}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-display text-[16px] leading-snug font-bold">
-                        {step.title}
-                      </h3>
-                      <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">
-                        {step.detail}
-                      </p>
-                      <div aria-hidden className="mt-4">
-                        {step.visual}
+          <h2
+            id="landing-how"
+            className="font-display text-[26px] leading-tight font-bold sm:text-[32px] lg:sticky lg:top-24 lg:self-start"
+          >
+            Как работи
+          </h2>
+          <ol className="flex flex-col gap-5 lg:max-w-[640px]">
+            {STEPS.map((step, index) => (
+              <li
+                key={step.title}
+                className={cn(
+                  index === 1 && 'lg:ml-14',
+                  index === 2 && 'lg:ml-28',
+                )}
+              >
+                <Rise>
+                  <div className="paper-lift">
+                    <div className="stub paper flex gap-4 p-5 sm:gap-5 sm:p-6">
+                      <span
+                        aria-hidden
+                        className="font-display text-[44px] leading-none font-extrabold text-stamp"
+                      >
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-display text-[16px] leading-snug font-bold">
+                          {step.title}
+                        </h3>
+                        <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">
+                          {step.detail}
+                        </p>
+                        <div aria-hidden className="mt-4">
+                          {step.visual}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </Rise>
-            </li>
-          ))}
-        </ol>
-      </section>
+                </Rise>
+              </li>
+            ))}
+          </ol>
+        </section>
 
-      <section className="grid gap-6 py-10 sm:py-14 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-8 lg:py-20">
-        <Rise>
-          <div className="paper-lift h-full">
-            <div className="stub paper flex h-full flex-col gap-5 p-5 sm:p-7">
-              <div className="flex items-center gap-3">
-                <span className="grid size-11 shrink-0 place-items-center rounded-full bg-stamp-soft text-stamp">
-                  <CameraIcon
-                    className="size-5"
-                    strokeWidth={1.75}
-                    aria-hidden
-                  />
-                </span>
-                <h2 className="font-display text-[22px] leading-tight font-bold">
-                  Бърза сметка
-                </h2>
-              </div>
-              <p className="max-w-[44ch] text-[13px] leading-relaxed">
-                Без линк и без чакане. Снимате бележката, подавате телефона по
-                масата и всеки докосва своето.
-              </p>
-              <div
-                aria-hidden
-                className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-3 border-t-2 border-dashed border-rule pt-4"
-              >
-                <span className="text-[11px] font-semibold text-ink-muted">
-                  Чий ред е?
-                </span>
-                <span className="flex items-center gap-2.5">
-                  {[0, 1, 2, 3].map((hue) => (
-                    <SeatAvatar
-                      key={hue}
-                      seat={{ initials: String(hue + 1), hue }}
-                      size="sm"
-                      ring={hue === 1 ? 'mine' : 'none'}
+        <section className="grid gap-6 py-10 sm:py-14 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-8 lg:py-20">
+          <Rise>
+            <div className="paper-lift h-full">
+              <div className="stub paper flex h-full flex-col gap-5 p-5 sm:p-7">
+                <div className="flex items-center gap-3">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-full bg-stamp-soft text-stamp">
+                    <CameraIcon
+                      className="size-5"
+                      strokeWidth={1.75}
+                      aria-hidden
                     />
-                  ))}
-                </span>
-              </div>
-            </div>
-          </div>
-        </Rise>
-        <Rise>
-          <div className="flex h-full flex-col gap-4 border-2 border-dashed border-table-3 p-5 sm:p-7">
-            <span className="grid size-11 shrink-0 place-items-center rounded-full border-[1.5px] border-current">
-              <SmartphoneIcon
-                className="size-5"
-                strokeWidth={1.75}
-                aria-hidden
-              />
-            </span>
-            <h2 className="font-display text-[22px] leading-tight font-bold">
-              Гост сте?
-            </h2>
-            <p className="text-[13px] leading-relaxed text-on-table-muted">
-              Отворете линка от домакина. Не ви трябва профил.
-            </p>
-          </div>
-        </Rise>
-      </section>
-
-      <section className="py-10 sm:py-14 lg:py-20">
-        <Rise>
-          <div className="paper-lift mx-auto lg:mx-0">
-            <div className="stub paper grid gap-6 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-12">
-              <div>
-                <h2 className="font-display text-[24px] leading-tight font-bold sm:text-[30px]">
-                  Разделете първата си сметка
-                </h2>
-                <p className="mt-2 text-[13px] leading-relaxed text-ink-muted">
-                  Безплатно за домакини и гости.
+                  </span>
+                  <h2 className="font-display text-[22px] leading-tight font-bold">
+                    Бърза сметка
+                  </h2>
+                </div>
+                <p className="max-w-[44ch] text-[13px] leading-relaxed">
+                  Без линк и без чакане. Снимате бележката, подавате телефона по
+                  масата и всеки докосва своето.
                 </p>
-              </div>
-              <div className="border-t-2 border-dashed border-rule pt-6 lg:border-t-0 lg:border-l-2 lg:pt-0 lg:pl-12">
-                <StartButton className="w-full lg:w-auto lg:min-w-56" />
+                <div
+                  aria-hidden
+                  className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-3 border-t-2 border-dashed border-rule pt-4"
+                >
+                  <span className="text-[11px] font-semibold text-ink-muted">
+                    Чий ред е?
+                  </span>
+                  <span className="flex items-center gap-2.5">
+                    {[0, 1, 2, 3].map((hue) => (
+                      <SeatAvatar
+                        key={hue}
+                        seat={{ initials: String(hue + 1), hue }}
+                        size="sm"
+                        ring={hue === 1 ? 'mine' : 'none'}
+                      />
+                    ))}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        </Rise>
-      </section>
+          </Rise>
+          <Rise>
+            <div className="flex h-full flex-col gap-4 border-2 border-dashed border-table-3 p-5 sm:p-7">
+              <span className="grid size-11 shrink-0 place-items-center rounded-full border-[1.5px] border-current">
+                <SmartphoneIcon
+                  className="size-5"
+                  strokeWidth={1.75}
+                  aria-hidden
+                />
+              </span>
+              <h2 className="font-display text-[22px] leading-tight font-bold">
+                Гост сте?
+              </h2>
+              <p className="text-[13px] leading-relaxed text-on-table-muted">
+                Отворете линка от домакина. Не ви трябва профил.
+              </p>
+            </div>
+          </Rise>
+        </section>
 
-      <footer className="flex flex-col gap-1 border-t-2 border-dashed border-table-3 pt-4 text-[11px] text-on-table-muted sm:flex-row sm:items-center sm:justify-between">
-        <p>Чисти сметки, добри приятели.</p>
-        <nav aria-label="Информация" className="flex flex-wrap gap-x-5">
-          <FooterLink to="/privacy">Поверителност</FooterLink>
-          <FooterLink to="/terms">Условия</FooterLink>
-          <a
-            href={mailtoHref(SUPPORT_EMAIL, 'Онова за сметката')}
-            className={footerLinkClass}
-          >
-            Пишете ни
-          </a>
-        </nav>
-      </footer>
-    </div>
+        <section className="py-10 sm:py-14 lg:py-20">
+          <Rise>
+            <div className="paper-lift mx-auto lg:mx-0">
+              <div className="stub paper grid gap-6 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-12">
+                <div>
+                  <h2 className="font-display text-[24px] leading-tight font-bold sm:text-[30px]">
+                    Разделете първата си сметка
+                  </h2>
+                  <p className="mt-2 text-[13px] leading-relaxed text-ink-muted">
+                    Безплатно за домакини и гости.
+                  </p>
+                </div>
+                <div className="border-t-2 border-dashed border-rule pt-6 lg:border-t-0 lg:border-l-2 lg:pt-0 lg:pl-12">
+                  <StartButton className="w-full lg:w-auto lg:min-w-56" />
+                </div>
+              </div>
+            </div>
+          </Rise>
+        </section>
+
+        <footer className="flex flex-col gap-1 border-t-2 border-dashed border-table-3 pt-4 text-[11px] text-on-table-muted sm:flex-row sm:items-center sm:justify-between">
+          <p>Чисти сметки, добри приятели.</p>
+          <nav aria-label="Информация" className="flex flex-wrap gap-x-5">
+            <FooterLink to="/privacy">Поверителност</FooterLink>
+            <FooterLink to="/terms">Условия</FooterLink>
+            <a
+              href={mailtoHref(SUPPORT_EMAIL, 'Онова за сметката')}
+              className={footerLinkClass}
+            >
+              Пишете ни
+            </a>
+          </nav>
+        </footer>
+      </div>
+    </MotionConfig>
   )
 }
 
