@@ -1,5 +1,6 @@
 import { lineTotalCents } from './bill-calculations'
 import type { ItemInput } from './bill-calculations'
+import { formatEurInput } from './validation/eur'
 
 export type TipPercent = 0 | 10 | 15 | 20
 
@@ -17,7 +18,7 @@ export function calculateItemsSubtotalCents(items: ItemInput[]): number {
   return items.reduce((sum, item) => sum + lineTotalCents(item), 0)
 }
 
+/** An amount field's value for `cents`; zero leaves the field empty. */
 export function formatEurInputValue(cents: number): string {
-  if (cents === 0) return ''
-  return (cents / 100).toFixed(2).replace('.', ',')
+  return cents === 0 ? '' : formatEurInput(cents)
 }

@@ -2,15 +2,13 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { SignIn, useAuth } from '@clerk/tanstack-react-start'
 import { useEffect } from 'react'
 import { ReceiptLoading } from '#/components/receipt/receipt-states.tsx'
+import { safeRedirectPath } from '#/lib/safe-redirect-path.ts'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
 
 export const Route = createFileRoute('/login')({
   head: () => buildNoIndexHead('Вход'),
   validateSearch: (search: Record<string, unknown>) => ({
-    redirect:
-      typeof search.redirect === 'string' && search.redirect.startsWith('/')
-        ? search.redirect
-        : undefined,
+    redirect: safeRedirectPath(search.redirect),
   }),
   component: LoginPage,
 })

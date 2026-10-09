@@ -9,10 +9,6 @@ import {
   formatParticipantShareSectionText,
 } from '../../shared/participant-share-view.ts'
 
-export function formatCopyAmount(cents: number): string {
-  return (cents / 100).toFixed(2).replace('.', ',')
-}
-
 function formatShareAmount(cents: number): string {
   return formatEur(cents)
 }

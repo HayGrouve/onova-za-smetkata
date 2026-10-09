@@ -5,19 +5,12 @@ import type { MutationCtx } from '../_generated/server'
 /** A photo older than this was not uploaded for whatever is taking it now. */
 const UPLOAD_MAX_AGE_MS = 10 * 60 * 1000
 
-/**
- * Photo ids come from the phone, and whatever takes one may later delete it
- * (a quick scan once read, a bill when its receipt is replaced or the bill is
- * deleted). So only take a fresh upload nothing holds yet: never a bill's
- * receipt or a quick scan's photo.
- */
-export async function assertFreshUpload(
+/** Whether a bill, receipt scan or quick scan keeps this stored photo. */
+export async function isPhotoHeld(
   ctx: MutationCtx,
   storageId: Id<'_storage'>,
-  nowMs: number,
-): Promise<void> {
-  const photo = await ctx.db.system.get('_storage', storageId)
-  const taken =
+): Promise<boolean> {
+  const holder =
     (await ctx.db
       .query('quickScans')
       .withIndex('by_storageId', (q) => q.eq('storageId', storageId))
@@ -27,7 +20,28 @@ export async function assertFreshUpload(
       .withIndex('by_receiptStorageId', (q) =>
         q.eq('receiptStorageId', storageId),
       )
+      .first()) ??
+    (await ctx.db
+      .query('receiptScans')
+      .withIndex('by_storageId', (q) => q.eq('storageId', storageId))
       .first())
+  return holder !== null
+}
+
+/**
+ * Photo ids come from the phone, and whatever takes one may later delete it
+ * (a quick scan once read, a bill when its receipt is replaced or the bill is
+ * deleted). So only take a fresh upload nothing holds yet: never a bill's
+ * receipt or a quick scan's photo. An upload nothing took within a day can
+ * never be taken (this check refuses it), so the cleanup cron deletes it.
+ */
+export async function assertFreshUpload(
+  ctx: MutationCtx,
+  storageId: Id<'_storage'>,
+  nowMs: number,
+): Promise<void> {
+  const photo = await ctx.db.system.get('_storage', storageId)
+  const taken = await isPhotoHeld(ctx, storageId)
   if (!photo || taken || nowMs - photo._creationTime > UPLOAD_MAX_AGE_MS) {
     throw new ConvexError('Снимката не е качена. Опитайте отново.')
   }

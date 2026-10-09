@@ -96,6 +96,20 @@ export function buildHomeHead(origin?: string) {
   }
 }
 
+/** schema.org description of the app, for the landing page's `<head>`. */
+export function buildHomeStructuredData(origin?: string) {
+  return JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: SITE_NAME,
+    url: absoluteSiteUrl('/', origin),
+    description: SITE_DESCRIPTION,
+    inLanguage: 'bg',
+    applicationCategory: 'FinanceApplication',
+    operatingSystem: 'Any',
+  })
+}
+
 export function buildJoinShareHead(billId: string, origin?: string) {
   const resolvedOrigin = origin ?? resolveSiteOrigin()
   return {

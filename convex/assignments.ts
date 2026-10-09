@@ -3,6 +3,7 @@ import type { MutationCtx } from './_generated/server'
 import { mutation } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
 import { assertAssignmentEditable } from './lib/assertAssignmentEditable'
+import { assertBillDraft } from './lib/assertBillDraft'
 import { requireSeatActor } from './lib/guestSession'
 import { requireBillOwner } from './lib/auth'
 import { touchBill } from './lib/touchBill'
@@ -460,15 +461,8 @@ export const assignEven = mutation({
       throw new ConvexError('Артикулът не е намерен.')
     }
 
-    const bill = await ctx.db.get(item.billId)
-    if (!bill) {
-      throw new ConvexError('Сметката не е намерена.')
-    }
-    if (bill.status === 'final') {
-      throw new ConvexError('Сметката е приключена и не може да се редактира.')
-    }
-
-    await requireBillOwner(ctx, item.billId)
+    const bill = await requireBillOwner(ctx, item.billId)
+    assertBillDraft(bill)
 
     const participants = await ctx.db
       .query('participants')
@@ -490,9 +484,7 @@ export const assignAll = mutation({
   },
   handler: async (ctx, args) => {
     const bill = await requireBillOwner(ctx, args.billId)
-    if (bill.status === 'final') {
-      throw new ConvexError('Сметката е приключена и не може да се редактира.')
-    }
+    assertBillDraft(bill)
     const participants = await ctx.db
       .query('participants')
       .withIndex('by_billId', (q) => q.eq('billId', args.billId))

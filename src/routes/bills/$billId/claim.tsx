@@ -1,13 +1,12 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useQuery } from 'convex/react'
 import { useEffect } from 'react'
 import { withReducedMotion } from '#/components/motion-root.tsx'
 import { GuestClaimView } from '#/components/guest/guest-claim-view.tsx'
 import { ReceiptLoading } from '#/components/receipt/receipt-states.tsx'
 import { QueryErrorBoundary } from '#/components/ui/query-error-boundary.tsx'
+import { useActiveSeats } from '#/hooks/use-active-seats.ts'
 import { useGuestBillSession } from '#/hooks/use-guest-bill-session.ts'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
-import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
 
 export const Route = createFileRoute('/bills/$billId/claim')({
@@ -63,10 +62,7 @@ function GuestClaimContent({
     labels,
     handleSwitchIdentity,
   } = useGuestBillSession(billId, shareTokenFromUrl)
-  const activeSeats = useQuery(
-    api.guestSessions.listActiveForBill,
-    shareToken ? { billId, shareToken } : 'skip',
-  )
+  const activeSeats = useActiveSeats(billId, shareToken)
 
   if (gate.status !== 'ready' || !data || !storedSession || !participantId) {
     return <ReceiptLoading />

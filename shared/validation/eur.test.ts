@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { parseEurInputStrict } from './eur'
+import fc from 'fast-check'
+import { formatEurInput, parseEurInputStrict } from './eur'
 import { EUR_CENTS_MAX } from './constants'
 
 describe('parseEurInputStrict', () => {
@@ -73,5 +74,24 @@ describe('parseEurInputStrict', () => {
       ok: false,
       message: 'Невалидна сума.',
     })
+  })
+})
+
+describe('formatEurInput', () => {
+  it('shows cents with a decimal comma and no symbol', () => {
+    expect(formatEurInput(1250)).toBe('12,50')
+    expect(formatEurInput(5)).toBe('0,05')
+    expect(formatEurInput(0)).toBe('0,00')
+  })
+
+  it('reads back as the same cents', () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: EUR_CENTS_MAX }), (cents) => {
+        expect(parseEurInputStrict(formatEurInput(cents))).toEqual({
+          ok: true,
+          cents,
+        })
+      }),
+    )
   })
 })

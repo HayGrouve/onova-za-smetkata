@@ -127,8 +127,11 @@ export const syncAfterCheckout = action({
   args: { sessionId: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
+    const account = await ctx.runMutation(
+      internal.billing.beginCheckoutSync,
+      {},
+    )
     const stripe = stripeClient(requireStripeSecretKey())
-    const account = await ctx.runQuery(internal.billing.billingAccount, {})
     const session = await stripe.checkout.sessions.retrieve(args.sessionId)
     const customerId =
       typeof session.customer === 'string'
@@ -146,13 +149,35 @@ export const syncAfterCheckout = action({
   },
 })
 
+/**
+ * Waits before each retry of a failed webhook sync. The event is already
+ * recorded as handled, so Stripe's own redelivery is dropped as a repeat.
+ */
+const SYNC_RETRY_DELAYS_MS = [60_000, 5 * 60_000, 30 * 60_000, 2 * 60 * 60_000]
+
 /** Webhook-triggered re-fetch of a customer's subscriptions. */
 export const syncCustomer = internalAction({
-  args: { customerId: v.string() },
+  args: { customerId: v.string(), attempt: v.optional(v.number()) },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const stripe = stripeClient(requireStripeSecretKey())
-    await syncCustomerSubscriptions(ctx, stripe, args.customerId)
+    const attempt = args.attempt ?? 0
+    try {
+      const stripe = stripeClient(requireStripeSecretKey())
+      await syncCustomerSubscriptions(ctx, stripe, args.customerId)
+    } catch (error) {
+      const delayMs = SYNC_RETRY_DELAYS_MS.at(attempt)
+      if (delayMs !== undefined) {
+        await ctx.scheduler.runAfter(
+          delayMs,
+          internal.billingStripe.syncCustomer,
+          {
+            customerId: args.customerId,
+            attempt: attempt + 1,
+          },
+        )
+      }
+      throw error
+    }
     return null
   },
 })

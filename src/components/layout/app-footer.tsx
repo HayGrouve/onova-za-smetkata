@@ -6,12 +6,6 @@ import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 import { usePwaInstall } from '#/components/pwa-install-provider.tsx'
 
-const VALUE_PROPS = [
-  'Снимате бележката и продуктите се въвеждат сами.',
-  'Линк и QR код за хората на масата.',
-  'Плащане с Revolut или по IBAN.',
-] as const
-
 const IOS_INSTALL_STEPS = [
   'Плъзнете екрана надолу и изберете „Добавяне в началния екран“.',
   'Натиснете „Добави“ горе вдясно.',
@@ -44,67 +38,56 @@ export function AppFooter() {
   const { canInstall, showIosSteps, install } = usePwaInstall()
   const [iosExpanded, setIosExpanded] = useState(false)
 
-  if (!isLoaded || !isSignedIn || pathname !== '/') {
+  if (!isLoaded || !isSignedIn || pathname !== '/' || !canInstall) {
     return null
   }
 
   return (
     <footer className="mx-auto w-full max-w-[1180px] px-4 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] sm:px-6">
       <div className="flex flex-col gap-4 border-t-2 border-dashed border-table-3 pt-6">
-        <div>
-          <p className="text-[13px] font-bold">Какво може приложението</p>
-          <ul className="mt-2 space-y-1 text-[11px] leading-relaxed text-on-table-muted">
-            {VALUE_PROPS.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </div>
-
-        {canInstall ? (
-          <div className="flex flex-col gap-2">
-            {showIosSteps ? (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-fit"
-                  onClick={() => setIosExpanded((open) => !open)}
-                >
-                  <DownloadIcon className={ICON.button} aria-hidden />
-                  {iosExpanded
-                    ? 'Скрий инструкциите'
-                    : 'Добави на началния екран'}
-                </Button>
-                {iosExpanded ? (
-                  <ol className="list-decimal space-y-1.5 pl-4 text-[11px] leading-relaxed text-on-table-muted">
-                    <li>
-                      <span className="inline-flex flex-wrap items-center gap-1">
-                        Докоснете бутона Сподели
-                        <SafariShareIcon className="inline size-4 shrink-0 text-foreground" />
-                        в лентата на Safari долу.
-                      </span>
-                    </li>
-                    {IOS_INSTALL_STEPS.map((step) => (
-                      <li key={step}>{step}</li>
-                    ))}
-                  </ol>
-                ) : null}
-              </>
-            ) : (
+        <div className="flex flex-col gap-2">
+          {showIosSteps ? (
+            <>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 className="w-fit"
-                onClick={() => void install()}
+                onClick={() => setIosExpanded((open) => !open)}
               >
                 <DownloadIcon className={ICON.button} aria-hidden />
-                Инсталирай приложението
+                {iosExpanded
+                  ? 'Скрий инструкциите'
+                  : 'Добави на началния екран'}
               </Button>
-            )}
-          </div>
-        ) : null}
+              {iosExpanded ? (
+                <ol className="list-decimal space-y-1.5 pl-4 text-[11px] leading-relaxed text-on-table-muted">
+                  <li>
+                    <span className="inline-flex flex-wrap items-center gap-1">
+                      Докоснете бутона Сподели
+                      <SafariShareIcon className="inline size-4 shrink-0 text-foreground" />
+                      в лентата на Safari долу.
+                    </span>
+                  </li>
+                  {IOS_INSTALL_STEPS.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+              ) : null}
+            </>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-fit"
+              onClick={() => void install()}
+            >
+              <DownloadIcon className={ICON.button} aria-hidden />
+              Инсталирай приложението
+            </Button>
+          )}
+        </div>
       </div>
     </footer>
   )

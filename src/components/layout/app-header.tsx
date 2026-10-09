@@ -187,6 +187,8 @@ export function AppHeader() {
 
   const isGuestRoute = isGuestRouteContext(routeContext)
   const isLogin = pathname === '/login'
+  // The signed-out landing page brings its own h1.
+  const TitleTag = pathname === '/' && !isSignedIn ? 'p' : 'h1'
   const showHostActions = isSignedIn === true && !isGuestRoute && !isLogin
 
   const billMenuEligibility = useMemo(() => {
@@ -270,9 +272,9 @@ export function AppHeader() {
                 className="size-8 shrink-0 rounded-full"
               />
             ) : null}
-            <h1 className="min-w-0 flex-1 truncate font-display text-[13px] font-bold">
+            <TitleTag className="min-w-0 flex-1 truncate font-display text-[13px] font-bold">
               {title}
-            </h1>
+            </TitleTag>
           </div>
         )}
         {/* Bill pages portal their phase timeline here instead of a title. */}

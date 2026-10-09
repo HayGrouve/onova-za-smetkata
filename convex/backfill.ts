@@ -1,6 +1,9 @@
+import { v } from 'convex/values'
+import { internal } from './_generated/api'
 import { internalMutation } from './_generated/server'
 import type { Id } from './_generated/dataModel'
 import { computeBillListSummary } from './lib/billListSummary'
+import { backfillGuestPresence } from './lib/guestSession'
 import { createShareToken } from './lib/shareToken'
 
 /**
@@ -105,5 +108,30 @@ export const planFromClerkPlanSlug = internalMutation({
       patched++
     }
     return { patched }
+  },
+})
+
+const GUEST_PRESENCE_BATCH_SIZE = 100
+
+/**
+ * After deploying `guestSessionPresence`: gives sessions opened before it a
+ * presence row (from the time on the session) and marks them, so the minute
+ * sweep stops reading them as legacy rows. Idempotent; reschedules itself
+ * until every session is marked.
+ * Run once per environment: npx convex run backfill:guestSessionPresence
+ */
+export const guestSessionPresence = internalMutation({
+  args: {},
+  returns: v.object({ marked: v.number() }),
+  handler: async (ctx) => {
+    const marked = await backfillGuestPresence(ctx, GUEST_PRESENCE_BATCH_SIZE)
+    if (marked === GUEST_PRESENCE_BATCH_SIZE) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.backfill.guestSessionPresence,
+        {},
+      )
+    }
+    return { marked }
   },
 })
