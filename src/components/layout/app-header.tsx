@@ -261,7 +261,9 @@ export function AppHeader() {
           <div className="flex min-w-0 flex-1 items-center gap-2.5 pl-1">
             {!backTo ? (
               <img
-                src="/logo.png"
+                src="/logo-96.webp"
+                width={32}
+                height={32}
                 alt=""
                 aria-hidden
                 className="size-8 shrink-0 rounded-full"
