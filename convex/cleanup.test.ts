@@ -231,4 +231,30 @@ describe('the orphan upload sweep', () => {
     )
     expect(left).toEqual([kept])
   })
+
+  it('leaves uploads older than three days to the full backfill', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const old = await store(t)
+
+    vi.setSystemTime(Date.now() + 4 * DAY_MS)
+    const recentOrphan = await store(t)
+    vi.setSystemTime(Date.now() + 2 * DAY_MS)
+    const daily = await t.mutation(internal.cleanup.sweepOrphanUploads, {})
+    expect(daily).toEqual({ deletedUploads: 1 })
+    expect(
+      await t.run((ctx) => ctx.db.system.get('_storage', recentOrphan)),
+    ).toBeNull()
+    expect(
+      await t.run((ctx) => ctx.db.system.get('_storage', old)),
+    ).not.toBeNull()
+
+    const backfill = await t.mutation(internal.cleanup.sweepOrphanUploads, {
+      fullBackfill: true,
+    })
+    expect(backfill).toEqual({ deletedUploads: 1 })
+    expect(
+      await t.run((ctx) => ctx.db.system.query('_storage').collect()),
+    ).toEqual([])
+  })
 })

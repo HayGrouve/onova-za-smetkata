@@ -184,38 +184,53 @@ export const run = internalMutation({
 })
 
 /**
- * Delete uploaded photos that no bill, receipt scan or quick scan holds. Walks
- * storage oldest first and stops at the first file younger than a day, handing
- * its place to a follow-up run in batches so one run stays far below the
- * per-transaction read limit. Files that are held are checked again each day.
+ * Each daily run checks uploads made one to three days ago; the overlap
+ * covers a missed run. A photo needs checking only once: whatever holds it
+ * deletes it on letting go (`deleteStoredPhoto`), so it cannot become an
+ * orphan later.
+ */
+const ORPHAN_UPLOAD_WINDOW_MS = 3 * 24 * 60 * 60 * 1000
+
+/**
+ * Delete uploaded photos that no bill, receipt scan or quick scan holds, in
+ * batches handed to follow-up runs so one run stays far below the
+ * per-transaction read limit. `fullBackfill` walks all storage older than a
+ * day instead of the window, for a one-off manual run:
+ * `npx convex run cleanup:sweepOrphanUploads '{"fullBackfill":true}'`.
  */
 export const sweepOrphanUploads = internalMutation({
-  args: { cursor: v.optional(v.string()) },
+  args: {
+    fullBackfill: v.optional(v.boolean()),
+    /** Follow-up runs keep the first run's bounds: a cursor fits one query. */
+    next: v.optional(
+      v.object({ cursor: v.string(), from: v.number(), to: v.number() }),
+    ),
+  },
   handler: async (ctx, args) => {
-    const cutoff = Date.now() - ORPHAN_UPLOAD_MIN_AGE_MS
+    const now = Date.now()
+    const to = args.next?.to ?? now - ORPHAN_UPLOAD_MIN_AGE_MS
+    const from =
+      args.next?.from ?? (args.fullBackfill ? 0 : now - ORPHAN_UPLOAD_WINDOW_MS)
     const page = await ctx.db.system
       .query('_storage')
-      .order('asc')
+      .withIndex('by_creation_time', (q) =>
+        q.gte('_creationTime', from).lt('_creationTime', to),
+      )
       .paginate({
         numItems: ORPHAN_UPLOAD_BATCH_SIZE,
-        cursor: args.cursor ?? null,
+        cursor: args.next?.cursor ?? null,
       })
 
     let deleted = 0
-    let reachedRecentUploads = false
     for (const file of page.page) {
-      if (file._creationTime > cutoff) {
-        reachedRecentUploads = true
-        break
-      }
       if (await isPhotoHeld(ctx, file._id)) continue
       await ctx.storage.delete(file._id)
       deleted++
     }
 
-    if (!page.isDone && !reachedRecentUploads) {
+    if (!page.isDone) {
       await ctx.scheduler.runAfter(0, internal.cleanup.sweepOrphanUploads, {
-        cursor: page.continueCursor,
+        next: { cursor: page.continueCursor, from, to },
       })
     }
     return { deletedUploads: deleted }
