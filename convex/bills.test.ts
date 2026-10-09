@@ -418,6 +418,19 @@ describe('who can see and change a bill', () => {
     expect(view.myPayments).toEqual([])
   })
 
+  it('a malformed bill id in a share link reads as an invalid link', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const args = { billId: 'notarealid', shareToken: bill.shareToken }
+
+    await expect(t.query(api.bills.getForGuest, args)).rejects.toThrow(
+      GUEST_FLOW_MESSAGES.invalidShareLink,
+    )
+    await expect(
+      t.query(api.guestSessions.listActiveForBill, args),
+    ).rejects.toThrow(GUEST_FLOW_MESSAGES.invalidShareLink)
+  })
+
   it('a Guest phone sees every seat’s money but only its own sent transfer', async () => {
     const t = setupConvex()
     const bill = await seedBill(t, { guests: ['Ани', 'Боби', 'Вики'] })
