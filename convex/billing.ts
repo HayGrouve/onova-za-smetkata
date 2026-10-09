@@ -1,6 +1,8 @@
 import { ConvexError, v } from 'convex/values'
 import { internal } from './_generated/api'
+import type { Id } from './_generated/dataModel'
 import { internalMutation, internalQuery, query } from './_generated/server'
+import type { QueryCtx } from './_generated/server'
 import { getOptionalAuthUserId, requireAuth } from './lib/auth'
 import { isBillingEnabled } from './lib/billingEnv'
 import { getEntitledTier } from './lib/hostTier'
@@ -85,27 +87,31 @@ export const beginCheckout = internalMutation({
   },
 })
 
-/** The signed-in Host's Stripe customer and Convex id, for portal and post-checkout sync. */
+const billingAccountValidator = v.object({
+  userId: v.id('users'),
+  stripeCustomerId: v.optional(v.string()),
+})
+
+/** The Host's Convex id and Stripe customer, if they have one yet. */
+async function readBillingAccount(
+  ctx: Pick<QueryCtx, 'db'>,
+  userId: Id<'users'>,
+) {
+  const user = await ctx.db.get('users', userId)
+  return { userId, stripeCustomerId: user?.stripeCustomerId }
+}
+
+/** The signed-in Host's Stripe customer and Convex id, for the portal. */
 export const billingAccount = internalQuery({
   args: {},
-  returns: v.object({
-    userId: v.id('users'),
-    stripeCustomerId: v.optional(v.string()),
-  }),
-  handler: async (ctx) => {
-    const userId = await requireAuth(ctx)
-    const user = await ctx.db.get('users', userId)
-    return { userId, stripeCustomerId: user?.stripeCustomerId }
-  },
+  returns: billingAccountValidator,
+  handler: async (ctx) => readBillingAccount(ctx, await requireAuth(ctx)),
 })
 
 /** `billingAccount` for `billingStripe.syncAfterCheckout`, rate limited. */
 export const beginCheckoutSync = internalMutation({
   args: {},
-  returns: v.object({
-    userId: v.id('users'),
-    stripeCustomerId: v.optional(v.string()),
-  }),
+  returns: billingAccountValidator,
   handler: async (ctx) => {
     const userId = await requireAuth(ctx)
     await assertRateLimit(
@@ -114,8 +120,7 @@ export const beginCheckoutSync = internalMutation({
       CHECKOUT_SYNC_RATE_LIMIT.max,
       CHECKOUT_SYNC_RATE_LIMIT.windowMs,
     )
-    const user = await ctx.db.get('users', userId)
-    return { userId, stripeCustomerId: user?.stripeCustomerId }
+    return readBillingAccount(ctx, userId)
   },
 })
 
