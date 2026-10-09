@@ -44,7 +44,28 @@ export function scrubSentryEvent<T extends Event>(event: T): T {
   if (event.breadcrumbs) {
     event.breadcrumbs = event.breadcrumbs.map(scrubBreadcrumb)
   }
+
+  // Transactions: span names and URL attributes (`url`, `http.url`, `url.full`…).
+  const trace = event.contexts?.trace
+  if (trace?.data) scrubStringValues(trace.data)
+  for (const span of event.spans ?? []) {
+    if (span.description) span.description = scrubShareToken(span.description)
+    scrubStringValues(span.data)
+  }
   return event
+}
+
+/** Scrub every string (or list of strings) held directly in `record`. */
+function scrubStringValues(record: Record<string, unknown>): void {
+  for (const [key, value] of Object.entries(record)) {
+    if (typeof value === 'string') {
+      record[key] = scrubShareToken(value)
+    } else if (Array.isArray(value)) {
+      record[key] = value.map((item: unknown) =>
+        typeof item === 'string' ? scrubShareToken(item) : item,
+      )
+    }
+  }
 }
 
 /** Sentry `beforeBreadcrumb`: navigation (`from`, `to`) and request (`url`) data. */
@@ -52,11 +73,6 @@ export function scrubBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb {
   if (breadcrumb.message) {
     breadcrumb.message = scrubShareToken(breadcrumb.message)
   }
-  const data = breadcrumb.data
-  if (data) {
-    for (const [key, value] of Object.entries(data)) {
-      if (typeof value === 'string') data[key] = scrubShareToken(value)
-    }
-  }
+  if (breadcrumb.data) scrubStringValues(breadcrumb.data)
   return breadcrumb
 }

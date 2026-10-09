@@ -92,6 +92,46 @@ describe('scrubSentryEvent', () => {
     ).toEqual({ request: { query_string: [['m', '1']] } })
   })
 
+  it('scrubs span names and URL attributes of a transaction', () => {
+    const span = {
+      span_id: '1',
+      trace_id: '2',
+      start_timestamp: 0,
+      description: 'GET /bills/a/join?t=x',
+      data: {
+        url: '/bills/a/join?t=x',
+        'http.url': 'https://onova-za-smetkata.com/bills/a/join?t=x',
+        'url.full': 'https://onova-za-smetkata.com/bills/a/claim?m=1&t=x',
+        'http.query': '?t=x',
+        'http.response.status_code': 200,
+        tags: ['/bills/a?t=x'],
+      },
+    }
+    const event = scrubSentryEvent({
+      type: 'transaction',
+      contexts: {
+        trace: {
+          trace_id: '2',
+          span_id: '3',
+          data: { 'url.full': '/bills/a/pay?t=x' },
+        },
+      },
+      spans: [span],
+    })
+    expect(event.contexts.trace.data).toEqual({ 'url.full': '/bills/a/pay' })
+    expect(event.spans[0]).toMatchObject({
+      description: 'GET /bills/a/join',
+      data: {
+        url: '/bills/a/join',
+        'http.url': 'https://onova-za-smetkata.com/bills/a/join',
+        'url.full': 'https://onova-za-smetkata.com/bills/a/claim?m=1',
+        'http.query': '',
+        'http.response.status_code': 200,
+        tags: ['/bills/a'],
+      },
+    })
+  })
+
   it('passes an event without a URL through', () => {
     expect(scrubSentryEvent({ message: 'boom' })).toEqual({ message: 'boom' })
   })
