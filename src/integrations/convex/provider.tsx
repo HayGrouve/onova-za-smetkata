@@ -1,12 +1,11 @@
 import { ClerkProvider, useAuth } from '@clerk/tanstack-react-start'
-import { useMutation } from 'convex/react'
-import { ConvexQueryClient } from '@convex-dev/react-query'
+import { ConvexReactClient, useMutation } from 'convex/react'
 import { ConvexProviderWithClerk } from 'convex/react-clerk'
 import { useEffect, useState } from 'react'
 import { api } from '../../../convex/_generated/api'
 import { assertConvexUrlForBuild } from '#/lib/env.ts'
 import { getClerkPublishableKey } from '#/lib/clerk-env.ts'
-import { clerkBgLocalization } from '#/lib/clerk-bg-localization.ts'
+import type { clerkBgLocalization } from '#/lib/clerk-bg-localization.ts'
 import { SubscriptionProvider } from '#/components/subscription/subscription-provider.tsx'
 
 const convexUrl = assertConvexUrlForBuild()
@@ -40,7 +39,35 @@ const CLERK_APPEARANCE = {
 }
 const clerkPublishableKey = getClerkPublishableKey()
 
-const convexQueryClient = convexUrl ? new ConvexQueryClient(convexUrl) : null
+const convexClient = convexUrl ? new ConvexReactClient(convexUrl) : null
+
+type ClerkLocalization = typeof clerkBgLocalization
+
+/**
+ * The Bulgarian strings are ~78 KB, so they load beside the entry bundle
+ * instead of inside it. Clerk's own scripts take longer to arrive than this
+ * chunk, so its components are already Bulgarian when they first draw.
+ */
+const clerkLocalizationPromise: Promise<ClerkLocalization> | null =
+  typeof window === 'undefined'
+    ? null
+    : import('#/lib/clerk-bg-localization.ts').then(
+        (module) => module.clerkBgLocalization,
+      )
+
+function useClerkLocalization(): ClerkLocalization | undefined {
+  const [localization, setLocalization] = useState<ClerkLocalization>()
+  useEffect(() => {
+    let cancelled = false
+    void clerkLocalizationPromise?.then((loaded) => {
+      if (!cancelled) setLocalization(loaded)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+  return localization
+}
 
 function MissingConvexConfig() {
   return (
@@ -124,7 +151,9 @@ export default function AppConvexProvider({
 }: {
   children: React.ReactNode
 }) {
-  if (!convexQueryClient) {
+  const localization = useClerkLocalization()
+
+  if (!convexClient) {
     return <MissingConvexConfig />
   }
 
@@ -132,15 +161,13 @@ export default function AppConvexProvider({
     return <MissingClerkConfig />
   }
 
-  const client = convexQueryClient.convexClient
-
   return (
     <ClerkProvider
       publishableKey={clerkPublishableKey}
-      localization={clerkBgLocalization}
+      localization={localization}
       appearance={CLERK_APPEARANCE}
     >
-      <ConvexProviderWithClerk client={client} useAuth={useAuth}>
+      <ConvexProviderWithClerk client={convexClient} useAuth={useAuth}>
         <EnsureConvexUser>
           <SubscriptionProvider>{children}</SubscriptionProvider>
         </EnsureConvexUser>
