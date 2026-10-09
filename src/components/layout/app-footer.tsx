@@ -1,5 +1,5 @@
 import { DownloadIcon } from 'lucide-react'
-import { useHostAuth } from '#/hooks/use-host-auth.ts'
+import { useHomeView } from '#/hooks/use-home-view.ts'
 import { useRouterState } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Button } from '#/components/ui/button.tsx'
@@ -35,16 +35,14 @@ function SafariShareIcon({ className }: { className?: string }) {
 
 export function AppFooter() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const { isSignedIn, isLoaded } = useHostAuth()
+  const homeView = useHomeView()
   const { canInstall, showIosSteps, install } = usePwaInstall()
   const [iosExpanded, setIosExpanded] = useState(false)
 
+  if (pathname !== '/') return null
   // Signed out, `/` is the landing page: its footer, outside <main>.
-  if (pathname === '/' && isLoaded && !isSignedIn) return <LandingFooter />
-
-  if (!isLoaded || !isSignedIn || pathname !== '/' || !canInstall) {
-    return null
-  }
+  if (homeView === 'landing') return <LandingFooter />
+  if (homeView !== 'home' || !canInstall) return null
 
   return (
     <footer className="mx-auto w-full max-w-[1180px] px-4 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] sm:px-6">
