@@ -19,8 +19,10 @@ const SheetAttemptContext = createContext(0)
  * A sheet whose code loads on first use. Unlike `React.lazy`, a failed load
  * (offline, or a tab left open across a deploy whose old chunk is gone) is
  * not remembered for good: the next open of its MountOnFirstOpen, or the next
- * `preload()`, fetches again. Within one open the failure sticks, so React's
- * own re-renders surface it instead of looping.
+ * `preload()`, calls `load` again. Within one open the failure sticks, so
+ * React's own re-renders surface it instead of looping. Chromium keeps a
+ * failed module import for the life of the page, so there the real way back
+ * is the reload the toast offers.
  */
 export function lazySheet<TProps extends object>(
   load: () => Promise<ComponentType<TProps>>,
@@ -62,7 +64,9 @@ class SheetLoadBoundary extends Component<
   }
 
   componentDidCatch() {
-    toast.error(SHEET_LOAD_FAILED)
+    toast.error(SHEET_LOAD_FAILED, {
+      action: { label: 'Обнови', onClick: () => window.location.reload() },
+    })
     this.props.onError()
   }
 
