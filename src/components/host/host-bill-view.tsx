@@ -854,14 +854,19 @@ function PhaseActions({
           {undo ? (
             <UndoRow entry={undo} onDone={clearUndo} />
           ) : freeUnits > 0 ? (
-            <div className="flex items-center gap-2">
-              <div className="min-w-0 flex-1 leading-tight">
+            // One row in the phone dock; in the narrow side column from md
+            // up, the button drops under the count instead of squeezing it.
+            <div className="flex items-center gap-2 md:flex-wrap">
+              <div className="min-w-0 flex-1 leading-tight md:basis-36">
                 <span className="block text-[11px] text-on-table-muted">
                   Неразпределени
                 </span>
                 <span className="font-display text-[15px] font-bold">
-                  {freeUnits} бр. <span className="text-on-table-muted">/</span>{' '}
-                  {formatEur(freeCents)}
+                  <span className="whitespace-nowrap">{freeUnits} бр.</span>{' '}
+                  <span className="text-on-table-muted">/</span>{' '}
+                  <span className="whitespace-nowrap">
+                    {formatEur(freeCents)}
+                  </span>
                 </span>
               </div>
               <Button
