@@ -242,15 +242,23 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Inline text links. Links rendered as buttons or menu items keep their own colours. */
-a:not([data-slot='button'], [data-slot='dropdown-menu-item']) {
+/* Inline text links. Links rendered as buttons, menu items or the skip link keep their own colours. */
+a:not(
+  [data-slot='button'],
+  [data-slot='dropdown-menu-item'],
+  [data-slot='skip-link']
+) {
   color: var(--primary);
   text-decoration-color: color-mix(in oklab, var(--primary) 40%, transparent);
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
 }
 
-a:not([data-slot='button'], [data-slot='dropdown-menu-item']):hover {
+a:not(
+    [data-slot='button'],
+    [data-slot='dropdown-menu-item'],
+    [data-slot='skip-link']
+  ):hover {
   color: color-mix(in oklab, var(--primary) 85%, var(--foreground));
 }
 
