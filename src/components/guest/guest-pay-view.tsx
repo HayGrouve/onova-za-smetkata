@@ -320,7 +320,7 @@ export function GuestPayView({
             ) : pending ? (
               <div className="space-y-2 text-[12px]">
                 <p className="leading-relaxed">
-                  {payment.pendingStatusLabel} Тук ще се появи печат „Платено“,
+                  {payment.pendingStatusLabel}. Тук ще се появи печат „Платено“,
                   щом {hostName} потвърди.
                 </p>
                 <Button
