@@ -1,6 +1,5 @@
 import {
   createContext,
-  lazy,
   useCallback,
   useContext,
   useEffect,
@@ -18,6 +17,7 @@ import type { BillStep } from '#/lib/bill-steps.ts'
 import type { EditorGuidancePanel } from '#/components/host-onboarding/sticky-guidance-bar.tsx'
 import {
   MountOnFirstOpen,
+  lazySheet,
   usePreloadWhenIdle,
 } from '#/components/lazy-sheet.tsx'
 import { Button } from '#/components/ui/button.tsx'
@@ -56,20 +56,20 @@ import {
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 
-const loadWelcomeSheet = () =>
-  import('#/components/host-onboarding/welcome-sheet.tsx')
-const loadPaymentCheckpointSheet = () =>
-  import('#/components/host-onboarding/payment-checkpoint-sheet.tsx')
-const WelcomeSheet = lazy(() =>
-  loadWelcomeSheet().then((m) => ({ default: m.WelcomeSheet })),
+const welcomeSheet = lazySheet(() =>
+  import('#/components/host-onboarding/welcome-sheet.tsx').then(
+    (m) => m.WelcomeSheet,
+  ),
 )
-const PaymentCheckpointSheet = lazy(() =>
-  loadPaymentCheckpointSheet().then((m) => ({
-    default: m.PaymentCheckpointSheet,
-  })),
+const paymentCheckpointSheet = lazySheet(() =>
+  import('#/components/host-onboarding/payment-checkpoint-sheet.tsx').then(
+    (m) => m.PaymentCheckpointSheet,
+  ),
 )
+const WelcomeSheet = welcomeSheet.Sheet
+const PaymentCheckpointSheet = paymentCheckpointSheet.Sheet
 
-const SHEET_LOADERS = [loadWelcomeSheet, loadPaymentCheckpointSheet]
+const SHEET_LOADERS = [welcomeSheet.preload, paymentCheckpointSheet.preload]
 
 export type GuidanceSlot = (anchor: GuidanceAnchor) => ReactNode
 
@@ -513,7 +513,13 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
           onStartGuidedWithExistingBills={handleStartGuidedWithExistingBills}
         />
       </MountOnFirstOpen>
-      <MountOnFirstOpen open={checkpointOpen}>
+      <MountOnFirstOpen
+        open={checkpointOpen}
+        onClose={() => {
+          setCheckpointOpen(false)
+          setPendingShare(null)
+        }}
+      >
         <PaymentCheckpointSheet
           open={checkpointOpen}
           onOpenChange={(open) => {

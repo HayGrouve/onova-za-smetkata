@@ -1,24 +1,28 @@
-import { createContext, lazy, useContext, useState } from 'react'
+import { createContext, useContext, useState } from 'react'
 import { useHostAuth } from '#/hooks/use-host-auth.ts'
 import {
   MountOnFirstOpen,
+  lazySheet,
   usePreloadWhenIdle,
 } from '#/components/lazy-sheet.tsx'
 
-const loadFriendGroupsSheet = () =>
-  import('#/components/bills/friend-groups-sheet.tsx')
-const loadFriendGroupEditorSheet = () =>
-  import('#/components/bills/friend-group-editor-sheet.tsx')
-const FriendGroupsSheet = lazy(() =>
-  loadFriendGroupsSheet().then((m) => ({ default: m.FriendGroupsSheet })),
+const friendGroupsSheet = lazySheet(() =>
+  import('#/components/bills/friend-groups-sheet.tsx').then(
+    (m) => m.FriendGroupsSheet,
+  ),
 )
-const FriendGroupEditorSheet = lazy(() =>
-  loadFriendGroupEditorSheet().then((m) => ({
-    default: m.FriendGroupEditorSheet,
-  })),
+const friendGroupEditorSheet = lazySheet(() =>
+  import('#/components/bills/friend-group-editor-sheet.tsx').then(
+    (m) => m.FriendGroupEditorSheet,
+  ),
 )
+const FriendGroupsSheet = friendGroupsSheet.Sheet
+const FriendGroupEditorSheet = friendGroupEditorSheet.Sheet
 
-const SHEET_LOADERS = [loadFriendGroupsSheet, loadFriendGroupEditorSheet]
+const SHEET_LOADERS = [
+  friendGroupsSheet.preload,
+  friendGroupEditorSheet.preload,
+]
 
 interface FriendGroupsContextValue {
   openFriendGroups: () => void
@@ -54,10 +58,13 @@ export function FriendGroupsProvider({
       }}
     >
       {children}
-      <MountOnFirstOpen open={settingsOpen}>
+      <MountOnFirstOpen
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      >
         <FriendGroupsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
       </MountOnFirstOpen>
-      <MountOnFirstOpen open={editorOpen}>
+      <MountOnFirstOpen open={editorOpen} onClose={() => setEditorOpen(false)}>
         <FriendGroupEditorSheet
           open={editorOpen}
           onOpenChange={setEditorOpen}

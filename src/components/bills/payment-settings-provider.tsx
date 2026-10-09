@@ -1,8 +1,9 @@
 import { useHostAuth } from '#/hooks/use-host-auth.ts'
 import { useQuery } from 'convex/react'
-import { createContext, lazy, useContext, useState } from 'react'
+import { createContext, useContext, useState } from 'react'
 import {
   MountOnFirstOpen,
+  lazySheet,
   usePreloadWhenIdle,
 } from '#/components/lazy-sheet.tsx'
 import { getPaymentSettingsStatus } from '#/lib/payment-settings.ts'
@@ -12,13 +13,14 @@ import type {
 } from '#/lib/payment-settings.ts'
 import { api } from '../../../convex/_generated/api'
 
-const loadPaymentSettingsSheet = () =>
-  import('#/components/bills/payment-settings-sheet.tsx')
-const PaymentSettingsSheet = lazy(() =>
-  loadPaymentSettingsSheet().then((m) => ({ default: m.PaymentSettingsSheet })),
+const paymentSettingsSheet = lazySheet(() =>
+  import('#/components/bills/payment-settings-sheet.tsx').then(
+    (m) => m.PaymentSettingsSheet,
+  ),
 )
+const PaymentSettingsSheet = paymentSettingsSheet.Sheet
 
-const SHEET_LOADERS = [loadPaymentSettingsSheet]
+const SHEET_LOADERS = [paymentSettingsSheet.preload]
 
 interface PaymentSettingsContextValue {
   openPaymentSettings: () => void
@@ -51,7 +53,7 @@ export function PaymentSettingsProvider({
       }}
     >
       {children}
-      <MountOnFirstOpen open={open}>
+      <MountOnFirstOpen open={open} onClose={() => setOpen(false)}>
         <PaymentSettingsSheet open={open} onOpenChange={setOpen} />
       </MountOnFirstOpen>
     </PaymentSettingsContext.Provider>
