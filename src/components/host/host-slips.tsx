@@ -7,10 +7,12 @@ import { Perforation } from '#/components/receipt/paper.tsx'
 import { SeatAvatar } from '#/components/receipt/seats.tsx'
 import type { Seat } from '#/components/receipt/seats.tsx'
 import { Stamp } from '#/components/receipt/stamp.tsx'
+import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { shareOrCopyText } from '#/lib/bill-share.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { getConvexErrorMessage } from '#/lib/convex-error.ts'
+import { getPaymentUndoCopy } from '#/lib/destructive-action-copy.ts'
 import { cn } from '#/lib/utils.ts'
 import type { ParticipantTotals } from '../../../shared/bill-calculations.ts'
 import type { SeatStatus } from '../../../shared/live-receipt.ts'
@@ -66,6 +68,7 @@ export function HostSlip({
   const confirmRequest = useMutation(api.combinedPayments.confirm)
   const addPayment = useMutation(api.payments.add)
   const undoLast = useMutation(api.payments.undoLast)
+  const { confirm } = useConfirmAction()
   const [busy, setBusy] = useState(false)
   const { seat, status, totals } = slip
   const remaining = Math.max(0, totals.balanceCents)
@@ -81,6 +84,11 @@ export function HostSlip({
     } finally {
       setBusy(false)
     }
+  }
+
+  async function undoWithConfirm() {
+    if (!(await confirm(getPaymentUndoCopy()))) return
+    await run(() => undoLast({ billId, participantId }), 'Плащането е отменено')
   }
 
   async function remind() {
@@ -105,7 +113,6 @@ export function HostSlip({
     paysForSelf ? (
     <Button
       type="button"
-      size="sm"
       disabled={busy}
       onClick={() =>
         void run(
@@ -122,7 +129,6 @@ export function HostSlip({
       <Button
         type="button"
         variant="outline"
-        size="sm"
         disabled={busy}
         aria-label={`Отбележи ${seat.label} като платил в брой`}
         onClick={() =>
@@ -140,12 +146,7 @@ export function HostSlip({
       >
         <BanknoteIcon className="size-4" strokeWidth={1.75} aria-hidden />В брой
       </Button>
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        onClick={() => void remind()}
-      >
+      <Button type="button" variant="secondary" onClick={() => void remind()}>
         <BellIcon className="size-4" strokeWidth={1.75} aria-hidden />
         Напомни
       </Button>
@@ -155,12 +156,7 @@ export function HostSlip({
       type="button"
       className="min-h-11 px-1 text-[11px] text-ink-muted underline decoration-dotted decoration-2 underline-offset-4"
       disabled={busy}
-      onClick={() =>
-        void run(
-          () => undoLast({ billId, participantId }),
-          'Плащането е отменено',
-        )
-      }
+      onClick={() => void undoWithConfirm()}
     >
       Отмени плащането
     </button>
