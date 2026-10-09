@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 import { usePwaInstall } from '#/components/pwa-install-provider.tsx'
+import { LandingFooter } from '#/components/landing/landing-footer.tsx'
 
 const IOS_INSTALL_STEPS = [
   'Плъзнете екрана надолу и изберете „Добавяне в началния екран“.',
@@ -37,6 +38,9 @@ export function AppFooter() {
   const { isSignedIn, isLoaded } = useHostAuth()
   const { canInstall, showIosSteps, install } = usePwaInstall()
   const [iosExpanded, setIosExpanded] = useState(false)
+
+  // Signed out, `/` is the landing page: its footer, outside <main>.
+  if (pathname === '/' && isLoaded && !isSignedIn) return <LandingFooter />
 
   if (!isLoaded || !isSignedIn || pathname !== '/' || !canInstall) {
     return null
