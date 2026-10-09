@@ -11,20 +11,10 @@ import {
   QUANTITY_MAX,
   RESTAURANT_NAME_MAX,
 } from './constants'
+import { hasVisibleText } from './visible-text'
 
 // eslint-disable-next-line no-control-regex -- reject control characters in user-facing names
 const CONTROL_CHAR_PATTERN = /[\x00-\x1f\x7f-\x9f]/
-
-/**
- * Characters that render as nothing: controls, format marks (zero-width,
- * direction, soft hyphen), separators and the blank fillers some keyboards
- * offer. A name made only of these looks empty on every phone.
- */
-const INVISIBLE_PATTERN = /[\p{Cc}\p{Cf}\p{Z}\u115f\u1160\u3164\uffa0\u2800]/gu
-
-export function hasVisibleText(value: string): boolean {
-  return value.replace(INVISIBLE_PATTERN, '').length > 0
-}
 
 export const personNameSchema = z
   .string()
