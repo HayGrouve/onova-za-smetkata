@@ -5,13 +5,14 @@ import { useEffect } from 'react'
 export function useRequireHostAuth(redirectPath: string) {
   const { isSignedIn, isLoaded } = useHostAuth()
   const navigate = useNavigate()
-  const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const searchStr = useRouterState({ select: (s) => s.location.searchStr })
+  // Path, search and hash, without the origin.
+  const href = useRouterState({ select: (s) => s.location.href })
+  const pathname = href.split(/[?#]/, 1)[0]
   // Back to exactly where the Host was (`?step=3` and all) when the page is
   // the one asked for; `redirectPath` alone otherwise.
   const onRedirectPage =
     pathname === redirectPath || pathname.startsWith(`${redirectPath}/`)
-  const redirect = onRedirectPage ? `${pathname}${searchStr}` : redirectPath
+  const redirect = onRedirectPage ? href : redirectPath
 
   useEffect(() => {
     if (!isLoaded) return
