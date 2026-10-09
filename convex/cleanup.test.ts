@@ -155,3 +155,80 @@ describe('the cleanup cron', () => {
     ).toBe(0)
   })
 })
+
+describe('the orphan upload sweep', () => {
+  const store = (t: ReturnType<typeof setupConvex>) =>
+    t.run((ctx) =>
+      ctx.storage.store(new Blob(['photo'], { type: 'image/jpeg' })),
+    )
+
+  it('deletes day-old uploads nothing holds and keeps the rest', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const ownerId = (await t.run((ctx) => ctx.db.get(bill.billId)))!.ownerId
+    const orphan = await store(t)
+    const onBill = await store(t)
+    const onQuickScan = await store(t)
+    const onReceiptScan = await store(t)
+    await t.run(async (ctx) => {
+      await ctx.db.patch(bill.billId, { receiptStorageId: onBill })
+      await ctx.db.insert('quickScans', {
+        ownerId,
+        storageId: onQuickScan,
+        status: 'processing',
+        createdAt: Date.now(),
+      })
+      await ctx.db.insert('receiptScans', {
+        billId: bill.billId,
+        storageId: onReceiptScan,
+        status: 'done',
+        createdAt: Date.now(),
+      })
+    })
+
+    vi.setSystemTime(Date.now() + DAY_MS + HOUR_MS)
+    const fresh = await store(t)
+    const result = await t.mutation(internal.cleanup.sweepOrphanUploads, {})
+
+    expect(result).toEqual({ deletedUploads: 1 })
+    const left = await t.run(async (ctx) =>
+      (await ctx.db.system.query('_storage').collect()).map((file) => file._id),
+    )
+    expect(left).not.toContain(orphan)
+    expect(left).toEqual(
+      expect.arrayContaining([onBill, onQuickScan, onReceiptScan, fresh]),
+    )
+  })
+
+  it('keeps an unheld upload that is younger than a day', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const storageId = await store(t)
+
+    vi.setSystemTime(Date.now() + DAY_MS - HOUR_MS)
+    await t.mutation(internal.cleanup.sweepOrphanUploads, {})
+
+    expect(
+      await t.run((ctx) => ctx.db.system.get('_storage', storageId)),
+    ).not.toBeNull()
+  })
+
+  it('works off more orphans than one batch over follow-up runs', async () => {
+    vi.useFakeTimers()
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const kept = await store(t)
+    await t.run((ctx) => ctx.db.patch(bill.billId, { receiptStorageId: kept }))
+    for (let index = 0; index < 250; index++) await store(t)
+
+    vi.setSystemTime(Date.now() + 2 * DAY_MS)
+    await t.mutation(internal.cleanup.sweepOrphanUploads, {})
+    await t.finishAllScheduledFunctions(vi.runAllTimers)
+
+    const left = await t.run(async (ctx) =>
+      (await ctx.db.system.query('_storage').collect()).map((file) => file._id),
+    )
+    expect(left).toEqual([kept])
+  })
+})

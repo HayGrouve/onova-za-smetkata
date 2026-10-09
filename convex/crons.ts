@@ -10,4 +10,11 @@ crons.interval(
   {},
 )
 
+crons.interval(
+  'delete uploaded photos nothing kept',
+  { hours: 24 },
+  internal.cleanup.sweepOrphanUploads,
+  {},
+)
+
 export default crons

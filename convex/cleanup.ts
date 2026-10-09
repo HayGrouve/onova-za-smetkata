@@ -3,7 +3,7 @@ import { internal } from './_generated/api'
 import { internalMutation } from './_generated/server'
 import type { MutationCtx } from './_generated/server'
 import { endGuestSession, GUEST_SESSION_TTL_MS } from './lib/guestSession'
-import { deleteStoredPhoto } from './lib/receiptStorage'
+import { deleteStoredPhoto, isPhotoHeld } from './lib/receiptStorage'
 
 /** Buckets older than this are stale (longest app rate-limit window is 1 hour). */
 const RATE_LIMIT_MAX_AGE_MS = 2 * 60 * 60 * 1000
@@ -25,6 +25,16 @@ const QUICK_SCAN_RETENTION_MS = 24 * 60 * 60 * 1000
 
 /** Stripe stops retrying a webhook after three days; keep event ids for 30. */
 const WEBHOOK_EVENT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
+
+/**
+ * A photo is only taken within minutes of its upload (`assertFreshUpload`), so
+ * one that is still unheld a day later was abandoned (the phone lost signal,
+ * the Host closed the tab) and nothing will ever delete it.
+ */
+const ORPHAN_UPLOAD_MIN_AGE_MS = 24 * 60 * 60 * 1000
+
+/** Stored files checked per run; each costs a few index reads. */
+const ORPHAN_UPLOAD_BATCH_SIZE = 100
 
 /** Rows deleted per table per run; a full batch schedules another run. */
 export const CLEANUP_BATCH_SIZE = 200
@@ -170,5 +180,44 @@ export const run = internalMutation({
       purgedQuickScans: quickScans.length,
       purgedWebhookEvents: webhookEvents.length,
     }
+  },
+})
+
+/**
+ * Delete uploaded photos that no bill, receipt scan or quick scan holds. Walks
+ * storage oldest first and stops at the first file younger than a day, handing
+ * its place to a follow-up run in batches so one run stays far below the
+ * per-transaction read limit. Files that are held are checked again each day.
+ */
+export const sweepOrphanUploads = internalMutation({
+  args: { cursor: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const cutoff = Date.now() - ORPHAN_UPLOAD_MIN_AGE_MS
+    const page = await ctx.db.system
+      .query('_storage')
+      .order('asc')
+      .paginate({
+        numItems: ORPHAN_UPLOAD_BATCH_SIZE,
+        cursor: args.cursor ?? null,
+      })
+
+    let deleted = 0
+    let reachedRecentUploads = false
+    for (const file of page.page) {
+      if (file._creationTime > cutoff) {
+        reachedRecentUploads = true
+        break
+      }
+      if (await isPhotoHeld(ctx, file._id)) continue
+      await ctx.storage.delete(file._id)
+      deleted++
+    }
+
+    if (!page.isDone && !reachedRecentUploads) {
+      await ctx.scheduler.runAfter(0, internal.cleanup.sweepOrphanUploads, {
+        cursor: page.continueCursor,
+      })
+    }
+    return { deletedUploads: deleted }
   },
 })
