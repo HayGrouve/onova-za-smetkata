@@ -6,7 +6,7 @@ import {
   useMutation,
 } from 'convex/react'
 import { ConvexProviderWithClerk } from 'convex/react-clerk'
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, use, useEffect, useMemo, useState } from 'react'
 import { api } from '../../../convex/_generated/api'
 import { assertConvexUrlForBuild } from '#/lib/env.ts'
 import { getClerkPublishableKey } from '#/lib/clerk-env.ts'
@@ -53,30 +53,45 @@ type ClerkLocalization = typeof clerkBgLocalization
 
 /**
  * The Bulgarian strings are ~78 KB, so they load beside the entry bundle
- * instead of inside it, and only where Clerk runs. Clerk's own scripts take
- * longer to arrive than this chunk, so its components are already Bulgarian
- * when they first draw.
+ * instead of inside it, and only where Clerk runs. ClerkProvider waits for
+ * them (see ClerkTree), so Clerk never draws a screen in English; if they fail
+ * to load, Clerk mounts without them rather than not at all.
  */
-let clerkLocalizationPromise: Promise<ClerkLocalization> | undefined
-function loadClerkLocalization(): Promise<ClerkLocalization> {
+let clerkLocalizationPromise: Promise<ClerkLocalization | null> | undefined
+/** `undefined` while loading, `null` if the load failed. */
+let loadedClerkLocalization: ClerkLocalization | null | undefined
+function loadClerkLocalization(): Promise<ClerkLocalization | null> {
   clerkLocalizationPromise ??= import('#/lib/clerk-bg-localization.ts').then(
-    (module) => module.clerkBgLocalization,
+    (module) => (loadedClerkLocalization = module.clerkBgLocalization),
+    (error: unknown) => {
+      console.error('Clerk Bulgarian localization failed to load', error)
+      return (loadedClerkLocalization = null)
+    },
   )
   return clerkLocalizationPromise
 }
 
+// Start fetching while the entry bundle is still evaluating, before React
+// hydrates, on every page that will mount Clerk.
+if (
+  typeof window !== 'undefined' &&
+  !isGuestPage(window.location.pathname, window.location.search)
+) {
+  void loadClerkLocalization()
+}
+
+/**
+ * Suspends until the strings have loaded (or failed). The server renders
+ * without them: Clerk draws nothing there, so the markup is the same, and the
+ * browser keeps the server HTML on screen while hydration waits.
+ */
 function useClerkLocalization(): ClerkLocalization | undefined {
-  const [localization, setLocalization] = useState<ClerkLocalization>()
-  useEffect(() => {
-    let cancelled = false
-    void loadClerkLocalization().then((loaded) => {
-      if (!cancelled) setLocalization(loaded)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-  return localization
+  if (import.meta.env.SSR) return undefined
+  const loaded =
+    loadedClerkLocalization !== undefined
+      ? loadedClerkLocalization
+      : use(loadClerkLocalization())
+  return loaded ?? undefined
 }
 
 /**
@@ -118,15 +133,25 @@ function ClerkHostAuth({ children }: { children: React.ReactNode }) {
   )
 }
 
-function ClerkTree({
-  client,
-  publishableKey,
-  children,
-}: {
+type ClerkTreeProps = {
   client: ConvexReactClient
   publishableKey: string
   children: React.ReactNode
-}) {
+}
+
+function ClerkTree(props: ClerkTreeProps) {
+  return (
+    <Suspense fallback={<ShellMessage>Зареждане...</ShellMessage>}>
+      <LocalizedClerkTree {...props} />
+    </Suspense>
+  )
+}
+
+function LocalizedClerkTree({
+  client,
+  publishableKey,
+  children,
+}: ClerkTreeProps) {
   const localization = useClerkLocalization()
   return (
     <ClerkProvider
@@ -142,6 +167,14 @@ function ClerkTree({
         </ConvexProviderWithClerk>
       </ClerkHostAuth>
     </ClerkProvider>
+  )
+}
+
+function ShellMessage({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-auto flex min-h-dvh max-w-lg items-center justify-center px-4 text-center">
+      <p className="text-sm text-muted-foreground">{children}</p>
+    </div>
   )
 }
 
