@@ -25,6 +25,7 @@ import { useGuestLiveReceipt } from '#/hooks/use-guest-live-receipt.ts'
 import type { FunctionReturnType } from 'convex/server'
 import type { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
+import { formatIbanGroups } from '../../../shared/payment-settings-schema.ts'
 
 type GuestBillData = NonNullable<
   FunctionReturnType<typeof api.bills.getForGuest>
@@ -357,8 +358,9 @@ export function GuestPayView({
                         : 'По банков път'}
                     </p>
                     <div className="mt-1 flex items-center gap-2">
-                      <span className="min-w-0 flex-1 text-[13px] font-semibold break-all">
-                        {payment.iban}
+                      {/* Groups of four, wrapping between groups; the copy stays raw. */}
+                      <span className="min-w-0 flex-1 text-[13px] font-semibold break-words">
+                        {formatIbanGroups(payment.iban)}
                       </span>
                       <Button
                         type="button"
