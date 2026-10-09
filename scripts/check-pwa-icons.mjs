@@ -2,6 +2,7 @@ import { accessSync } from 'node:fs'
 
 const required = [
   'public/logo.png',
+  'public/logo-96.webp',
   'public/favicon.ico',
   'public/icon-192.png',
   'public/icon-512.png',

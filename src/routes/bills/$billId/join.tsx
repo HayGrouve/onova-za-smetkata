@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { PlusIcon } from 'lucide-react'
 import { useState } from 'react'
+import { withReducedMotion } from '#/components/motion-root.tsx'
 import { BillHeaderSlot } from '#/components/layout/bill-header-title.tsx'
 import { ClaimLine } from '#/components/receipt/claim-line.tsx'
 import {
@@ -39,7 +40,7 @@ export const Route = createFileRoute('/bills/$billId/join')({
   validateSearch: (search: Record<string, unknown>) => ({
     t: typeof search.t === 'string' ? search.t : '',
   }),
-  component: BillJoinPage,
+  component: withReducedMotion(BillJoinPage),
 })
 
 function BillJoinPage() {

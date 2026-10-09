@@ -1,5 +1,4 @@
 import { RefreshCwIcon } from 'lucide-react'
-import { MotionConfig } from 'motion/react'
 import type { ErrorComponentProps } from '@tanstack/react-router'
 import {
   HeadContent,
@@ -29,6 +28,8 @@ import { SentryInit } from '../components/sentry-init.tsx'
 import { ServiceWorkerRegister } from '../components/service-worker-register.tsx'
 import { SITE_NAME, titleMeta } from '#/lib/site-meta.ts'
 import appCss from '../styles.css?url'
+import unboundedCyrillicUrl from '@fontsource-variable/unbounded/files/unbounded-cyrillic-wght-normal.woff2?url'
+import unboundedLatinUrl from '@fontsource-variable/unbounded/files/unbounded-latin-wght-normal.woff2?url'
 
 function RootError({ error }: ErrorComponentProps) {
   // A reason the server gave on purpose („Сметката не е намерена“) beats a
@@ -81,6 +82,15 @@ export const Route = createRootRoute({
         rel: 'stylesheet',
         href: appCss,
       },
+      // Headings and totals are set in Unbounded; fetch it with the CSS
+      // instead of after the first layout.
+      ...[unboundedCyrillicUrl, unboundedLatinUrl].map((href) => ({
+        rel: 'preload',
+        href,
+        as: 'font',
+        type: 'font/woff2',
+        crossOrigin: 'anonymous' as const,
+      })),
       {
         rel: 'manifest',
         href: '/manifest.json',
@@ -89,12 +99,6 @@ export const Route = createRootRoute({
         rel: 'icon',
         href: '/favicon.ico',
         sizes: 'any',
-      },
-      {
-        rel: 'icon',
-        href: '/icon-192.png',
-        sizes: '192x192',
-        type: 'image/png',
       },
       {
         rel: 'apple-touch-icon',
@@ -109,12 +113,9 @@ export const Route = createRootRoute({
 
 function RootLayout() {
   return (
-    // Motion's JS animations skip the CSS reduced-motion rule; honour it here.
-    <MotionConfig reducedMotion="user">
-      <AppShell>
-        <Outlet />
-      </AppShell>
-    </MotionConfig>
+    <AppShell>
+      <Outlet />
+    </AppShell>
   )
 }
 

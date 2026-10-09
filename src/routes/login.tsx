@@ -8,13 +8,13 @@ import { buildNoIndexHead } from '#/lib/site-meta.ts'
 export const Route = createFileRoute('/login')({
   head: () => buildNoIndexHead('Вход'),
   validateSearch: (search: Record<string, unknown>) => ({
-    redirect: safeRedirectPath(search.redirect) ?? '/',
+    redirect: safeRedirectPath(search.redirect),
   }),
   component: LoginPage,
 })
 
 function LoginPage() {
-  const { redirect } = Route.useSearch()
+  const { redirect = '/' } = Route.useSearch()
   const { isSignedIn, isLoaded } = useAuth()
   const navigate = useNavigate()
 

@@ -1,13 +1,26 @@
-import { useAuth } from '@clerk/tanstack-react-start'
+import { useHostAuth } from '#/hooks/use-host-auth.ts'
 import { useQuery } from 'convex/react'
 import { createContext, useContext, useState } from 'react'
-import { PaymentSettingsSheet } from '#/components/bills/payment-settings-sheet.tsx'
+import {
+  MountOnFirstOpen,
+  lazySheet,
+  usePreloadWhenIdle,
+} from '#/components/lazy-sheet.tsx'
 import { getPaymentSettingsStatus } from '#/lib/payment-settings.ts'
 import type {
   PaymentSettings,
   PaymentSettingsStatus,
 } from '#/lib/payment-settings.ts'
 import { api } from '../../../convex/_generated/api'
+
+const paymentSettingsSheet = lazySheet(() =>
+  import('#/components/bills/payment-settings-sheet.tsx').then(
+    (m) => m.PaymentSettingsSheet,
+  ),
+)
+const PaymentSettingsSheet = paymentSettingsSheet.Sheet
+
+const SHEET_LOADERS = [paymentSettingsSheet.preload]
 
 interface PaymentSettingsContextValue {
   openPaymentSettings: () => void
@@ -24,7 +37,8 @@ export function PaymentSettingsProvider({
   children: React.ReactNode
 }) {
   const [open, setOpen] = useState(false)
-  const { isSignedIn } = useAuth()
+  const { isSignedIn } = useHostAuth()
+  usePreloadWhenIdle(Boolean(isSignedIn), SHEET_LOADERS)
   const settings = useQuery(api.paymentSettings.get, isSignedIn ? {} : 'skip')
   const status: PaymentSettingsStatus = isSignedIn
     ? getPaymentSettingsStatus(settings)
@@ -39,7 +53,9 @@ export function PaymentSettingsProvider({
       }}
     >
       {children}
-      <PaymentSettingsSheet open={open} onOpenChange={setOpen} />
+      <MountOnFirstOpen open={open} onClose={() => setOpen(false)}>
+        <PaymentSettingsSheet open={open} onOpenChange={setOpen} />
+      </MountOnFirstOpen>
     </PaymentSettingsContext.Provider>
   )
 }

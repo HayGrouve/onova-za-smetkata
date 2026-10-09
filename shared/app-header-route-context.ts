@@ -34,3 +34,14 @@ export function isGuestRouteContext(context: AppHeaderRouteContext): boolean {
     context === 'guestPay'
   )
 }
+
+/**
+ * A share-link page a Guest opens without an account. The app skips Clerk
+ * there; `?mode=host` on the claim page belongs to the Host.
+ */
+export function isGuestPage(pathname: string, searchStr: string): boolean {
+  const billId = /^\/bills\/([^/]+)\//.exec(pathname)?.[1]
+  return isGuestRouteContext(
+    resolveAppHeaderRouteContext(pathname, searchStr, billId),
+  )
+}

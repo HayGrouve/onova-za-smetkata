@@ -7,7 +7,7 @@ import {
   useState,
 } from 'react'
 import type { ReactNode } from 'react'
-import { useAuth } from '@clerk/tanstack-react-start'
+import { useHostAuth } from '#/hooks/use-host-auth.ts'
 import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
 import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
@@ -15,8 +15,11 @@ import { usePaymentSettings } from '#/components/bills/payment-settings-provider
 import { BILL_STEP_LABELS } from '#/lib/bill-steps.ts'
 import type { BillStep } from '#/lib/bill-steps.ts'
 import type { EditorGuidancePanel } from '#/components/host-onboarding/sticky-guidance-bar.tsx'
-import { WelcomeSheet } from '#/components/host-onboarding/welcome-sheet.tsx'
-import { PaymentCheckpointSheet } from '#/components/host-onboarding/payment-checkpoint-sheet.tsx'
+import {
+  MountOnFirstOpen,
+  lazySheet,
+  usePreloadWhenIdle,
+} from '#/components/lazy-sheet.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { getStopGuidanceCopy } from '#/lib/destructive-action-copy.ts'
 import { getConvexErrorMessage } from '#/lib/convex-error.ts'
@@ -52,6 +55,21 @@ import {
 } from '../../../shared/host-onboarding-messages.ts'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
+
+const welcomeSheet = lazySheet(() =>
+  import('#/components/host-onboarding/welcome-sheet.tsx').then(
+    (m) => m.WelcomeSheet,
+  ),
+)
+const paymentCheckpointSheet = lazySheet(() =>
+  import('#/components/host-onboarding/payment-checkpoint-sheet.tsx').then(
+    (m) => m.PaymentCheckpointSheet,
+  ),
+)
+const WelcomeSheet = welcomeSheet.Sheet
+const PaymentCheckpointSheet = paymentCheckpointSheet.Sheet
+
+const SHEET_LOADERS = [welcomeSheet.preload, paymentCheckpointSheet.preload]
 
 export type GuidanceSlot = (anchor: GuidanceAnchor) => ReactNode
 
@@ -117,7 +135,8 @@ const HostOnboardingContext = createContext<HostOnboardingContextValue | null>(
 )
 
 export function HostOnboardingProvider({ children }: { children: ReactNode }) {
-  const { isSignedIn } = useAuth()
+  const { isSignedIn } = useHostAuth()
+  usePreloadWhenIdle(Boolean(isSignedIn), SHEET_LOADERS)
   const onboarding = useQuery(
     api.hostOnboarding.getForViewer,
     isSignedIn ? {} : 'skip',
@@ -479,28 +498,38 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
   return (
     <HostOnboardingContext.Provider value={value}>
       {children}
-      <WelcomeSheet
-        open={showWelcome}
-        onOpenChange={(open) => {
-          if (!open) {
-            dismissWelcome()
-            setWelcomeForcedOpen(false)
-          }
-        }}
-        onDismiss={dismissWelcome}
-        billCount={onboarding?.billCount ?? 0}
-        onCreateFirstBill={handleCreateFirstBill}
-        onStartGuidedWithExistingBills={handleStartGuidedWithExistingBills}
-      />
-      <PaymentCheckpointSheet
+      <MountOnFirstOpen open={showWelcome}>
+        <WelcomeSheet
+          open={showWelcome}
+          onOpenChange={(open) => {
+            if (!open) {
+              dismissWelcome()
+              setWelcomeForcedOpen(false)
+            }
+          }}
+          onDismiss={dismissWelcome}
+          billCount={onboarding?.billCount ?? 0}
+          onCreateFirstBill={handleCreateFirstBill}
+          onStartGuidedWithExistingBills={handleStartGuidedWithExistingBills}
+        />
+      </MountOnFirstOpen>
+      <MountOnFirstOpen
         open={checkpointOpen}
-        onOpenChange={(open) => {
-          setCheckpointOpen(open)
-          if (!open) setPendingShare(null)
+        onClose={() => {
+          setCheckpointOpen(false)
+          setPendingShare(null)
         }}
-        onShareWithoutPayment={() => void handleShareWithoutPayment()}
-        onSavedAndShare={() => void handlePaymentSavedAndShare()}
-      />
+      >
+        <PaymentCheckpointSheet
+          open={checkpointOpen}
+          onOpenChange={(open) => {
+            setCheckpointOpen(open)
+            if (!open) setPendingShare(null)
+          }}
+          onShareWithoutPayment={() => void handleShareWithoutPayment()}
+          onSavedAndShare={() => void handlePaymentSavedAndShare()}
+        />
+      </MountOnFirstOpen>
     </HostOnboardingContext.Provider>
   )
 }

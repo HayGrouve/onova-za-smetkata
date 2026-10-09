@@ -1,5 +1,6 @@
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { CameraIcon } from 'lucide-react'
+import { withReducedMotion } from '#/components/motion-root.tsx'
 import { QuickBillView } from '#/components/quick-bill/quick-bill-view.tsx'
 import type { QuickBillScreen } from '#/components/quick-bill/quick-bill-view.tsx'
 import { QuickCameraButton } from '#/components/quick-bill/quick-camera-button.tsx'
@@ -26,7 +27,7 @@ export const Route = createFileRoute('/quick-bill')({
     seat: typeof search.seat === 'string' ? search.seat : undefined,
   }),
   head: () => buildNoIndexHead('Бърза сметка'),
-  component: QuickBillPage,
+  component: withReducedMotion(QuickBillPage),
 })
 
 /** A throwaway bill on the Host's phone: snap, pass around, see totals. */
