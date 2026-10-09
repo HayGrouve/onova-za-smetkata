@@ -118,6 +118,20 @@ export type ActiveGuestSeat = {
   heldByParticipantId?: string
 }
 
+/** The same seats held the same way, in the same order. */
+export function sameActiveSeats(
+  a: ActiveGuestSeat[] | undefined,
+  b: ActiveGuestSeat[] | undefined,
+): boolean {
+  if (a === b) return true
+  if (a === undefined || b === undefined || a.length !== b.length) return false
+  return a.every(
+    (seat, index) =>
+      seat.participantId === b[index].participantId &&
+      seat.heldByParticipantId === b[index].heldByParticipantId,
+  )
+}
+
 /**
  * Seats other phones hold (this phone's own seats excluded). The value is the
  * holder's own seat for a Covered seat, `null` for someone's own seat.

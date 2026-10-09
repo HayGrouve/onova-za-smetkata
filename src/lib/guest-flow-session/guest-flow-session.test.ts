@@ -4,6 +4,7 @@ import {
   claimPageGate,
   createGuestFlowSession,
   mySeatIds,
+  sameActiveSeats,
   takenSeats,
 } from './guest-flow-session.ts'
 import type {
@@ -285,6 +286,23 @@ describe('on the claim and pay pages', () => {
 })
 
 describe('seats other phones hold', () => {
+  it('tells a changed seat list from the same one sent again', () => {
+    const seats = [
+      { participantId: 'alice' },
+      { participantId: 'bob', heldByParticipantId: 'alice' },
+    ]
+    expect(sameActiveSeats(seats, structuredClone(seats))).toBe(true)
+    expect(sameActiveSeats(undefined, undefined)).toBe(true)
+    expect(sameActiveSeats(seats, undefined)).toBe(false)
+    expect(sameActiveSeats(seats, seats.slice(0, 1))).toBe(false)
+    expect(
+      sameActiveSeats(seats, [
+        { participantId: 'alice' },
+        { participantId: 'bob' },
+      ]),
+    ).toBe(false)
+  })
+
   it('leaves out this phone’s own seat and its Covered seats', () => {
     expect(
       takenSeats(

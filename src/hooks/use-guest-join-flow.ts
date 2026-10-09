@@ -9,6 +9,7 @@ import {
   takenSeats,
 } from '#/lib/guest-flow-session/guest-flow-session.ts'
 import type { FlowOutcome } from '#/lib/guest-flow-session/guest-flow-session.ts'
+import { useActiveSeats } from '#/hooks/use-active-seats.ts'
 import { localSeatStore } from '#/lib/guest-flow-session/local-seat-store.ts'
 import { useGuestFlowSession } from '#/lib/guest-flow-session/use-guest-flow-session.ts'
 
@@ -17,10 +18,7 @@ export function useGuestJoinFlow(billId: Id<'bills'>, shareToken: string) {
   const navigate = useNavigate()
   const flow = useGuestFlowSession(billId)
   const data = useQuery(api.bills.getForGuest, { billId, shareToken })
-  const activeSeats = useQuery(api.guestSessions.listActiveForBill, {
-    billId,
-    shareToken,
-  })
+  const activeSeats = useActiveSeats(billId, shareToken)
   const [joining, setJoining] = useState(false)
   const [resuming, setResuming] = useState(() =>
     canResume(localSeatStore.read(billId), shareToken),

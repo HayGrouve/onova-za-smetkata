@@ -13,6 +13,7 @@ import { toast } from 'sonner'
 import { CombinedPaymentBanner } from '#/components/bills/combined-payment-banner.tsx'
 import { ParticipantDetailSheet } from '#/components/bills/participant-detail-sheet.tsx'
 import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
+import { useActiveSeats } from '#/hooks/use-active-seats.ts'
 import { BillHeaderSlot } from '#/components/layout/bill-header-title.tsx'
 import {
   DockHandle,
@@ -140,11 +141,9 @@ function HostBillTable({
     api.combinedPayments.listPendingForBill,
     final ? 'skip' : { billId },
   )
-  const activeSeats = useQuery(
-    api.guestSessions.listActiveForBill,
-    bill.shareToken && !final
-      ? { billId, shareToken: bill.shareToken }
-      : 'skip',
+  const activeSeats = useActiveSeats(
+    billId,
+    final ? undefined : bill.shareToken,
   )
   const { openPaymentSettings } = usePaymentSettingsSheet()
   const [brushId, setBrushId] = useState<string | null>(null)
