@@ -1,6 +1,24 @@
-import { createContext, useContext, useState } from 'react'
-import { FriendGroupsSheet } from '#/components/bills/friend-groups-sheet.tsx'
-import { FriendGroupEditorSheet } from '#/components/bills/friend-group-editor-sheet.tsx'
+import { createContext, lazy, useContext, useState } from 'react'
+import { useAuth } from '@clerk/tanstack-react-start'
+import {
+  MountOnFirstOpen,
+  usePreloadWhenIdle,
+} from '#/components/lazy-sheet.tsx'
+
+const loadFriendGroupsSheet = () =>
+  import('#/components/bills/friend-groups-sheet.tsx')
+const loadFriendGroupEditorSheet = () =>
+  import('#/components/bills/friend-group-editor-sheet.tsx')
+const FriendGroupsSheet = lazy(() =>
+  loadFriendGroupsSheet().then((m) => ({ default: m.FriendGroupsSheet })),
+)
+const FriendGroupEditorSheet = lazy(() =>
+  loadFriendGroupEditorSheet().then((m) => ({
+    default: m.FriendGroupEditorSheet,
+  })),
+)
+
+const SHEET_LOADERS = [loadFriendGroupsSheet, loadFriendGroupEditorSheet]
 
 interface FriendGroupsContextValue {
   openFriendGroups: () => void
@@ -17,6 +35,8 @@ export function FriendGroupsProvider({
 }: {
   children: React.ReactNode
 }) {
+  const { isSignedIn } = useAuth()
+  usePreloadWhenIdle(Boolean(isSignedIn), SHEET_LOADERS)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [editorOpen, setEditorOpen] = useState(false)
   const [editorMemberNames, setEditorMemberNames] = useState<string[]>([])
@@ -34,13 +54,17 @@ export function FriendGroupsProvider({
       }}
     >
       {children}
-      <FriendGroupsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
-      <FriendGroupEditorSheet
-        open={editorOpen}
-        onOpenChange={setEditorOpen}
-        initialMemberNames={editorMemberNames}
-        initialName={editorSuggestedName}
-      />
+      <MountOnFirstOpen open={settingsOpen}>
+        <FriendGroupsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+      </MountOnFirstOpen>
+      <MountOnFirstOpen open={editorOpen}>
+        <FriendGroupEditorSheet
+          open={editorOpen}
+          onOpenChange={setEditorOpen}
+          initialMemberNames={editorMemberNames}
+          initialName={editorSuggestedName}
+        />
+      </MountOnFirstOpen>
     </FriendGroupsContext.Provider>
   )
 }
