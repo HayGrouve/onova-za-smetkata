@@ -10,13 +10,13 @@ export const Route = createFileRoute('/login')({
     redirect:
       typeof search.redirect === 'string' && search.redirect.startsWith('/')
         ? search.redirect
-        : '/',
+        : undefined,
   }),
   component: LoginPage,
 })
 
 function LoginPage() {
-  const { redirect } = Route.useSearch()
+  const { redirect = '/' } = Route.useSearch()
   const { isSignedIn, isLoaded } = useAuth()
   const navigate = useNavigate()
 
