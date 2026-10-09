@@ -29,16 +29,7 @@ export function isGuestSessionActive(lastSeenAt: number, now: number): boolean {
 // (`endQuietGuestSessions`) signs it off, while every mutation still refuses
 // it the moment its TTL passes.
 
-async function presenceRowsOf(
-  ctx: QueryCtx | MutationCtx,
-  sessionId: Id<'guestSessions'>,
-) {
-  return await ctx.db
-    .query('guestSessionPresence')
-    .withIndex('by_sessionId', (q) => q.eq('sessionId', sessionId))
-    .collect()
-}
-
+/** The session's presence row; there is at most one (`touchGuestPresence`). */
 async function presenceOf(
   ctx: QueryCtx | MutationCtx,
   sessionId: Id<'guestSessions'>,
@@ -50,15 +41,16 @@ async function presenceOf(
 }
 
 /**
- * When the phone last checked in. Sessions opened before the presence table
- * existed have no row and fall back to the time written on the session.
+ * The liveness rule, in one place: when the phone last checked in. A session
+ * opened before the presence table existed may have no row yet and falls back
+ * to the time written on the session.
  */
-async function lastSeenAtOf(
-  ctx: MutationCtx,
+function isLive(
   session: Doc<'guestSessions'>,
-): Promise<number> {
-  const presence = await presenceOf(ctx, session._id)
-  return presence?.lastSeenAt ?? session.lastSeenAt
+  presence: { lastSeenAt: number } | null | undefined,
+  now: number,
+): boolean {
+  return isGuestSessionActive(presence?.lastSeenAt ?? session.lastSeenAt, now)
 }
 
 /** Mutations only: the phone checked in within the TTL. */
@@ -67,7 +59,7 @@ export async function isGuestSessionLive(
   session: Doc<'guestSessions'>,
   now: number,
 ): Promise<boolean> {
-  return isGuestSessionActive(await lastSeenAtOf(ctx, session), now)
+  return isLive(session, await presenceOf(ctx, session._id), now)
 }
 
 /** The phone checks in: the one write a heartbeat makes. */
@@ -108,12 +100,12 @@ async function partitionSessionsForBill(
     .query('guestSessionPresence')
     .withIndex('by_billId', (q) => q.eq('billId', billId))
     .collect()
-  const seenAt = new Map(presence.map((row) => [row.sessionId, row.lastSeenAt]))
+  const presenceBySession = new Map(presence.map((row) => [row.sessionId, row]))
   const live: Doc<'guestSessions'>[] = []
   const quiet: Doc<'guestSessions'>[] = []
   for (const session of sessions) {
-    const lastSeenAt = seenAt.get(session._id) ?? session.lastSeenAt
-    ;(isGuestSessionActive(lastSeenAt, now) ? live : quiet).push(session)
+    const row = presenceBySession.get(session._id)
+    ;(isLive(session, row, now) ? live : quiet).push(session)
   }
   return { live, quiet }
 }
@@ -223,9 +215,8 @@ export async function endGuestSession(
   session: Doc<'guestSessions'>,
 ): Promise<void> {
   await onGuestSessionEnded(ctx, session._id)
-  for (const presence of await presenceRowsOf(ctx, session._id)) {
-    await ctx.db.delete(presence._id)
-  }
+  const presence = await presenceOf(ctx, session._id)
+  if (presence) await ctx.db.delete(presence._id)
   await ctx.db.delete(session._id)
 }
 
@@ -262,19 +253,27 @@ export async function endExpiredGuestSessions(
   return live
 }
 
+/** Sessions opened before the presence table existed and not yet backfilled. */
+function legacySessions(ctx: MutationCtx) {
+  return ctx.db
+    .query('guestSessions')
+    .withIndex('by_hasPresence', (q) => q.eq('hasPresence', undefined))
+}
+
 /**
  * Sign off every phone that went quiet past the TTL, whatever the bill — the
  * only thing that frees a seat on screen, since queries do not read the clock.
  * Works through at most `limit` presence rows; `more` says a full batch is
- * left to the next run. With `legacy`, also ends sessions opened before the
- * presence table existed (no row, old `lastSeenAt`); oldest first, so those
- * come before any session that has a presence row.
+ * left to the next run.
+ *
+ * Also checks sessions opened before the presence table existed, through
+ * `by_hasPresence`: that range holds only those, so once they have ended or
+ * `backfill:guestSessionPresence` has marked them it reads nothing.
  */
 export async function endQuietGuestSessions(
   ctx: MutationCtx,
   now: number,
   limit: number,
-  options: { legacy?: boolean } = {},
 ): Promise<{ ended: number; more: boolean }> {
   const cutoff = now - GUEST_SESSION_TTL_MS
   let ended = 0
@@ -294,22 +293,41 @@ export async function endQuietGuestSessions(
   }
   let more = quiet.length === limit
 
-  if (options.legacy) {
-    const old = await ctx.db
-      .query('guestSessions')
-      .withIndex('by_lastSeenAt', (q) => q.lte('lastSeenAt', cutoff))
-      .take(limit)
-    let endedLegacy = 0
-    for (const session of old) {
-      if (await presenceOf(ctx, session._id)) continue
-      await endGuestSession(ctx, session)
-      endedLegacy++
-    }
-    ended += endedLegacy
-    // Skipped rows stay behind: only a batch that made progress asks for more.
-    more = more || (endedLegacy > 0 && old.length === limit)
+  const legacy = await legacySessions(ctx).take(limit)
+  let endedLegacy = 0
+  for (const session of legacy) {
+    if (isLive(session, await presenceOf(ctx, session._id), now)) continue
+    await endGuestSession(ctx, session)
+    endedLegacy++
   }
+  ended += endedLegacy
+  // Live rows stay behind: only a batch that made progress asks for more.
+  more = more || (endedLegacy > 0 && legacy.length === limit)
   return { ended, more }
+}
+
+/**
+ * Give sessions opened before the presence table existed a presence row (from
+ * the time on the session) and mark them, a batch at a time. Afterwards the
+ * sweep finds them through presence like any other session. Returns how many
+ * it marked; a full batch means more are left.
+ */
+export async function backfillGuestPresence(
+  ctx: MutationCtx,
+  limit: number,
+): Promise<number> {
+  const legacy = await legacySessions(ctx).take(limit)
+  for (const session of legacy) {
+    if (!(await presenceOf(ctx, session._id))) {
+      await ctx.db.insert('guestSessionPresence', {
+        sessionId: session._id,
+        billId: session.billId,
+        lastSeenAt: session.lastSeenAt,
+      })
+    }
+    await ctx.db.patch(session._id, { hasPresence: true })
+  }
+  return legacy.length
 }
 
 /**

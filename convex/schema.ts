@@ -143,11 +143,18 @@ export default defineSchema({
      */
     lastSeenAt: v.number(),
     createdAt: v.number(),
+    /**
+     * Set at insert on every session that has a `guestSessionPresence` row.
+     * Missing only on sessions opened before that table existed, so
+     * `by_hasPresence` finds exactly those (until `backfill:guestSessionPresence` marks them).
+     */
+    hasPresence: v.optional(v.literal(true)),
   })
     .index('by_billId', ['billId'])
     .index('by_sessionToken', ['sessionToken'])
     .index('by_participantId', ['participantId'])
-    .index('by_lastSeenAt', ['lastSeenAt']),
+    .index('by_lastSeenAt', ['lastSeenAt'])
+    .index('by_hasPresence', ['hasPresence']),
 
   /**
    * The heartbeat's write target: when a Guest phone last checked in. Kept off

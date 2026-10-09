@@ -77,11 +77,8 @@ export const run = internalMutation({
   handler: async (ctx, args) => {
     const now = Date.now()
 
-    // Backstop for the minute sweep (`guestSessions.endQuiet`); also ends the
-    // sessions that predate the presence table.
-    const sessions = await endQuietGuestSessions(ctx, now, CLEANUP_BATCH_SIZE, {
-      legacy: true,
-    })
+    // Backstop for the minute sweep (`guestSessions.endQuiet`).
+    const sessions = await endQuietGuestSessions(ctx, now, CLEANUP_BATCH_SIZE)
 
     // Live usage counters share the index with stale rate-limit buckets and
     // are skipped, so a run that stops early hands its position to the next

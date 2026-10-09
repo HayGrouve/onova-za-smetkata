@@ -229,6 +229,7 @@ export const claim = mutation({
       sessionToken: args.sessionToken,
       lastSeenAt: now,
       createdAt: now,
+      hasPresence: true,
     })
     await touchGuestPresence(ctx, { _id: sessionId, billId: args.billId }, now)
     await onSeatClaimed(ctx, {
@@ -264,7 +265,10 @@ export const updateCoveredSeats = mutation({
       otherSessions: sessions.filter((other) => other._id !== session._id),
     })
 
-    await ctx.db.patch(session._id, { coveredParticipantIds })
+    // The session row changes only when the seats do.
+    if (!sameIds(coveredParticipantIds, session.coveredParticipantIds ?? [])) {
+      await ctx.db.patch(session._id, { coveredParticipantIds })
+    }
     await touchGuestPresence(ctx, session, now)
     return { coveredParticipantIds }
   },

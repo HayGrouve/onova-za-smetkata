@@ -179,7 +179,35 @@ describe('picking a seat', () => {
   })
 })
 
+const LEGACY_ANI = 'legacy-session-token-ani'
+const LEGACY_BOBI = 'legacy-session-token-bobi'
+
+/** A session as written before presence existed: no presence row, no mark. */
+function insertLegacySession(
+  t: TestConvex,
+  bill: SeededBill,
+  participantId: SeededBill['hostSeat'],
+  sessionToken: string,
+) {
+  return t.run((ctx) =>
+    ctx.db.insert('guestSessions', {
+      billId: bill.billId,
+      participantId,
+      sessionToken,
+      lastSeenAt: Date.now(),
+      createdAt: Date.now(),
+    }),
+  )
+}
+
 describe('keeping a seat alive', () => {
+  const legacyRows = (t: TestConvex) =>
+    t.run((ctx) =>
+      ctx.db
+        .query('guestSessions')
+        .withIndex('by_hasPresence', (q) => q.eq('hasPresence', undefined))
+        .collect(),
+    )
   const sessionRows = (t: TestConvex) =>
     t.run((ctx) => ctx.db.query('guestSessions').collect())
   const presenceRows = (t: TestConvex) =>
@@ -236,6 +264,31 @@ describe('keeping a seat alive', () => {
 
     expect(await sessionRows(t)).toEqual(before)
     expect(await presenceRows(t)).toHaveLength(1)
+  })
+
+  it('saving the same Covered seats leaves the session row alone', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedBill(t, { guests: ['Ани', 'Боби'] })
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'], [
+      bill.seats['Боби'],
+    ])
+    const before = await sessionRows(t)
+
+    vi.setSystemTime(Date.now() + 10_000)
+    await t.mutation(api.guestSessions.updateCoveredSeats, {
+      billId: bill.billId,
+      sessionToken: ani.sessionToken,
+      coveredParticipantIds: [bill.seats['Боби']],
+    })
+    expect(await sessionRows(t)).toEqual(before)
+
+    await t.mutation(api.guestSessions.updateCoveredSeats, {
+      billId: bill.billId,
+      sessionToken: ani.sessionToken,
+      coveredParticipantIds: [],
+    })
+    expect((await sessionRows(t))[0].coveredParticipantIds).toEqual([])
   })
 
   it('a phone that keeps checking in outlives the TTL and keeps acting', async () => {
@@ -363,39 +416,68 @@ describe('keeping a seat alive', () => {
     expect(await sessionRows(t)).toEqual([])
   })
 
-  it('sessions from before presence existed are live until their TTL, then swept', async () => {
+  it('sessions from before presence existed are live until their TTL, then swept within the minute', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     const t = setupConvex()
     const bill = await seedBill(t)
-    const insertLegacy = (participantId: typeof bill.hostSeat, token: string) =>
-      t.run((ctx) =>
-        ctx.db.insert('guestSessions', {
-          billId: bill.billId,
-          participantId,
-          sessionToken: token,
-          lastSeenAt: Date.now(),
-          createdAt: Date.now(),
-        }),
-      )
-    await insertLegacy(bill.seats['Ани'], 'legacy-session-token-ani')
-    await insertLegacy(bill.seats['Боби'], 'legacy-session-token-bobi')
+    await insertLegacySession(t, bill, bill.seats['Ани'], LEGACY_ANI)
+    await insertLegacySession(t, bill, bill.seats['Боби'], LEGACY_BOBI)
 
     vi.setSystemTime(Date.now() + GUEST_SESSION_TTL_MS - 1_000)
     // Ани's old tab beats once: the session works and gains a presence row.
     await t.mutation(api.guestSessions.heartbeat, {
       billId: bill.billId,
       participantId: bill.seats['Ани'],
-      sessionToken: 'legacy-session-token-ani',
+      sessionToken: LEGACY_ANI,
     })
     expect(await presenceRows(t)).toHaveLength(1)
 
     vi.setSystemTime(Date.now() + 2_000)
-    const swept = await t.mutation(internal.cleanup.run, {})
+    await t.mutation(internal.guestSessions.endQuiet, {})
 
-    expect(swept.purgedSessions).toBe(1)
     expect((await sessionRows(t)).map((row) => row.sessionToken)).toEqual([
-      'legacy-session-token-ani',
+      LEGACY_ANI,
     ])
+    expect(await activeSeats(t, bill)).toEqual([
+      { participantId: bill.seats['Ани'] },
+    ])
+  })
+
+  it('the backfill gives old sessions presence, after which the sweep has no legacy rows to read', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    await insertLegacySession(t, bill, bill.seats['Ани'], LEGACY_ANI)
+    vi.setSystemTime(Date.now() + 30_000)
+    await insertLegacySession(t, bill, bill.seats['Боби'], LEGACY_BOBI)
+    const sessionsBefore = await sessionRows(t)
+    expect(await legacyRows(t)).toHaveLength(2)
+
+    await t.mutation(internal.backfill.guestSessionPresence, {})
+    await t.mutation(internal.backfill.guestSessionPresence, {})
+
+    expect(await legacyRows(t)).toEqual([])
+    const presence = await presenceRows(t)
+    expect(presence.map((row) => row.lastSeenAt)).toEqual(
+      sessionsBefore.map((row) => row.lastSeenAt),
+    )
+
+    // Ани's time runs out first, measured from the session's old check-in.
+    vi.setSystemTime(Date.now() + GUEST_SESSION_TTL_MS - 15_000)
+    await t.mutation(internal.guestSessions.endQuiet, {})
+    expect((await sessionRows(t)).map((row) => row.sessionToken)).toEqual([
+      LEGACY_BOBI,
+    ])
+  })
+
+  it('a session opened now is never read as a legacy row', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    await joinAsGuest(t, bill, bill.seats['Ани'])
+    await joinAsGuest(t, bill, bill.seats['Боби'])
+
+    expect(await legacyRows(t)).toEqual([])
+    expect(await presenceRows(t)).toHaveLength(2)
   })
 })
 
