@@ -38,6 +38,8 @@ export class QueryErrorBoundary extends Component<
       return (
         <div className="page-container py-10">
           <QueryErrorPanel
+            title={definite ? 'Линкът не работи' : undefined}
+            homeLink={definite}
             message={reason ?? undefined}
             onRetry={
               definite ? undefined : () => this.setState({ error: null })
