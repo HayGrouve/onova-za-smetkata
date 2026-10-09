@@ -607,3 +607,53 @@ describe('searching the bill archive', () => {
     expect(seen).toEqual([...ids].reverse())
   })
 })
+
+describe('touching the bill after an edit', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  const billRow = (t: TestConvex, billId: SeededBill['billId']) =>
+    t.run((ctx) => ctx.db.get(billId))
+
+  it('an edit that moves no totals leaves the bill row alone for a minute', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const [itemId] = bill.itemIds
+    const before = await billRow(t, bill.billId)
+
+    vi.setSystemTime(Date.now() + 10_000)
+    await bill.host.mutation(api.items.update, { itemId, name: 'Наливна' })
+    await bill.host.mutation(api.items.update, { itemId, name: 'Наливна' })
+    expect(await billRow(t, bill.billId)).toEqual(before)
+
+    // Past the debounce window the same kind of edit bumps the bill again.
+    vi.setSystemTime(Date.now() + 61_000)
+    await bill.host.mutation(api.items.update, { itemId, name: 'Бира' })
+    expect((await billRow(t, bill.billId))?.updatedAt).toBe(Date.now())
+  })
+
+  it('an edit that changes the stored summary always writes it', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedBill(t)
+
+    vi.setSystemTime(Date.now() + 1_000)
+    await hostTakesUnits(bill, bill.itemIds[0], [bill.seats['Ани']])
+    const afterTake = await billRow(t, bill.billId)
+    expect(afterTake?.updatedAt).toBe(Date.now())
+
+    vi.setSystemTime(Date.now() + 1_000)
+    await bill.host.mutation(api.participants.add, {
+      billId: bill.billId,
+      name: 'Вики',
+    })
+    const afterAdd = await billRow(t, bill.billId)
+    expect(afterAdd?.listParticipantNames).toContain('Вики')
+    expect(afterAdd?.updatedAt).toBe(Date.now())
+    expect(afterAdd?.listGuestBalances).not.toEqual(
+      afterTake?.listGuestBalances,
+    )
+  })
+})
