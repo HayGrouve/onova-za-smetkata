@@ -32,7 +32,7 @@ import { GUEST_FLOW_MESSAGES } from '../../shared/guest-flow-messages'
 import { validatePaymentAdd } from '../../shared/payment-amount-schema'
 import { assertBillDraft } from './assertBillDraft'
 import { loadBillRelations } from './billListSummary'
-import { isGuestSessionActive } from './guestSession'
+import { isGuestSessionLive } from './guestSession'
 import type { GuestActor } from './guestSession'
 import { assertRateLimit } from './rateLimit'
 import { touchBill } from './touchBill'
@@ -75,17 +75,22 @@ async function loadBillTotals(
  * Pending requests that still hold their seats: every Sent one, and
  * Reservations whose phone is still on the bill. A phone that left (released
  * or expired) no longer keeps the covered Guest from paying.
+ *
+ * `isLive` decides whether a phone is within its TTL. Mutations pass the real
+ * check; queries pass nothing and count every session that still exists as
+ * alive, since a query must not read the clock or a heartbeat's presence row
+ * (the minute sweep ends quiet sessions soon enough).
  */
 async function loadSeatHoldingRequests(
   ctx: QueryCtx | MutationCtx,
   billId: Id<'bills'>,
+  isLive: (session: Doc<'guestSessions'>) => Promise<boolean> = () =>
+    Promise.resolve(true),
 ): Promise<PayRequest[]> {
-  const now = Date.now()
   const holding: PayRequest[] = []
   for (const request of await pendingForBill(ctx, billId)) {
     const session = await ctx.db.get(request.guestSessionId)
-    const alive =
-      session !== null && isGuestSessionActive(session.lastSeenAt, now)
+    const alive = session !== null && (await isLive(session))
     if (holdsCoveredSeats(request, alive)) holding.push(request)
   }
   return holding
@@ -176,7 +181,10 @@ async function priceForPhone(
   }
 
   const totals = await loadBillTotals(ctx, bill)
-  const holding = await loadSeatHoldingRequests(ctx, bill._id)
+  const now = Date.now()
+  const holding = await loadSeatHoldingRequests(ctx, bill._id, (other) =>
+    isGuestSessionLive(ctx, other, now),
+  )
   // One payer per Share: a Guest another phone pays for cannot pay again.
   const coveredElsewhere = holding.some(
     (request) =>

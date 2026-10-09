@@ -136,12 +136,32 @@ export default defineSchema({
     /** Covered seats: extra Participants this phone claims and pays for. */
     coveredParticipantIds: v.optional(v.array(v.id('participants'))),
     sessionToken: v.string(),
+    /**
+     * When the session was opened. Liveness lives in `guestSessionPresence`,
+     * so heartbeats never rewrite this row (and its live queries). Only
+     * sessions that predate that table are read for liveness here.
+     */
     lastSeenAt: v.number(),
     createdAt: v.number(),
   })
     .index('by_billId', ['billId'])
     .index('by_sessionToken', ['sessionToken'])
     .index('by_participantId', ['participantId'])
+    .index('by_lastSeenAt', ['lastSeenAt']),
+
+  /**
+   * The heartbeat's write target: when a Guest phone last checked in. Kept off
+   * `guestSessions` so a check-in every 30 seconds does not invalidate every
+   * live query that reads sessions or the bill. Only mutations and the expiry
+   * sweep read it — queries never do.
+   */
+  guestSessionPresence: defineTable({
+    sessionId: v.id('guestSessions'),
+    billId: v.id('bills'),
+    lastSeenAt: v.number(),
+  })
+    .index('by_sessionId', ['sessionId'])
+    .index('by_billId', ['billId'])
     .index('by_lastSeenAt', ['lastSeenAt']),
 
   payments: defineTable({

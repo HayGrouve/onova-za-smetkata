@@ -1,5 +1,6 @@
 import { ConvexError, v } from 'convex/values'
-import { mutation, query } from './_generated/server'
+import { internal } from './_generated/api'
+import { internalMutation, mutation, query } from './_generated/server'
 import type { Doc, Id } from './_generated/dataModel'
 import type { MutationCtx } from './_generated/server'
 import {
@@ -16,9 +17,11 @@ import { assertBillDraft } from './lib/assertBillDraft'
 import {
   endExpiredGuestSessions,
   endGuestSession,
+  endQuietGuestSessions,
   findGuest,
-  isGuestSessionActive,
+  liveSessionsForBill,
   requireGuest,
+  touchGuestPresence,
 } from './lib/guestSession'
 import {
   hasSentPayRequest,
@@ -27,6 +30,10 @@ import {
 } from './lib/payRequest'
 import { assertRateLimit } from './lib/rateLimit'
 import { assertShareToken } from './lib/guestAccess'
+
+function sameIds(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((id, index) => id === b[index])
+}
 
 async function assertParticipantOnBill(
   ctx: MutationCtx,
@@ -96,9 +103,14 @@ async function assertClaimRateLimits(
 type ActiveSeat = {
   participantId: Id<'participants'>
   heldByParticipantId?: Id<'participants'>
-  lastSeenAt: number
 }
 
+/**
+ * Seats Guest phones hold. Reads only the sessions, never the clock or a
+ * heartbeat's presence row, so the result changes when a seat is taken, changed
+ * or freed — not every 30 seconds per phone. A phone that went quiet keeps its
+ * seat here until `endQuiet` signs it off (within a few minutes).
+ */
 export const listActiveForBill = query({
   args: {
     billId: v.id('bills'),
@@ -109,29 +121,21 @@ export const listActiveForBill = query({
       participantId: v.id('participants'),
       /** Set for Covered seats: the holding session's own seat. */
       heldByParticipantId: v.optional(v.id('participants')),
-      lastSeenAt: v.number(),
     }),
   ),
   handler: async (ctx, args) => {
     await assertShareToken(ctx, args.billId, args.shareToken)
-    const now = Date.now()
     const sessions = await ctx.db
       .query('guestSessions')
       .withIndex('by_billId', (q) => q.eq('billId', args.billId))
       .collect()
-    return sessions
-      .filter((session) => isGuestSessionActive(session.lastSeenAt, now))
-      .flatMap((session): ActiveSeat[] => [
-        {
-          participantId: session.participantId,
-          lastSeenAt: session.lastSeenAt,
-        },
-        ...(session.coveredParticipantIds ?? []).map((participantId) => ({
-          participantId,
-          heldByParticipantId: session.participantId,
-          lastSeenAt: session.lastSeenAt,
-        })),
-      ])
+    return sessions.flatMap((session): ActiveSeat[] => [
+      { participantId: session.participantId },
+      ...(session.coveredParticipantIds ?? []).map((participantId) => ({
+        participantId,
+        heldByParticipantId: session.participantId,
+      })),
+    ])
   },
 })
 
@@ -168,14 +172,7 @@ export const claim = mutation({
     if (args.participantId === bill.hostParticipantId) {
       throw new ConvexError(GUEST_FLOW_MESSAGES.hostSeatNotJoinable)
     }
-    await endExpiredGuestSessions(ctx, args.billId, now)
-
-    const sessions = (
-      await ctx.db
-        .query('guestSessions')
-        .withIndex('by_billId', (q) => q.eq('billId', args.billId))
-        .collect()
-    ).filter((session) => isGuestSessionActive(session.lastSeenAt, now))
+    const sessions = await endExpiredGuestSessions(ctx, args.billId, now)
 
     const holder = sessions.find((session) =>
       sessionSeatIds(session).includes(args.participantId),
@@ -202,10 +199,14 @@ export const claim = mutation({
       const changeCovered =
         coveredParticipantIds !== undefined &&
         !(await hasSentPayRequest(ctx, holder))
-      await ctx.db.patch(holder._id, {
-        lastSeenAt: now,
-        ...(changeCovered ? { coveredParticipantIds } : {}),
-      })
+      await touchGuestPresence(ctx, holder, now)
+      // The session row changes only when the seats do.
+      if (
+        changeCovered &&
+        !sameIds(coveredParticipantIds, holder.coveredParticipantIds ?? [])
+      ) {
+        await ctx.db.patch(holder._id, { coveredParticipantIds })
+      }
       return { ok: true as const }
     }
 
@@ -229,6 +230,7 @@ export const claim = mutation({
       lastSeenAt: now,
       createdAt: now,
     })
+    await touchGuestPresence(ctx, { _id: sessionId, billId: args.billId }, now)
     await onSeatClaimed(ctx, {
       billId: args.billId,
       participantId: args.participantId,
@@ -254,22 +256,16 @@ export const updateCoveredSeats = mutation({
     await onCoveredSeatsChanging(ctx, session)
 
     const now = Date.now()
-    const sessions = await ctx.db
-      .query('guestSessions')
-      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
-      .collect()
+    const sessions = await liveSessionsForBill(ctx, args.billId, now)
     const coveredParticipantIds = await resolveCoveredSeats(ctx, {
       bill,
       ownParticipantId: session.participantId,
       coveredParticipantIds: args.coveredParticipantIds,
-      otherSessions: sessions.filter(
-        (other) =>
-          other._id !== session._id &&
-          isGuestSessionActive(other.lastSeenAt, now),
-      ),
+      otherSessions: sessions.filter((other) => other._id !== session._id),
     })
 
-    await ctx.db.patch(session._id, { coveredParticipantIds, lastSeenAt: now })
+    await ctx.db.patch(session._id, { coveredParticipantIds })
+    await touchGuestPresence(ctx, session, now)
     return { coveredParticipantIds }
   },
 })
@@ -287,8 +283,29 @@ export const heartbeat = mutation({
       seatId: args.participantId,
     })
     await assertRateLimit(ctx, `heartbeat:${args.sessionToken}`, 120, 60_000)
-    await ctx.db.patch(session._id, { lastSeenAt: Date.now() })
+    // Presence, not the session: a check-in must not wake the live queries.
+    await touchGuestPresence(ctx, session, Date.now())
     return { ok: true as const }
+  },
+})
+
+/** Sessions ended per sweep run; a full batch schedules another run. */
+const END_QUIET_BATCH_SIZE = 100
+
+/** The minute sweep: phones past the TTL leave and their seats free up. */
+export const endQuiet = internalMutation({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    const { more } = await endQuietGuestSessions(
+      ctx,
+      Date.now(),
+      END_QUIET_BATCH_SIZE,
+    )
+    if (more) {
+      await ctx.scheduler.runAfter(0, internal.guestSessions.endQuiet, {})
+    }
+    return null
   },
 })
 

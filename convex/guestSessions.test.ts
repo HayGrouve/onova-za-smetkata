@@ -1,6 +1,6 @@
 // @vitest-environment edge-runtime
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { api } from './_generated/api'
+import { api, internal } from './_generated/api'
 import { GUEST_FLOW_MESSAGES } from '../shared/guest-flow-messages'
 import { GUEST_SESSION_TTL_MS } from './lib/guestSession'
 import {
@@ -176,6 +176,226 @@ describe('picking a seat', () => {
         ...ani,
       }),
     ).rejects.toThrow(GUEST_FLOW_MESSAGES.sessionExpired)
+  })
+})
+
+describe('keeping a seat alive', () => {
+  const sessionRows = (t: TestConvex) =>
+    t.run((ctx) => ctx.db.query('guestSessions').collect())
+  const presenceRows = (t: TestConvex) =>
+    t.run((ctx) => ctx.db.query('guestSessionPresence').collect())
+  const guestView = (t: TestConvex, bill: SeededBill, sessionToken: string) =>
+    t.query(api.bills.getForGuest, {
+      billId: bill.billId,
+      shareToken: bill.shareToken,
+      sessionToken,
+    })
+
+  it('a heartbeat writes only presence: the session and what queries read stay as they were', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+    const before = {
+      sessions: await sessionRows(t),
+      seats: await activeSeats(t, bill),
+      view: await guestView(t, bill, ani.sessionToken),
+      presence: await presenceRows(t),
+    }
+
+    vi.setSystemTime(Date.now() + 30_000)
+    await t.mutation(api.guestSessions.heartbeat, {
+      billId: bill.billId,
+      ...ani,
+    })
+
+    expect(await sessionRows(t)).toEqual(before.sessions)
+    expect(await activeSeats(t, bill)).toEqual(before.seats)
+    expect(await guestView(t, bill, ani.sessionToken)).toEqual(before.view)
+    const [presence] = await presenceRows(t)
+    expect(presence.lastSeenAt).toBe(before.presence[0].lastSeenAt + 30_000)
+  })
+
+  it('re-opening the join link on the same phone leaves the session row alone', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedBill(t, { guests: ['Ани', 'Боби'] })
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'], [
+      bill.seats['Боби'],
+    ])
+    const before = await sessionRows(t)
+
+    vi.setSystemTime(Date.now() + 10_000)
+    await t.mutation(api.guestSessions.claim, {
+      billId: bill.billId,
+      shareToken: bill.shareToken,
+      participantId: bill.seats['Ани'],
+      sessionToken: ani.sessionToken,
+      coveredParticipantIds: [bill.seats['Боби']],
+    })
+
+    expect(await sessionRows(t)).toEqual(before)
+    expect(await presenceRows(t)).toHaveLength(1)
+  })
+
+  it('a phone that keeps checking in outlives the TTL and keeps acting', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+
+    for (let beat = 0; beat < 8; beat++) {
+      vi.setSystemTime(Date.now() + GUEST_SESSION_TTL_MS - 30_000)
+      await t.mutation(api.guestSessions.heartbeat, {
+        billId: bill.billId,
+        ...ani,
+      })
+      // The minute sweep running in between must not touch a live phone.
+      await t.mutation(internal.guestSessions.endQuiet, {})
+    }
+
+    await expect(
+      t.mutation(api.assignments.takeUnit, { itemIds: bill.itemIds, ...ani }),
+    ).resolves.toMatchObject({ unitIndex: 0 })
+    await expect(joinAsGuest(t, bill, bill.seats['Ани'])).rejects.toThrow(
+      GUEST_FLOW_MESSAGES.nameTaken,
+    )
+    expect(await sessionRows(t)).toHaveLength(1)
+  })
+
+  it('a quiet phone stops acting at the TTL and loses its seat when the sweep runs', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedBill(t, {
+      guests: ['Ани', 'Боби'],
+      items: [{ name: 'Бира', unitPriceCents: 300, quantity: 2 }],
+    })
+    await hostTakesUnits(bill, bill.itemIds[0], Object.values(bill.seats))
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+    const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
+    const reservation = await reserve(t, {
+      billId: bill.billId,
+      sessionToken: ani.sessionToken,
+      otherParticipantIds: [bill.seats['Боби']],
+    })
+
+    vi.setSystemTime(Date.now() + GUEST_SESSION_TTL_MS - 1_000)
+    await t.mutation(api.guestSessions.heartbeat, {
+      billId: bill.billId,
+      ...bobi,
+    })
+    vi.setSystemTime(Date.now() + 2_000)
+
+    // Queries do not read the clock: the quiet phone's seat is still shown
+    // (and its view still resolves) until the sweep, but it cannot act.
+    expect(await activeSeats(t, bill)).toHaveLength(2)
+    expect((await guestView(t, bill, ani.sessionToken)).mySeatIds).toEqual([
+      bill.seats['Ани'],
+    ])
+    await expect(
+      t.mutation(api.assignments.takeUnit, { itemIds: bill.itemIds, ...ani }),
+    ).rejects.toThrow(GUEST_FLOW_MESSAGES.sessionExpired)
+
+    await t.mutation(internal.guestSessions.endQuiet, {})
+
+    expect(await activeSeats(t, bill)).toEqual([
+      expect.objectContaining({ participantId: bill.seats['Боби'] }),
+    ])
+    expect((await guestView(t, bill, ani.sessionToken)).mySeatIds).toEqual([])
+    expect(await presenceRows(t)).toHaveLength(1)
+    expect(
+      await t.run((ctx) => ctx.db.get(reservation.requestId)),
+    ).toMatchObject({ status: 'cancelled' })
+    await expect(joinAsGuest(t, bill, bill.seats['Ани'])).resolves.toBeTruthy()
+  })
+
+  it('a quiet Covered-seat holder no longer blocks the Guest it paid for', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedBill(t, {
+      guests: ['Ани', 'Боби'],
+      items: [{ name: 'Бира', unitPriceCents: 300, quantity: 2 }],
+    })
+    await hostTakesUnits(bill, bill.itemIds[0], Object.values(bill.seats))
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+    const bobi = await joinAsGuest(t, bill, bill.seats['Боби'])
+    await reserve(t, {
+      billId: bill.billId,
+      sessionToken: ani.sessionToken,
+      otherParticipantIds: [bill.seats['Боби']],
+    })
+
+    // Ани goes quiet; Боби keeps checking in. No sweep has run yet.
+    vi.setSystemTime(Date.now() + GUEST_SESSION_TTL_MS - 1_000)
+    await t.mutation(api.guestSessions.heartbeat, {
+      billId: bill.billId,
+      ...bobi,
+    })
+    vi.setSystemTime(Date.now() + 2_000)
+
+    // Ани's Reservation lapsed with her phone, so Боби may pay for himself.
+    await expect(
+      t.mutation(api.combinedPayments.recordTransfer, {
+        billId: bill.billId,
+        sessionToken: bobi.sessionToken,
+        otherParticipantIds: [],
+      }),
+    ).resolves.toMatchObject({ requestId: expect.anything() })
+  })
+
+  it('release and the sweep leave no presence rows behind', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const ani = await joinAsGuest(t, bill, bill.seats['Ани'])
+    await joinAsGuest(t, bill, bill.seats['Боби'])
+    expect(await presenceRows(t)).toHaveLength(2)
+
+    await t.mutation(api.guestSessions.release, {
+      billId: bill.billId,
+      sessionToken: ani.sessionToken,
+    })
+    expect(await presenceRows(t)).toHaveLength(1)
+
+    vi.setSystemTime(Date.now() + GUEST_SESSION_TTL_MS + 1_000)
+    await t.mutation(internal.guestSessions.endQuiet, {})
+    expect(await presenceRows(t)).toEqual([])
+    expect(await sessionRows(t)).toEqual([])
+  })
+
+  it('sessions from before presence existed are live until their TTL, then swept', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const insertLegacy = (participantId: typeof bill.hostSeat, token: string) =>
+      t.run((ctx) =>
+        ctx.db.insert('guestSessions', {
+          billId: bill.billId,
+          participantId,
+          sessionToken: token,
+          lastSeenAt: Date.now(),
+          createdAt: Date.now(),
+        }),
+      )
+    await insertLegacy(bill.seats['Ани'], 'legacy-session-token-ani')
+    await insertLegacy(bill.seats['Боби'], 'legacy-session-token-bobi')
+
+    vi.setSystemTime(Date.now() + GUEST_SESSION_TTL_MS - 1_000)
+    // Ани's old tab beats once: the session works and gains a presence row.
+    await t.mutation(api.guestSessions.heartbeat, {
+      billId: bill.billId,
+      participantId: bill.seats['Ани'],
+      sessionToken: 'legacy-session-token-ani',
+    })
+    expect(await presenceRows(t)).toHaveLength(1)
+
+    vi.setSystemTime(Date.now() + 2_000)
+    const swept = await t.mutation(internal.cleanup.run, {})
+
+    expect(swept.purgedSessions).toBe(1)
+    expect((await sessionRows(t)).map((row) => row.sessionToken)).toEqual([
+      'legacy-session-token-ani',
+    ])
   })
 })
 

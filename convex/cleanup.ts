@@ -2,7 +2,7 @@ import { v } from 'convex/values'
 import { internal } from './_generated/api'
 import { internalMutation } from './_generated/server'
 import type { MutationCtx } from './_generated/server'
-import { endGuestSession, GUEST_SESSION_TTL_MS } from './lib/guestSession'
+import { endQuietGuestSessions } from './lib/guestSession'
 import { deleteStoredPhoto } from './lib/receiptStorage'
 
 /** Buckets older than this are stale (longest app rate-limit window is 1 hour). */
@@ -77,15 +77,11 @@ export const run = internalMutation({
   handler: async (ctx, args) => {
     const now = Date.now()
 
-    const sessions = await ctx.db
-      .query('guestSessions')
-      .withIndex('by_lastSeenAt', (q) =>
-        q.lte('lastSeenAt', now - GUEST_SESSION_TTL_MS),
-      )
-      .take(CLEANUP_BATCH_SIZE)
-    for (const session of sessions) {
-      await endGuestSession(ctx, session)
-    }
+    // Backstop for the minute sweep (`guestSessions.endQuiet`); also ends the
+    // sessions that predate the presence table.
+    const sessions = await endQuietGuestSessions(ctx, now, CLEANUP_BATCH_SIZE, {
+      legacy: true,
+    })
 
     // Live usage counters share the index with stale rate-limit buckets and
     // are skipped, so a run that stops early hands its position to the next
@@ -152,7 +148,7 @@ export const run = internalMutation({
     }
 
     const moreLeft =
-      sessions.length === CLEANUP_BATCH_SIZE ||
+      sessions.more ||
       bucketCursor !== undefined ||
       scans.length === CLEANUP_BATCH_SIZE ||
       quickScans.length === CLEANUP_BATCH_SIZE ||
@@ -164,7 +160,7 @@ export const run = internalMutation({
     }
 
     return {
-      purgedSessions: sessions.length,
+      purgedSessions: sessions.ended,
       purgedBuckets,
       purgedScans: scans.length,
       purgedQuickScans: quickScans.length,
