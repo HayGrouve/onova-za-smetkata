@@ -171,12 +171,34 @@ export function GuestPayView({
                     ? 'Вашият дял'
                     : 'За плащане'}
             </p>
-            <p
-              className="mt-1 font-display text-[48px] leading-none font-extrabold tracking-[-0.03em] sm:text-[56px]"
-              data-testid="pay-total"
-            >
-              {formatEur(settled || readOnly ? owed : payment.amountCents)}
-            </p>
+            <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <p
+                className="font-display text-[48px] leading-none font-extrabold tracking-[-0.03em] sm:text-[56px]"
+                data-testid="pay-total"
+              >
+                {formatEur(settled || readOnly ? owed : payment.amountCents)}
+              </p>
+              {!readOnly &&
+              !settled &&
+              !pending &&
+              !nothingClaimed &&
+              payment.hasIban &&
+              payment.canPay ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="px-3 text-[12px]"
+                  onClick={() => void payment.copyAmount()}
+                >
+                  <CopyIcon
+                    className="size-3.5"
+                    strokeWidth={1.75}
+                    aria-hidden
+                  />
+                  Копирай сумата
+                </Button>
+              ) : null}
+            </div>
             <div className="pointer-events-none absolute top-11 right-4">
               <AnimatePresence initial={false}>
                 {settled ? (
@@ -301,13 +323,14 @@ export function GuestPayView({
                   {payment.pendingStatusLabel} Тук ще се появи печат „Платено“,
                   щом {hostName} потвърди.
                 </p>
-                <button
+                <Button
                   type="button"
-                  className="min-h-11 text-[12px] underline decoration-dotted decoration-2 underline-offset-4"
+                  variant="outline"
+                  className="w-full text-[12px]"
                   onClick={() => void payment.cancelPending()}
                 >
                   Още не съм превел, отмени
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -350,7 +373,7 @@ export function GuestPayView({
                           strokeWidth={1.75}
                           aria-hidden
                         />
-                        IBAN и сума
+                        Копирай IBAN
                       </Button>
                     </div>
                   </div>

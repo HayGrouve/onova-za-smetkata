@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { formatCopyAmount } from '#/lib/bill-share.ts'
 import { copyToClipboard } from '#/lib/copy-to-clipboard.ts'
+import { formatEur } from '#/lib/format-currency.ts'
 import { getConvexErrorMessage } from '#/lib/convex-error.ts'
 import {
   buildRevolutPaymentNote,
@@ -182,10 +183,21 @@ export function useGuestPayment({
       setBusy(false)
       if (!recorded) return
     }
-    const text = canPay ? `${formatCopyAmount(amountCents)}\n${iban}` : iban
-    const copied = await copyToClipboard(text)
+    // Only the IBAN: a bank's IBAN field does not take "amount, newline, IBAN".
+    const copied = await copyToClipboard(iban)
     if (copied) {
-      toast.success('IBAN копиран')
+      toast.success('IBAN е копиран')
+    } else {
+      toast.error('Неуспешно копиране')
+    }
+  }
+
+  /** Copies just the amount for the bank's amount field; records nothing. */
+  async function copyAmount() {
+    if (!canPay) return
+    const copied = await copyToClipboard(formatCopyAmount(amountCents))
+    if (copied) {
+      toast.success(`Сумата ${formatEur(amountCents)} е копирана`)
     } else {
       toast.error('Неуспешно копиране')
     }
@@ -218,6 +230,7 @@ export function useGuestPayment({
     toggleExtra,
     payWithRevolut,
     copyIban,
+    copyAmount,
     cancelPending,
     pendingStatusLabel: COMBINED_PAYMENT_MESSAGES.statusPending,
   }
