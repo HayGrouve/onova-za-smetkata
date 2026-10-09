@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useMutation } from 'convex/react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ScissorsIcon, UserPlusIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { CombinedCoverNotice } from '#/components/bills/combined-cover-notice.tsx'
@@ -42,6 +42,7 @@ import { Timeline } from '#/components/receipt/timeline.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { useBillActivity } from '#/hooks/use-bill-activity.ts'
 import { useClaimActions } from '#/hooks/use-claim-actions.ts'
+import { useFlashError } from '#/hooks/use-flash-error.ts'
 import { useGuestLiveReceipt } from '#/hooks/use-guest-live-receipt.ts'
 import { buildCoveredSeatCandidates } from '#/lib/covered-seat-candidates.ts'
 import { formatEur } from '#/lib/format-currency.ts'
@@ -117,11 +118,7 @@ function GuestClaimTable({
       : participantId
   ) as Id<'participants'>
   const [openKey, setOpenKey] = useState<string | null>(null)
-  const [lineError, setLineError] = useState<{
-    key: string
-    text: string
-  } | null>(null)
-  const errorTimer = useRef<number | undefined>(undefined)
+  const { lineError, flashError } = useFlashError()
   const [undo, pushUndo, clearUndo] = useUndo()
   const [coveredOpen, setCoveredOpen] = useState(false)
   const [dockCollapsed, toggleDock] = useDockCollapsed()
@@ -151,12 +148,6 @@ function GuestClaimTable({
       .filter((event) => event.kind === 'took')
       .map((event) => event.seatId),
   )
-
-  function flashError(key: string, text: string) {
-    setLineError({ key, text })
-    window.clearTimeout(errorTimer.current)
-    errorTimer.current = window.setTimeout(() => setLineError(null), 2800)
-  }
 
   async function take(group: ClaimGroup) {
     if (readOnly) return

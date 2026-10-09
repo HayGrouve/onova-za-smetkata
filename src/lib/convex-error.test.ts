@@ -23,6 +23,12 @@ describe('getConvexErrorMessage', () => {
     )
   })
 
+  it('reads the message of object data, such as a quota error', () => {
+    expect(
+      getConvexErrorMessage({ data: { code: 'QUOTA_OCR', message: 'Лимит.' } }),
+    ).toBe('Лимит.')
+  })
+
   it('falls back for unknown errors', () => {
     expect(getConvexErrorMessage(null)).toBe('Неуспешна операция')
   })

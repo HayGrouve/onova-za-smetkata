@@ -19,9 +19,7 @@ export const add = mutation({
   },
   handler: async (ctx, args) => {
     const bill = await requireBillOwner(ctx, args.billId)
-    if (bill.status === 'final') {
-      throw new ConvexError('Сметката е завършена.')
-    }
+    assertBillDraft(bill)
 
     const validated = validateItemAddArgs({
       name: args.name,
@@ -65,9 +63,7 @@ export const update = mutation({
     }
 
     const bill = await requireBillOwner(ctx, item.billId)
-    if (bill.status === 'final') {
-      throw new ConvexError('Сметката е завършена.')
-    }
+    assertBillDraft(bill)
 
     const validated = validateItemUpdatePatch({
       name: args.name,
