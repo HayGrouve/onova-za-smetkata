@@ -147,6 +147,9 @@ export function useGuestPayment({
   }
 
   const canPay = !locked && !transferInitiated && amountCents > 0
+  // Still useful after „Копирай IBAN“ records the transfer: the bank app
+  // needs the amount too, and copying it records nothing.
+  const canCopyAmount = !locked && amountCents > 0
 
   const paymentNote = buildRevolutPaymentNote(
     restaurantName,
@@ -194,7 +197,7 @@ export function useGuestPayment({
 
   /** Copies just the amount for the bank's amount field; records nothing. */
   async function copyAmount() {
-    if (!canPay) return
+    if (!canCopyAmount) return
     const copied = await copyToClipboard(formatCopyAmount(amountCents))
     if (copied) {
       toast.success(`Сумата ${formatEur(amountCents)} е копирана`)
@@ -231,6 +234,7 @@ export function useGuestPayment({
     payWithRevolut,
     copyIban,
     copyAmount,
+    canCopyAmount,
     cancelPending,
     pendingStatusLabel: COMBINED_PAYMENT_MESSAGES.statusPending,
   }

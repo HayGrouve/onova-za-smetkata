@@ -180,10 +180,9 @@ export function GuestPayView({
               </p>
               {!readOnly &&
               !settled &&
-              !pending &&
               !nothingClaimed &&
               payment.hasIban &&
-              payment.canPay ? (
+              payment.canCopyAmount ? (
                 <Button
                   type="button"
                   variant="outline"
