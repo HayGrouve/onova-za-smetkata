@@ -1,6 +1,8 @@
 import { Component, useState } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
+import { LandingPage } from '#/components/landing/landing-page.tsx'
 import { ReceiptLoading } from '#/components/receipt/receipt-states.tsx'
+import { useAuth } from '@clerk/tanstack-react-start'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
@@ -19,25 +21,29 @@ import { QuickCameraButton } from '#/components/quick-bill/quick-camera-button.t
 import { Button } from '#/components/ui/button.tsx'
 import { QueryErrorPanel } from '#/components/ui/query-error-panel.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
-import { useRequireHostAuth } from '#/hooks/use-require-host-auth.ts'
 import { useSubscriptionPaywall } from '#/components/subscription/subscription-provider.tsx'
 import { PwaInstallBanner } from '#/components/pwa-install-banner.tsx'
 import { ICON } from '#/lib/app-icons.ts'
-import { buildHomeHead } from '#/lib/site-meta.ts'
+import { buildHomeHead, buildHomeStructuredData } from '#/lib/site-meta.ts'
 import { cn } from '#/lib/utils.ts'
 import { useHostOnboarding } from '#/components/host-onboarding/host-onboarding-provider.tsx'
 import { HOST_ONBOARDING_HOME } from '../../shared/host-onboarding-messages.ts'
 import { api } from '../../convex/_generated/api'
 
 export const Route = createFileRoute('/')({
-  head: () => buildHomeHead(),
+  head: () => ({
+    ...buildHomeHead(),
+    scripts: [
+      { type: 'application/ld+json', children: buildHomeStructuredData() },
+    ],
+  }),
   validateSearch: (search: Record<string, unknown>): { q?: string } => ({
     q:
       typeof search.q === 'string' && search.q.trim()
         ? search.q.trim()
         : undefined,
   }),
-  component: Home,
+  component: HomeGate,
 })
 
 class HomeSectionErrorBoundary extends Component<
@@ -78,9 +84,23 @@ class HomeSectionErrorBoundary extends Component<
   }
 }
 
+/**
+ * `/` is the signed-out front door and the signed-in Host's Home. Clerk's
+ * session is read on the server (`clerkMiddleware`) and handed to the browser
+ * as initial state, so `isLoaded` is already true during SSR: a signed-out
+ * request is answered with the landing page's HTML, and a signed-in Host
+ * never sees it. Only a browser Clerk has not loaded yet shows the skeleton.
+ */
+function HomeGate() {
+  const { isLoaded, isSignedIn } = useAuth()
+
+  if (!isLoaded) return <ReceiptLoading />
+  if (!isSignedIn) return <LandingPage />
+  return <Home />
+}
+
 function Home() {
   const navigate = useNavigate()
-  const { isAuthenticated, isLoading } = useRequireHostAuth('/')
   const { handleMutationError } = useSubscriptionPaywall()
   const createBill = useMutation(api.bills.create)
   const [resetKey, setResetKey] = useState(0)
@@ -92,14 +112,7 @@ function Home() {
   const startAnotherGuidedBill = useMutation(
     api.hostOnboarding.startAnotherGuidedBill,
   )
-  const onboarding = useQuery(
-    api.hostOnboarding.getForViewer,
-    isAuthenticated ? {} : 'skip',
-  )
-
-  if (isLoading || !isAuthenticated) {
-    return <ReceiptLoading />
-  }
+  const onboarding = useQuery(api.hostOnboarding.getForViewer, {})
 
   async function handleCreateBill() {
     setIsCreating(true)
