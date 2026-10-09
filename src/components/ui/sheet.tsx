@@ -2,6 +2,7 @@ import * as React from 'react'
 import { XIcon } from 'lucide-react'
 import { Dialog as SheetPrimitive } from 'radix-ui'
 
+import { useReturnFocus } from '#/hooks/use-return-focus.ts'
 import { cn } from '#/lib/utils.ts'
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
@@ -54,29 +55,19 @@ function SheetContent({
   side?: 'top' | 'right' | 'bottom' | 'left'
   showCloseButton?: boolean
 }) {
-  // Sheets open from state, not a SheetTrigger, so Radix has no trigger to
-  // hand focus back to on close and drops it on the page. Remember the opener.
-  const openerRef = React.useRef<HTMLElement | null>(null)
+  const returnFocus = useReturnFocus()
 
   return (
     <SheetPortal>
       <SheetOverlay />
       <SheetPrimitive.Content
         onOpenAutoFocus={(event) => {
-          const active = document.activeElement
-          openerRef.current =
-            active instanceof HTMLElement && active !== document.body
-              ? active
-              : null
+          returnFocus.remember()
           onOpenAutoFocus?.(event)
         }}
         onCloseAutoFocus={(event) => {
           onCloseAutoFocus?.(event)
-          const opener = openerRef.current
-          openerRef.current = null
-          if (event.defaultPrevented || !opener?.isConnected) return
-          event.preventDefault()
-          opener.focus({ preventScroll: true })
+          returnFocus.restore(event)
         }}
         data-slot="sheet-content"
         className={cn(
