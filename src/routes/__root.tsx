@@ -23,6 +23,7 @@ import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 import { isDefiniteErrorReason } from '#/lib/definite-error-reason.ts'
 import { getConvexErrorData } from '#/lib/convex-error.ts'
+import { scrubEventUrl } from '#/lib/scrub-share-token.ts'
 
 import { SentryInit } from '../components/sentry-init.tsx'
 import { ServiceWorkerRegister } from '../components/service-worker-register.tsx'
@@ -137,8 +138,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               <ConvexProvider>
                 <SentryInit />
                 <ServiceWorkerRegister />
-                <Analytics />
-                <SpeedInsights />
+                <Analytics beforeSend={scrubEventUrl} />
+                <SpeedInsights beforeSend={scrubEventUrl} />
                 {children}
                 <Toaster />
                 {import.meta.env.DEV && (
