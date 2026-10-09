@@ -249,7 +249,7 @@ function Slots({
   return (
     <span
       data-slots
-      className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1.5"
+      className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2"
     >
       {group.units.map((unit, unitIdx) => {
         const ids = members[unitIdx] ?? []
@@ -317,7 +317,7 @@ function Slots({
               aria-label={`Върни бройка ${unitIdx + 1} от ${group.name}${ids.length > 1 ? ', махни ме от споделената' : ''}`}
               className={cn(
                 slotClass,
-                "pointer-events-auto after:absolute after:-inset-[11px] after:content-['']",
+                "pointer-events-auto after:absolute after:-inset-[4px] after:content-['']",
               )}
             >
               {avatars}

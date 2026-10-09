@@ -174,7 +174,6 @@ export function QuickSummary({
                 <Button
                   key={percent}
                   type="button"
-                  size="sm"
                   variant={
                     bill.tipPercent === percent ? 'secondary' : 'outline'
                   }
