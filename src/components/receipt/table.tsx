@@ -78,7 +78,8 @@ export function SeatsRail({
           ? 'flex flex-col gap-1'
           : 'scroll-x-quiet -mx-1 flex items-start gap-1 overflow-x-auto px-1 pt-2',
       )}
-      role={onSeat ? 'group' : undefined}
+      // A label needs a role to be announced, picker or not.
+      role={label || onSeat ? 'group' : undefined}
       aria-label={label}
       style={{
         ['--ring-offset' as string]: onTable ? 'var(--table)' : 'var(--paper)',

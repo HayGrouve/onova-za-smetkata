@@ -10,6 +10,11 @@ export function normalizeIban(input: string): string {
   return input.replace(/\s+/g, '').toUpperCase()
 }
 
+/** The IBAN as people read it: groups of four („BG80 BNBG 9661 …“). Copy the raw one. */
+export function formatIbanGroups(input: string): string {
+  return normalizeIban(input).replace(/(.{4})(?=.)/g, '$1 ')
+}
+
 function letterToIbanDigits(char: string): string {
   return String(char.charCodeAt(0) - 55)
 }

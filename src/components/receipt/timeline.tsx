@@ -51,17 +51,20 @@ export function Timeline({
                 active ? 'bg-stamp' : done ? 'bg-on-table' : 'bg-table-3',
               )}
             />
+            {/* Phones next to the header buttons: condensed text, no ticks (the
+                bar already shows a phase is done) and each step as wide as
+                its label, so whole labels fit. */}
             <span
               className={cn(
                 'flex w-full min-w-0 items-center gap-1 leading-tight',
                 active
-                  ? 'font-display text-[10px] font-bold text-on-table sm:text-[11px]'
-                  : 'text-[11px] text-on-table-muted',
+                  ? 'font-display text-[10px] font-bold tracking-[-0.02em] text-on-table sm:text-[11px] sm:tracking-normal'
+                  : 'text-[10px] text-on-table-muted [font-stretch:75%] sm:text-[11px] sm:[font-stretch:87.5%]',
               )}
             >
               {done ? (
                 <CheckIcon
-                  className="size-3 shrink-0"
+                  className="hidden size-3 shrink-0 sm:block"
                   strokeWidth={2.25}
                   aria-hidden
                 />
@@ -73,7 +76,7 @@ export function Timeline({
         return (
           <li
             key={p.key}
-            className="min-w-0 flex-1"
+            className="min-w-0 flex-auto sm:flex-1"
             aria-current={active ? 'step' : undefined}
           >
             {onPhase ? (

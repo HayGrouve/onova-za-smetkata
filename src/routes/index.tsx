@@ -2,7 +2,7 @@ import { Component, useState } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 import { LandingPage } from '#/components/landing/landing-page.tsx'
 import { ReceiptLoading } from '#/components/receipt/receipt-states.tsx'
-import { useAuth } from '@clerk/tanstack-react-start'
+import { useHomeView } from '#/hooks/use-home-view.ts'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
@@ -92,10 +92,10 @@ class HomeSectionErrorBoundary extends Component<
  * never sees it. Only a browser Clerk has not loaded yet shows the skeleton.
  */
 function HomeGate() {
-  const { isLoaded, isSignedIn } = useAuth()
+  const view = useHomeView()
 
-  if (!isLoaded) return <ReceiptLoading />
-  if (!isSignedIn) return <LandingPage />
+  if (view === 'loading') return <ReceiptLoading />
+  if (view === 'landing') return <LandingPage />
   return <Home />
 }
 

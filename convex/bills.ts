@@ -29,7 +29,11 @@ import {
 } from './lib/receiptStorage'
 import { onBillFinalizing, pendingPayRequestOf } from './lib/payRequest'
 import { endGuestSessionsForBill, findGuest } from './lib/guestSession'
-import { assertShareToken, toGuestVisibleBill } from './lib/guestAccess'
+import {
+  assertShareToken,
+  billIdFromLink,
+  toGuestVisibleBill,
+} from './lib/guestAccess'
 import { firstZodIssueMessage } from '../shared/validation/errors'
 import { parseBillMetadataPatch } from '../shared/bill-metadata-schema'
 import { createShareToken } from './lib/shareToken'
@@ -130,19 +134,21 @@ export const get = query({
 
 export const getForGuest = query({
   args: {
-    billId: v.id('bills'),
+    // A string: a mangled link must still answer „invalid link“.
+    billId: v.string(),
     shareToken: v.string(),
     sessionToken: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const bill = await assertShareToken(ctx, args.billId, args.shareToken)
+    const billId = billIdFromLink(ctx, args.billId)
+    const bill = await assertShareToken(ctx, billId, args.shareToken)
 
     const { participants, items, assignments, payments } =
-      await loadBillRelations(ctx, args.billId)
+      await loadBillRelations(ctx, billId)
 
     const guest = args.sessionToken
       ? await findGuest(ctx, {
-          billId: args.billId,
+          billId,
           sessionToken: args.sessionToken,
         })
       : null

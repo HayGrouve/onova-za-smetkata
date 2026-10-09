@@ -178,10 +178,13 @@ export function PaymentSettingsSheet({
                 aria-invalid={Boolean(fieldErrors.iban)}
                 aria-describedby={fieldErrors.iban ? 'iban-error' : undefined}
               />
+              {/* Icon only: the field keeps the width a whole IBAN needs. */}
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 shrink-0"
+                size="icon"
+                className="shrink-0"
+                aria-label="Копирай IBAN"
                 disabled={!iban.trim()}
                 onClick={async () => {
                   try {
@@ -193,7 +196,6 @@ export function PaymentSettingsSheet({
                 }}
               >
                 <CopyIcon className={ICON.button} aria-hidden />
-                Копирай
               </Button>
             </div>
             {fieldErrors.iban ? (

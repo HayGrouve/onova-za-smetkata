@@ -1,4 +1,4 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { PlusIcon } from 'lucide-react'
 import { useState } from 'react'
 import { withReducedMotion } from '#/components/motion-root.tsx'
@@ -10,18 +10,16 @@ import {
   RestaurantTitle,
   Rule,
 } from '#/components/receipt/paper.tsx'
-import {
-  ReceiptLoading,
-  ReceiptMessage,
-} from '#/components/receipt/receipt-states.tsx'
+import { ReceiptLoading } from '#/components/receipt/receipt-states.tsx'
 import {
   SeatAvatar,
   SeatsProvider,
   useSeatLookup,
 } from '#/components/receipt/seats.tsx'
 import { Timeline } from '#/components/receipt/timeline.tsx'
-import { Button } from '#/components/ui/button.tsx'
+import { InvalidLinkMessage } from '#/components/guest/invalid-link-message.tsx'
 import { QueryErrorBoundary } from '#/components/ui/query-error-boundary.tsx'
+import { looksLikeConvexId } from '#/lib/convex-id.ts'
 import { useGuestJoinFlow } from '#/hooks/use-guest-join-flow.ts'
 import { takenSeatLabel } from '#/lib/covered-seat-candidates.ts'
 import { buildParticipantLabels } from '#/lib/participant-labels.ts'
@@ -50,19 +48,10 @@ function BillJoinPage() {
   const billId = billIdParam as Id<'bills'>
 
   if (!shareToken) {
-    return (
-      <ReceiptMessage
-        title="Линкът не работи"
-        action={
-          <Button asChild className="w-full">
-            <Link to="/">Към началото</Link>
-          </Button>
-        }
-      >
-        {GUEST_FLOW_MESSAGES.invalidJoinLink}
-      </ReceiptMessage>
-    )
+    return <InvalidLinkMessage message={GUEST_FLOW_MESSAGES.invalidJoinLink} />
   }
+  // A mangled link: answer here rather than send it to every query.
+  if (!looksLikeConvexId(billIdParam)) return <InvalidLinkMessage />
 
   return (
     <QueryErrorBoundary resetKey={`${billId}:${shareToken}`}>

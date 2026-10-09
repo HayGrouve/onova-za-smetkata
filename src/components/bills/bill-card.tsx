@@ -79,7 +79,7 @@ export function BillCard({
           </div>
           <p
             className={cn(
-              'mt-1 truncate font-display text-[15px] font-bold uppercase',
+              'mt-1 truncate font-display text-[15px] font-bold text-stamp-ink uppercase',
               !bill.restaurantName.trim() && 'text-ink-muted italic',
             )}
           >

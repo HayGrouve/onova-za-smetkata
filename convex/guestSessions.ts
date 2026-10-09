@@ -29,7 +29,7 @@ import {
   onSeatClaimed,
 } from './lib/payRequest'
 import { assertRateLimit } from './lib/rateLimit'
-import { assertShareToken } from './lib/guestAccess'
+import { assertShareToken, billIdFromLink } from './lib/guestAccess'
 
 function sameIds(a: readonly string[], b: readonly string[]): boolean {
   return a.length === b.length && a.every((id, index) => id === b[index])
@@ -113,7 +113,8 @@ type ActiveSeat = {
  */
 export const listActiveForBill = query({
   args: {
-    billId: v.id('bills'),
+    // A string: a mangled link must still answer „invalid link“.
+    billId: v.string(),
     shareToken: v.string(),
   },
   returns: v.array(
@@ -124,10 +125,11 @@ export const listActiveForBill = query({
     }),
   ),
   handler: async (ctx, args) => {
-    await assertShareToken(ctx, args.billId, args.shareToken)
+    const billId = billIdFromLink(ctx, args.billId)
+    await assertShareToken(ctx, billId, args.shareToken)
     const sessions = await ctx.db
       .query('guestSessions')
-      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
+      .withIndex('by_billId', (q) => q.eq('billId', billId))
       .collect()
     return sessions.flatMap((session): ActiveSeat[] => [
       { participantId: session.participantId },

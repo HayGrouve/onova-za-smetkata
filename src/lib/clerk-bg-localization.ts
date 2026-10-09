@@ -1,8 +1,28 @@
 import { bgBG } from '@clerk/localizations/bg-BG'
 
+/** The Clerk dashboard names the app in Latin; screens say it in Cyrillic. */
+const APP_NAME = 'Онова за сметката'
+const CONTINUE_TO_APP = `за да продължите към ${APP_NAME}`
+
 /** Host-visible Bulgarian fills for community `bgBG` gaps. Clerk Billing keys stay untranslated. */
 export const clerkBgLocalization = {
   ...bgBG,
+  identityPreviewEditButton__emailAddress: 'Промени имейл адреса',
+  identityPreviewEditButton__identifier: 'Промени',
+  identityPreviewEditButton__phoneNumber: 'Промени телефонния номер',
+  signIn: {
+    ...bgBG.signIn,
+    start: { ...bgBG.signIn?.start, title: `Вход в ${APP_NAME}` },
+    emailCode: { ...bgBG.signIn?.emailCode, subtitle: CONTINUE_TO_APP },
+    emailCodeMfa: { ...bgBG.signIn?.emailCodeMfa, subtitle: CONTINUE_TO_APP },
+    emailLink: { ...bgBG.signIn?.emailLink, subtitle: CONTINUE_TO_APP },
+    emailLinkMfa: { ...bgBG.signIn?.emailLinkMfa, subtitle: CONTINUE_TO_APP },
+    phoneCode: { ...bgBG.signIn?.phoneCode, subtitle: CONTINUE_TO_APP },
+  },
+  signUp: {
+    ...bgBG.signUp,
+    emailLink: { ...bgBG.signUp?.emailLink, subtitle: CONTINUE_TO_APP },
+  },
   userButton: {
     ...bgBG.userButton,
     action__openUserMenu: 'Отвори менюто на акаунта',

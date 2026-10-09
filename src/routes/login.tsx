@@ -20,7 +20,9 @@ function LoginPage() {
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
-      void navigate({ to: redirect })
+      // `redirect` may carry a search string (`/bills/…?step=3`): an href,
+      // not a route path.
+      void navigate({ href: redirect })
     }
   }, [isLoaded, isSignedIn, navigate, redirect])
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  formatIbanGroups,
   formatPaymentSettingsErrors,
   isValidIbanChecksum,
   normalizeRevolutUsername,
@@ -8,6 +9,18 @@ import {
 } from './payment-settings-schema'
 
 const VALID_BG_IBAN = 'BG80BNBG96611020345678'
+
+describe('formatIbanGroups', () => {
+  it('prints the IBAN in groups of four, as banks do', () => {
+    expect(formatIbanGroups(VALID_BG_IBAN)).toBe('BG80 BNBG 9661 1020 3456 78')
+  })
+
+  it('regroups an IBAN typed with odd spacing', () => {
+    expect(formatIbanGroups(' bg80bnbg 9661102034 5678 ')).toBe(
+      'BG80 BNBG 9661 1020 3456 78',
+    )
+  })
+})
 
 describe('normalizeRevolutUsername', () => {
   it('strips leading @ and trims', () => {

@@ -28,6 +28,8 @@ const convexUrl = assertConvexUrlForBuild()
 const CLERK_APPEARANCE = {
   variables: {
     colorPrimary: '#c83314',
+    // White on vermilion is 5.3:1; Clerk's dark-scheme default turns it black.
+    colorPrimaryForeground: '#ffffff',
     colorBackground: '#fbfaf8',
     colorForeground: '#161b22',
     colorMutedForeground: '#5e646c',

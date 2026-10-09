@@ -3,7 +3,9 @@ import { useEffect } from 'react'
 import { withReducedMotion } from '#/components/motion-root.tsx'
 import { GuestClaimView } from '#/components/guest/guest-claim-view.tsx'
 import { ReceiptLoading } from '#/components/receipt/receipt-states.tsx'
+import { InvalidLinkMessage } from '#/components/guest/invalid-link-message.tsx'
 import { QueryErrorBoundary } from '#/components/ui/query-error-boundary.tsx'
+import { looksLikeConvexId } from '#/lib/convex-id.ts'
 import { useActiveSeats } from '#/hooks/use-active-seats.ts'
 import { useGuestBillSession } from '#/hooks/use-guest-bill-session.ts'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
@@ -32,6 +34,9 @@ function BillClaimPage() {
       </QueryErrorBoundary>
     )
   }
+
+  // A mangled link: answer here rather than send it to every query.
+  if (!looksLikeConvexId(billIdParam)) return <InvalidLinkMessage />
 
   return (
     <QueryErrorBoundary resetKey={`${billId}:${shareTokenFromUrl}`}>
