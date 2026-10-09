@@ -108,6 +108,7 @@ export function ReceiptScanReviewSheet({
   }
 
   const allChecked = rows.length > 0 && rows.every((r) => r.checked)
+  const hasLowConfidenceRow = rows.some((r) => r.confidence === 'low')
   const checkedCount = rows.filter((r) => r.checked).length
 
   const selectionInput = rows.map((row) => ({
@@ -227,7 +228,7 @@ export function ReceiptScanReviewSheet({
         onOpenAutoFocus={focusContentInsteadOfField}
         className="mx-auto flex max-h-[85dvh] w-full max-w-lg flex-col gap-0 overflow-hidden rounded-t-xl border-t bg-background p-0 pb-[env(safe-area-inset-bottom)] shadow-lg"
       >
-        <SheetClose className="absolute top-4 right-4 z-10 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:pointer-events-none">
+        <SheetClose className="absolute top-2 right-2 z-10 grid size-11 place-items-center rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:pointer-events-none">
           <XIcon className="size-4" aria-hidden />
           <span className="sr-only">Затвори</span>
         </SheetClose>
@@ -292,18 +293,28 @@ export function ReceiptScanReviewSheet({
             )}
 
           {rows.length > 0 && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                {rows.length} разпознати артикула
-              </p>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={toggleSelectAll}
-              >
-                {allChecked ? 'Размаркирай всички' : 'Маркирай всички'}
-              </Button>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {rows.length} разпознати артикула
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleSelectAll}
+                >
+                  {allChecked ? 'Размаркирай всички' : 'Маркирай всички'}
+                </Button>
+              </div>
+              {hasLowConfidenceRow ? (
+                <p className="text-xs text-muted-foreground">
+                  <span aria-hidden className="font-bold">
+                    ?
+                  </span>{' '}
+                  — несигурно разпознато, проверете
+                </p>
+              ) : null}
             </div>
           )}
 
