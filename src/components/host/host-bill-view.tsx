@@ -460,7 +460,7 @@ function HostBillTable({
           {activePhase !== 'assemble' ? <ActivityFeed events={events} /> : null}
         </aside>
 
-        <main className="min-w-0">{paper}</main>
+        <div className="min-w-0">{paper}</div>
 
         {/*
           One copy of the actions: a dock pinned to the bottom on phones (with

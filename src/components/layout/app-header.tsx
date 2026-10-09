@@ -183,6 +183,17 @@ export function AppHeader() {
     useHeaderConfig()
   const { isSignedIn } = useAuth()
   const slot = useBillHeaderSlot()
+  // The legal pages, the 404 page and the sign-in card (Clerk's own title)
+  // heading themselves with an h1, so the title up here steps back to plain
+  // text instead of a second h1.
+  const pageOwnsHeading = useRouterState({
+    select: (s) =>
+      s.matches.some((m) => m.status === 'notFound') ||
+      s.location.pathname === '/privacy' ||
+      s.location.pathname === '/terms' ||
+      s.location.pathname === '/login',
+  })
+  const TitleTag = pageOwnsHeading ? 'p' : 'h1'
 
   const isGuestRoute = isGuestRouteContext(routeContext)
   const isLogin = pathname === '/login'
@@ -267,9 +278,9 @@ export function AppHeader() {
                 className="size-8 shrink-0 rounded-full"
               />
             ) : null}
-            <h1 className="min-w-0 flex-1 truncate font-display text-[13px] font-bold">
+            <TitleTag className="min-w-0 flex-1 truncate font-display text-[13px] font-bold">
               {title}
-            </h1>
+            </TitleTag>
           </div>
         )}
         {/* Bill pages portal their phase timeline here instead of a title. */}

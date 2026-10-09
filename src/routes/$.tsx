@@ -17,6 +17,7 @@ function NotFoundPage() {
   return (
     <ReceiptMessage
       title="Страницата не е намерена"
+      headingLevel="h1"
       action={
         <Button asChild className="w-full">
           <Link to="/">Към началото</Link>

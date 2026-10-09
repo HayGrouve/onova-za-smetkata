@@ -288,7 +288,7 @@ function GuestClaimTable({
           <ActivityFeed events={events} />
         </aside>
 
-        <main className="min-w-0">
+        <div className="min-w-0">
           <div className="mb-2 lg:hidden">
             <SeatsRail
               seats={railSeats}
@@ -391,7 +391,7 @@ function GuestClaimTable({
               ) : null}
             </ReceiptTotals>
           </Receipt>
-        </main>
+        </div>
 
         {/* One slip: pinned to the bottom on phones, a column beside the receipt wider up. */}
         <aside className="space-y-5 md:sticky md:top-20">
