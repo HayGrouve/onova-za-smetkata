@@ -177,4 +177,47 @@ describe('Host Pro from Stripe', () => {
         .mutation(internal.billing.beginCheckout, {}),
     ).rejects.toMatchObject({ data: { code: 'ALREADY_SUBSCRIBED' } })
   })
+
+  it('a Host cannot sync a Checkout more than ten times an hour', async () => {
+    const t = setupConvex()
+    const host = await hostWithStripeCustomer(t)
+    const sync = () =>
+      host.action(api.billingStripe.syncAfterCheckout, { sessionId: 'cs_1' })
+
+    // Without a Stripe key each allowed call fails after the rate limit.
+    for (let call = 0; call < 10; call++) {
+      await expect(sync()).rejects.toThrow('STRIPE_SECRET_KEY')
+    }
+    await expect(sync()).rejects.toThrow('Твърде много заявки')
+  })
+})
+
+describe('a failed webhook sync', () => {
+  async function scheduledSyncs(t: TestConvex) {
+    const scheduled = await t.run((ctx) =>
+      ctx.db.system.query('_scheduled_functions').collect(),
+    )
+    return scheduled.map((job) => job.args[0] as object)
+  }
+
+  it('retries itself with the next attempt number', async () => {
+    const t = setupConvex()
+    await expect(
+      t.action(internal.billingStripe.syncCustomer, { customerId: 'cus_1' }),
+    ).rejects.toThrow()
+    expect(await scheduledSyncs(t)).toEqual([
+      { customerId: 'cus_1', attempt: 1 },
+    ])
+  })
+
+  it('gives up after the last retry', async () => {
+    const t = setupConvex()
+    await expect(
+      t.action(internal.billingStripe.syncCustomer, {
+        customerId: 'cus_1',
+        attempt: 4,
+      }),
+    ).rejects.toThrow()
+    expect(await scheduledSyncs(t)).toEqual([])
+  })
 })
