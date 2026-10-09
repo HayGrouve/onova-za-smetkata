@@ -20,6 +20,7 @@ import { ICON } from '#/lib/app-icons.ts'
 import { getScanDismissCopy } from '#/lib/destructive-action-copy.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { validateBillMetadataField } from '../../../shared/bill-metadata-schema.ts'
+import { formatEurInput } from '../../../shared/validation/eur.ts'
 import {
   validateReceiptImportRow,
   validateReceiptImportSelection,
@@ -53,10 +54,6 @@ interface ReviewRow {
   checked: boolean
 }
 
-function formatEurInputValue(cents: number): string {
-  return (cents / 100).toFixed(2).replace('.', ',')
-}
-
 export function ReceiptScanReviewSheet({
   open,
   onOpenChange,
@@ -87,7 +84,7 @@ export function ReceiptScanReviewSheet({
     setRows(
       extractedItems.map((item) => ({
         name: item.name,
-        priceInput: formatEurInputValue(item.unitPriceCents),
+        priceInput: formatEurInput(item.unitPriceCents),
         quantity: String(item.quantity),
         confidence: item.confidence,
         checked: true,

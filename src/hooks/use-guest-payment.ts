@@ -1,7 +1,6 @@
 import { useMutation, useQuery } from 'convex/react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { formatCopyAmount } from '#/lib/bill-share.ts'
 import { copyToClipboard } from '#/lib/copy-to-clipboard.ts'
 import { getConvexErrorMessage } from '#/lib/convex-error.ts'
 import {
@@ -10,6 +9,7 @@ import {
 } from '#/lib/payment-settings.ts'
 import { launchRevolut } from '#/lib/revolut-launch.ts'
 import { getCoveredParticipantIds } from '../../shared/combined-payment'
+import { formatEurInput } from '../../shared/validation/eur'
 import { COMBINED_PAYMENT_MESSAGES } from '../../shared/combined-payment-messages'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
@@ -160,7 +160,7 @@ export function useGuestPayment({
       url,
       openWindow: (targetUrl) => window.open(targetUrl),
       copyAmount: () => {
-        void copyToClipboard(formatCopyAmount(amountCents))
+        void copyToClipboard(formatEurInput(amountCents))
       },
       recordTransfer,
     })
@@ -182,7 +182,7 @@ export function useGuestPayment({
       setBusy(false)
       if (!recorded) return
     }
-    const text = canPay ? `${formatCopyAmount(amountCents)}\n${iban}` : iban
+    const text = canPay ? `${formatEurInput(amountCents)}\n${iban}` : iban
     const copied = await copyToClipboard(text)
     if (copied) {
       toast.success('IBAN копиран')
