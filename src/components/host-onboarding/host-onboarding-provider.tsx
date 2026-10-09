@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react'
 import type { ReactNode } from 'react'
-import { useAuth } from '@clerk/tanstack-react-start'
+import { useHostAuth } from '#/hooks/use-host-auth.ts'
 import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
 import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
@@ -135,7 +135,7 @@ const HostOnboardingContext = createContext<HostOnboardingContextValue | null>(
 )
 
 export function HostOnboardingProvider({ children }: { children: ReactNode }) {
-  const { isSignedIn } = useAuth()
+  const { isSignedIn } = useHostAuth()
   usePreloadWhenIdle(Boolean(isSignedIn), SHEET_LOADERS)
   const onboarding = useQuery(
     api.hostOnboarding.getForViewer,

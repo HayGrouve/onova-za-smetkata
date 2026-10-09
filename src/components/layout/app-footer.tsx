@@ -1,5 +1,5 @@
 import { DownloadIcon } from 'lucide-react'
-import { useAuth } from '@clerk/tanstack-react-start'
+import { useHostAuth } from '#/hooks/use-host-auth.ts'
 import { useRouterState } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Button } from '#/components/ui/button.tsx'
@@ -40,7 +40,7 @@ function SafariShareIcon({ className }: { className?: string }) {
 
 export function AppFooter() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const { isSignedIn, isLoaded } = useAuth()
+  const { isSignedIn, isLoaded } = useHostAuth()
   const { canInstall, showIosSteps, install } = usePwaInstall()
   const [iosExpanded, setIosExpanded] = useState(false)
 

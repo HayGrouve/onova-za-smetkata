@@ -1,12 +1,20 @@
 import { ClerkProvider, useAuth } from '@clerk/tanstack-react-start'
-import { ConvexReactClient, useMutation } from 'convex/react'
+import { useRouterState } from '@tanstack/react-router'
+import {
+  ConvexProviderWithAuth,
+  ConvexReactClient,
+  useMutation,
+} from 'convex/react'
 import { ConvexProviderWithClerk } from 'convex/react-clerk'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { api } from '../../../convex/_generated/api'
 import { assertConvexUrlForBuild } from '#/lib/env.ts'
 import { getClerkPublishableKey } from '#/lib/clerk-env.ts'
 import type { clerkBgLocalization } from '#/lib/clerk-bg-localization.ts'
 import { SubscriptionProvider } from '#/components/subscription/subscription-provider.tsx'
+import { HostAuthContext } from '#/hooks/use-host-auth.ts'
+import type { HostAuthState } from '#/hooks/use-host-auth.ts'
+import { isGuestPage } from '../../../shared/app-header-route-context.ts'
 
 const convexUrl = assertConvexUrlForBuild()
 
@@ -45,21 +53,23 @@ type ClerkLocalization = typeof clerkBgLocalization
 
 /**
  * The Bulgarian strings are ~78 KB, so they load beside the entry bundle
- * instead of inside it. Clerk's own scripts take longer to arrive than this
- * chunk, so its components are already Bulgarian when they first draw.
+ * instead of inside it, and only where Clerk runs. Clerk's own scripts take
+ * longer to arrive than this chunk, so its components are already Bulgarian
+ * when they first draw.
  */
-const clerkLocalizationPromise: Promise<ClerkLocalization> | null =
-  typeof window === 'undefined'
-    ? null
-    : import('#/lib/clerk-bg-localization.ts').then(
-        (module) => module.clerkBgLocalization,
-      )
+let clerkLocalizationPromise: Promise<ClerkLocalization> | undefined
+function loadClerkLocalization(): Promise<ClerkLocalization> {
+  clerkLocalizationPromise ??= import('#/lib/clerk-bg-localization.ts').then(
+    (module) => module.clerkBgLocalization,
+  )
+  return clerkLocalizationPromise
+}
 
 function useClerkLocalization(): ClerkLocalization | undefined {
   const [localization, setLocalization] = useState<ClerkLocalization>()
   useEffect(() => {
     let cancelled = false
-    void clerkLocalizationPromise?.then((loaded) => {
+    void loadClerkLocalization().then((loaded) => {
       if (!cancelled) setLocalization(loaded)
     })
     return () => {
@@ -67,6 +77,72 @@ function useClerkLocalization(): ClerkLocalization | undefined {
     }
   }, [])
   return localization
+}
+
+/**
+ * Clerk (its provider plus ~1 MB of scripts from Clerk's CDN) runs on every
+ * page except the Guest share-link pages, which never need an account. Once a
+ * phone has been on a Host page Clerk stays mounted, so moving between the two
+ * remounts the app at most once.
+ */
+function useClerkNeeded(): boolean {
+  const onGuestPage = useRouterState({
+    select: (state) =>
+      isGuestPage(state.location.pathname, state.location.searchStr),
+  })
+  const [clerkMounted, setClerkMounted] = useState(!onGuestPage)
+  if (!onGuestPage && !clerkMounted) setClerkMounted(true)
+  return clerkMounted || !onGuestPage
+}
+
+const GUEST_HOST_AUTH: HostAuthState = { isLoaded: true, isSignedIn: false }
+const GUEST_CONVEX_AUTH = {
+  isLoading: false,
+  isAuthenticated: false,
+  fetchAccessToken: () => Promise.resolve(null),
+}
+function useGuestConvexAuth() {
+  return GUEST_CONVEX_AUTH
+}
+
+function ClerkHostAuth({ children }: { children: React.ReactNode }) {
+  const { isLoaded, isSignedIn } = useAuth()
+  const value = useMemo(
+    () => ({ isLoaded, isSignedIn }),
+    [isLoaded, isSignedIn],
+  )
+  return (
+    <HostAuthContext.Provider value={value}>
+      {children}
+    </HostAuthContext.Provider>
+  )
+}
+
+function ClerkTree({
+  client,
+  publishableKey,
+  children,
+}: {
+  client: ConvexReactClient
+  publishableKey: string
+  children: React.ReactNode
+}) {
+  const localization = useClerkLocalization()
+  return (
+    <ClerkProvider
+      publishableKey={publishableKey}
+      localization={localization}
+      appearance={CLERK_APPEARANCE}
+    >
+      <ClerkHostAuth>
+        <ConvexProviderWithClerk client={client} useAuth={useAuth}>
+          <EnsureConvexUser>
+            <SubscriptionProvider>{children}</SubscriptionProvider>
+          </EnsureConvexUser>
+        </ConvexProviderWithClerk>
+      </ClerkHostAuth>
+    </ClerkProvider>
+  )
 }
 
 function MissingConvexConfig() {
@@ -151,7 +227,7 @@ export default function AppConvexProvider({
 }: {
   children: React.ReactNode
 }) {
-  const localization = useClerkLocalization()
+  const clerkNeeded = useClerkNeeded()
 
   if (!convexClient) {
     return <MissingConvexConfig />
@@ -161,17 +237,22 @@ export default function AppConvexProvider({
     return <MissingClerkConfig />
   }
 
-  return (
-    <ClerkProvider
-      publishableKey={clerkPublishableKey}
-      localization={localization}
-      appearance={CLERK_APPEARANCE}
-    >
-      <ConvexProviderWithClerk client={convexClient} useAuth={useAuth}>
-        <EnsureConvexUser>
+  if (!clerkNeeded) {
+    return (
+      <HostAuthContext.Provider value={GUEST_HOST_AUTH}>
+        <ConvexProviderWithAuth
+          client={convexClient}
+          useAuth={useGuestConvexAuth}
+        >
           <SubscriptionProvider>{children}</SubscriptionProvider>
-        </EnsureConvexUser>
-      </ConvexProviderWithClerk>
-    </ClerkProvider>
+        </ConvexProviderWithAuth>
+      </HostAuthContext.Provider>
+    )
+  }
+
+  return (
+    <ClerkTree client={convexClient} publishableKey={clerkPublishableKey}>
+      {children}
+    </ClerkTree>
   )
 }

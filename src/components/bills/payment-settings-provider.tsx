@@ -1,4 +1,4 @@
-import { useAuth } from '@clerk/tanstack-react-start'
+import { useHostAuth } from '#/hooks/use-host-auth.ts'
 import { useQuery } from 'convex/react'
 import { createContext, lazy, useContext, useState } from 'react'
 import {
@@ -35,7 +35,7 @@ export function PaymentSettingsProvider({
   children: React.ReactNode
 }) {
   const [open, setOpen] = useState(false)
-  const { isSignedIn } = useAuth()
+  const { isSignedIn } = useHostAuth()
   usePreloadWhenIdle(Boolean(isSignedIn), SHEET_LOADERS)
   const settings = useQuery(api.paymentSettings.get, isSignedIn ? {} : 'skip')
   const status: PaymentSettingsStatus = isSignedIn

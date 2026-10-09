@@ -1,4 +1,5 @@
-import { useAuth, UserButton } from '@clerk/tanstack-react-start'
+import { UserButton } from '@clerk/tanstack-react-start'
+import { useHostAuth } from '#/hooks/use-host-auth.ts'
 import { Link, useParams, useRouterState } from '@tanstack/react-router'
 import { useConvexAuth, useQuery } from 'convex/react'
 import { ChevronLeftIcon } from 'lucide-react'
@@ -181,7 +182,7 @@ export function AppHeader() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const { title, backTo, backParams, backSearch, routeContext, billId, bill } =
     useHeaderConfig()
-  const { isSignedIn } = useAuth()
+  const { isSignedIn } = useHostAuth()
   const slot = useBillHeaderSlot()
 
   const isGuestRoute = isGuestRouteContext(routeContext)

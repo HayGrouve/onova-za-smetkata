@@ -1,5 +1,5 @@
 import { createContext, lazy, useContext, useState } from 'react'
-import { useAuth } from '@clerk/tanstack-react-start'
+import { useHostAuth } from '#/hooks/use-host-auth.ts'
 import {
   MountOnFirstOpen,
   usePreloadWhenIdle,
@@ -35,7 +35,7 @@ export function FriendGroupsProvider({
 }: {
   children: React.ReactNode
 }) {
-  const { isSignedIn } = useAuth()
+  const { isSignedIn } = useHostAuth()
   usePreloadWhenIdle(Boolean(isSignedIn), SHEET_LOADERS)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [editorOpen, setEditorOpen] = useState(false)
