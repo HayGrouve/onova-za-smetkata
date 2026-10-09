@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
 import { useEffect } from 'react'
+import { withReducedMotion } from '#/components/motion-root.tsx'
 import { GuestClaimView } from '#/components/guest/guest-claim-view.tsx'
 import { ReceiptLoading } from '#/components/receipt/receipt-states.tsx'
 import { QueryErrorBoundary } from '#/components/ui/query-error-boundary.tsx'
@@ -17,7 +18,7 @@ export const Route = createFileRoute('/bills/$billId/claim')({
     t: typeof search.t === 'string' ? search.t : '',
     mode: search.mode === 'host' ? ('host' as const) : undefined,
   }),
-  component: BillClaimPage,
+  component: withReducedMotion(BillClaimPage),
 })
 
 function BillClaimPage() {

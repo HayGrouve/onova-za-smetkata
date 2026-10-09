@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
+import { withReducedMotion } from '#/components/motion-root.tsx'
 import { GuestPayView } from '#/components/guest/guest-pay-view.tsx'
 import { ReceiptLoading } from '#/components/receipt/receipt-states.tsx'
 import { QueryErrorBoundary } from '#/components/ui/query-error-boundary.tsx'
@@ -13,7 +14,7 @@ export const Route = createFileRoute('/bills/$billId/pay')({
   validateSearch: (search: Record<string, unknown>) => ({
     t: typeof search.t === 'string' ? search.t : '',
   }),
-  component: BillPayPage,
+  component: withReducedMotion(BillPayPage),
 })
 
 function BillPayPage() {

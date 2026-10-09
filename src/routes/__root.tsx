@@ -1,5 +1,4 @@
 import { RefreshCwIcon } from 'lucide-react'
-import { MotionConfig } from 'motion/react'
 import type { ErrorComponentProps } from '@tanstack/react-router'
 import {
   HeadContent,
@@ -108,12 +107,9 @@ export const Route = createRootRoute({
 
 function RootLayout() {
   return (
-    // Motion's JS animations skip the CSS reduced-motion rule; honour it here.
-    <MotionConfig reducedMotion="user">
-      <AppShell>
-        <Outlet />
-      </AppShell>
-    </MotionConfig>
+    <AppShell>
+      <Outlet />
+    </AppShell>
   )
 }
 

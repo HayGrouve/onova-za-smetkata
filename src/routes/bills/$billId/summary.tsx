@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
+import { withReducedMotion } from '#/components/motion-root.tsx'
 import { HostBillView } from '#/components/host/host-bill-view.tsx'
 import { BillHeaderTitleSync } from '#/components/layout/bill-header-title.tsx'
 import { ReceiptLoading } from '#/components/receipt/receipt-states.tsx'
@@ -11,7 +12,7 @@ import type { Id } from '../../../../convex/_generated/dataModel'
 
 export const Route = createFileRoute('/bills/$billId/summary')({
   head: () => buildNoIndexHead('Обобщение'),
-  component: BillSummary,
+  component: withReducedMotion(BillSummary),
 })
 
 /** The settled receipt: stamped „Приключена“ once the bill is final. */
