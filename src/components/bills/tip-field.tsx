@@ -14,7 +14,6 @@ import {
   TIP_PRESETS,
   tipCentsFromPercent,
 } from '../../../shared/tip-calculations.ts'
-import { cn } from '#/lib/utils.ts'
 
 export interface TipFieldProps {
   itemsSubtotalCents: number
@@ -118,9 +117,9 @@ export function TipField({
             <Button
               key={percent}
               type="button"
-              size="sm"
               variant={selectedPercent === percent ? 'default' : 'outline'}
-              className={cn('h-9 w-full min-w-0 px-2 text-xs sm:text-sm')}
+              aria-pressed={selectedPercent === percent}
+              className="w-full min-w-0 px-2 text-xs sm:text-sm"
               onClick={() => handlePercentSelect(percent)}
             >
               {percent}% · {formatEur(cents)}
@@ -131,14 +130,18 @@ export function TipField({
       <Input
         id="tip"
         inputMode="decimal"
+        autoComplete="off"
         value={value}
         onChange={(e) => handleCustomChange(e.target.value)}
         placeholder="0,00"
         className="h-11"
         aria-invalid={Boolean(error)}
+        aria-describedby={error ? 'tip-error' : undefined}
       />
       {error ? (
-        <p className="text-xs text-destructive">{error}</p>
+        <p id="tip-error" className="text-xs text-destructive">
+          {error}
+        </p>
       ) : !showTipPresets ? (
         <p className="text-xs text-muted-foreground">
           Добави артикули за да изчислиш бакшиш.

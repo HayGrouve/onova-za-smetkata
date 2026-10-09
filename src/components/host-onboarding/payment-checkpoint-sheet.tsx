@@ -142,10 +142,24 @@ export function PaymentCheckpointSheet({
                   id="checkpoint-revolut"
                   value={revolutUsername}
                   onChange={(event) => setRevolutUsername(event.target.value)}
+                  placeholder="username"
                   className="h-11"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  aria-invalid={Boolean(fieldErrors.revolutUsername)}
+                  aria-describedby={
+                    fieldErrors.revolutUsername
+                      ? 'checkpoint-revolut-error'
+                      : undefined
+                  }
                 />
                 {fieldErrors.revolutUsername ? (
-                  <p className="text-sm text-destructive">
+                  <p
+                    id="checkpoint-revolut-error"
+                    className="text-sm text-destructive"
+                  >
                     {fieldErrors.revolutUsername}
                   </p>
                 ) : null}
@@ -156,10 +170,24 @@ export function PaymentCheckpointSheet({
                   id="checkpoint-iban"
                   value={iban}
                   onChange={(event) => setIban(event.target.value)}
+                  placeholder="BG00XXXX00000000000000"
                   className="h-11"
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  aria-invalid={Boolean(fieldErrors.iban)}
+                  aria-describedby={
+                    fieldErrors.iban ? 'checkpoint-iban-error' : undefined
+                  }
                 />
                 {fieldErrors.iban ? (
-                  <p className="text-sm text-destructive">{fieldErrors.iban}</p>
+                  <p
+                    id="checkpoint-iban-error"
+                    className="text-sm text-destructive"
+                  >
+                    {fieldErrors.iban}
+                  </p>
                 ) : null}
               </div>
             </div>
