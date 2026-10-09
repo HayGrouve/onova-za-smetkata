@@ -30,6 +30,8 @@
   /* Vermilion stamp ink: the one accent. */
   --stamp: oklch(0.6 0.2 33);
   --stamp-soft: oklch(0.93 0.04 40);
+  /* Vermilion as small text on the table: deep enough for 4.5:1 in light mode. */
+  --stamp-ink: oklch(0.48 0.19 33);
   --paper-shadow: oklch(0.2 0.02 255 / 0.4);
   /* Seat identity: same lightness and chroma, always paired with initials. */
   --seat-0: oklch(0.72 0.09 250);
@@ -93,6 +95,7 @@
   --rule: oklch(0.78 0.008 255);
   --stamp: oklch(0.68 0.19 35);
   --stamp-soft: oklch(0.88 0.05 40);
+  --stamp-ink: var(--stamp);
   --paper-shadow: oklch(0.08 0.02 255 / 0.7);
   --primary: oklch(0.68 0.19 35);
   --primary-foreground: oklch(0.2 0.02 255);
@@ -139,6 +142,7 @@
   --input: var(--ink-muted);
   --ring: oklch(0.6 0.2 33 / 55%);
   --stamp: oklch(0.6 0.2 33);
+  --stamp-ink: oklch(0.48 0.19 33);
   color: var(--ink);
 }
 
@@ -161,6 +165,7 @@
   --color-rule: var(--rule);
   --color-stamp: var(--stamp);
   --color-stamp-soft: var(--stamp-soft);
+  --color-stamp-ink: var(--stamp-ink);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
