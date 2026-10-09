@@ -1,4 +1,5 @@
-import { useAuth, UserButton } from '@clerk/tanstack-react-start'
+import { UserButton } from '@clerk/tanstack-react-start'
+import { useHostAuth } from '#/hooks/use-host-auth.ts'
 import { Link, useParams, useRouterState } from '@tanstack/react-router'
 import { useConvexAuth, useQuery } from 'convex/react'
 import { ChevronLeftIcon } from 'lucide-react'
@@ -181,11 +182,11 @@ export function AppHeader() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const { title, backTo, backParams, backSearch, routeContext, billId, bill } =
     useHeaderConfig()
-  const { isSignedIn } = useAuth()
+  const { isSignedIn } = useHostAuth()
   const slot = useBillHeaderSlot()
-  // The legal pages, the 404 page and the sign-in card (Clerk's own title)
-  // heading themselves with an h1, so the title up here steps back to plain
-  // text instead of a second h1.
+  // The legal pages, the 404 page, the sign-in card (Clerk's own title) and
+  // the signed-out landing page heading themselves with an h1, so the title up
+  // here steps back to plain text instead of a second h1.
   const pageOwnsHeading = useRouterState({
     select: (s) =>
       s.matches.some((m) => m.status === 'notFound') ||
@@ -193,7 +194,8 @@ export function AppHeader() {
       s.location.pathname === '/terms' ||
       s.location.pathname === '/login',
   })
-  const TitleTag = pageOwnsHeading ? 'p' : 'h1'
+  const TitleTag =
+    pageOwnsHeading || (pathname === '/' && !isSignedIn) ? 'p' : 'h1'
 
   const isGuestRoute = isGuestRouteContext(routeContext)
   const isLogin = pathname === '/login'
@@ -272,7 +274,9 @@ export function AppHeader() {
           <div className="flex min-w-0 flex-1 items-center gap-2.5 pl-1">
             {!backTo ? (
               <img
-                src="/logo.png"
+                src="/logo-96.webp"
+                width={32}
+                height={32}
                 alt=""
                 aria-hidden
                 className="size-8 shrink-0 rounded-full"

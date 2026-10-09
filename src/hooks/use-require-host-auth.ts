@@ -1,9 +1,9 @@
-import { useAuth } from '@clerk/tanstack-react-start'
+import { useHostAuth } from '#/hooks/use-host-auth.ts'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
 
 export function useRequireHostAuth(redirectPath: string) {
-  const { isSignedIn, isLoaded } = useAuth()
+  const { isSignedIn, isLoaded } = useHostAuth()
   const navigate = useNavigate()
 
   useEffect(() => {

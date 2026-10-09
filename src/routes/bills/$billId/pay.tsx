@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useQuery } from 'convex/react'
+import { withReducedMotion } from '#/components/motion-root.tsx'
 import { GuestPayView } from '#/components/guest/guest-pay-view.tsx'
 import { ReceiptLoading } from '#/components/receipt/receipt-states.tsx'
 import { QueryErrorBoundary } from '#/components/ui/query-error-boundary.tsx'
+import { useActiveSeats } from '#/hooks/use-active-seats.ts'
 import { useGuestBillSession } from '#/hooks/use-guest-bill-session.ts'
 import { buildNoIndexHead } from '#/lib/site-meta.ts'
-import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
 
 export const Route = createFileRoute('/bills/$billId/pay')({
@@ -13,7 +13,7 @@ export const Route = createFileRoute('/bills/$billId/pay')({
   validateSearch: (search: Record<string, unknown>) => ({
     t: typeof search.t === 'string' ? search.t : '',
   }),
-  component: BillPayPage,
+  component: withReducedMotion(BillPayPage),
 })
 
 function BillPayPage() {
@@ -46,10 +46,7 @@ function GuestPayContent({
     readOnly,
     labels,
   } = useGuestBillSession(billId, shareTokenFromUrl)
-  const activeSeats = useQuery(
-    api.guestSessions.listActiveForBill,
-    shareToken ? { billId, shareToken } : 'skip',
-  )
+  const activeSeats = useActiveSeats(billId, shareToken)
 
   if (gate.status !== 'ready' || !data || !storedSession || !participantId) {
     return <ReceiptLoading />

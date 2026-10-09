@@ -49,6 +49,7 @@ Domain terms and auth boundaries: **`.cursor/rules/context-core.mdc`**. Implemen
 
 - **Host** — authenticated bill owner. Routes like `/bills/$billId`, `/bills/$billId/summary`. Guarded by `requireAuth` / `requireBillOwner` on the server and `useRequireHostAuth` on the client.
 - **Guest** — unauthenticated participant. Joins via `?t={shareToken}` → `/join` → `/claim`. Mutations require a live guest session (`convex/lib/guestSession.ts`: `requireGuest`, or `requireSeatActor` where the Host may act too). A live session implies the current share link, so session-holding calls take no share token.
+- **Clerk is not mounted on the Guest pages** (join, claim, pay without `?mode=host`; see `isGuestPage` in `shared/app-header-route-context.ts`), so their phones never download Clerk. Components in the app shell read sign-in state through `useHostAuth()` (`src/hooks/use-host-auth.ts`), which is signed out there; call Clerk hooks or components only from Host pages.
 
 Guest-facing queries must not leak other participants' payment details. Respect existing privacy boundaries in `getForGuest` and related helpers.
 
@@ -66,6 +67,7 @@ See `.cursor/rules/convex.mdc` for backend conventions; schema validators and sy
 - New tables and indices go in `convex/schema.ts`.
 - Put reusable server logic in `convex/lib/`, not duplicated across top-level modules.
 - A photo id (`v.id('_storage')`) sent by the phone goes through `assertFreshUpload` (`convex/lib/receiptStorage.ts`) before anything keeps it: a fresh upload that no bill or quick scan holds yet, since whatever keeps a photo may later delete it.
+- Guest session liveness lives in `guestSessionPresence`, written by the heartbeat; the session row changes only when seats do. Queries never decide liveness (no clock, no presence reads) — mutations check the TTL through `requireGuest`, and the minute sweep (`guestSessions.endQuiet`) signs quiet phones off, which is what frees their seats on screen.
 - Secrets and server flags (`DEV_MODE`, OAuth keys, `GEMINI_API_KEY`) live in the **Convex Dashboard**, not Vercel.
 - **`DEV_MODE=true`** is allowed only on dev deployments in the allowlist (`convex/lib/devMode.ts`). Never on production.
 
@@ -134,6 +136,7 @@ Copy `.env.example` → `.env.local` and set `VITE_CONVEX_URL` and `VITE_CLERK_P
 - Confusing **client** dev mode (`import.meta.env.DEV`) with **server** `DEV_MODE` — both are needed for local auto-auth.
 - Treating **Clerk Billing** as the Host Pro stack — Host Pro is Stripe ([ADR 0003](../adr/0003-stripe-billing-beside-clerk.md)).
 - Using English in user-facing copy.
+- Animating with `motion/react` on a route whose `component` is not wrapped in `withReducedMotion` (`src/components/motion-root.tsx`): Motion then ignores prefers-reduced-motion. The config sits on the animating routes, not the root, to keep motion out of the entry bundle.
 - Drifting from `CONTEXT.md` terms (e.g. calling a Guest a "member" or the host's seat a "guest").
 - Assuming E2E runs in CI — it is optional unless `E2E_VITE_CONVEX_URL` is configured.
 

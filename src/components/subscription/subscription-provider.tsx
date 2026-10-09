@@ -8,7 +8,13 @@ import {
 import type { QuotaErrorCode } from '../../../shared/subscription-messages.ts'
 import { SUBSCRIPTION_MESSAGES } from '../../../shared/subscription-messages.ts'
 import { parseQuotaError } from '#/lib/convex-quota-error.ts'
-import { QuotaPaywallSheet } from '#/components/subscription/quota-paywall-sheet.tsx'
+import { MountOnFirstOpen, lazySheet } from '#/components/lazy-sheet.tsx'
+
+const QuotaPaywallSheet = lazySheet(() =>
+  import('#/components/subscription/quota-paywall-sheet.tsx').then(
+    (m) => m.QuotaPaywallSheet,
+  ),
+).Sheet
 
 type SubscriptionContextValue = {
   openPaywall: (code?: QuotaErrorCode, message?: string) => void
@@ -57,7 +63,13 @@ export function SubscriptionProvider({
   return (
     <SubscriptionContext.Provider value={value}>
       {children}
-      <QuotaPaywallSheet open={open} onOpenChange={setOpen} message={message} />
+      <MountOnFirstOpen open={open} onClose={() => setOpen(false)}>
+        <QuotaPaywallSheet
+          open={open}
+          onOpenChange={setOpen}
+          message={message}
+        />
+      </MountOnFirstOpen>
     </SubscriptionContext.Provider>
   )
 }

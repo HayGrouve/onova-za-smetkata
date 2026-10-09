@@ -3,9 +3,9 @@ import { toast } from 'sonner'
 import { usePaymentSettings } from '#/components/bills/payment-settings-provider.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { ICON } from '#/lib/app-icons.ts'
-import { formatCopyAmount } from '#/lib/bill-share.ts'
 import { buildRevolutUrl } from '#/lib/payment-settings.ts'
 import { copyToClipboard } from '#/lib/copy-to-clipboard.ts'
+import { formatEurInput } from '../../../shared/validation/eur'
 
 export interface ParticipantPayActionsProps {
   remainingCents: number
@@ -17,7 +17,7 @@ async function copyAmount(
   cents: number,
   options?: { silent?: boolean },
 ): Promise<boolean> {
-  const copied = await copyToClipboard(formatCopyAmount(cents))
+  const copied = await copyToClipboard(formatEurInput(cents))
   if (copied && !options?.silent) {
     toast.success('Копирано')
   } else if (!copied && !options?.silent) {

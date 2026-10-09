@@ -1,7 +1,8 @@
 import { mutation, query } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
-import type { Id } from './_generated/dataModel'
+import type { Doc, Id } from './_generated/dataModel'
 import type { MutationCtx } from './_generated/server'
+import { assertBillDraft } from './lib/assertBillDraft'
 import { requireAuth, requireBillOwner } from './lib/auth'
 import { assertFriendGroupCreateQuota } from './lib/hostTier'
 import { parseFriendGroupInput } from '../shared/friend-group-schema'
@@ -25,6 +26,16 @@ async function requireFriendGroupOwner(
   return group
 }
 
+function toGroupRow(group: Doc<'friendGroups'>) {
+  return {
+    _id: group._id,
+    name: group.name,
+    memberNames: group.memberNames,
+    memberCount: group.memberNames.length,
+    updatedAt: group.updatedAt,
+  }
+}
+
 export const list = query({
   args: {},
   handler: async (ctx) => {
@@ -36,13 +47,7 @@ export const list = query({
     return groups
       .filter((group) => group.memberNames.length > 0)
       .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
-      .map((group) => ({
-        _id: group._id,
-        name: group.name,
-        memberNames: group.memberNames,
-        memberCount: group.memberNames.length,
-        updatedAt: group.updatedAt,
-      }))
+      .map(toGroupRow)
   },
 })
 
@@ -56,13 +61,7 @@ export const listAll = query({
       .collect()
     return groups
       .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
-      .map((group) => ({
-        _id: group._id,
-        name: group.name,
-        memberNames: group.memberNames,
-        memberCount: group.memberNames.length,
-        updatedAt: group.updatedAt,
-      }))
+      .map(toGroupRow)
   },
 })
 
@@ -163,16 +162,9 @@ export const addToBill = mutation({
     names: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    await requireBillOwner(ctx, args.billId)
+    const bill = await requireBillOwner(ctx, args.billId)
+    assertBillDraft(bill)
     const group = await requireFriendGroupOwner(ctx, args.groupId)
-
-    const bill = await ctx.db.get(args.billId)
-    if (!bill) {
-      throw new ConvexError('Сметката не е намерена.')
-    }
-    if (bill.status === 'final') {
-      throw new ConvexError('Сметката е завършена.')
-    }
 
     const selectedNames =
       args.names?.map((name) => name.trim()).filter(Boolean) ??

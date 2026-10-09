@@ -12,6 +12,7 @@ import {
   joinAsGuest,
   reserve,
   seedBill,
+  setBillStatus,
   setupConvex,
 } from './test.setup'
 import type { SeededBill, TestConvex } from './test.setup'
@@ -182,6 +183,70 @@ describe('editing seats and lines', () => {
       const orders = rows.map((row) => row.sortOrder)
       expect(new Set(orders).size).toBe(orders.length)
     }
+  })
+})
+
+describe('a final bill is locked', () => {
+  it('the Host cannot edit seats, lines or the split once it is final', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const { billId } = bill
+    const [itemId] = bill.itemIds
+    const groupId = await bill.host.mutation(api.friendGroups.create, {
+      name: 'Колеги',
+      memberNames: ['Вики'],
+    })
+    await setBillStatus(t, billId, 'final')
+
+    for (const attempt of [
+      () =>
+        bill.host.mutation(api.items.add, {
+          billId,
+          name: 'Хляб',
+          unitPriceCents: 200,
+        }),
+      () => bill.host.mutation(api.items.update, { itemId, unitPriceCents: 1 }),
+      () => bill.host.mutation(api.items.remove, { itemId }),
+      () => bill.host.mutation(api.participants.add, { billId, name: 'Вики' }),
+      () =>
+        bill.host.mutation(api.participants.remove, {
+          participantId: bill.seats['Ани'],
+        }),
+      () => bill.host.mutation(api.friendGroups.addToBill, { billId, groupId }),
+      () => bill.host.mutation(api.assignments.assignEven, { itemId }),
+      () =>
+        bill.host.mutation(api.assignments.assignAll, {
+          billId,
+          mode: 'all_items',
+        }),
+    ]) {
+      await expect(attempt()).rejects.toThrow(
+        GUEST_FLOW_MESSAGES.billFinalNoEdit,
+      )
+    }
+    expect(await rowsOnBill(t, billId)).toMatchObject({
+      participants: 3,
+      items: 1,
+    })
+  })
+
+  it('a stranger learns nothing about whether the bill is final', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    await setBillStatus(t, bill.billId, 'final')
+    const stranger = t.withIdentity(STRANGER)
+
+    await expect(
+      stranger.mutation(api.assignments.assignEven, {
+        itemId: bill.itemIds[0],
+      }),
+    ).rejects.not.toThrow(GUEST_FLOW_MESSAGES.billFinalNoEdit)
+    await expect(
+      stranger.mutation(api.assignments.assignAll, {
+        billId: bill.billId,
+        mode: 'all_items',
+      }),
+    ).rejects.not.toThrow(GUEST_FLOW_MESSAGES.billFinalNoEdit)
   })
 })
 
@@ -605,5 +670,55 @@ describe('searching the bill archive', () => {
     }
 
     expect(seen).toEqual([...ids].reverse())
+  })
+})
+
+describe('touching the bill after an edit', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  const billRow = (t: TestConvex, billId: SeededBill['billId']) =>
+    t.run((ctx) => ctx.db.get(billId))
+
+  it('an edit that moves no totals leaves the bill row alone for a minute', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const [itemId] = bill.itemIds
+    const before = await billRow(t, bill.billId)
+
+    vi.setSystemTime(Date.now() + 10_000)
+    await bill.host.mutation(api.items.update, { itemId, name: 'Наливна' })
+    await bill.host.mutation(api.items.update, { itemId, name: 'Наливна' })
+    expect(await billRow(t, bill.billId)).toEqual(before)
+
+    // Past the debounce window the same kind of edit bumps the bill again.
+    vi.setSystemTime(Date.now() + 61_000)
+    await bill.host.mutation(api.items.update, { itemId, name: 'Бира' })
+    expect((await billRow(t, bill.billId))?.updatedAt).toBe(Date.now())
+  })
+
+  it('an edit that changes the stored summary always writes it', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedBill(t)
+
+    vi.setSystemTime(Date.now() + 1_000)
+    await hostTakesUnits(bill, bill.itemIds[0], [bill.seats['Ани']])
+    const afterTake = await billRow(t, bill.billId)
+    expect(afterTake?.updatedAt).toBe(Date.now())
+
+    vi.setSystemTime(Date.now() + 1_000)
+    await bill.host.mutation(api.participants.add, {
+      billId: bill.billId,
+      name: 'Вики',
+    })
+    const afterAdd = await billRow(t, bill.billId)
+    expect(afterAdd?.listParticipantNames).toContain('Вики')
+    expect(afterAdd?.updatedAt).toBe(Date.now())
+    expect(afterAdd?.listGuestBalances).not.toEqual(
+      afterTake?.listGuestBalances,
+    )
   })
 })

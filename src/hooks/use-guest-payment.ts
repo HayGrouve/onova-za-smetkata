@@ -1,7 +1,6 @@
 import { useMutation, useQuery } from 'convex/react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { formatCopyAmount } from '#/lib/bill-share.ts'
 import { copyToClipboard } from '#/lib/copy-to-clipboard.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { getConvexErrorMessage } from '#/lib/convex-error.ts'
@@ -11,6 +10,7 @@ import {
 } from '#/lib/payment-settings.ts'
 import { launchRevolut } from '#/lib/revolut-launch.ts'
 import { getCoveredParticipantIds } from '../../shared/combined-payment'
+import { formatEurInput } from '../../shared/validation/eur'
 import { COMBINED_PAYMENT_MESSAGES } from '../../shared/combined-payment-messages'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
@@ -164,7 +164,7 @@ export function useGuestPayment({
       url,
       openWindow: (targetUrl) => window.open(targetUrl),
       copyAmount: () => {
-        void copyToClipboard(formatCopyAmount(amountCents))
+        void copyToClipboard(formatEurInput(amountCents))
       },
       recordTransfer,
     })
@@ -198,7 +198,7 @@ export function useGuestPayment({
   /** Copies just the amount for the bank's amount field; records nothing. */
   async function copyAmount() {
     if (!canCopyAmount) return
-    const copied = await copyToClipboard(formatCopyAmount(amountCents))
+    const copied = await copyToClipboard(formatEurInput(amountCents))
     if (copied) {
       toast.success(`Сумата ${formatEur(amountCents)} е копирана`)
     } else {

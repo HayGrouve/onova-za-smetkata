@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
 import { useEffect } from 'react'
+import { withReducedMotion } from '#/components/motion-root.tsx'
 import { BillAdvancedSettings } from '#/components/bills/bill-advanced-settings.tsx'
 import { OcrActivityBar } from '#/components/bills/ocr-activity-bar.tsx'
 import { ParticipantList } from '#/components/bills/participant-list.tsx'
@@ -46,7 +47,7 @@ export const Route = createFileRoute('/bills/$billId/')({
     step: clampBillEditorStep(search.step),
   }),
   head: () => buildNoIndexHead('Сметка'),
-  component: BillEditor,
+  component: withReducedMotion(BillEditor),
 })
 
 function BillEditor() {

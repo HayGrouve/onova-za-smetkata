@@ -3,6 +3,7 @@ import { useCallback, useEffect } from 'react'
 import { useSubscriptionPaywall } from '#/components/subscription/subscription-provider.tsx'
 import { getConvexErrorMessage } from '#/lib/convex-error.ts'
 import { prepareReceiptImage } from '#/lib/prepare-receipt-image.ts'
+import { uploadReceiptPhoto } from '#/lib/upload-receipt-photo.ts'
 import {
   readQuickBill,
   updateQuickBill,
@@ -94,17 +95,7 @@ export function useStartQuickScan() {
           {},
         )
         if (!isAttempt(readQuickBill(), attempt)) return
-        const response = await fetch(uploadUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': contentType },
-          body: blob,
-        })
-        if (!response.ok) {
-          throw new Error(`Неуспешно качване (${response.status})`)
-        }
-        const { storageId } = (await response.json()) as {
-          storageId: Id<'_storage'>
-        }
+        const storageId = await uploadReceiptPhoto(uploadUrl, blob, contentType)
         const started = await convex.mutation(api.quickScan.start, {
           storageId,
         })

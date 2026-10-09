@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  isGuestPage,
   isGuestRouteContext,
   resolveAppHeaderRouteContext,
 } from './app-header-route-context'
@@ -53,5 +54,24 @@ describe('isGuestRouteContext', () => {
     expect(isGuestRouteContext('guestPay')).toBe(true)
     expect(isGuestRouteContext('hostClaim')).toBe(false)
     expect(isGuestRouteContext('editor')).toBe(false)
+  })
+})
+
+describe('isGuestPage', () => {
+  it('is true for the share-link pages', () => {
+    expect(isGuestPage('/bills/bill_1/join', '?t=abc')).toBe(true)
+    expect(isGuestPage('/bills/bill_1/claim', '?t=abc')).toBe(true)
+    expect(isGuestPage('/bills/bill_1/pay', '?t=abc')).toBe(true)
+  })
+
+  it('is false for Host pages, including the claim page in Host mode', () => {
+    expect(isGuestPage('/bills/bill_1/claim', '?mode=host')).toBe(false)
+    expect(isGuestPage('/bills/bill_1', '')).toBe(false)
+    expect(isGuestPage('/bills/bill_1/summary', '')).toBe(false)
+    expect(isGuestPage('/', '')).toBe(false)
+    expect(isGuestPage('/login', '?redirect=%2Fbills%2Fbill_1%2Fjoin')).toBe(
+      false,
+    )
+    expect(isGuestPage('/quick-bill', '')).toBe(false)
   })
 })

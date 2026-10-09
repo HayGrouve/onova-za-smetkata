@@ -1,5 +1,5 @@
 import { PERSON_NAME_MAX } from './validation/constants'
-import { hasVisibleText } from './validation/fields'
+import { hasVisibleText } from './validation/visible-text'
 
 const HOST_PARTICIPANT_FALLBACK_NAME = 'домакин'
 
