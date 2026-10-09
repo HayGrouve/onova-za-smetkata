@@ -41,18 +41,6 @@ import { touchBill } from './lib/touchBill'
 import { deleteBillWithRelations } from './lib/deleteBill'
 import { createBillForOwner } from './lib/createBill'
 
-export const list = query({
-  args: {},
-  handler: async (ctx) => {
-    const userId = await requireAuth(ctx)
-    return await ctx.db
-      .query('bills')
-      .withIndex('by_ownerId_updatedAt', (q) => q.eq('ownerId', userId))
-      .order('desc')
-      .collect()
-  },
-})
-
 export const listWithSummary = query({
   args: {
     paginationOpts: paginationOptsValidator,

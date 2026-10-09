@@ -57,15 +57,21 @@ export const listRecentNames = query({
     const seen = new Set<string>()
     const names: string[] = []
     for (const bill of bills) {
-      const participants = await ctx.db
-        .query('participants')
-        .withIndex('by_billId', (q) => q.eq('billId', bill._id))
-        .collect()
-      for (const p of participants) {
-        const key = participantNameKey(p.name)
+      // `touchBill` keeps the names on the bill, in seat order; only a bill
+      // that predates the field reads its seats.
+      const billNames =
+        bill.listParticipantNames ??
+        (
+          await ctx.db
+            .query('participants')
+            .withIndex('by_billId', (q) => q.eq('billId', bill._id))
+            .collect()
+        ).map((participant) => participant.name)
+      for (const name of billNames) {
+        const key = participantNameKey(name)
         if (!key || seen.has(key)) continue
         seen.add(key)
-        names.push(p.name.trim())
+        names.push(name.trim())
         if (names.length >= max) return names
       }
     }

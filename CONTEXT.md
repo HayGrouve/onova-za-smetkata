@@ -75,7 +75,7 @@ A Participant seat a Guest's phone handles in addition to its own — they take 
 _Avoid_: member, companion; confusing with paying for someone who claims from their own phone (that is a Pay request picking another Guest on the Pay step)
 
 **Guest session**:
-A Guest phone's hold on its own seat and its Covered seats, kept alive while the phone checks in. Rotating the share link, finalizing or deleting the bill ends every Guest session, so a phone with a live one acts without the link. Module: `convex/lib/guestSession.ts`.
+A Guest phone's hold on its own seat and its Covered seats, kept alive while the phone checks in; a phone that stops checking in can no longer act once the session lapses, and a sweep frees its seats within a minute or so. Rotating the share link, finalizing or deleting the bill ends every Guest session, so a phone with a live one acts without the link. Module: `convex/lib/guestSession.ts`.
 _Avoid_: Guest flow session (the phone's journey through join, claim and pay); login, account
 
 **Pay step**:
