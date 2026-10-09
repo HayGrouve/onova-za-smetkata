@@ -83,9 +83,7 @@ export const add = mutation({
   args: { billId: v.id('bills'), name: v.string() },
   handler: async (ctx, args) => {
     const bill = await requireBillOwner(ctx, args.billId)
-    if (bill.status === 'final') {
-      throw new ConvexError('Сметката е завършена.')
-    }
+    assertBillDraft(bill)
 
     const existing = await ctx.db
       .query('participants')

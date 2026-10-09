@@ -10,6 +10,13 @@ crons.interval(
   {},
 )
 
+crons.interval(
+  'delete uploaded photos nothing kept',
+  { hours: 24 },
+  internal.cleanup.sweepOrphanUploads,
+  {},
+)
+
 // Queries never read the clock, so this sweep is what frees a seat whose phone
 // went quiet (and pushes the change to everyone watching the bill).
 crons.interval(

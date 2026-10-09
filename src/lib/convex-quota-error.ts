@@ -1,20 +1,14 @@
+import { getConvexErrorPayload } from './convex-error.ts'
 import {
   isQuotaErrorCode,
   SUBSCRIPTION_MESSAGES,
 } from '../../shared/subscription-messages.ts'
 import type { QuotaErrorCode } from '../../shared/subscription-messages.ts'
 
-function getConvexErrorData(error: unknown): unknown {
-  if (error && typeof error === 'object' && 'data' in error) {
-    return Reflect.get(error, 'data')
-  }
-  return undefined
-}
-
 export function parseQuotaError(
   error: unknown,
 ): { code: QuotaErrorCode; message: string } | null {
-  const data = getConvexErrorData(error)
+  const data = getConvexErrorPayload(error)
   if (!data || typeof data !== 'object') return null
 
   const code = Reflect.get(data, 'code')

@@ -11,6 +11,11 @@ const INVALID_AMOUNT_MESSAGE = 'Невалидна сума.'
 const EUR_INPUT_PATTERN =
   /^(\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)?(?:[.,](\d{0,2}))?$/
 
+/** Cents as an amount field shows them: `1250` → `12,50`, no symbol. */
+export function formatEurInput(cents: number): string {
+  return (cents / 100).toFixed(2).replace('.', ',')
+}
+
 export function parseEurInputStrict(
   value: string,
 ): { ok: true; cents: number } | { ok: false; message: string } {

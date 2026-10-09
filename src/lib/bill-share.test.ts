@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { formatEur } from './format-currency'
-import { formatBillShareText, formatCopyAmount } from './bill-share'
-
-describe('formatCopyAmount', () => {
-  it('formats cents as decimal comma without symbol', () => {
-    expect(formatCopyAmount(1250)).toBe('12,50')
-    expect(formatCopyAmount(0)).toBe('0,00')
-  })
-})
+import { formatBillShareText } from './bill-share'
 
 describe('formatBillShareText', () => {
   const breakdown = {

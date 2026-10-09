@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
   ArrowRightIcon,
@@ -50,6 +50,7 @@ import type { Phase } from '#/components/receipt/timeline.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { useBillActivity } from '#/hooks/use-bill-activity.ts'
+import { useFlashError } from '#/hooks/use-flash-error.ts'
 import { buildBillJoinUrl, resolveAppOrigin } from '#/lib/bill-join-url.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
@@ -148,11 +149,7 @@ function HostBillTable({
   const { openPaymentSettings } = usePaymentSettingsSheet()
   const [brushId, setBrushId] = useState<string | null>(null)
   const [openKey, setOpenKey] = useState<string | null>(null)
-  const [lineError, setLineError] = useState<{
-    key: string
-    text: string
-  } | null>(null)
-  const errorTimer = useRef<number | undefined>(undefined)
+  const { lineError, flashError } = useFlashError()
   const [undo, pushUndo, clearUndo] = useUndo()
   const [detailId, setDetailId] = useState<string | null>(null)
   const [dockCollapsed, toggleDock] = useDockCollapsed()
@@ -251,12 +248,6 @@ function HostBillTable({
           bill.shareToken,
         )
       : null
-
-  function flashError(key: string, text: string) {
-    setLineError({ key, text })
-    window.clearTimeout(errorTimer.current)
-    errorTimer.current = window.setTimeout(() => setLineError(null), 2800)
-  }
 
   async function paint(group: ClaimGroup) {
     const brush = brushId ? seatOf(brushId) : undefined

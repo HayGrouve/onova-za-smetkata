@@ -12,6 +12,7 @@ import {
   joinAsGuest,
   reserve,
   seedBill,
+  setBillStatus,
   setupConvex,
 } from './test.setup'
 import type { SeededBill, TestConvex } from './test.setup'
@@ -182,6 +183,70 @@ describe('editing seats and lines', () => {
       const orders = rows.map((row) => row.sortOrder)
       expect(new Set(orders).size).toBe(orders.length)
     }
+  })
+})
+
+describe('a final bill is locked', () => {
+  it('the Host cannot edit seats, lines or the split once it is final', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const { billId } = bill
+    const [itemId] = bill.itemIds
+    const groupId = await bill.host.mutation(api.friendGroups.create, {
+      name: 'Колеги',
+      memberNames: ['Вики'],
+    })
+    await setBillStatus(t, billId, 'final')
+
+    for (const attempt of [
+      () =>
+        bill.host.mutation(api.items.add, {
+          billId,
+          name: 'Хляб',
+          unitPriceCents: 200,
+        }),
+      () => bill.host.mutation(api.items.update, { itemId, unitPriceCents: 1 }),
+      () => bill.host.mutation(api.items.remove, { itemId }),
+      () => bill.host.mutation(api.participants.add, { billId, name: 'Вики' }),
+      () =>
+        bill.host.mutation(api.participants.remove, {
+          participantId: bill.seats['Ани'],
+        }),
+      () => bill.host.mutation(api.friendGroups.addToBill, { billId, groupId }),
+      () => bill.host.mutation(api.assignments.assignEven, { itemId }),
+      () =>
+        bill.host.mutation(api.assignments.assignAll, {
+          billId,
+          mode: 'all_items',
+        }),
+    ]) {
+      await expect(attempt()).rejects.toThrow(
+        GUEST_FLOW_MESSAGES.billFinalNoEdit,
+      )
+    }
+    expect(await rowsOnBill(t, billId)).toMatchObject({
+      participants: 3,
+      items: 1,
+    })
+  })
+
+  it('a stranger learns nothing about whether the bill is final', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    await setBillStatus(t, bill.billId, 'final')
+    const stranger = t.withIdentity(STRANGER)
+
+    await expect(
+      stranger.mutation(api.assignments.assignEven, {
+        itemId: bill.itemIds[0],
+      }),
+    ).rejects.not.toThrow(GUEST_FLOW_MESSAGES.billFinalNoEdit)
+    await expect(
+      stranger.mutation(api.assignments.assignAll, {
+        billId: bill.billId,
+        mode: 'all_items',
+      }),
+    ).rejects.not.toThrow(GUEST_FLOW_MESSAGES.billFinalNoEdit)
   })
 })
 

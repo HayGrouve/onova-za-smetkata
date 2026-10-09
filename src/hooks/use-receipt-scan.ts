@@ -1,7 +1,9 @@
 import { useMutation, useQuery } from 'convex/react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { getConvexErrorMessage } from '#/lib/convex-error.ts'
 import { prepareReceiptImage } from '#/lib/prepare-receipt-image.ts'
+import { uploadReceiptPhoto } from '#/lib/upload-receipt-photo.ts'
 import { useSubscriptionPaywall } from '#/components/subscription/subscription-provider.tsx'
 import { api } from '../../convex/_generated/api'
 import type { Doc, Id } from '../../convex/_generated/dataModel'
@@ -105,30 +107,12 @@ export function useReceiptScan({
     try {
       const { blob, contentType } = await prepareReceiptImage(file)
       const uploadUrl = await generateUploadUrl({ billId })
-      const result = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': contentType },
-        body: blob,
-      })
-      if (!result.ok) {
-        const errorText = await result.text()
-        throw new Error(errorText || `Неуспешно качване (${result.status})`)
-      }
-      const { storageId } = (await result.json()) as {
-        storageId: Id<'_storage'>
-      }
-      if (!storageId) {
-        throw new Error('Качването завърши без storageId')
-      }
+      const storageId = await uploadReceiptPhoto(uploadUrl, blob, contentType)
       await updateBill({ billId, receiptStorageId: storageId })
       toast.success('Снимката е качена')
       onReceiptUploaded?.()
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Неуспешно качване на снимката.'
-      toast.error(message)
+      toast.error(getConvexErrorMessage(error))
     } finally {
       setIsUploading(false)
       e.target.value = ''

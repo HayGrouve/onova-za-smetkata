@@ -237,7 +237,8 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index('by_billId', ['billId'])
-    .index('by_createdAt', ['createdAt']),
+    .index('by_createdAt', ['createdAt'])
+    .index('by_storageId', ['storageId']),
 
   /**
    * A receipt read for a quick bill, which lives only on the Host's phone.
