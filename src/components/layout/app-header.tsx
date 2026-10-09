@@ -184,11 +184,21 @@ export function AppHeader() {
     useHeaderConfig()
   const { isSignedIn } = useHostAuth()
   const slot = useBillHeaderSlot()
+  // The legal pages, the 404 page, the sign-in card (Clerk's own title) and
+  // the signed-out landing page heading themselves with an h1, so the title up
+  // here steps back to plain text instead of a second h1.
+  const pageOwnsHeading = useRouterState({
+    select: (s) =>
+      s.matches.some((m) => m.status === 'notFound') ||
+      s.location.pathname === '/privacy' ||
+      s.location.pathname === '/terms' ||
+      s.location.pathname === '/login',
+  })
+  const TitleTag =
+    pageOwnsHeading || (pathname === '/' && !isSignedIn) ? 'p' : 'h1'
 
   const isGuestRoute = isGuestRouteContext(routeContext)
   const isLogin = pathname === '/login'
-  // The signed-out landing page brings its own h1.
-  const TitleTag = pathname === '/' && !isSignedIn ? 'p' : 'h1'
   const showHostActions = isSignedIn === true && !isGuestRoute && !isLogin
 
   const billMenuEligibility = useMemo(() => {

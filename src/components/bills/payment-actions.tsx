@@ -163,13 +163,24 @@ export function PaymentActions({
                   if (amountError) setAmountError(undefined)
                 }}
                 inputMode="decimal"
+                autoComplete="off"
                 placeholder="Частична сума"
                 aria-label="Частична сума (€)"
                 className="h-11 min-w-0 flex-1"
                 aria-invalid={Boolean(amountError)}
+                aria-describedby={
+                  amountError
+                    ? `partial-amount-error-${participantId}`
+                    : undefined
+                }
               />
               {amountError ? (
-                <p className="text-xs text-destructive">{amountError}</p>
+                <p
+                  id={`partial-amount-error-${participantId}`}
+                  className="text-xs text-destructive"
+                >
+                  {amountError}
+                </p>
               ) : null}
             </div>
             <Button

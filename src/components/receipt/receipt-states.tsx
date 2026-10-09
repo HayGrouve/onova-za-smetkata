@@ -36,10 +36,13 @@ export function ReceiptLoading({ lines = 6 }: { lines?: number }) {
 /** A short printed note on paper: invalid link, nothing here, and so on. */
 export function ReceiptMessage({
   title,
+  headingLevel: Heading = 'h2',
   children,
   action,
 }: {
   title?: string
+  /** `h1` when the note is the whole page and the header's name is not. */
+  headingLevel?: 'h1' | 'h2'
   children: ReactNode
   action?: ReactNode
 }) {
@@ -47,7 +50,9 @@ export function ReceiptMessage({
     <div className="mx-auto w-full max-w-[480px] px-3 pt-6 pb-24 sm:pt-12">
       <Receipt>
         {title ? (
-          <h2 className="font-display text-[20px] font-bold">{title}</h2>
+          <Heading className="font-display text-[20px] font-bold">
+            {title}
+          </Heading>
         ) : null}
         <div className="mt-2 text-[13px] leading-relaxed">{children}</div>
         {action ? <div className="mt-4">{action}</div> : null}

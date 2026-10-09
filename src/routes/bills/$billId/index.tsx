@@ -147,7 +147,7 @@ function BillEditorContent({
 
   const stepBarGuidanceNode =
     stepBarSignal?.kind === 'on' ? (
-      <p className="text-[11px] text-stamp">
+      <p className="text-[11px] text-stamp-ink">
         {HOST_ONBOARDING_STEP_BAR.guidanceOn}
       </p>
     ) : stepBarSignal?.kind === 'pointer' ? (

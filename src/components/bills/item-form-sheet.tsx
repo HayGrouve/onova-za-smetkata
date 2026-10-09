@@ -167,13 +167,18 @@ export function ItemFormSheet({
               placeholder="Напр. Бира Загорка"
               className="h-11"
               aria-invalid={Boolean(fieldErrors.name)}
+              aria-describedby={
+                fieldErrors.name ? 'item-name-error' : undefined
+              }
               onChange={(event) => {
                 setName(event.target.value)
                 clearError('name')
               }}
             />
             {fieldErrors.name ? (
-              <p className="text-xs text-destructive">{fieldErrors.name}</p>
+              <p id="item-name-error" className="text-xs text-destructive">
+                {fieldErrors.name}
+              </p>
             ) : null}
           </div>
 
@@ -184,16 +189,22 @@ export function ItemFormSheet({
                 id="item-price"
                 value={price}
                 inputMode="decimal"
+                autoComplete="off"
                 placeholder="0,00"
                 className="h-11"
                 aria-invalid={Boolean(fieldErrors.price)}
+                aria-describedby={
+                  fieldErrors.price ? 'item-price-error' : undefined
+                }
                 onChange={(event) => {
                   setPrice(event.target.value)
                   clearError('price')
                 }}
               />
               {fieldErrors.price ? (
-                <p className="text-xs text-destructive">{fieldErrors.price}</p>
+                <p id="item-price-error" className="text-xs text-destructive">
+                  {fieldErrors.price}
+                </p>
               ) : null}
             </div>
             <div className="flex flex-col gap-1.5">
@@ -213,8 +224,12 @@ export function ItemFormSheet({
                   id="item-quantity"
                   value={quantity}
                   inputMode="numeric"
+                  autoComplete="off"
                   className="h-9 w-12 border-0 px-0 text-center shadow-none focus-visible:ring-0"
                   aria-invalid={Boolean(fieldErrors.quantity)}
+                  aria-describedby={
+                    fieldErrors.quantity ? 'item-quantity-error' : undefined
+                  }
                   onChange={(event) => {
                     setQuantity(event.target.value)
                     clearError('quantity')
@@ -232,7 +247,10 @@ export function ItemFormSheet({
                 </Button>
               </div>
               {fieldErrors.quantity ? (
-                <p className="text-xs text-destructive">
+                <p
+                  id="item-quantity-error"
+                  className="text-xs text-destructive"
+                >
                   {fieldErrors.quantity}
                 </p>
               ) : null}

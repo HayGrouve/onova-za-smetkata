@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useDockInset } from '#/hooks/use-dock-inset.ts'
 
 /** Title and one line of help, on the table above the paper. */
 export function QuickPageHeader({
@@ -27,8 +28,12 @@ export function QuickPageHeader({
 
 /** Pinned to the bottom of the phone: the step's one main action. */
 export function QuickActionBar({ children }: { children: ReactNode }) {
+  const barRef = useDockInset<HTMLDivElement>()
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-background from-60% to-transparent pt-6">
+    <div
+      ref={barRef}
+      className="fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-background from-60% to-transparent pt-6"
+    >
       <div className="mx-auto w-full max-w-[480px] px-3 pb-[max(12px,env(safe-area-inset-bottom))]">
         {children}
       </div>

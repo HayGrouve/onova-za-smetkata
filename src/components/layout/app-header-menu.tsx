@@ -221,7 +221,7 @@ export function AppHeaderMenu({
           <Button
             type="button"
             variant="ghost"
-            size="icon-sm"
+            size="icon"
             className="shrink-0 tap-feedback"
             aria-label="Настройки"
           >

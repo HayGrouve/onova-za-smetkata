@@ -15,9 +15,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <FriendGroupsProvider>
             <BillHeaderTitleProvider>
               <div className="flex min-h-dvh flex-col">
+                <a
+                  href="#main"
+                  className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:rounded-md focus:bg-paper focus:px-3 focus:py-2 focus:text-[13px] focus:font-semibold focus:shadow-lg"
+                >
+                  Към съдържанието
+                </a>
                 <AppHeader />
                 <OfflineBanner />
-                <main className="flex flex-1 flex-col">{children}</main>
+                <main
+                  id="main"
+                  tabIndex={-1}
+                  className="flex flex-1 flex-col outline-none"
+                >
+                  {children}
+                </main>
                 <AppFooter />
               </div>
             </BillHeaderTitleProvider>

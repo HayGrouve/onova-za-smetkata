@@ -35,7 +35,7 @@ export function getQuickBillCloseCopy(): ConfirmOptions {
   return withDefaults({
     title: 'Затваряне на бързата сметка?',
     description:
-      'Тя не се пази никъде. Изпратете или копирайте сумите, ако ще ви трябват.',
+      'Тя се пази само на този телефон и затварянето я изтрива. Изпратете или копирайте сумите, ако ще ви трябват.',
     confirmLabel: 'Затвори',
   })
 }
@@ -52,7 +52,7 @@ export function getQuickBillReplaceCopy(): ConfirmOptions {
 export function getItemDeleteCopy(name: string): ConfirmOptions {
   return withDefaults({
     title: 'Изтриване на артикул?',
-    description: `„${name}" ще бъде премахнат от сметката.`,
+    description: `„${name}“ ще бъде премахнат от сметката.`,
     confirmLabel: 'Изтрий',
   })
 }
@@ -60,7 +60,7 @@ export function getItemDeleteCopy(name: string): ConfirmOptions {
 export function getParticipantRemoveCopy(name: string): ConfirmOptions {
   return withDefaults({
     title: 'Премахване на участник?',
-    description: `„${name}" и разпределенията му ще бъдат премахнати.`,
+    description: `„${name}“ и разпределенията му ще бъдат премахнати.`,
     confirmLabel: 'Премахни',
   })
 }
@@ -77,7 +77,7 @@ export function getClearAllGuestsCopy(count: number): ConfirmOptions {
 export function getFriendGroupDeleteCopy(name: string): ConfirmOptions {
   return withDefaults({
     title: 'Изтриване на групата?',
-    description: `Групата „${name}" ще бъде изтрита завинаги.`,
+    description: `Групата „${name}“ ще бъде изтрита завинаги.`,
     confirmLabel: 'Изтрий групата',
   })
 }
@@ -85,7 +85,7 @@ export function getFriendGroupDeleteCopy(name: string): ConfirmOptions {
 export function getFriendGroupMemberRemoveCopy(name: string): ConfirmOptions {
   return withDefaults({
     title: 'Премахване от групата?',
-    description: `„${name}" ще бъде премахнат от списъка (промяната се записва при „Запази").`,
+    description: `„${name}“ ще бъде премахнат от списъка (промяната се записва при „Запази“).`,
     confirmLabel: 'Премахни',
   })
 }
@@ -102,7 +102,7 @@ export function getStopGuidanceCopy(): ConfirmOptions {
   return withDefaults({
     title: 'Спиране на напътствията?',
     description:
-      'Това действие е необратимо. Напътствията и напомнянето за начин на плащане ще спрат на всички ваши устройства. Ще останат достъпни от „Помощ и напътствия".',
+      'Това действие е необратимо. Напътствията и напомнянето за начин на плащане ще спрат на всички ваши устройства. Ще останат достъпни от „Помощ и напътствия“.',
     confirmLabel: 'Спри напътствията',
     variant: 'default',
   })

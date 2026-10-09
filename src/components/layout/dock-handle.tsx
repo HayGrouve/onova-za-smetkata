@@ -68,7 +68,7 @@ export function DockHandle({
         aria-expanded={!collapsed}
         aria-label={collapsed ? `Покажи: ${label}` : `Скрий: ${label}`}
         className={cn(
-          'flex h-8 items-center justify-center gap-1.5 rounded-full px-4 text-xs font-medium text-ink-muted transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+          "relative flex h-8 items-center justify-center gap-1.5 rounded-full px-4 text-xs font-medium text-ink-muted transition-colors after:absolute after:-inset-y-1.5 after:inset-x-0 after:content-[''] hover:text-ink focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
           collapsed && 'border border-rule bg-paper shadow-sm',
         )}
       >

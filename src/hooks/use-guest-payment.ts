@@ -2,6 +2,7 @@ import { useMutation, useQuery } from 'convex/react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { copyToClipboard } from '#/lib/copy-to-clipboard.ts'
+import { formatEur } from '#/lib/format-currency.ts'
 import { getConvexErrorMessage } from '#/lib/convex-error.ts'
 import {
   buildRevolutPaymentNote,
@@ -146,6 +147,9 @@ export function useGuestPayment({
   }
 
   const canPay = !locked && !transferInitiated && amountCents > 0
+  // Still useful after „Копирай IBAN“ records the transfer: the bank app
+  // needs the amount too, and copying it records nothing.
+  const canCopyAmount = !locked && amountCents > 0
 
   const paymentNote = buildRevolutPaymentNote(
     restaurantName,
@@ -182,10 +186,21 @@ export function useGuestPayment({
       setBusy(false)
       if (!recorded) return
     }
-    const text = canPay ? `${formatEurInput(amountCents)}\n${iban}` : iban
-    const copied = await copyToClipboard(text)
+    // Only the IBAN: a bank's IBAN field does not take "amount, newline, IBAN".
+    const copied = await copyToClipboard(iban)
     if (copied) {
-      toast.success('IBAN копиран')
+      toast.success('IBAN е копиран')
+    } else {
+      toast.error('Неуспешно копиране')
+    }
+  }
+
+  /** Copies just the amount for the bank's amount field; records nothing. */
+  async function copyAmount() {
+    if (!canCopyAmount) return
+    const copied = await copyToClipboard(formatEurInput(amountCents))
+    if (copied) {
+      toast.success(`Сумата ${formatEur(amountCents)} е копирана`)
     } else {
       toast.error('Неуспешно копиране')
     }
@@ -218,6 +233,8 @@ export function useGuestPayment({
     toggleExtra,
     payWithRevolut,
     copyIban,
+    copyAmount,
+    canCopyAmount,
     cancelPending,
     pendingStatusLabel: COMBINED_PAYMENT_MESSAGES.statusPending,
   }

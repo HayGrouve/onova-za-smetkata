@@ -142,7 +142,7 @@ export function SeatsRail({
                   {presence}
                 </span>
               ) : brush ? (
-                <span className="block text-[10px] leading-tight font-bold text-stamp uppercase">
+                <span className="block text-[10px] leading-tight font-bold text-stamp-ink uppercase">
                   избран
                 </span>
               ) : null}

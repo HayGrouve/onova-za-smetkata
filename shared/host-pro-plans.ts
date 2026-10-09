@@ -19,13 +19,14 @@ export const HOST_PRO_PLANS: Record<HostProInterval, HostProPlan> = {
   month: {
     interval: 'month',
     label: 'Месечно',
-    price: '€2.99',
+    // Same format as `formatEur`: comma, no-break space, sign after.
+    price: '2,99\u00a0€',
     period: 'месец',
   },
   year: {
     interval: 'year',
     label: 'Годишно',
-    price: '€29',
+    price: '29\u00a0€',
     period: 'година',
     note: 'Спестявате ~19%',
   },

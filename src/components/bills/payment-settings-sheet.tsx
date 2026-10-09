@@ -134,10 +134,21 @@ export function PaymentSettingsSheet({
               placeholder="username"
               className="h-11"
               autoComplete="off"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               aria-invalid={Boolean(fieldErrors.revolutUsername)}
+              aria-describedby={
+                fieldErrors.revolutUsername
+                  ? 'revolut-username-error'
+                  : undefined
+              }
             />
             {fieldErrors.revolutUsername ? (
-              <p className="text-xs text-destructive">
+              <p
+                id="revolut-username-error"
+                className="text-xs text-destructive"
+              >
                 {fieldErrors.revolutUsername}
               </p>
             ) : null}
@@ -161,7 +172,11 @@ export function PaymentSettingsSheet({
                 placeholder="BG00XXXX00000000000000"
                 className="h-11 min-w-0 flex-1"
                 autoComplete="off"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
                 aria-invalid={Boolean(fieldErrors.iban)}
+                aria-describedby={fieldErrors.iban ? 'iban-error' : undefined}
               />
               <Button
                 type="button"
@@ -182,7 +197,9 @@ export function PaymentSettingsSheet({
               </Button>
             </div>
             {fieldErrors.iban ? (
-              <p className="text-xs text-destructive">{fieldErrors.iban}</p>
+              <p id="iban-error" className="text-xs text-destructive">
+                {fieldErrors.iban}
+              </p>
             ) : null}
           </div>
         </div>

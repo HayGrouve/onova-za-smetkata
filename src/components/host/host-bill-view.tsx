@@ -50,6 +50,7 @@ import type { Phase } from '#/components/receipt/timeline.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { useConfirmAction } from '#/components/confirm-action-provider.tsx'
 import { useBillActivity } from '#/hooks/use-bill-activity.ts'
+import { useDockInset } from '#/hooks/use-dock-inset.ts'
 import { useFlashError } from '#/hooks/use-flash-error.ts'
 import { buildBillJoinUrl, resolveAppOrigin } from '#/lib/bill-join-url.ts'
 import { formatEur } from '#/lib/format-currency.ts'
@@ -153,6 +154,7 @@ function HostBillTable({
   const [undo, pushUndo, clearUndo] = useUndo()
   const [detailId, setDetailId] = useState<string | null>(null)
   const [dockCollapsed, toggleDock] = useDockCollapsed()
+  const dockRef = useDockInset<HTMLDivElement>()
   const activePhase: Phase | 'final' = final ? 'final' : phase
   const assembling = activePhase === 'assemble' && assemble !== undefined
 
@@ -450,7 +452,7 @@ function HostBillTable({
           {activePhase !== 'assemble' ? <ActivityFeed events={events} /> : null}
         </aside>
 
-        <main className="min-w-0">{paper}</main>
+        <div className="min-w-0">{paper}</div>
 
         {/*
           One copy of the actions: a dock pinned to the bottom on phones (with
@@ -469,7 +471,10 @@ function HostBillTable({
               hint={brushable}
             />
           </div>
-          <div className="fixed inset-x-0 bottom-0 z-40 after:absolute after:inset-x-0 after:top-full after:h-16 after:bg-table-2 md:static md:z-auto md:after:hidden">
+          <div
+            ref={dockRef}
+            className="fixed inset-x-0 bottom-0 z-40 after:absolute after:inset-x-0 after:top-full after:h-16 after:bg-table-2 md:static md:z-auto md:after:hidden"
+          >
             <div className="space-y-2 rounded-t-[26px] bg-table-2 px-3 pt-1 pb-[max(12px,env(safe-area-inset-bottom))] shadow-[0_-16px_40px_-20px_var(--paper-shadow)] md:rounded-none md:bg-transparent md:p-0 md:shadow-none">
               <DockHandle
                 collapsed={dockCollapsed}

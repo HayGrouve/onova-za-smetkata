@@ -34,9 +34,9 @@ export function LegalPageLayout({
   return (
     <div className="mx-auto w-full max-w-[680px] px-3 pt-4 pb-24 sm:pt-10">
       <Receipt innerClassName="sm:px-10">
-        <h2 className="font-display text-[22px] leading-tight font-bold uppercase">
+        <h1 className="font-display text-[22px] leading-tight font-bold uppercase">
           {title}
-        </h2>
+        </h1>
         <Rule />
         <div className="space-y-4 text-[12px] leading-relaxed [&_a]:text-ink [&_h2]:pt-2 [&_h2]:font-display [&_h2]:text-[15px] [&_h2]:font-bold [&_h2]:text-ink [&_strong]:text-ink">
           {children}

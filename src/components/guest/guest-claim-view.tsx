@@ -42,6 +42,7 @@ import { Timeline } from '#/components/receipt/timeline.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { useBillActivity } from '#/hooks/use-bill-activity.ts'
 import { useClaimActions } from '#/hooks/use-claim-actions.ts'
+import { useDockInset } from '#/hooks/use-dock-inset.ts'
 import { useFlashError } from '#/hooks/use-flash-error.ts'
 import { useGuestLiveReceipt } from '#/hooks/use-guest-live-receipt.ts'
 import { buildCoveredSeatCandidates } from '#/lib/covered-seat-candidates.ts'
@@ -122,6 +123,7 @@ function GuestClaimTable({
   const [undo, pushUndo, clearUndo] = useUndo()
   const [coveredOpen, setCoveredOpen] = useState(false)
   const [dockCollapsed, toggleDock] = useDockCollapsed()
+  const dockRef = useDockInset<HTMLDivElement>()
   const actions = useClaimActions({ seatId: actorId, sessionToken })
   const leaveUnit = useMutation(api.assignments.leaveUnit)
   const activeIds = useMemo(
@@ -279,7 +281,7 @@ function GuestClaimTable({
           <ActivityFeed events={events} />
         </aside>
 
-        <main className="min-w-0">
+        <div className="min-w-0">
           <div className="mb-2 lg:hidden">
             <SeatsRail
               seats={railSeats}
@@ -382,11 +384,14 @@ function GuestClaimTable({
               ) : null}
             </ReceiptTotals>
           </Receipt>
-        </main>
+        </div>
 
         {/* One slip: pinned to the bottom on phones, a column beside the receipt wider up. */}
         <aside className="space-y-5 md:sticky md:top-20">
-          <div className="fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-background from-60% to-transparent pt-2 after:absolute after:inset-x-0 after:top-full after:h-16 after:bg-background md:static md:z-auto md:bg-none md:pt-0 md:after:hidden">
+          <div
+            ref={dockRef}
+            className="fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-background from-60% to-transparent pt-2 after:absolute after:inset-x-0 after:top-full after:h-16 after:bg-background md:static md:z-auto md:bg-none md:pt-0 md:after:hidden"
+          >
             <DockHandle
               collapsed={dockCollapsed}
               onToggle={toggleDock}

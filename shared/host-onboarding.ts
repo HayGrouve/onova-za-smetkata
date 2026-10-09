@@ -172,7 +172,7 @@ export function deriveHostOnboardingGuidance(
     anchor: 'participants',
     step: 2,
     title: 'Добавете хората на масата',
-    body: `Вашето място „${hostSeat}" вече е добавено — добавете поне един гост, за да разпределите сметката.`,
+    body: `Вашето място „${hostSeat}“ вече е добавено — добавете поне един гост, за да разпределите сметката.`,
     done: bill.guestCount > 0,
   }
 

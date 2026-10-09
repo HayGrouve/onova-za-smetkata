@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 import { PlusIcon } from 'lucide-react'
 import { useState } from 'react'
 import { withReducedMotion } from '#/components/motion-root.tsx'
@@ -20,6 +20,7 @@ import {
   useSeatLookup,
 } from '#/components/receipt/seats.tsx'
 import { Timeline } from '#/components/receipt/timeline.tsx'
+import { Button } from '#/components/ui/button.tsx'
 import { QueryErrorBoundary } from '#/components/ui/query-error-boundary.tsx'
 import { useGuestJoinFlow } from '#/hooks/use-guest-join-flow.ts'
 import { takenSeatLabel } from '#/lib/covered-seat-candidates.ts'
@@ -50,7 +51,16 @@ function BillJoinPage() {
 
   if (!shareToken) {
     return (
-      <ReceiptMessage>{GUEST_FLOW_MESSAGES.invalidJoinLink}</ReceiptMessage>
+      <ReceiptMessage
+        title="Линкът не работи"
+        action={
+          <Button asChild className="w-full">
+            <Link to="/">Към началото</Link>
+          </Button>
+        }
+      >
+        {GUEST_FLOW_MESSAGES.invalidJoinLink}
+      </ReceiptMessage>
     )
   }
 

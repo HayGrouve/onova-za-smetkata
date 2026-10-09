@@ -112,7 +112,7 @@ export function QuickSetup({
     <div className="mx-auto w-full max-w-[480px] px-3 pt-4 pb-40 sm:pt-8">
       <QuickPageHeader
         title="Бърза сметка"
-        hint="Не се запазва. Всеки отбелязва своето, виждате сумите и я затваряте."
+        hint="Не се качва никъде — остава само на този телефон. Всеки отбелязва своето, виждате сумите и я затваряте."
       />
 
       <SeatCount bill={bill} />
