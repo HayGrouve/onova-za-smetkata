@@ -17,7 +17,7 @@ Stack: TanStack Router/Start, shadcn/ui, Tailwind. Route file patterns: **`.curs
 
 - **Bulgarian only** — no i18n framework.
 - Prefer centralized message modules: `shared/guest-flow-messages.ts`, `shared/combined-payment-messages.ts`, `src/lib/destructive-action-copy.ts`.
-- Domain vocabulary: **`CONTEXT.md`** / **`.cursor/rules/context-core.mdc`**.
+- Domain vocabulary: **`GLOSSARY.md`** / **`.cursor/rules/context-core.mdc`**.
 
 Install shadcn components:
 

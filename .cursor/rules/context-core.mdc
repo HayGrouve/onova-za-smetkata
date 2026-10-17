@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Domain terms
 
-Use these consistently in code, UI copy, tests, and issues. Full glossary: **`CONTEXT.md`**.
+Use these consistently in code, UI copy, tests, and issues. Full glossary: **`GLOSSARY.md`**.
 
 | Term | Meaning | Avoid |
 | ---- | ------- | ----- |

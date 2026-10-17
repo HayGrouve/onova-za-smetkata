@@ -1,6 +1,6 @@
 # Engineering Guidelines
 
-Project-specific conventions for agents working in this repo. Read this after `CONTEXT.md` when exploring or implementing a change.
+Project-specific conventions for agents working in this repo. Read this after `GLOSSARY.md` when exploring or implementing a change.
 
 ## Product
 
@@ -78,7 +78,7 @@ See `.cursor/rules/convex.mdc` for backend conventions; schema validators and sy
   - `shared/guest-flow-messages.ts`
   - `shared/combined-payment-messages.ts`
   - `src/lib/destructive-action-copy.ts` (confirm dialogs)
-- Use domain vocabulary from `CONTEXT.md` in UI labels, issue titles, and test names.
+- Use domain vocabulary from `GLOSSARY.md` in UI labels, issue titles, and test names.
 
 Install new shadcn components with:
 
@@ -137,12 +137,12 @@ Copy `.env.example` → `.env.local` and set `VITE_CONVEX_URL` and `VITE_CLERK_P
 - Treating **Clerk Billing** as the Host Pro stack — Host Pro is Stripe ([ADR 0003](../adr/0003-stripe-billing-beside-clerk.md)).
 - Using English in user-facing copy.
 - Animating with `motion/react` on a route whose `component` is not wrapped in `withReducedMotion` (`src/components/motion-root.tsx`): Motion then ignores prefers-reduced-motion. The config sits on the animating routes, not the root, to keep motion out of the entry bundle.
-- Drifting from `CONTEXT.md` terms (e.g. calling a Guest a "member" or the host's seat a "guest").
+- Drifting from `GLOSSARY.md` terms (e.g. calling a Guest a "member" or the host's seat a "guest").
 - Assuming E2E runs in CI — it is optional unless `E2E_VITE_CONVEX_URL` is configured.
 
 ## Related docs
 
-- `CONTEXT.md` — domain glossary (required reading)
+- `GLOSSARY.md` — domain glossary (required reading)
 - `docs/adr/0002-clerk-auth-billing.md` — Clerk for Host auth
 - `docs/adr/0003-stripe-billing-beside-clerk.md` — Stripe Billing for Host Pro
 - `docs/adr/0004-stripe-managed-payments.md` — Stripe Managed Payments, billing switch
