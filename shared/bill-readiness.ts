@@ -71,7 +71,7 @@ function hasFullUnitCoverageOnAllItems(
 }
 
 /**
- * Prepared bill milestone (CONTEXT.md): restaurant, Guest, priced items,
+ * Prepared bill milestone (GLOSSARY.md): restaurant, Guest, priced items,
  * every Unit assigned.
  */
 export function isPreparedBill(input: PreparedBillInput): boolean {
