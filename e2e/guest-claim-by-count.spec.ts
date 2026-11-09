@@ -40,7 +40,7 @@ test('guests taking the same drink by count never split a unit', async ({
     const row = claimGroup(page, 'Бира')
     // Every Unit taken, none of them split between the two phones.
     await expect(row.locator('[data-free]')).toHaveCount(0)
-    await expect(row.getByText(/делите с/)).toHaveCount(0)
+    await expect(row.getByText(/делиш с/)).toHaveCount(0)
     await expect(page.getByTestId('claim-pay-bar-amount')).toHaveText(/6,00/)
     await expect(page.getByText('Неотбелязани от никого')).toHaveCount(0)
   }

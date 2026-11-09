@@ -38,7 +38,7 @@ test('sharing a drink puts half of it on the friend right away', async ({
 
   const guestB = await joinAsGuest(browser, joinUrl, bobi)
   await expect(
-    claimGroup(guestB.page, 'Голяма бира').getByText(`делите с ${ani}`),
+    claimGroup(guestB.page, 'Голяма бира').getByText(`делиш с ${ani}`),
   ).toBeVisible()
   await expect(guestB.page.getByTestId('claim-pay-bar-amount')).toHaveText(
     /4,00/,
