@@ -7,6 +7,7 @@ const sample = {
   confirmLabel: 'OK',
   cancelLabel: 'Cancel',
   variant: 'destructive' as const,
+  typedConfirmation: null,
 }
 
 describe('createConfirmActionState', () => {

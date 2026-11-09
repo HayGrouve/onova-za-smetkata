@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test'
 import { expect, openHostContext, test } from './helpers/host-auth'
 
 async function openHostMenu(page: Page) {
-  await page.getByRole('button', { name: 'Настройки' }).click()
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click()
 }
 
 test('replay shows content-route guidance on a new bill', async ({

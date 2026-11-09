@@ -26,6 +26,10 @@ _Avoid_: bill creator (except as plain description), owner (except for auth/data
 The Host's Clerk sign-in identity — Auth name, emails, password or passkeys, MFA, connected accounts, sessions, account deletion. Managed in Clerk's UserButton / UserProfile. There is no in-app **Профил** sheet.
 _Avoid_: mixing this with Host Pro or Guest restaurant payments; calling Clerk UserProfile "Профил" in product copy; "user settings" as a name for this
 
+**Изтрий данните**:
+Removes everything Сметката holds about the Host: bills, groups („Моите групи“), payment settings, usage counters; a live Host Pro subscription stops at once with no refund. Started from the **Данни** sheet in the kebab's host settings with a typed `ИЗТРИЙ`. The Host account and the other онова за projects stay, and the Host stays signed in as a brand new Host. Deleting the whole Акаунт happens only on the hub's `/akaunt` and reaches Сметката through the `user.deleted` webhook; both use the same eraser.
+_Avoid_: "изтрий профила", "изтрий акаунта" for this; an export (portability goes through `privacy@onovaza.com`)
+
 **Host profile**:
 Retired. Was the in-app `Профил` sheet (Username + Free/Pro usage). Name lives on Host account; Host Pro usage is not shown from that sheet.
 _Avoid_: reviving an in-app Профил; treating Host account as Host profile

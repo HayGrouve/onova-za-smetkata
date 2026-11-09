@@ -12,7 +12,7 @@ function userButtonTrigger(page: Page): Locator {
 
 async function expectUserButtonLeftOfSettings(page: Page) {
   const userButton = userButtonTrigger(page)
-  const settings = page.getByRole('button', { name: 'Настройки' })
+  const settings = page.getByRole('button', { name: 'Настройки', exact: true })
   await expect(userButton).toBeVisible({ timeout: 30_000 })
   await expect(settings).toBeVisible()
   const userBox = await userButton.boundingBox()
@@ -44,6 +44,7 @@ async function expectHostKebabChrome(page: Page, moreSettingsNested: boolean) {
   await expect(
     page.getByRole('menuitem', { name: 'Моите групи' }),
   ).toBeVisible()
+  await expect(page.getByRole('menuitem', { name: 'Данни' })).toBeVisible()
   await expect(
     page.getByRole('menuitem', { name: 'Помощ и напътствия' }),
   ).toBeVisible()
@@ -70,7 +71,7 @@ test('signed-in Host can open Акаунт and security without 404', async ({
     page.getByRole('heading', { name: 'Страницата не е намерена' }),
   ).not.toBeVisible()
 
-  await page.getByRole('button', { name: 'Настройки' }).click()
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click()
   await expectHostKebabChrome(page, true)
   await page.keyboard.press('Escape')
 
@@ -93,7 +94,7 @@ test('signed-in Host sees UserButton left of kebab; Manage account opens Ака�
 
   await expectUserButtonLeftOfSettings(page)
 
-  await page.getByRole('button', { name: 'Настройки' }).click()
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click()
   await expectHostKebabChrome(page, false)
   await page.keyboard.press('Escape')
 
@@ -138,7 +139,9 @@ test('guest join and claim have no UserButton; theme stays in the kebab', async 
   await expect(userButtonTrigger(guestPage)).toHaveCount(0)
   // Retry until hydration settles; an early click can land before React owns the menu.
   await expect(async () => {
-    await guestPage.getByRole('button', { name: 'Настройки' }).click()
+    await guestPage
+      .getByRole('button', { name: 'Настройки', exact: true })
+      .click()
     await expectThemeRocker(guestPage)
   }).toPass({ timeout: 20_000 })
   await expect(
@@ -148,7 +151,9 @@ test('guest join and claim have no UserButton; theme stays in the kebab', async 
   await guestPage.getByRole('button', { name: participantName }).click()
   await expect(guestPage).toHaveURL(new RegExp(`/bills/${billId}/claim`))
   await expect(userButtonTrigger(guestPage)).toHaveCount(0)
-  await guestPage.getByRole('button', { name: 'Настройки' }).click()
+  await guestPage
+    .getByRole('button', { name: 'Настройки', exact: true })
+    .click()
   await expectThemeRocker(guestPage)
 
   await hostContext.close()
