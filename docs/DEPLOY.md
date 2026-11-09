@@ -4,7 +4,7 @@
 
 - [ ] GitHub repo connected to Vercel (PR previews OK; **production** deploys are owned by GitHub Actions)
 - [ ] Convex **production** deployment exists
-- [ ] Vercel env: `VITE_CONVEX_URL` = prod Convex cloud URL
+- [ ] Vercel env: Production `VITE_CONVEX_URL` = prod Convex cloud URL; Preview and Development = dev (see [Environment variables](#environment-variables))
 - [ ] Convex prod env: `GEMINI_API_KEY` (for receipt OCR)
 - [ ] Clerk production instance configured per `docs/clerk-production-setup.md` (Google SSO, email sign-in — **auth only**, not Clerk Billing)
 - [ ] Host Pro billing stays **off** until `BILLING_ENABLED=true` on Convex — see [Host Pro billing (Stripe Managed Payments)](#host-pro-billing-stripe-managed-payments) and [ADR 0004](./adr/0004-stripe-managed-payments.md)
@@ -14,31 +14,67 @@
 
 ## Environment variables
 
-| Variable                       | Where                           | Required                                                                  |
-| ------------------------------ | ------------------------------- | ------------------------------------------------------------------------- |
-| `VITE_CONVEX_URL`              | Vercel                          | Yes                                                                       |
-| `VITE_APP_ORIGIN`              | Vercel                          | Yes for production OG/share URLs (`https://onova-za-smetkata.com`)        |
-| `VITE_SENTRY_DSN`              | Vercel                          | No (Sentry client errors in production)                                   |
-| `GEMINI_API_KEY`               | Convex Dashboard                | Yes (for OCR)                                                             |
-| `GEMINI_MODEL`                 | Convex Dashboard                | No                                                                        |
-| `CLERK_JWT_ISSUER_DOMAIN`      | Convex Dashboard (dev + prod)   | Yes (Clerk JWT validation)                                                |
-| `CLERK_AUTHORIZED_PARTIES`     | Convex Dashboard (prod)         | No: origins allowed as the token's `azp`, comma separated; unset = off    |
-| `VITE_CLERK_PUBLISHABLE_KEY`   | Vercel / `.env.local`           | Yes (Clerk client — **Vite** prefix, not `NEXT_PUBLIC_*`)                 |
-| `CLERK_PUBLISHABLE_KEY`        | Vercel / `.env.local`           | Recommended (same `pk_live_…`; SSR middleware fallback)                   |
-| `CLERK_SECRET_KEY`             | Vercel / `.env.local`           | Yes (TanStack Start `clerkMiddleware`)                                    |
-| `CLERK_WEBHOOK_SIGNING_SECRET` | Convex Dashboard (dev + prod)   | Yes — `whsec_…` of the Clerk `/clerk/webhook` endpoint (account deletion) |
-| `DEV_MODE`                     | Convex Dashboard (**dev only**) | No — dev-only mutations (e.g. onboarding reset); **never production**     |
-| `BILLING_ENABLED`              | Convex Dashboard                | No — `true` turns Host Pro billing on; unset = everyone free              |
-| `STRIPE_SECRET_KEY`            | Convex Dashboard                | When billing is on (restricted key recommended)                           |
-| `STRIPE_WEBHOOK_SECRET`        | Convex Dashboard                | When billing is on (`whsec_…` of the `/stripe/webhook` endpoint)          |
-| `STRIPE_PRICE_MONTHLY`         | Convex Dashboard                | When billing is on (`price_…`, €2.99/month, VAT-inclusive)                |
-| `STRIPE_PRICE_YEARLY`          | Convex Dashboard                | When billing is on (`price_…`, €29/year, VAT-inclusive)                   |
-| `APP_ORIGIN`                   | Convex Dashboard                | When billing is on (Checkout/Portal return URL origin)                    |
-| `CONVEX_DEPLOYMENT`            | Local `.env.local`              | Yes for local `npx convex` CLI                                            |
-| `CONVEX_DEPLOY_KEY`            | GitHub Actions secret           | Yes — production deploy key (`deployment:deploy`)                         |
-| `VERCEL_TOKEN`                 | GitHub Actions secret           | Yes — Vercel access token for CLI deploys                                 |
-| `VERCEL_ORG_ID`                | GitHub Actions secret           | Yes                                                                       |
-| `VERCEL_PROJECT_ID`            | GitHub Actions secret           | Yes                                                                       |
+Host sign-in runs on the shared Акаунт, the Clerk app "онова за". Its **development** instance (Frontend API `https://fancy-bobcat-6703.clerk.accounts.dev`) serves local dev, Vercel Preview and Development, and CI e2e, all against the dev Convex deployment `striped-shepherd-984`. Production keeps the old Сметката Clerk app and `coordinated-warbler-782` until the cutover release (HayGrouve/onova-za-smetkata#211, #212) switches it to `clerk.onovaza.com`.
+
+### Which value lives where
+
+| Variable                                           | Production (Vercel)                                | Preview and Development (Vercel), `.env.local`                 |
+| -------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------------------- |
+| `VITE_CONVEX_URL`                                  | `https://coordinated-warbler-782.convex.cloud`     | `https://striped-shepherd-984.convex.cloud`                    |
+| `VITE_CLERK_PUBLISHABLE_KEY`                       | old app `pk_live_…` until cutover                  | "онова за" dev `pk_test_…`                                     |
+| `CLERK_SECRET_KEY`                                 | old app `sk_live_…` (Sensitive) until cutover      | "онова за" dev `sk_test_…`                                     |
+| `VITE_APP_ORIGIN`                                  | `https://onova-za-smetkata.com` until cutover      | **unset**: share links and canonical use the page's own origin |
+| `VITE_CLERK_SIGN_IN_URL`, `VITE_CLERK_SIGN_UP_URL` | not set yet; `https://onovaza.com/vhod` at cutover | **unset**: Clerk falls back to the dev Account Portal          |
+| `VITE_SENTRY_DSN`                                  | optional                                           | unset                                                          |
+
+Each of these is a separate Vercel entry per environment: never widen a Production entry to Preview again (live Clerk keys do not work on `*.vercel.app`, and production Convex will trust only `clerk.onovaza.com`). Never set a relative sign-in URL (`/login`) in Preview or Development: once `/login` only bounces to the sign-in URL it would redirect to itself. `VITE_` values are inlined at build time, so a change needs a new build.
+
+Previews run against **whatever functions sit on dev Convex**, not the PR's `convex/`. A PR that changes `convex/` is pushed to dev with `npx convex dev --once` before its preview (or its CI e2e) is trusted, and two such PRs at once overwrite each other there.
+
+| Variable                       | Convex prod `coordinated-warbler-782`               | Convex dev `striped-shepherd-984`                                                                                  |
+| ------------------------------ | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `CLERK_JWT_ISSUER_DOMAIN`      | `https://clerk.onova-za-smetkata.com` until cutover | `https://fancy-bobcat-6703.clerk.accounts.dev`                                                                     |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | `whsec_…` of the prod `user.deleted` endpoint       | `whsec_…` of the dev instance's `user.deleted` endpoint (`https://striped-shepherd-984.convex.site/clerk/webhook`) |
+| `CLERK_AUTHORIZED_PARTIES`     | after cutover: `https://smetkata.onovaza.com`       | unset                                                                                                              |
+| `DEV_MODE`                     | **never**                                           | `true` (dev-only mutations)                                                                                        |
+| `GEMINI_API_KEY`               | yes                                                 | yes                                                                                                                |
+
+| GitHub Actions secret            | Value                                                                 |
+| -------------------------------- | --------------------------------------------------------------------- |
+| `E2E_VITE_CONVEX_URL`            | `https://striped-shepherd-984.convex.cloud` (unset skips the e2e job) |
+| `E2E_VITE_CLERK_PUBLISHABLE_KEY` | "онова за" dev `pk_test_…`                                            |
+| `E2E_CLERK_SECRET_KEY`           | "онова за" dev `sk_test_…` (Clerk Testing Tokens)                     |
+| `E2E_CLERK_USER_EMAIL`           | `smetkata+clerk_test@example.com`, a test user in that dev instance   |
+| `CONVEX_DEPLOY_KEY`, `VERCEL_*`  | production deploy (below)                                             |
+
+Get the dev Clerk keys with `clerk env pull --app app_3Lk5Y1X31WAloPBVBUnYrtoTplv --instance dev --print` and pipe them where they go; never paste them into chat, an issue or a commit.
+
+### All variables
+
+| Variable                       | Where                           | Required                                                                 |
+| ------------------------------ | ------------------------------- | ------------------------------------------------------------------------ |
+| `VITE_CONVEX_URL`              | Vercel / `.env.local`           | Yes                                                                      |
+| `VITE_APP_ORIGIN`              | Vercel (Production only)        | Production only, for OG/share URLs; unset everywhere else                |
+| `VITE_SENTRY_DSN`              | Vercel                          | No (Sentry client errors in production)                                  |
+| `GEMINI_API_KEY`               | Convex Dashboard                | Yes (for OCR)                                                            |
+| `GEMINI_MODEL`                 | Convex Dashboard                | No                                                                       |
+| `CLERK_JWT_ISSUER_DOMAIN`      | Convex Dashboard (dev + prod)   | Yes (Clerk JWT validation)                                               |
+| `CLERK_AUTHORIZED_PARTIES`     | Convex Dashboard (prod)         | No: origins allowed as the token's `azp`, comma separated; unset = off   |
+| `VITE_CLERK_PUBLISHABLE_KEY`   | Vercel / `.env.local`           | Yes (Clerk client; **Vite** prefix, not `NEXT_PUBLIC_*`)                 |
+| `CLERK_SECRET_KEY`             | Vercel / `.env.local`           | Yes (TanStack Start `clerkMiddleware`)                                   |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | Convex Dashboard (dev + prod)   | Yes: `whsec_…` of the Clerk `/clerk/webhook` endpoint (account deletion) |
+| `DEV_MODE`                     | Convex Dashboard (**dev only**) | No: dev-only mutations (e.g. onboarding reset); **never production**     |
+| `BILLING_ENABLED`              | Convex Dashboard                | No: `true` turns Host Pro billing on; unset = everyone free              |
+| `STRIPE_SECRET_KEY`            | Convex Dashboard                | When billing is on (restricted key recommended)                          |
+| `STRIPE_WEBHOOK_SECRET`        | Convex Dashboard                | When billing is on (`whsec_…` of the `/stripe/webhook` endpoint)         |
+| `STRIPE_PRICE_MONTHLY`         | Convex Dashboard                | When billing is on (`price_…`, €2.99/month, VAT-inclusive)               |
+| `STRIPE_PRICE_YEARLY`          | Convex Dashboard                | When billing is on (`price_…`, €29/year, VAT-inclusive)                  |
+| `APP_ORIGIN`                   | Convex Dashboard                | When billing is on (Checkout/Portal return URL origin)                   |
+| `CONVEX_DEPLOYMENT`            | Local `.env.local`              | Yes for local `npx convex` CLI (`dev:striped-shepherd-984`)              |
+| `CONVEX_DEPLOY_KEY`            | GitHub Actions secret           | Yes: production deploy key (`deployment:deploy`)                         |
+| `VERCEL_TOKEN`                 | GitHub Actions secret           | Yes: Vercel access token for CLI deploys                                 |
+| `VERCEL_ORG_ID`                | GitHub Actions secret           | Yes                                                                      |
+| `VERCEL_PROJECT_ID`            | GitHub Actions secret           | Yes                                                                      |
 
 `CLERK_AUTHORIZED_PARTIES` stays unset until after the cutover. Once it is set on prod, the Convex dashboard's "run as user" needs `"azp": "https://smetkata.onovaza.com"` in the identity JSON, or the function sees a signed out caller.
 
@@ -76,7 +112,7 @@ Local testing: use a Stripe sandbox and `stripe listen --forward-to https://<dev
 4. **Do not** enable Clerk Billing. Host Pro is Stripe ([ADR 0003](./adr/0003-stripe-billing-beside-clerk.md)).
 5. Set on **production** Convex: `CLERK_JWT_ISSUER_DOMAIN`.
 6. **Webhooks** → Add endpoint `https://<deployment>.convex.site/clerk/webhook` (prod: `https://coordinated-warbler-782.convex.site/clerk/webhook`), event **`user.deleted`** only. Copy its signing secret to Convex: `npx convex env set CLERK_WEBHOOK_SIGNING_SECRET whsec_… --prod`. Then send a test `user.deleted` from the dashboard; the endpoint should answer 200. When a Host deletes their account, `accountDeletion.deleteHostData` erases their bills, seats, payments, payment settings, groups, counters and receipt photos, and cancels a live Stripe subscription. Until the secret is set the endpoint answers 503 and Clerk retries.
-7. Set on Vercel: `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` (optional duplicate: `CLERK_PUBLISHABLE_KEY`). **Do not** use `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` — this stack is Vite, not Next.js.
+7. Set on Vercel **Production** only: `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` (optional duplicate: `CLERK_PUBLISHABLE_KEY`). **Do not** use `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` — this stack is Vite, not Next.js.
 
 See [ADR 0002](./adr/0002-clerk-auth-billing.md). Full Clerk + Google OAuth steps: **`docs/clerk-production-setup.md`** (prod auth verified 2026-08-11).
 
@@ -96,11 +132,7 @@ When Host Pro ships: Stripe Product/Price in **EUR**, Checkout + Customer Portal
 2. Framework: TanStack Start (auto-detected with Nitro plugin).
 3. Package manager: pnpm.
 4. Node.js: 22 (set in project settings if needed).
-5. Environment variables (Production) — used by `vercel pull` / `vercel build` in Actions:
-   - `VITE_CONVEX_URL=https://coordinated-warbler-782.convex.cloud`
-   - `VITE_APP_ORIGIN=https://onova-za-smetkata.com` (required for correct OG previews)
-   - Optional: `VITE_SENTRY_DSN`
-   - `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` (Clerk prod; optional `CLERK_PUBLISHABLE_KEY` duplicate)
+5. Environment variables, one entry per environment as in [Which value lives where](#which-value-lives-where). Production is pulled by `vercel pull --environment=production` / `vercel build` in Actions; Preview is what Vercel's Git integration builds PR previews with; Development is what `vercel env pull` writes locally.
 6. Production Git auto-deploys for `main` are **off** (`vercel.json` → `git.deploymentEnabled.main: false`). PR preview deploys from Git stay enabled. Production releases are triggered only by the GitHub Actions workflow after Convex succeeds.
 
 ## Release steps
@@ -236,26 +268,27 @@ Do this **after** smoke tests pass on `https://<project>.vercel.app`.
 
 ## Troubleshooting
 
-| Symptom                                              | Likely cause                                | Fix                                                                                              |
-| ---------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Frontend live, Convex API/schema errors              | Old failure mode: UI shipped without Convex | Use Actions order; do not re-enable Git prod deploys on `main`                                   |
-| Actions: Convex deploy fails                         | Missing/wrong `CONVEX_DEPLOY_KEY`           | Mint production deploy key with `deployment:deploy`; update secret                               |
-| Actions: Vercel deploy fails after Convex green      | Vercel secrets/env; CLI build error         | Fix `VERCEL_*` / dashboard env; re-run failed job or re-push (backend may already be ahead)      |
-| Push to `main` deploys Vercel with no Actions        | Git auto-deploy still on for `main`         | Ensure `vercel.json` `git.deploymentEnabled.main: false` is on the branch Vercel reads           |
-| Blank page / config message                          | Missing `VITE_CONVEX_URL` on Vercel         | Set env var; redeploy via Actions                                                                |
-| Build fails on Vercel (`ERR_PNPM_OUTDATED_LOCKFILE`) | `pnpm-lock.yaml` out of sync                | Run `pnpm install` locally; commit lockfile                                                      |
-| Build fails on Vercel (other)                        | Missing `VITE_CONVEX_URL`                   | Set in Vercel Production env (pulled by CLI)                                                     |
-| Apex domain `DEPLOYMENT_NOT_FOUND`                   | Domain not assigned to Vercel project       | Add domain in Vercel project settings                                                            |
-| Preflight fails on PWA icons                         | PNGs not generated                          | Run `pnpm run generate-icons` and commit                                                         |
-| Google sign-in `redirect_uri_mismatch`               | Wrong callback in Google Console            | Use Clerk redirect URI per `docs/clerk-production-setup.md` §1.8                                 |
-| Clerk sign-in fails / blank auth UI                  | Missing or wrong Clerk keys on Vercel       | Set `VITE_CLERK_PUBLISHABLE_KEY` (not `NEXT_PUBLIC_*`); `CLERK_SECRET_KEY`; redeploy via Actions |
-| Vercel 500: Publishable key is missing               | `NEXT_PUBLIC_*` or key removed              | Restore `VITE_CLERK_PUBLISHABLE_KEY`; see `docs/clerk-production-setup.md` §4                    |
-| Login page text only; `https://npm/@clerk/clerk-js`  | Bad `CLERK_JS_URL` or FAPI DNS on `clerk.`  | Remove `CLERK_JS_*` vars; fix Clerk custom-domain CNAME; redeploy                                |
-| Convex rejects host mutations                        | JWT issuer mismatch                         | Set `CLERK_JWT_ISSUER_DOMAIN` = `https://clerk.onova-za-smetkata.com` on Convex prod             |
-| OCR always fails                                     | Missing `GEMINI_API_KEY` in Convex prod     | Set in Convex Dashboard                                                                          |
-| Data from wrong environment                          | Dev Convex URL in Vercel                    | Point Vercel at prod URL                                                                         |
-| Guest assignment fails                               | Missing/expired session                     | Re-join and pick name again                                                                      |
-| Assignment queries fail after upgrade                | Missing `billId` backfill                   | Run `npx convex run backfill:assignmentBillIds`                                                  |
+| Symptom                                              | Likely cause                                         | Fix                                                                                              |
+| ---------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Frontend live, Convex API/schema errors              | Old failure mode: UI shipped without Convex          | Use Actions order; do not re-enable Git prod deploys on `main`                                   |
+| Actions: Convex deploy fails                         | Missing/wrong `CONVEX_DEPLOY_KEY`                    | Mint production deploy key with `deployment:deploy`; update secret                               |
+| Actions: Vercel deploy fails after Convex green      | Vercel secrets/env; CLI build error                  | Fix `VERCEL_*` / dashboard env; re-run failed job or re-push (backend may already be ahead)      |
+| Push to `main` deploys Vercel with no Actions        | Git auto-deploy still on for `main`                  | Ensure `vercel.json` `git.deploymentEnabled.main: false` is on the branch Vercel reads           |
+| Blank page / config message                          | Missing `VITE_CONVEX_URL` on Vercel                  | Set env var; redeploy via Actions                                                                |
+| Build fails on Vercel (`ERR_PNPM_OUTDATED_LOCKFILE`) | `pnpm-lock.yaml` out of sync                         | Run `pnpm install` locally; commit lockfile                                                      |
+| Build fails on Vercel (other)                        | Missing `VITE_CONVEX_URL`                            | Set in Vercel Production env (pulled by CLI)                                                     |
+| Apex domain `DEPLOYMENT_NOT_FOUND`                   | Domain not assigned to Vercel project                | Add domain in Vercel project settings                                                            |
+| Preflight fails on PWA icons                         | PNGs not generated                                   | Run `pnpm run generate-icons` and commit                                                         |
+| Google sign-in `redirect_uri_mismatch`               | Wrong callback in Google Console                     | Use Clerk redirect URI per `docs/clerk-production-setup.md` §1.8                                 |
+| Clerk sign-in fails / blank auth UI                  | Missing or wrong Clerk keys on Vercel                | Set `VITE_CLERK_PUBLISHABLE_KEY` (not `NEXT_PUBLIC_*`); `CLERK_SECRET_KEY`; redeploy via Actions |
+| Vercel 500: Publishable key is missing               | `NEXT_PUBLIC_*` or key removed                       | Restore `VITE_CLERK_PUBLISHABLE_KEY`; see `docs/clerk-production-setup.md` §4                    |
+| Login page text only; `https://npm/@clerk/clerk-js`  | Bad `CLERK_JS_URL` or FAPI DNS on `clerk.`           | Remove `CLERK_JS_*` vars; fix Clerk custom-domain CNAME; redeploy                                |
+| Convex rejects host mutations                        | JWT issuer mismatch                                  | Set `CLERK_JWT_ISSUER_DOMAIN` = `https://clerk.onova-za-smetkata.com` on Convex prod             |
+| OCR always fails                                     | Missing `GEMINI_API_KEY` in Convex prod              | Set in Convex Dashboard                                                                          |
+| Data from wrong environment                          | Dev Convex URL in Vercel Production                  | Production `VITE_CONVEX_URL` is the prod URL; only Preview/Development point at dev              |
+| Preview: signed in but Convex calls signed out       | Host functions differ on dev Convex, or wrong issuer | `npx convex dev --once` from the PR branch; dev `CLERK_JWT_ISSUER_DOMAIN` = dev Frontend API URL |
+| Guest assignment fails                               | Missing/expired session                              | Re-join and pick name again                                                                      |
+| Assignment queries fail after upgrade                | Missing `billId` backfill                            | Run `npx convex run backfill:assignmentBillIds`                                                  |
 
 ## Production launch checklist
 
@@ -283,4 +316,4 @@ Complete once before calling production “solid”:
 
 ### E2E in CI (optional)
 
-To run Playwright on push/PR, add GitHub secret `E2E_VITE_CONVEX_URL` pointing at a **dev** Convex deployment with `DEV_MODE=true`. The CI job is skipped when the secret is unset. Optional e2e does **not** block the Convex → Vercel production jobs.
+Playwright runs on push/PR when the GitHub secret `E2E_VITE_CONVEX_URL` points at the **dev** Convex deployment (`DEV_MODE=true`); the other `E2E_*` secrets point at the "онова за" dev instance and its `+clerk_test` user (table above, `e2e/README.md`). The CI job is skipped when the secret is unset. Like previews, it runs against whatever functions sit on dev Convex, so push a PR's `convex/` changes with `npx convex dev --once` first. Optional e2e does **not** block the Convex → Vercel production jobs.
