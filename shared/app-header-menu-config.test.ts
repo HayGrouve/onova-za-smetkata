@@ -33,10 +33,10 @@ describe('buildAppHeaderMenuConfig', () => {
     ).toEqual([])
   })
 
-  it('returns no bill items on Host account', () => {
+  it('returns no bill items on Абонамент', () => {
     expect(
       visibleIds(
-        buildAppHeaderMenuConfig(input({ routeContext: 'hostAccount' })),
+        buildAppHeaderMenuConfig(input({ routeContext: 'subscription' })),
       ),
     ).toEqual([])
   })

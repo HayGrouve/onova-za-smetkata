@@ -20,16 +20,6 @@ const DASH = /[–—]/
 
 const ROOT = join(import.meta.dirname, '..', '..')
 
-/**
- * Prose the cutover release replaces with redirects to the hub
- * (HayGrouve/onova-za-smetkata#211), so it skips the copy pass.
- */
-const LEAVING_AT_CUTOVER = new Set([
-  'src/routes/login.tsx',
-  'src/routes/privacy.tsx',
-  'src/routes/terms.tsx',
-])
-
 function collectStrings(value: unknown, out: string[] = []): string[] {
   if (typeof value === 'string') out.push(value)
   else if (typeof value === 'function') {
@@ -51,7 +41,6 @@ function sourceFiles(dir: string): string[] {
     .map((file) => join(dir, file).split('\\').join('/'))
     .filter((file) => !file.startsWith('convex/_generated/'))
     .filter((file) => file !== 'src/routeTree.gen.ts')
-    .filter((file) => !LEAVING_AT_CUTOVER.has(file))
 }
 
 /** String literals, template text and JSX text: what can reach a screen. Comments are skipped. */

@@ -1,25 +1,30 @@
-import type { Locator, Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
 import {
   billIdFromUrl,
   expectParticipantAdded,
   goToBillStep,
 } from './helpers/bill-editor'
-import { expect, openHostContext, test } from './helpers/host-auth'
+import {
+  avatarTrigger,
+  expect,
+  openHostContext,
+  test,
+} from './helpers/host-auth'
+import { expectSignInBounce } from './helpers/sign-in-bounce'
+import { HUB_AKAUNT_URL } from '../src/lib/hub-links'
 
-function userButtonTrigger(page: Page): Locator {
-  return page.locator('.cl-userButtonTrigger')
-}
-
-async function expectUserButtonLeftOfSettings(page: Page) {
-  const userButton = userButtonTrigger(page)
+async function expectAvatarLeftOfSettings(page: Page) {
+  const avatar = avatarTrigger(page)
   const settings = page.getByRole('button', { name: 'Настройки', exact: true })
-  await expect(userButton).toBeVisible({ timeout: 30_000 })
+  await expect(avatar).toBeVisible({ timeout: 30_000 })
   await expect(settings).toBeVisible()
-  const userBox = await userButton.boundingBox()
+  const avatarBox = await avatar.boundingBox()
   const settingsBox = await settings.boundingBox()
-  expect(userBox).toBeTruthy()
+  expect(avatarBox).toBeTruthy()
   expect(settingsBox).toBeTruthy()
-  expect(userBox!.x + userBox!.width).toBeLessThanOrEqual(settingsBox!.x + 1)
+  expect(avatarBox!.x + avatarBox!.width).toBeLessThanOrEqual(
+    settingsBox!.x + 1,
+  )
 }
 
 async function expectThemeRocker(page: Page) {
@@ -28,16 +33,11 @@ async function expectThemeRocker(page: Page) {
   await expect(page.getByRole('radio', { name: 'Тъмна' })).toBeVisible()
 }
 
-async function expectHostKebabChrome(page: Page, moreSettingsNested: boolean) {
+async function expectHostKebabChrome(page: Page) {
   await expect(page.getByRole('menuitem', { name: 'Профил' })).toHaveCount(0)
   await expect(page.getByRole('menuitem', { name: 'Изход' })).toHaveCount(0)
   await expect(page.locator('[data-slot="dropdown-menu-label"]')).toHaveCount(0)
   await expectThemeRocker(page)
-
-  if (moreSettingsNested) {
-    await page.getByRole('menuitem', { name: 'Още настройки' }).click()
-  }
-
   await expect(
     page.getByRole('menuitem', { name: 'Настройки за плащане' }),
   ).toBeVisible()
@@ -50,18 +50,12 @@ async function expectHostKebabChrome(page: Page, moreSettingsNested: boolean) {
   ).toBeVisible()
 }
 
-test('unsigned /user-profile redirects to login with redirect', async ({
+test('unsigned /abonament bounces to sign-in and back to /abonament', async ({
   page,
-}) => {
-  await page.goto('/user-profile')
-  await expect(page).toHaveURL(/\/login\?redirect=%2Fuser-profile/)
-})
-
-test('unsigned /abonament redirects to login with redirect', async ({
-  page,
+  baseURL,
 }) => {
   await page.goto('/abonament')
-  await expect(page).toHaveURL(/\/login\?redirect=%2Fabonament/)
+  await expectSignInBounce(page, `${baseURL}/abonament`)
 })
 
 // Needs the billing switch off on the dev deployment (see e2e/README.md).
@@ -80,58 +74,67 @@ test('signed-in Host on /abonament goes Home while billing is off', async ({
   await context.close()
 })
 
-test('signed-in Host can open Акаунт and security without 404', async ({
+test('an old Checkout return to /user-profile lands on /abonament with the query', async ({
   browser,
+  baseURL,
 }) => {
   const { context, page } = await openHostContext(browser)
 
-  await page.goto('/user-profile')
-  await expect(page.getByRole('heading', { name: 'Акаунт' })).toBeVisible({
-    timeout: 30_000,
-  })
-  await expect(page.getByRole('link', { name: 'Назад' })).toBeVisible()
-  await expect(
-    page.getByRole('heading', { name: 'Страницата не е намерена' }),
-  ).not.toBeVisible()
-
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click()
-  await expectHostKebabChrome(page, true)
-  await page.keyboard.press('Escape')
-
-  await page.goto('/user-profile/security')
-  await expect(page.getByRole('heading', { name: 'Акаунт' })).toBeVisible({
-    timeout: 30_000,
-  })
-  await expect(
-    page.getByRole('heading', { name: 'Страницата не е намерена' }),
-  ).not.toBeVisible()
-  await expect(page).toHaveURL(/\/user-profile\/security/)
+  const response = await page.goto(
+    '/user-profile/subscription?checkout=success&session_id=x',
+  )
+  expect(response?.request().redirectedFrom()?.url()).toBe(
+    `${baseURL}/user-profile/subscription?checkout=success&session_id=x`,
+  )
+  expect(response?.url()).toBe(
+    `${baseURL}/abonament?checkout=success&session_id=x`,
+  )
+  // Billing is off on dev, so /abonament then sends the Host Home.
+  await expect(page).toHaveURL(/\/$/, { timeout: 30_000 })
 
   await context.close()
 })
 
-test('signed-in Host sees UserButton left of kebab; Manage account opens Акаунт', async ({
+test('the avatar menu holds only Акаунт (to the hub) and Изход', async ({
   browser,
 }) => {
   const { context, page } = await openHostContext(browser)
 
-  await expectUserButtonLeftOfSettings(page)
+  await expectAvatarLeftOfSettings(page)
 
   await page.getByRole('button', { name: 'Настройки', exact: true }).click()
-  await expectHostKebabChrome(page, false)
+  await expectHostKebabChrome(page)
   await page.keyboard.press('Escape')
 
-  await userButtonTrigger(page).click()
-  await page.getByText('Управление на акаунта', { exact: true }).click()
-  await expect(page).toHaveURL(/\/user-profile/)
-  await expect(page.getByRole('heading', { name: 'Акаунт' })).toBeVisible({
-    timeout: 30_000,
-  })
+  await avatarTrigger(page).click()
+  const items = page.getByRole('menuitem')
+  await expect(items).toHaveCount(2)
+  await expect(page.getByRole('menuitem', { name: 'Акаунт' })).toHaveAttribute(
+    'href',
+    HUB_AKAUNT_URL,
+  )
+  await expect(page.getByRole('menuitem', { name: 'Изход' })).toBeVisible()
 
   await context.close()
 })
 
-test('guest join and claim have no UserButton; theme stays in the kebab', async ({
+test('Изход signs the Host out onto the landing page', async ({ browser }) => {
+  const { context, page } = await openHostContext(browser)
+  await page.goto('/quick-bill')
+
+  await avatarTrigger(page).click()
+  await page.getByRole('menuitem', { name: 'Изход' }).click()
+
+  await expect(page).toHaveURL(/\/$/, { timeout: 30_000 })
+  await expect(page.getByRole('link', { name: 'Започни' }).first()).toBeVisible(
+    { timeout: 30_000 },
+  )
+  await expect(avatarTrigger(page)).toHaveCount(0)
+
+  await context.close()
+})
+
+test('guest join and claim have no avatar; theme stays in the kebab', async ({
   browser,
 }) => {
   const { context: hostContext, page: hostPage } =
@@ -154,12 +157,12 @@ test('guest join and claim have no UserButton; theme stays in the kebab', async 
   expect(billId).toBeTruthy()
 
   await hostPage.goto(joinUrl!)
-  await expect(userButtonTrigger(hostPage)).toHaveCount(0)
+  await expect(avatarTrigger(hostPage)).toHaveCount(0)
 
   const guest = await browser.newContext()
   const guestPage = await guest.newPage()
   await guestPage.goto(joinUrl!)
-  await expect(userButtonTrigger(guestPage)).toHaveCount(0)
+  await expect(avatarTrigger(guestPage)).toHaveCount(0)
   // Retry until hydration settles; an early click can land before React owns the menu.
   await expect(async () => {
     await guestPage
@@ -173,7 +176,7 @@ test('guest join and claim have no UserButton; theme stays in the kebab', async 
   await guestPage.keyboard.press('Escape')
   await guestPage.getByRole('button', { name: participantName }).click()
   await expect(guestPage).toHaveURL(new RegExp(`/bills/${billId}/claim`))
-  await expect(userButtonTrigger(guestPage)).toHaveCount(0)
+  await expect(avatarTrigger(guestPage)).toHaveCount(0)
   await guestPage
     .getByRole('button', { name: 'Настройки', exact: true })
     .click()

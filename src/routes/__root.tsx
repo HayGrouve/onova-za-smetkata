@@ -24,7 +24,6 @@ import { isDefiniteErrorReason } from '#/lib/definite-error-reason.ts'
 import { getConvexErrorData } from '#/lib/convex-error.ts'
 import { scrubEventUrl } from '#/lib/scrub-share-token.ts'
 
-import { SentryInit } from '../components/sentry-init.tsx'
 import { ServiceWorkerRegister } from '../components/service-worker-register.tsx'
 import { SITE_NAME, titleMeta } from '#/lib/site-meta.ts'
 import appCss from '../styles.css?url'
@@ -137,7 +136,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <ConfirmActionProvider>
             <TooltipProvider>
               <ConvexProvider>
-                <SentryInit />
                 <ServiceWorkerRegister />
                 <Analytics beforeSend={scrubEventUrl} />
                 <SpeedInsights beforeSend={scrubEventUrl} />

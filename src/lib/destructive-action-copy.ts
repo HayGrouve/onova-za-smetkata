@@ -134,9 +134,7 @@ export const DELETE_MY_DATA_COPY = {
   button: 'Изтрий данните',
   akauntQuestion: 'Искаш да изтриеш целия си Акаунт? Това става в',
   akauntLink: 'Акаунт',
-  akauntUrl: 'https://onovaza.com/akaunt',
   privacyLink: 'Поверителност',
-  privacyUrl: 'https://onovaza.com/poveritelnost#smetkata',
   done: 'Данните ти са изтрити. Започваш на чисто.',
   failed: 'Неуспешно изтриване. Опитай пак.',
 } as const

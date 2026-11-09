@@ -10,13 +10,13 @@ Project-specific conventions for agents working in this repo. Read this after `G
 
 These are separate products. Do not collapse them into “Clerk Billing”.
 
-| Concern                                                                | Owner                                                                                                      |
-| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Host sign-in (Google + email)                                          | **Clerk** — [ADR 0002](../adr/0002-clerk-auth-billing.md)                                                  |
-| Host Pro subscription (€2.99/mo or €29/yr, Checkout + Customer Portal) | **Stripe Managed Payments** — [ADR 0004](../adr/0004-stripe-managed-payments.md), behind `BILLING_ENABLED` |
-| Free/Pro quota enforcement                                             | **Convex** (`convex/lib/hostTier.ts`)                                                                      |
-| Guest join                                                             | Share token + `guestSessions` (no Clerk account)                                                           |
-| Guest restaurant payment                                               | Host Revolut / IBAN (not Stripe)                                                                           |
+| Concern                                                                | Owner                                                                                                       |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Host sign-in (Google + email code)                                     | **Clerk**, the shared Акаунт on onovaza.com/vhod — [ADR 0005](../adr/0005-sign-in-and-akaunt-on-the-hub.md) |
+| Host Pro subscription (€2.99/mo or €29/yr, Checkout + Customer Portal) | **Stripe Managed Payments** — [ADR 0004](../adr/0004-stripe-managed-payments.md), behind `BILLING_ENABLED`  |
+| Free/Pro quota enforcement                                             | **Convex** (`convex/lib/hostTier.ts`)                                                                       |
+| Guest join                                                             | Share token + `guestSessions` (no Clerk account)                                                            |
+| Guest restaurant payment                                               | Host Revolut / IBAN (not Stripe)                                                                            |
 
 Do **not** enable Clerk Billing in the Clerk Dashboard. Host Pro plan state on `users` is written by the Stripe sync (`convex/billing.ts`, `convex/billingStripe.ts`, webhook in `convex/http.ts`), not Clerk. While the billing switch (`BILLING_ENABLED`) is off, `getEntitledTier` gives every Host Pro limits.
 
@@ -49,7 +49,7 @@ Domain terms and auth boundaries: **`.cursor/rules/context-core.mdc`**. Implemen
 
 - **Host** — authenticated bill owner. Routes like `/bills/$billId`, `/bills/$billId/summary`. Guarded by `requireAuth` / `requireBillOwner` on the server and `useRequireHostAuth` on the client.
 - **Guest** — unauthenticated participant. Joins via `?t={shareToken}` → `/join` → `/claim`. Mutations require a live guest session (`convex/lib/guestSession.ts`: `requireGuest`, or `requireSeatActor` where the Host may act too). A live session implies the current share link, so session-holding calls take no share token.
-- **Clerk is not mounted on the Guest pages** (join, claim, pay without `?mode=host`; see `isGuestPage` in `shared/app-header-route-context.ts`), so their phones never download Clerk. Components in the app shell read sign-in state through `useHostAuth()` (`src/hooks/use-host-auth.ts`), which is signed out there; call Clerk hooks or components only from Host pages.
+- **Clerk is not mounted on the Guest pages** (join, claim, pay without `?mode=host`; see `isGuestPage` in `shared/app-header-route-context.ts`), so their phones never download Clerk. Components in the app shell read sign-in state through `useHostAuth()` (`src/hooks/use-host-auth.ts`), which is signed out there; call Clerk hooks only from Host pages. Сметката renders no Clerk component: `/login` bounces to Clerk's sign-in URL and the avatar is our own menu (`host-avatar-menu.tsx`), see ADR 0005.
 
 Guest-facing queries must not leak other participants' payment details. Respect existing privacy boundaries in `getForGuest` and related helpers.
 
@@ -144,6 +144,7 @@ Copy `.env.example` → `.env.local` and set `VITE_CONVEX_URL` and `VITE_CLERK_P
 
 - `GLOSSARY.md` — domain glossary (required reading)
 - `docs/adr/0002-clerk-auth-billing.md` — Clerk for Host auth
+- `docs/adr/0005-sign-in-and-akaunt-on-the-hub.md` — sign-in, the Акаунт and the legal texts live on the hub
 - `docs/adr/0003-stripe-billing-beside-clerk.md` — Stripe Billing for Host Pro
 - `docs/adr/0004-stripe-managed-payments.md` — Stripe Managed Payments, billing switch
 - `README.md` — setup and scripts

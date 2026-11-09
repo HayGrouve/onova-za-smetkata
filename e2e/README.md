@@ -28,7 +28,7 @@ Run these locally before merge when you touch guest/host browser flows. In CI, t
    E2E_CLERK_USER_EMAIL=smetkata+clerk_test@example.com
    ```
 
-   `CLERK_SECRET_KEY` powers Clerk Testing Tokens (`e2e/global-setup.ts`). `E2E_CLERK_USER_EMAIL` is the `+clerk_test` user in that dev instance used by `openHostContext`; Testing Tokens and `clerk.signIn` work on any dev instance, so the helpers need no change when the instance does. Leave `VITE_APP_ORIGIN` and the sign-in URLs unset.
+   `CLERK_SECRET_KEY` powers Clerk Testing Tokens (`e2e/global-setup.ts`). `E2E_CLERK_USER_EMAIL` is the `+clerk_test` user in that dev instance used by `openHostContext`; Testing Tokens and `clerk.signIn` work on any dev instance, so the helpers need no change when the instance does. Leave `VITE_APP_ORIGIN` and the sign-in URLs unset. The sign-in specs expect `/login` to bounce to the dev Account Portal (`*.accounts.dev/sign-in`), which is where Clerk sends signed-out visitors when the sign-in URLs are unset.
 
 4. **Convex env** on the dev deployment (already set on `striped-shepherd-984`):
 
@@ -57,7 +57,9 @@ Run these locally before merge when you touch guest/host browser flows. In CI, t
 | `guest-covered-seat.spec.ts`          | One phone claims and pays for two seats; Host confirms both                        |
 | `guest-pay-for-other-release.spec.ts` | A pay-for-others pick frees the covered Guest when the payer's phone leaves        |
 | `combined-guest-payment.spec.ts`      | Host payment banner appears only after Revolut opens                               |
-| `host-account-route.spec.ts`          | Host Акаунт: unsigned redirect; `/user-profile/*`; `/abonament` with billing off   |
+| `host-account-route.spec.ts`          | Avatar menu (only „Акаунт“, „Изход“), Изход, `/abonament`, `/user-profile` 308     |
+| `sign-in-bounce.spec.ts`              | Signed-out Започни, deep links, old `/login` links bounce to Clerk sign-in         |
+| `not-found.spec.ts`                   | 404 page; `/privacy`, `/terms`, `/user-profile/*` answer 308                       |
 | `host-onboarding.spec.ts`             | Host replay hints; welcome dismiss                                                 |
 | `delete-my-data.spec.ts`              | Изтрий данните: Данни from the kebab, typed ИЗТРИЙ, bills gone, still signed in    |
 
