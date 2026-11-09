@@ -65,7 +65,7 @@ export function HostProPlanPicker({ className }: { className?: string }) {
         <li>{HOST_PRO_DISCLOSURES.pricing}</li>
         <li>{HOST_PRO_DISCLOSURES.cancel}</li>
         <li>
-          {HOST_PRO_DISCLOSURES.seller} Вижте{' '}
+          {HOST_PRO_DISCLOSURES.seller} Виж{' '}
           <Link to="/terms" className="underline underline-offset-2">
             Общите условия
           </Link>

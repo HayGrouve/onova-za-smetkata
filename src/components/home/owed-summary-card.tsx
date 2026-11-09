@@ -24,13 +24,13 @@ export function OwedSummaryCard({
 }: OwedSummaryCardProps) {
   if (owedCents === 0) {
     return (
-      <section aria-label="Дължат ви">
+      <section aria-label="Дължат ти">
         <p className="text-[12px] text-on-table-muted">Навън са общо</p>
         <p className="mt-1 font-display text-[40px] leading-none font-bold sm:text-[48px]">
           {formatEur(0)}
         </p>
         <p className="mt-2 max-w-[36ch] text-[12px] leading-relaxed text-on-table-muted">
-          Никой не ви дължи нищо. Приключете платените сметки по-долу.
+          Никой не ти дължи нищо. Приключи платените сметки по-долу.
         </p>
       </section>
     )
@@ -40,7 +40,7 @@ export function OwedSummaryCard({
   const collectedShare = expectedCents > 0 ? collectedCents / expectedCents : 0
 
   return (
-    <section aria-label="Дължат ви">
+    <section aria-label="Дължат ти">
       <p className="text-[12px] text-on-table-muted">Навън са общо</p>
       <p className="mt-1 font-display text-[40px] leading-none font-bold sm:text-[48px]">
         {formatEur(owedCents)}

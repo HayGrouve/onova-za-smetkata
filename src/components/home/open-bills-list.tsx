@@ -54,7 +54,7 @@ export function OpenBillsList({ bills, truncated }: OpenBillsListProps) {
       </ul>
       {truncated ? (
         <p className="text-[11px] text-on-table-muted">
-          Показани са последните 50 чернови. По-старите намерете чрез търсене
+          Показани са последните 50 чернови. По-старите намери чрез търсене
           по-долу.
         </p>
       ) : null}
@@ -99,7 +99,7 @@ function OpenBillStub({ bill, tilt }: { bill: OpenBill; tilt: number }) {
           <div className="mt-3 flex items-end justify-between gap-3">
             <p className="min-w-0 text-[11px] leading-snug text-ink-muted">
               {bill.nextAction === 'finish'
-                ? (bill.missing ?? 'Проверете сметката')
+                ? (bill.missing ?? 'Провери сметката')
                 : bill.owingGuestCount > 0
                   ? `${bill.paidGuestCount} от ${bill.owingGuestCount} платили`
                   : 'Никой не дължи'}

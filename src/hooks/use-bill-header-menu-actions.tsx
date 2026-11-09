@@ -233,7 +233,7 @@ export function useBillHeaderMenuActions({
           <DialogHeader>
             <DialogTitle>Обнови линка за покана?</DialogTitle>
             <DialogDescription>
-              Старите линкове и QR кодове ще спрат да работят. Споделете новия
+              Старите линкове и QR кодове ще спрат да работят. Сподели новия
               линк с хората на масата.
             </DialogDescription>
           </DialogHeader>

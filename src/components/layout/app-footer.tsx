@@ -8,8 +8,8 @@ import { usePwaInstall } from '#/components/pwa-install-provider.tsx'
 import { LandingFooter } from '#/components/landing/landing-footer.tsx'
 
 const IOS_INSTALL_STEPS = [
-  'Плъзнете екрана надолу и изберете „Добавяне в началния екран“.',
-  'Натиснете „Добави“ горе вдясно.',
+  'Плъзни екрана надолу и избери „Добавяне в началния екран“.',
+  'Натисни „Добави“ горе вдясно.',
 ] as const
 
 function SafariShareIcon({ className }: { className?: string }) {
@@ -66,7 +66,7 @@ export function AppFooter() {
                 <ol className="list-decimal space-y-1.5 pl-4 text-[11px] leading-relaxed text-on-table-muted">
                   <li>
                     <span className="inline-flex flex-wrap items-center gap-1">
-                      Докоснете бутона Сподели
+                      Докосни бутона Сподели
                       <SafariShareIcon className="inline size-4 shrink-0 text-foreground" />
                       в лентата на Safari долу.
                     </span>

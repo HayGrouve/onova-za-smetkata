@@ -277,8 +277,8 @@ function CollectionOverview({ actions }: { actions: ReactNode }) {
               Безплатен обяд няма!
             </p>
             <p className="mt-2 max-w-[36ch] text-[12px] leading-relaxed text-on-table-muted">
-              Снимате бележката, пращате линка в групата, всеки отбелязва своето
-              и плаща.
+              Снимаш бележката, пращаш линка в групата, всеки отбелязва своето и
+              плаща.
             </p>
           </section>
         )}

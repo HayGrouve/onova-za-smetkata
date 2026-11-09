@@ -47,8 +47,8 @@ import {
 } from '../../../shared/quick-bill.ts'
 import type { QuickBill, QuickBillLine } from '../../../shared/quick-bill.ts'
 
-const UPLOAD_CUT_OFF = 'Качването прекъсна. Снимайте бележката отново.'
-const SCAN_TOO_SLOW = 'Бележката се чете твърде дълго. Снимайте я отново.'
+const UPLOAD_CUT_OFF = 'Качването прекъсна. Снимай бележката отново.'
+const SCAN_TOO_SLOW = 'Бележката се чете твърде дълго. Снимай я отново.'
 
 /** Render again once a photo still on its way counts as stuck. */
 function useStaleRerender(startedAt: number | null) {
@@ -112,7 +112,7 @@ export function QuickSetup({
     <div className="mx-auto w-full max-w-[480px] px-3 pt-4 pb-40 sm:pt-8">
       <QuickPageHeader
         title="Бърза сметка"
-        hint="Не се качва никъде — остава само на този телефон. Всеки отбелязва своето, виждате сумите и я затваряте."
+        hint="Не се качва никъде, остава само на този телефон. Всеки отбелязва своето, виждаш сумите и я затваряш."
       />
 
       <SeatCount bill={bill} />
@@ -148,7 +148,7 @@ export function QuickSetup({
                 Четем бележката
               </p>
               <p className="mt-1 text-ink-muted">
-                Междувременно кажете колко сте. Редовете ще се отпечатат тук.
+                Междувременно кажи колко сте. Редовете ще се отпечатат тук.
               </p>
             </div>
           </div>
@@ -180,7 +180,7 @@ export function QuickSetup({
                   </QuickCameraButton>
                 </div>
                 <p className="text-[11px] text-ink-muted">
-                  Или добавете редовете ръчно.
+                  Или добави редовете ръчно.
                 </p>
               </div>
             ) : null}
@@ -188,8 +188,8 @@ export function QuickSetup({
             {bill.lines.length > 0 ? (
               <>
                 <p className="pb-1 text-[11px] leading-relaxed text-ink-muted">
-                  Докоснете ред, за да го поправите. „За всички“ го дели
-                  поравно: хляб, вода, бутилка за масата.
+                  Докосни ред, за да го поправиш. „За всички“ го дели поравно:
+                  хляб, вода, бутилка за масата.
                 </p>
                 <ul>
                   {bill.lines.map((line) => (
@@ -203,7 +203,7 @@ export function QuickSetup({
               </>
             ) : !failure ? (
               <p className="py-4 text-center text-[12px] text-ink-muted">
-                Не намерихме редове на снимката. Добавете ги ръчно.
+                Не намерихме редове на снимката. Добави ги ръчно.
               </p>
             ) : null}
 
@@ -239,8 +239,8 @@ export function QuickSetup({
                   aria-hidden
                 />
                 Редовете дават {formatEur(summary.receiptMismatch.linesCents)},
-                а бележката — {formatEur(summary.receiptMismatch.receiptCents)}.
-                Проверете цените и бройките.
+                а бележката: {formatEur(summary.receiptMismatch.receiptCents)}.
+                Провери цените и бройките.
               </p>
             ) : null}
           </>

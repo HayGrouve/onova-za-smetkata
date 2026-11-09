@@ -8,8 +8,8 @@ const BANNER_DISMISS_KEY = 'pwa-banner-dismissed'
 const LEGACY_DISMISS_KEY = 'pwa-install-dismissed'
 
 const IOS_INSTALL_STEPS = [
-  'Плъзнете екрана надолу и изберете „Добавяне в началния екран“.',
-  'Натиснете „Добави“ горе вдясно.',
+  'Плъзни екрана надолу и избери „Добавяне в началния екран“.',
+  'Натисни „Добави“ горе вдясно.',
 ] as const
 
 function SafariShareIcon({ className }: { className?: string }) {
@@ -75,14 +75,14 @@ export function PwaInstallBanner() {
         <p className="text-sm font-medium">Инсталирай приложението</p>
         <p className="text-xs text-muted-foreground">
           {showIosSteps
-            ? 'На iPhone добавете приложението ръчно към началния екран:'
-            : 'Добавете „Онова за сметката“ на началния екран за по-бърз достъп.'}
+            ? 'На iPhone добави приложението ръчно към началния екран:'
+            : 'Добави „Онова за сметката“ на началния екран за по-бърз достъп.'}
         </p>
         {showIosSteps ? (
           <ol className="list-decimal space-y-1.5 pl-4 text-xs leading-relaxed text-muted-foreground">
             <li>
               <span className="inline-flex flex-wrap items-center gap-1">
-                Докоснете бутона Сподели
+                Докосни бутона Сподели
                 <SafariShareIcon className="inline size-4 shrink-0 text-foreground" />
                 в лентата на Safari долу.
               </span>

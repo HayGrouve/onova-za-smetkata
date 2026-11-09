@@ -93,7 +93,7 @@ export function CombinedPaymentBanner({ billId }: { billId: Id<'bills'> }) {
 
   async function handleReject(requestId: Id<'combinedPaymentRequests'>) {
     const confirmed = await confirmAction({
-      title: 'Не виждате превода?',
+      title: 'Не виждаш превода?',
       description:
         'Гостът ще види, че плащането не е потвърдено, и може да опита отново.',
       confirmLabel: COMBINED_PAYMENT_MESSAGES.reject,

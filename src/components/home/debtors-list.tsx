@@ -152,7 +152,7 @@ function RemindButton({ debtor }: { debtor: Debtor }) {
       }
     }
     if (await copyToClipboard(text)) {
-      toast.success('Напомнянето е копирано. Поставете го в чата.')
+      toast.success('Напомнянето е копирано. Постави го в чата.')
     } else {
       toast.error('Неуспешно копиране')
     }

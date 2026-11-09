@@ -39,7 +39,7 @@ export function QuickSeats({
     <div className="mx-auto w-full max-w-[480px] px-3 pt-4 pb-40 sm:pt-8">
       <QuickPageHeader
         title="Чий ред е?"
-        hint="Подайте телефона. Всеки докосва себе си и отбелязва какво е ял и пил."
+        hint="Подай телефона. Всеки докосва себе си и отбелязва какво е ял и пил."
       />
 
       <ul className="mt-5 grid grid-cols-2 gap-3" aria-label="Хората на масата">

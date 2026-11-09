@@ -1,4 +1,8 @@
 import type { Page } from '@playwright/test'
+import {
+  HOST_ONBOARDING_CONTENT_ROUTE,
+  HOST_ONBOARDING_WELCOME,
+} from '../shared/host-onboarding-messages'
 import { expect, openHostContext, test } from './helpers/host-auth'
 
 async function openHostMenu(page: Page) {
@@ -16,7 +20,7 @@ test('replay shows content-route guidance on a new bill', async ({
 
   // Shown both in the sticky guidance bar and on the content-route card.
   await expect(
-    page.getByText('Изберете как да въведете сметката').first(),
+    page.getByText(HOST_ONBOARDING_CONTENT_ROUTE.title).first(),
   ).toBeVisible({ timeout: 30_000 })
 
   await context.close()
@@ -38,7 +42,9 @@ test('dev reset welcome sheet can be dismissed', async ({ browser }) => {
   })
 
   await expect(
-    page.getByRole('heading', { name: 'Вече имате сметки' }),
+    page.getByRole('heading', {
+      name: HOST_ONBOARDING_WELCOME.existingBillsTitle,
+    }),
   ).toBeVisible({ timeout: 15_000 })
   await expect(page.getByRole('textbox')).toHaveCount(0)
 
@@ -46,7 +52,9 @@ test('dev reset welcome sheet can be dismissed', async ({ browser }) => {
   await page.getByRole('button', { name: 'Затвори' }).first().click()
 
   await expect(
-    page.getByRole('heading', { name: 'Вече имате сметки' }),
+    page.getByRole('heading', {
+      name: HOST_ONBOARDING_WELCOME.existingBillsTitle,
+    }),
   ).not.toBeVisible()
 
   await context.close()

@@ -23,7 +23,7 @@ function planSummary(status: HostProStatus): string {
       ? dateFormatter.format(status.currentPeriodEnd)
       : null
   if (status.subscriptionStatus === 'past_due') {
-    return 'Последното плащане не мина. Обновете картата си, за да запазите Pro.'
+    return 'Последното плащане не мина. Обнови картата си, за да запазиш Pro.'
   }
   if (status.cancelAtPeriodEnd && periodEnd) {
     return `Абонаментът е отказан и Pro остава активен до ${periodEnd}.`

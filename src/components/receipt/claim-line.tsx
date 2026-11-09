@@ -48,7 +48,7 @@ export function ClaimLine({
   mode: LineMode
   /** Seats to emphasise: the guest's own seats, or the host's brush. */
   highlightIds?: string[]
-  /** Seats counted in „ваши N“ (the seat being marked for). */
+  /** Seats counted in „твои N“ (the seat being marked for). */
   countIds?: string[]
   open?: boolean
   error?: string | null
@@ -100,8 +100,8 @@ export function ClaimLine({
   const hint =
     mode === 'claim' && mine > 0 ? (
       <>
-        ваши <span data-testid={`claim-count-${group.itemIds[0]}`}>{mine}</span>
-        {sharedWith.length > 0 ? `, делите с ${sharedLabel(sharedWith)}` : null}
+        твои <span data-testid={`claim-count-${group.itemIds[0]}`}>{mine}</span>
+        {sharedWith.length > 0 ? `, делиш с ${sharedLabel(sharedWith)}` : null}
       </>
     ) : untouched && mode !== 'readonly' ? (
       'никой още'
@@ -140,7 +140,7 @@ export function ClaimLine({
               'absolute inset-0 transition-colors disabled:cursor-default aria-disabled:cursor-default',
               interactive && 'hover:bg-paper-2 active:bg-paper-2',
             )}
-            aria-label={`${tapLabel ? `${tapLabel}: ` : ''}${group.name}, ${formatEur(group.unitPriceCents)} за бройка, свободни ${free} от ${count}${mine > 0 ? `, ваши ${mine}` : ''}`}
+            aria-label={`${tapLabel ? `${tapLabel}: ` : ''}${group.name}, ${formatEur(group.unitPriceCents)} за бройка, свободни ${free} от ${count}${mine > 0 ? `, твои ${mine}` : ''}`}
           />
           <div className="pointer-events-none relative min-h-[60px] px-2 py-2.5">
             <span

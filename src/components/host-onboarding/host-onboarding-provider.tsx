@@ -325,7 +325,7 @@ export function HostOnboardingProvider({ children }: { children: ReactNode }) {
     refreshBillSession()
     if (onboarding && onboarding.billCount > 0) {
       toast.message(
-        'Onboarding е нулиран. Можете да започнете сметка с напътствия без да изтривате съществуващите.',
+        'Напътствията са нулирани. Можеш да започнеш сметка с напътствия, без да изтриваш съществуващите.',
       )
     } else {
       toast.message('Напътствията са готови за тест.')

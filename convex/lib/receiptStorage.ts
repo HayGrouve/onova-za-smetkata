@@ -43,7 +43,7 @@ export async function assertFreshUpload(
   const photo = await ctx.db.system.get('_storage', storageId)
   const taken = await isPhotoHeld(ctx, storageId)
   if (!photo || taken || nowMs - photo._creationTime > UPLOAD_MAX_AGE_MS) {
-    throw new ConvexError('Снимката не е качена. Опитайте отново.')
+    throw new ConvexError('Снимката не е качена. Опитай отново.')
   }
 }
 

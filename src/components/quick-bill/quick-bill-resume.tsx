@@ -30,7 +30,7 @@ export function QuickBillResume() {
             ) : null}
           </span>
           <span className="mt-1 block truncate font-display text-[15px] font-bold uppercase">
-            {name || 'Продължете оттам, докъдето стигнахте'}
+            {name || 'Продължи оттам, докъдето стигна'}
           </span>
           <span className="mt-2 flex items-end justify-between gap-3">
             <span className="text-[11px] text-ink-muted">

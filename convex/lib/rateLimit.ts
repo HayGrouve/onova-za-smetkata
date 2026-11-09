@@ -6,7 +6,7 @@ export async function assertRateLimit(
   key: string,
   max: number,
   windowMs: number,
-  message = 'Твърде много заявки. Опитайте отново след малко.',
+  message = 'Твърде много заявки. Опитай отново след малко.',
 ): Promise<void> {
   const now = Date.now()
   const existing = await ctx.db

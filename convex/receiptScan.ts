@@ -112,7 +112,7 @@ export const importScannedItems = mutation({
       )
     if (itemsToImport.length === 0) {
       // „Замени“ with nothing selected would silently wipe every line.
-      throw new ConvexError('Изберете поне един артикул за импортиране.')
+      throw new ConvexError('Избери поне един артикул за импортиране.')
     }
 
     const validated = validateReceiptImportItems(itemsToImport)

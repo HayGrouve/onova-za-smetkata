@@ -55,7 +55,7 @@ export const createFirstBill = mutation({
     const billCount = await countOwnedBills(ctx, userId)
     if (billCount > 0) {
       throw new ConvexError(
-        'Първоначалните напътствия са само когато все още нямате сметки.',
+        'Първоначалните напътствия са само докато още нямаш сметки.',
       )
     }
 
@@ -232,7 +232,7 @@ export const startGuidedBillWithExistingBills = mutation({
     const billCount = await countOwnedBills(ctx, userId)
     if (billCount === 0) {
       throw new ConvexError(
-        'Първоначалните напътствия започват от началния екран, когато все още нямате сметки.',
+        'Първоначалните напътствия започват от началния екран, докато още нямаш сметки.',
       )
     }
 
@@ -241,7 +241,7 @@ export const startGuidedBillWithExistingBills = mutation({
       throw new ConvexError('Напътствията вече са приключили.')
     }
     if (onboarding.guidedBillId !== undefined) {
-      throw new ConvexError('Вече имате активна сметка с напътствия.')
+      throw new ConvexError('Вече имаш активна сметка с напътствия.')
     }
 
     const billId = await createBillForOwner(ctx, owner)
@@ -271,7 +271,7 @@ export const startAnotherGuidedBill = mutation({
       throw new ConvexError('Напътствията не са активни.')
     }
     if (onboarding.guidedBillId !== undefined) {
-      throw new ConvexError('Вече имате активна сметка с напътствия.')
+      throw new ConvexError('Вече имаш активна сметка с напътствия.')
     }
 
     const billId = await createBillForOwner(ctx, owner)

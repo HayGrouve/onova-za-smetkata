@@ -258,7 +258,7 @@ export function FriendGroupEditorSheet({
             <div className="flex flex-wrap gap-2">
               {memberNames.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Добавете поне един участник.
+                  Добави поне един участник.
                 </p>
               ) : null}
               {memberNames.map((member, index) => (

@@ -77,7 +77,7 @@ export function FriendGroupsSheet({
               <p className="text-sm text-muted-foreground">Зареждане...</p>
             ) : groups.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Запазете хора от сметка или създайте група тук.
+                Запази хора от сметка или създай група тук.
               </p>
             ) : (
               <ul className="flex flex-col gap-2">

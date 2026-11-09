@@ -84,12 +84,12 @@ export function QuickTurn({
     if (!result.ok) {
       flashError(
         group.key,
-        'Всичко от реда е взето. Делихте ли? Задръжте реда.',
+        'Всичко от реда е взето. Дели ли с някого? Задръж реда.',
       )
       return
     }
     fly(seatId, group.key)
-    pushUndo(`Взехте ${group.name}`, () => {
+    pushUndo(`Взе ${group.name}`, () => {
       editQuickBill((b) => releaseQuickBillUnit(b, group.itemIds, seatId))
     })
   }
@@ -109,7 +109,7 @@ export function QuickTurn({
           taken += 1
         }
         if (taken > 0) {
-          pushUndo(`Взехте ${taken} × ${group.name}`, () => {
+          pushUndo(`Взе ${taken} × ${group.name}`, () => {
             for (let i = 0; i < taken; i++) {
               editQuickBill((b) =>
                 releaseQuickBillUnit(b, group.itemIds, seatId),
@@ -182,7 +182,7 @@ export function QuickTurn({
           </div>
         </header>
         <p className="mt-2 flex flex-wrap items-center gap-x-2 text-[12px] text-on-table-muted">
-          <span>Напишете името си, ако искате.</span>
+          <span>Напиши името си, ако искаш.</span>
           <button
             type="button"
             className="min-h-11 underline decoration-dotted decoration-2 underline-offset-4"
@@ -194,7 +194,7 @@ export function QuickTurn({
 
         <Receipt className="mt-3">
           <p className="pt-3 text-[12px] leading-relaxed">
-            Докоснете ред, за да вземете бройка. Задръжте го за делене и брой.
+            Докосни ред, за да вземеш бройка. Задръж го за делене и брой.
           </p>
           <Rule />
           {groups.length === 0 ? (

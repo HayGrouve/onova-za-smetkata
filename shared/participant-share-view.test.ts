@@ -236,9 +236,9 @@ describe('formatParticipantShareSectionText', () => {
     const lines = formatParticipantShareSectionText('Иван', view, formatAmount)
 
     expect(lines[0]).toBe('▸ Иван')
-    expect(lines[1]).toContain('Салата · споделено с Мария — 6.00 €')
+    expect(lines[1]).toContain('Салата · споделено с Мария: 6.00 €')
     expect(lines.at(-1)).toBe(
-      '  Дължи 39.00 € · Платено 0.00 € · Остатък 39.00 € — неплатено',
+      '  Дължи 39.00 € · Платено 0.00 € · Остатък 39.00 € · неплатено',
     )
   })
 })

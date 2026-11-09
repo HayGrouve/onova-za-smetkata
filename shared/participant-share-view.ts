@@ -226,7 +226,7 @@ export function formatBillItemsSectionText(
     if (totalCents <= 0) continue
 
     const quantitySuffix = item.quantity > 1 ? ` ×${item.quantity}` : ''
-    lines.push(`• ${item.name}${quantitySuffix} — ${formatAmount(totalCents)}`)
+    lines.push(`• ${item.name}${quantitySuffix}: ${formatAmount(totalCents)}`)
     lines.push(
       `  ${formatItemAssigneesText(item, breakdown, labels, formatAmount)}`,
     )
@@ -237,7 +237,7 @@ export function formatBillItemsSectionText(
     const participantCount = breakdown.participants.length
     const shareLabel =
       participantCount > 1 ? `поравно между ${participantCount}` : 'цялата сума'
-    lines.push(`• Бакшиш — ${formatAmount(tipCents)} (${shareLabel})`)
+    lines.push(`• Бакшиш: ${formatAmount(tipCents)} (${shareLabel})`)
   }
 
   return lines
@@ -255,14 +255,14 @@ export function formatParticipantShareSectionText(
   } else {
     for (const line of view.lines) {
       lines.push(
-        `  • ${line.label}${line.suffix} — ${formatAmount(line.amountCents)}`,
+        `  • ${line.label}${line.suffix}: ${formatAmount(line.amountCents)}`,
       )
     }
   }
 
   const { owedCents, paidCents } = view.totals
   lines.push(
-    `  Дължи ${formatAmount(owedCents)} · Платено ${formatAmount(paidCents)} · Остатък ${formatAmount(view.remainingCents)} — ${view.statusLabel}`,
+    `  Дължи ${formatAmount(owedCents)} · Платено ${formatAmount(paidCents)} · Остатък ${formatAmount(view.remainingCents)} · ${view.statusLabel}`,
   )
 
   return lines

@@ -157,7 +157,7 @@ function GuestClaimTable({
     if (view.freeUnits.length === 0) {
       flashError(
         group.key,
-        'Всичко от реда е взето. Делихте ли? Задръжте реда.',
+        'Всичко от реда е взето. Дели ли с някого? Задръж реда.',
       )
       return
     }
@@ -165,7 +165,7 @@ function GuestClaimTable({
     if (!ok) return
     fly(actorId, group.key)
     const who =
-      actorId === participantId ? 'Взехте' : `За ${labels[actorId] ?? 'друг'}:`
+      actorId === participantId ? 'Взе' : `За ${labels[actorId] ?? 'друг'}:`
     pushUndo(`${who} ${group.name}`, () => {
       void actions.release(group.itemIds)
     })
@@ -198,7 +198,7 @@ function GuestClaimTable({
           taken += 1
         }
         if (taken > 0) {
-          pushUndo(`Взехте ${taken} × ${group.name}`, () => {
+          pushUndo(`Взе ${taken} × ${group.name}`, () => {
             void (async () => {
               for (let i = 0; i < taken; i++) {
                 if (!(await actions.release(group.itemIds))) return
@@ -305,7 +305,7 @@ function GuestClaimTable({
             >
               <p className="mt-2 flex flex-wrap items-center gap-x-2 text-[12px] text-ink-muted">
                 <span>
-                  Вие сте <b className="text-ink">{meLabel}</b>.
+                  Ти си <b className="text-ink">{meLabel}</b>.
                 </span>
                 <button
                   type="button"
@@ -318,7 +318,7 @@ function GuestClaimTable({
               <p className="text-[12px] leading-relaxed">
                 {readOnly
                   ? 'Сметката е приключена. Само преглед.'
-                  : 'Докоснете ред, за да вземете бройка. Задръжте го за делене и брой.'}
+                  : 'Докосни ред, за да вземеш бройка. Задръж го за делене и брой.'}
               </p>
             </ReceiptHeader>
             <Rule />
@@ -510,7 +510,7 @@ function MySlip({
             <div
               className="mb-2 flex flex-wrap items-center gap-1.5"
               role="group"
-              aria-label="Отбелязвате за"
+              aria-label="Отбелязваш за"
             >
               <span className="text-[11px] text-ink-muted">Отбелязвам за</span>
               {mySeatIds.map((id) => {
@@ -548,7 +548,7 @@ function MySlip({
                   ? `Общо за ${joinLabels(mySeatIds.map((id) => seatOf(id)?.label ?? 'друг'))}`
                   : anyPaid
                     ? 'Остатък'
-                    : 'Вашият дял'}
+                    : 'Твоят дял'}
                 , {units} бр.
               </span>
               <motion.span
@@ -588,9 +588,7 @@ function MySlip({
                   className="size-12 shrink-0 px-0"
                   onClick={onCover}
                   aria-label={
-                    hasCovered
-                      ? 'Промени за кого плащате'
-                      : 'Плащам и за някого'
+                    hasCovered ? 'Промени за кого плащаш' : 'Плащам и за някого'
                   }
                 >
                   <UserPlusIcon
@@ -622,7 +620,7 @@ function MySlip({
           )}
           {owed === 0 && !readOnly ? (
             <p className="mt-2 text-[11px] text-ink-muted">
-              Докоснете ред от бележката, за да започнете.
+              Докосни ред от бележката, за да започнеш.
             </p>
           ) : null}
         </div>

@@ -114,8 +114,8 @@ export function AssembleLines({
               {receiptScan.isScanning
                 ? 'Четем бележката. Редовете ще се отпечатат тук.'
                 : hasItems
-                  ? 'Снимката е тук, ако искате да сверите редовете.'
-                  : 'Снимката е качена. Разпознайте редовете.'}
+                  ? 'Снимката е тук, ако искаш да провериш редовете.'
+                  : 'Снимката е качена. Разпознай редовете.'}
             </p>
             <GuidanceTarget stepId="scan-run-ocr" focus={guidanceFocus}>
               <Button
@@ -157,8 +157,8 @@ export function AssembleLines({
           <div className="my-2 border-2 border-dashed border-rule px-4 py-8 text-center">
             <p className="font-display text-[15px] font-bold">Празна бележка</p>
             <p className="mx-auto mt-2 max-w-[32ch] text-[12px] leading-relaxed text-ink-muted">
-              Снимайте касовата бележка и редовете ще се отпечатат тук. Или ги
-              въведете на ръка.
+              Снимай касовата бележка и редовете ще се отпечатат тук. Или ги
+              въведи на ръка.
             </p>
             <div className="mt-5 flex flex-col items-center gap-2">
               {receiptUploaded ? null : uploadButtons}
@@ -212,7 +212,7 @@ export function AssembleLines({
                     )}
                   >
                     {item.unitPriceCents <= 0
-                      ? 'Без цена. Докоснете, за да я въведете.'
+                      ? 'Без цена. Докосни, за да я въведеш.'
                       : `${item.quantity} × ${formatEur(item.unitPriceCents)}`}
                   </span>
                 </button>
@@ -249,7 +249,7 @@ export function AssembleLines({
             />
           ) : null}
           <p className="mt-3 text-[11px] text-ink-muted">
-            Данък или такса за обслужване? Добавете ги като отделен ред.
+            Данък или такса за обслужване? Добави ги като отделен ред.
           </p>
         </>
       )}
@@ -300,7 +300,7 @@ function ScanCheck({
       )}
       {diff === 0
         ? `Редовете дават ${formatEur(receiptCents)}, колкото е и на бележката.`
-        : `Редовете дават ${formatEur(linesCents)}, а на бележката пише ${formatEur(receiptCents)}. Проверете ${diff > 0 ? 'за излишен ред' : 'дали липсва ред'}.`}
+        : `Редовете дават ${formatEur(linesCents)}, а на бележката пише ${formatEur(receiptCents)}. Провери ${diff > 0 ? 'за излишен ред' : 'дали липсва ред'}.`}
     </p>
   )
 }

@@ -10,7 +10,7 @@ import {
 import type { ComponentType, ReactNode } from 'react'
 import { toast } from 'sonner'
 
-const SHEET_LOAD_FAILED = 'Неуспешно зареждане. Обновете страницата.'
+const SHEET_LOAD_FAILED = 'Неуспешно зареждане. Обнови страницата.'
 
 /** Which open of a MountOnFirstOpen is rendering: a failed load retries on the next. */
 const SheetAttemptContext = createContext(0)

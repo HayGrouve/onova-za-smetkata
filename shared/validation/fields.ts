@@ -51,7 +51,7 @@ export function restaurantNameSchema(options: { required?: boolean } = {}) {
     .transform((value) => (hasVisibleText(value) ? value : ''))
 
   if (options.required) {
-    return base.pipe(z.string().min(1, 'Въведете име на ресторант.'))
+    return base.pipe(z.string().min(1, 'Въведи име на ресторант.'))
   }
 
   return base

@@ -46,7 +46,7 @@ test('one phone claims and pays for two seats', async ({ browser }) => {
 
   // Mark for Боби from the same phone: the count follows the active seat.
   await payer.page
-    .getByRole('group', { name: 'Отбелязвате за' })
+    .getByRole('group', { name: 'Отбелязваш за' })
     .getByRole('button', { name: bobi })
     .click()
   await takeUnit(payer.page, 'Пица')

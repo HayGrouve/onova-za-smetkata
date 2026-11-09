@@ -16,7 +16,7 @@ export interface QueryErrorPanelProps {
 
 /** A short printed note on paper: the data did not load. */
 export function QueryErrorPanel({
-  message = 'Неуспешно зареждане. Проверете интернет връзката.',
+  message = 'Неуспешно зареждане. Провери интернет връзката.',
   title,
   onRetry,
   homeLink = false,

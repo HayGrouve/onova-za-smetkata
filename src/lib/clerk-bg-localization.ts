@@ -2,7 +2,7 @@ import { bgBG } from '@clerk/localizations/bg-BG'
 
 /** The Clerk dashboard names the app in Latin; screens say it in Cyrillic. */
 const APP_NAME = 'Онова за сметката'
-const CONTINUE_TO_APP = `за да продължите към ${APP_NAME}`
+const CONTINUE_TO_APP = `за да продължиш към ${APP_NAME}`
 
 /** Host-visible Bulgarian fills for community `bgBG` gaps. Clerk Billing keys stay untranslated. */
 export const clerkBgLocalization = {
@@ -35,24 +35,24 @@ export const clerkBgLocalization = {
       backButton: 'Използвай съществуващ номер',
       successTitle: 'Потвърждението със SMS код е включено',
       successMessage1:
-        'При вход ще трябва да въведете код, изпратен на този телефонен номер.',
+        'При вход ще трябва да въведеш код, изпратен на този телефонен номер.',
       successMessage2:
-        'Запазете резервните кодове на сигурно място. Ако загубите достъп до устройството, с тях можете да влезете.',
+        'Запази резервните кодове на сигурно място. Ако загубиш достъп до устройството, с тях можеш да влезеш.',
     },
     phoneNumberPage: {
       ...bgBG.userProfile?.phoneNumberPage,
-      verifyTitle: 'Потвърдете телефонния номер',
-      verifySubtitle: 'Въведете кода, изпратен на {{identifier}}',
+      verifyTitle: 'Потвърди телефонния номер',
+      verifySubtitle: 'Въведи кода, изпратен на {{identifier}}',
     },
     passwordPage: {
       ...bgBG.userProfile?.passwordPage,
       checkboxInfoText__signOutOfOtherSessions:
-        'Препоръчително е да излезете от всички други устройства, които може да използват старата парола.',
+        'Препоръчително е да излезеш от всички други устройства, които може да използват старата парола.',
     },
     passkeyScreen: {
       ...bgBG.userProfile?.passkeyScreen,
       title__rename: 'Преименуване на ключ за достъп',
-      subtitle__rename: 'Можете да смените името, за да го намирате по-лесно.',
+      subtitle__rename: 'Можеш да смениш името, за да го намираш по-лесно.',
       removeResource: {
         ...bgBG.userProfile?.passkeyScreen?.removeResource,
         title: 'Премахване на ключ за достъп',
@@ -64,7 +64,7 @@ export const clerkBgLocalization = {
       connectedAccountsSection: {
         ...bgBG.userProfile?.start?.connectedAccountsSection,
         subtitle__reauthorize:
-          'Необходимите права са обновени и приложението може да е ограничено. Упълномощете отново, за да избегнете проблеми.',
+          'Необходимите права са обновени и приложението може да е ограничено. Упълномощи отново, за да избегнеш проблеми.',
       },
       passkeysSection: {
         ...bgBG.userProfile?.start?.passkeysSection,

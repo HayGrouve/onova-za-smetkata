@@ -1,3 +1,4 @@
+import { COMBINED_PAYMENT_MESSAGES } from '../shared/combined-payment-messages'
 import {
   addBillItem,
   addBillParticipants,
@@ -13,7 +14,7 @@ test('a pay-for-others pick is freed when that phone leaves', async ({
   const stamp = Date.now()
   const ani = `Ани ${stamp}`
   const bobi = `Боби ${stamp}`
-  const coveredHint = 'Не е нужно да плащате отделно засега.'
+  const coveredHint = COMBINED_PAYMENT_MESSAGES.coveredGuestHint
 
   const { context: hostContext, page: hostPage } =
     await openHostContext(browser)

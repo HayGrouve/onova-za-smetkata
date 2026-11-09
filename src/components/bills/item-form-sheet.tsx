@@ -146,7 +146,7 @@ export function ItemFormSheet({
             {item ? 'Редакция на артикул' : 'Нов артикул'}
           </SheetTitle>
           <SheetDescription>
-            Цената е за една бройка — бройките я умножават.
+            Цената е за една бройка, бройките я умножават.
           </SheetDescription>
         </SheetHeader>
 

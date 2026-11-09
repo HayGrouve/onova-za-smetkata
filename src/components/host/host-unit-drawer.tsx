@@ -52,7 +52,7 @@ export function HostUnitDrawer({
   return (
     <LinePanel title="Кой какво от този ред" onClose={onClose}>
       <p className="mb-2 text-[11px] leading-snug text-ink-muted">
-        Отбележете кой е ял от всяка бройка. Двама или повече делят цената
+        Отбележи кой е ял от всяка бройка. Двама или повече делят цената
         поравно.
       </p>
       <ul className="space-y-2">

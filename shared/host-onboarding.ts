@@ -6,6 +6,7 @@ import {
   isRestaurantReady,
 } from './bill-readiness'
 import {
+  HOST_ONBOARDING_CONTENT_ROUTE,
   HOST_ONBOARDING_ITEMS,
   HOST_ONBOARDING_REVIEW,
   HOST_ONBOARDING_SCAN,
@@ -88,8 +89,8 @@ export function deriveHostOnboardingGuidance(
         id: 'content-route',
         anchor: 'content',
         step: 1,
-        title: 'Изберете как да въведете сметката',
-        body: 'При дълга бележка снимката е по-бърза; при няколко артикула въведете ги ръчно.',
+        title: HOST_ONBOARDING_CONTENT_ROUTE.title,
+        body: HOST_ONBOARDING_CONTENT_ROUTE.body,
         done: false,
       }
     }
@@ -137,7 +138,7 @@ export function deriveHostOnboardingGuidance(
       id: 'content-route',
       anchor: 'content',
       step: 1,
-      title: 'Изберете как да въведете сметката',
+      title: HOST_ONBOARDING_CONTENT_ROUTE.title,
       body: '',
       done: true,
     }
@@ -147,11 +148,9 @@ export function deriveHostOnboardingGuidance(
     id: 'restaurant',
     anchor: 'bill-details',
     step: 1,
-    title: bill.restaurantFromOcr
-      ? 'Проверете ресторанта'
-      : 'Добавете ресторанта',
+    title: bill.restaurantFromOcr ? 'Провери ресторанта' : 'Добави ресторанта',
     body: bill.restaurantFromOcr
-      ? 'Името е разпознато от бележката — потвърдете го или го поправете.'
+      ? 'Името е разпознато от бележката. Потвърди го или го поправи.'
       : 'Името се вижда от гостите, когато отворят линка.',
     done: isRestaurantReady(bill.restaurantName),
   }
@@ -171,8 +170,8 @@ export function deriveHostOnboardingGuidance(
     id: 'participants',
     anchor: 'participants',
     step: 2,
-    title: 'Добавете хората на масата',
-    body: `Вашето място „${hostSeat}“ вече е добавено — добавете поне един гост, за да разпределите сметката.`,
+    title: 'Добави хората на масата',
+    body: `Твоето място „${hostSeat}“ вече е добавено. Добави поне един гост, за да разпределиш сметката.`,
     done: bill.guestCount > 0,
   }
 
@@ -180,13 +179,13 @@ export function deriveHostOnboardingGuidance(
     id: 'allocation',
     anchor: 'allocation',
     step: 3,
-    title: 'Разпределете артикулите',
+    title: 'Разпредели артикулите',
     body:
       bill.items.length === 0
-        ? 'Първо добавете редовете на бележката в Сглобяване.'
+        ? 'Първо добави редовете на бележката в Сглобяване.'
         : hasMultiUnitItem(bill.items)
-          ? 'Изберете човек от масата и докосвайте редовете му: всяко докосване е една бройка. Или пратете линка и гостите ще си отбележат сами.'
-          : 'Изберете човек от масата и докоснете редовете му. Делено ястие: „⋯“ на реда. Или пратете линка и гостите ще си отбележат сами.',
+          ? 'Избери човек от масата и докосвай редовете му: всяко докосване е една бройка. Или прати линка и гостите ще си отбележат сами.'
+          : 'Избери човек от масата и докосни редовете му. Делено ястие: „⋯“ на реда. Или прати линка и гостите ще си отбележат сами.',
     done: isAllocationReady({
       items: bill.items,
       assignments: bill.assignments,
