@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
+import { Route as AbonamentRouteImport } from './routes/abonament'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as QuickBillRouteImport } from './routes/quick-bill'
@@ -30,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
 const SplatRoute = SplatRouteImport.update({
   id: '/$',
   path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AbonamentRoute = AbonamentRouteImport.update({
+  id: '/abonament',
+  path: '/abonament',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -86,6 +92,7 @@ const BillsBillIdSummaryRoute = BillsBillIdSummaryRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/abonament': typeof AbonamentRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/quick-bill': typeof QuickBillRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/abonament': typeof AbonamentRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/quick-bill': typeof QuickBillRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/abonament': typeof AbonamentRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/quick-bill': typeof QuickBillRoute
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$'
+    | '/abonament'
     | '/login'
     | '/privacy'
     | '/quick-bill'
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$'
+    | '/abonament'
     | '/login'
     | '/privacy'
     | '/quick-bill'
@@ -159,6 +170,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$'
+    | '/abonament'
     | '/login'
     | '/privacy'
     | '/quick-bill'
@@ -174,6 +186,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
+  AbonamentRoute: typeof AbonamentRoute
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
   QuickBillRoute: typeof QuickBillRoute
@@ -200,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: '/$'
       fullPath: '/$'
       preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/abonament': {
+      id: '/abonament'
+      path: '/abonament'
+      fullPath: '/abonament'
+      preLoaderRoute: typeof AbonamentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -278,6 +298,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
+  AbonamentRoute: AbonamentRoute,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
   QuickBillRoute: QuickBillRoute,

@@ -20,7 +20,7 @@ function stripeClient(secretKey: string): Stripe {
 }
 
 /** Where Checkout and the Customer Portal send the Host back to. */
-const SUBSCRIPTION_PAGE_PATH = '/user-profile/subscription'
+const SUBSCRIPTION_PAGE_PATH = '/abonament'
 
 async function syncCustomerSubscriptions(
   ctx: ActionCtx,
