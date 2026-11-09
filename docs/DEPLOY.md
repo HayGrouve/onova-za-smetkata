@@ -22,6 +22,7 @@
 | `GEMINI_API_KEY`               | Convex Dashboard                | Yes (for OCR)                                                             |
 | `GEMINI_MODEL`                 | Convex Dashboard                | No                                                                        |
 | `CLERK_JWT_ISSUER_DOMAIN`      | Convex Dashboard (dev + prod)   | Yes (Clerk JWT validation)                                                |
+| `CLERK_AUTHORIZED_PARTIES`     | Convex Dashboard (prod)         | No: origins allowed as the token's `azp`, comma separated; unset = off    |
 | `VITE_CLERK_PUBLISHABLE_KEY`   | Vercel / `.env.local`           | Yes (Clerk client — **Vite** prefix, not `NEXT_PUBLIC_*`)                 |
 | `CLERK_PUBLISHABLE_KEY`        | Vercel / `.env.local`           | Recommended (same `pk_live_…`; SSR middleware fallback)                   |
 | `CLERK_SECRET_KEY`             | Vercel / `.env.local`           | Yes (TanStack Start `clerkMiddleware`)                                    |
@@ -38,6 +39,8 @@
 | `VERCEL_TOKEN`                 | GitHub Actions secret           | Yes — Vercel access token for CLI deploys                                 |
 | `VERCEL_ORG_ID`                | GitHub Actions secret           | Yes                                                                       |
 | `VERCEL_PROJECT_ID`            | GitHub Actions secret           | Yes                                                                       |
+
+`CLERK_AUTHORIZED_PARTIES` stays unset until after the cutover. Once it is set on prod, the Convex dashboard's "run as user" needs `"azp": "https://smetkata.onovaza.com"` in the identity JSON, or the function sees a signed out caller.
 
 Never put `GEMINI_API_KEY`, Stripe keys, Clerk secrets, `DEV_MODE`, or deploy keys/tokens in the repo.
 

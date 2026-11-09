@@ -11,12 +11,57 @@ function isMutationCtx(ctx: QueryCtx | MutationCtx): ctx is MutationCtx {
   return 'insert' in ctx.db
 }
 
+/**
+ * Origins allowed to mint a token for this deployment, from the comma
+ * separated `CLERK_AUTHORIZED_PARTIES`. Empty (unset) turns the `azp` check off.
+ */
+function authorizedParties(): string[] {
+  return (
+    process.env.CLERK_AUTHORIZED_PARTIES?.split(',')
+      .map((party) => party.trim())
+      .filter(Boolean) ?? []
+  )
+}
+
+/**
+ * The caller's identity, or `null` when signed out. The only
+ * `getUserIdentity()` call in `convex/`. Every онова за subdomain shares one
+ * Clerk session, so once `CLERK_AUTHORIZED_PARTIES` is set, a token whose
+ * `azp` (the origin that minted it) is missing or not listed counts as signed
+ * out. `azp` reaches us only because `auth.config.ts` uses `customJwt`.
+ */
+async function getAuthorizedIdentity(
+  ctx: QueryCtx | MutationCtx,
+): Promise<UserIdentity | null> {
+  const identity = await ctx.auth.getUserIdentity()
+  if (!identity?.subject) return null
+
+  const parties = authorizedParties()
+  if (
+    parties.length > 0 &&
+    (typeof identity.azp !== 'string' || !parties.includes(identity.azp))
+  ) {
+    return null
+  }
+  return identity
+}
+
+/**
+ * Profile photo URL. Under `customJwt` Clerk's `picture` claim arrives as a
+ * custom claim of that name; `pictureUrl` is where the old `domain` config put it.
+ */
+function pictureFromIdentity(identity: UserIdentity): string | undefined {
+  const { picture } = identity
+  if (typeof picture === 'string' && picture) return picture
+  return identity.pictureUrl || undefined
+}
+
 function newUserFields(identity: UserIdentity) {
   return {
     clerkSubject: identity.subject,
     email: identity.email,
     name: identity.name,
-    image: identity.pictureUrl,
+    image: pictureFromIdentity(identity),
     plan: 'free' as const,
   }
 }
@@ -46,8 +91,8 @@ export async function requireAuth(ctx: QueryCtx): Promise<Id<'users'>>
 export async function requireAuth(
   ctx: QueryCtx | MutationCtx,
 ): Promise<Id<'users'>> {
-  const identity = await ctx.auth.getUserIdentity()
-  if (!identity?.subject) {
+  const identity = await getAuthorizedIdentity(ctx)
+  if (!identity) {
     throw new ConvexError('Изисква се вход')
   }
 
@@ -69,13 +114,10 @@ export async function requireAuth(
 export async function getOptionalAuthUserId(
   ctx: QueryCtx | MutationCtx,
 ): Promise<Id<'users'> | null> {
-  const identity = await ctx.auth.getUserIdentity()
-  if (!identity?.subject) return null
+  const identity = await getAuthorizedIdentity(ctx)
+  if (!identity) return null
 
-  const existing = await ctx.db
-    .query('users')
-    .withIndex('by_clerkSubject', (q) => q.eq('clerkSubject', identity.subject))
-    .unique()
+  const existing = await findUserByIdentity(ctx, identity)
   return existing?._id ?? null
 }
 
