@@ -55,5 +55,16 @@ test('Изтрий данните: typed ИЗТРИЙ wipes the bills and the Ho
     page.getByText(GUEST_FLOW_MESSAGES.billNotFound.replace(/\.$/, '')).first(),
   ).toBeVisible({ timeout: 30_000 })
 
+  // The brand new Host can start over. This also leaves the shared e2e user
+  // with a bill, so later specs don't race the first-run welcome sheet.
+  // The welcome sheet may still slide in over Home; dismiss it and retry.
+  await page.goto('/')
+  await expect(async () => {
+    if (await skipWelcome.isVisible()) await skipWelcome.click()
+    await newBill.click({ timeout: 3_000 })
+    await expect(page).toHaveURL(/\/bills\/[^/?]+/, { timeout: 5_000 })
+  }).toPass({ timeout: 45_000 })
+  expect(billIdFromUrl(page.url())).not.toBe(billId)
+
   await context.close()
 })
