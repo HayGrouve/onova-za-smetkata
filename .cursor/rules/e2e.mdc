@@ -16,7 +16,9 @@ Playwright covers critical-path guest/host browser flows. Full setup and failure
 | `guest-pay-for-other-release.spec.ts` | A pay-for-others pick frees the covered Guest when the payer's phone leaves |
 | `session-conflict.spec.ts` | Two browsers claim the same guest seat |
 | `combined-guest-payment.spec.ts` | Host payment banner appears only after Revolut opens |
-| `host-account-route.spec.ts` | Host Акаунт route: unsigned redirect; signed-in `/user-profile` and `/user-profile/security` |
+| `host-account-route.spec.ts` | Avatar menu (only „Акаунт“ to the hub and „Изход“), Изход, `/abonament` and the `/user-profile` 308, no avatar on Guest pages |
+| `sign-in-bounce.spec.ts` | Signed-out Започни, deep links and old `/login` links bounce to Clerk sign-in with the full return URL |
+| `not-found.spec.ts` | 404 page; `/privacy`, `/terms`, `/user-profile/*` answer 308 |
 | `host-onboarding.spec.ts` | Host replay hints; welcome dismiss |
 
 ## Prerequisites

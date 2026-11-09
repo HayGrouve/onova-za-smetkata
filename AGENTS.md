@@ -6,7 +6,7 @@ Repo-specific agent config. Stack and quality bar: **`.cursor/rules/project.mdc`
 
 1. **`GLOSSARY.md`** — full domain glossary (core terms always in `.cursor/rules/context-core.mdc`).
 2. **`docs/agents/guidelines.md`** — architecture map, imports, testing, Convex/env, pitfalls.
-3. **`docs/adr/`** — ADRs for the area you touch. Host auth is Clerk ([0002](docs/adr/0002-clerk-auth-billing.md)); Host Pro is Stripe Billing ([0003](docs/adr/0003-stripe-billing-beside-clerk.md)).
+3. **`docs/adr/`** — ADRs for the area you touch. Host auth is Clerk ([0002](docs/adr/0002-clerk-auth-billing.md)) through the shared онова за Акаунт: sign-in, the Акаунт and the legal texts live on onovaza.com ([0005](docs/adr/0005-sign-in-and-akaunt-on-the-hub.md)); Host Pro is Stripe Billing ([0003](docs/adr/0003-stripe-billing-beside-clerk.md), [0004](docs/adr/0004-stripe-managed-payments.md)).
 
 ## Typical loop
 

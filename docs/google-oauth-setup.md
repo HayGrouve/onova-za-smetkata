@@ -1,13 +1,7 @@
 # Google OAuth setup
 
-> **Superseded.** Host Google sign-in is configured in **Clerk**, not Convex Auth.
+> **Superseded.** Host Google sign-in belongs to the shared Акаунт's Clerk app "онова за" and its Google client, set up by the hub: [HayGrouve/onova-za#26](https://github.com/HayGrouve/onova-za/issues/26). Сметката configures no OAuth client ([ADR 0005](./adr/0005-sign-in-and-akaunt-on-the-hub.md)).
 
-Use **[clerk-production-setup.md](./clerk-production-setup.md)** — Phase 1, **§1.8 Google SSO (production)** — for:
+Do **not** use old Convex Auth redirect URIs (`*.convex.site/api/auth/callback/google`) or Convex env vars (`AUTH_GOOGLE_*`, `SITE_URL`), nor the retired app's callback on `clerk.onova-za-smetkata.com`.
 
-- OAuth consent screen branding in Google Cloud Console
-- OAuth client credentials and the Clerk redirect URI (`https://clerk.onova-za-smetkata.com/v1/oauth_callback`)
-- Pasting Client ID / Secret into the Clerk Dashboard
-
-Do **not** use old Convex Auth redirect URIs (`*.convex.site/api/auth/callback/google`) or Convex env vars (`AUTH_GOOGLE_*`, `SITE_URL`).
-
-**Historical context:** [ADR 0001](./adr/0001-google-oauth-branding.md) (consent screen strategy). Auth routing is now [ADR 0002](./adr/0002-clerk-auth-billing.md) (Clerk). Host Pro billing is [ADR 0003](./adr/0003-stripe-billing-beside-clerk.md) (Stripe, not Clerk Billing).
+**Historical context:** [ADR 0001](./adr/0001-google-oauth-branding.md) (consent screen strategy), [ADR 0002](./adr/0002-clerk-auth-billing.md) (Clerk).
