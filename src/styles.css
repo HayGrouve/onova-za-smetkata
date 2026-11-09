@@ -548,11 +548,6 @@ a {
     @apply mx-auto max-w-lg px-4;
   }
 
-  /* Clerk UserProfile two-pane card — center without page-shell / max-w-lg clip */
-  .host-account-clerk {
-    @apply flex min-h-0 w-full flex-1 justify-center px-4 py-4;
-  }
-
   .page-container {
     @apply mx-auto w-full max-w-lg px-4 pt-4;
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 3rem);

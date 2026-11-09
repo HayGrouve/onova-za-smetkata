@@ -7,9 +7,6 @@ export function resolveAppHeaderRouteContext(
 ): AppHeaderRouteContext {
   if (pathname === '/') return 'home'
   if (pathname === '/login') return 'login'
-  if (pathname === '/user-profile' || pathname.startsWith('/user-profile/')) {
-    return 'hostAccount'
-  }
   if (pathname === '/abonament') return 'subscription'
   if (!billId) return 'home'
 

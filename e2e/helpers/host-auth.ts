@@ -43,5 +43,10 @@ export async function openHostContext(
   return { context, page }
 }
 
+/** The Host's avatar menu in the header („Акаунт“, „Изход“). */
+export function avatarTrigger(page: Page) {
+  return page.getByRole('button', { name: 'Твоят Акаунт' })
+}
+
 export const test = base
 export { expect }
