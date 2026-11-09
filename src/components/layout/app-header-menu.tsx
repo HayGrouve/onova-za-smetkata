@@ -9,9 +9,11 @@ import {
   PencilIcon,
   Share2Icon,
   ShareIcon,
+  SparklesIcon,
   Trash2Icon,
   UsersIcon,
 } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
@@ -45,6 +47,7 @@ import { ICON } from '#/lib/app-icons.ts'
 import { SUPPORT_EMAIL, mailtoHref } from '#/lib/contact.ts'
 import { cn } from '#/lib/utils.ts'
 import { ThemeRocker } from '#/components/layout/theme-rocker.tsx'
+import { useHostProStatus } from '#/hooks/use-host-pro.ts'
 
 const BILL_ACTION_ICONS: Record<AppHeaderMenuBillActionId, typeof Share2Icon> =
   {
@@ -131,7 +134,22 @@ function HostSettingsMenuItems({
         <BookOpenIcon className={ICON.button} aria-hidden />
         {HOST_ONBOARDING_HOME.helpAndGuidance}
       </DropdownMenuItem>
+      <SubscriptionMenuItem />
     </>
+  )
+}
+
+/** Абонамент, only while the billing switch is on. */
+function SubscriptionMenuItem() {
+  const hostPro = useHostProStatus()
+  if (!hostPro?.enabled) return null
+  return (
+    <DropdownMenuItem asChild>
+      <Link to="/abonament">
+        <SparklesIcon className={ICON.button} aria-hidden />
+        Абонамент
+      </Link>
+    </DropdownMenuItem>
   )
 }
 

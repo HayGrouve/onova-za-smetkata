@@ -79,6 +79,18 @@ function useHeaderConfig() {
     }
   }
 
+  if (routeContext === 'subscription') {
+    return {
+      title: 'Абонамент',
+      backTo: '/' as const,
+      backParams: undefined,
+      backSearch: undefined,
+      routeContext,
+      billId,
+      bill,
+    }
+  }
+
   if (routeContext === 'hostAccount') {
     return {
       title: 'Акаунт',

@@ -53,7 +53,7 @@ Run these locally before merge when you touch guest/host browser flows. In CI, t
 | `guest-covered-seat.spec.ts`          | One phone claims and pays for two seats; Host confirms both                        |
 | `guest-pay-for-other-release.spec.ts` | A pay-for-others pick frees the covered Guest when the payer's phone leaves        |
 | `combined-guest-payment.spec.ts`      | Host payment banner appears only after Revolut opens                               |
-| `host-account-route.spec.ts`          | Host Акаунт: unsigned redirect; `/user-profile` and `/user-profile/security`       |
+| `host-account-route.spec.ts`          | Host Акаунт: unsigned redirect; `/user-profile/*`; `/abonament` with billing off   |
 | `host-onboarding.spec.ts`             | Host replay hints; welcome dismiss                                                 |
 
 ## Common failures

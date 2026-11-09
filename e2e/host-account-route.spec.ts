@@ -56,6 +56,29 @@ test('unsigned /user-profile redirects to login with redirect', async ({
   await expect(page).toHaveURL(/\/login\?redirect=%2Fuser-profile/)
 })
 
+test('unsigned /abonament redirects to login with redirect', async ({
+  page,
+}) => {
+  await page.goto('/abonament')
+  await expect(page).toHaveURL(/\/login\?redirect=%2Fabonament/)
+})
+
+// Needs the billing switch off on the dev deployment (see e2e/README.md).
+test('signed-in Host on /abonament goes Home while billing is off', async ({
+  browser,
+}) => {
+  const { context, page } = await openHostContext(browser)
+
+  await page.goto('/abonament?checkout=success&session_id=cs_test')
+  await expect(page).toHaveURL(/\/$/, { timeout: 30_000 })
+  await expect(page.getByRole('button', { name: 'Нова сметка' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click()
+  await expect(page.getByRole('menuitem', { name: 'Абонамент' })).toHaveCount(0)
+
+  await context.close()
+})
+
 test('signed-in Host can open Акаунт and security without 404', async ({
   browser,
 }) => {

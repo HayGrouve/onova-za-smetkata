@@ -68,7 +68,7 @@ function useCheckoutReturn() {
   return isConfirming
 }
 
-/** The „Абонамент“ page in the Host account (shown only while billing is on). */
+/** The „Абонамент“ page, `/abonament` (exists only while billing is on). */
 export function HostProSubscriptionPanel() {
   const status = useHostProStatus()
   const isConfirming = useCheckoutReturn()

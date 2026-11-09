@@ -18,6 +18,19 @@ describe('resolveAppHeaderRouteContext', () => {
     ).toBe('hostAccount')
   })
 
+  it('treats /abonament as its own Абонамент context, not Host account', () => {
+    expect(resolveAppHeaderRouteContext('/abonament', '', undefined)).toBe(
+      'subscription',
+    )
+    expect(
+      resolveAppHeaderRouteContext(
+        '/abonament',
+        '?checkout=success&session_id=cs_1',
+        undefined,
+      ),
+    ).toBe('subscription')
+  })
+
   it('keeps home, login, and bill routes unchanged', () => {
     expect(resolveAppHeaderRouteContext('/', '', undefined)).toBe('home')
     expect(resolveAppHeaderRouteContext('/login', '', undefined)).toBe('login')

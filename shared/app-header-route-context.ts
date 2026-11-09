@@ -10,6 +10,7 @@ export function resolveAppHeaderRouteContext(
   if (pathname === '/user-profile' || pathname.startsWith('/user-profile/')) {
     return 'hostAccount'
   }
+  if (pathname === '/abonament') return 'subscription'
   if (!billId) return 'home'
 
   const isSummary = pathname.endsWith('/summary')
