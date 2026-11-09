@@ -4,9 +4,9 @@
  */
 export const PROVIDER_NAME = 'Цветомир Цеков'
 
-export const SUPPORT_EMAIL = 'support@onova-za-smetkata.com'
+export const SUPPORT_EMAIL = 'support@onovaza.com'
 
-export const PRIVACY_EMAIL = 'privacy@onova-za-smetkata.com'
+export const PRIVACY_EMAIL = 'privacy@onovaza.com'
 
 export function mailtoHref(email: string, subject?: string): string {
   return subject
