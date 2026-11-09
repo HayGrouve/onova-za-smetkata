@@ -38,7 +38,7 @@ export interface AppHeaderMenuConfigInput {
 }
 
 const FINALIZE_UNPAID_TOOLTIP =
-  'Всички гости трябва да платят, преди да приключите сметката.'
+  'Всички гости трябва да платят, преди да приключиш сметката.'
 
 export { FINALIZE_UNPAID_TOOLTIP }
 

@@ -161,7 +161,7 @@ export function ReceiptScanReviewSheet({
 
   async function handleImport() {
     if (checkedCount === 0) {
-      toast.error('Изберете поне един артикул за импортиране')
+      toast.error('Избери поне един артикул за импортиране')
       return
     }
 
@@ -309,7 +309,7 @@ export function ReceiptScanReviewSheet({
                   <span aria-hidden className="font-bold">
                     ?
                   </span>{' '}
-                  — несигурно разпознато, проверете
+                  несигурно разпознато, провери
                 </p>
               ) : null}
             </div>
@@ -454,7 +454,7 @@ export function ReceiptScanReviewSheet({
               )}
               {mismatch && (
                 <p className="text-xs font-medium text-accent-foreground">
-                  Сумите не съвпадат — проверете артикулите
+                  Сумите не съвпадат, провери артикулите
                 </p>
               )}
             </div>

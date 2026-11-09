@@ -37,7 +37,7 @@ The product UI follows direction C of the three design explorations (closed prot
 | ---------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | Home `/`               | Owed card, open bills list, history                     | Receipt shelf: "Навън са общо", live receipts on top, older bills as stamped stubs, debtors with „Напомни“   |
 | Host bill `/bills/$id` | Four steps (Сметка, Участници, Разпределение, Плащания) | One receipt moving through three phases: Сглобяване (steps 1 and 2), На масата (step 3), Разплащане (step 4) |
-| Guest join             | Seat list                                               | "Кой сте вие?" seats around the table                                                                        |
+| Guest join             | Seat list                                               | "Кой си ти?" seats around the table                                                                          |
 | Guest claim            | Claim groups list and pay bar                           | The same receipt with tap-to-claim lines. Your slip is pinned at the bottom with „Откъсни и плати“.          |
 | Guest pay              | Breakdown cards, then Revolut                           | The torn-off slip: amount first, then Revolut or IBAN, then „Платих“                                         |
 | Summary                | Breakdown                                               | Receipt stamped „ПРИКЛЮЧЕНА“ with each person's slip                                                         |

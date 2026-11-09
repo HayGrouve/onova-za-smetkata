@@ -43,7 +43,7 @@ function showPhoto(attempt: string, blob: Blob) {
   livePhoto = { attempt, url: URL.createObjectURL(blob) }
 }
 
-const SCAN_GONE = 'Разпознаването прекъсна. Снимайте бележката отново.'
+const SCAN_GONE = 'Разпознаването прекъсна. Снимай бележката отново.'
 
 /** Upload plus read take seconds; after this long the read is presumed dead. */
 export const QUICK_SCAN_STALE_MS = 3 * 60 * 1000

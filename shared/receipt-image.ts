@@ -15,9 +15,9 @@ const RECEIPT_IMAGE_TYPES = new Set([
 
 export const RECEIPT_IMAGE_MESSAGES = {
   unsupported: 'Поддържат се само изображения (JPEG, PNG, HEIC).',
-  tooLarge: 'Снимката е по-голяма от 12 MB. Изберете по-малка снимка.',
+  tooLarge: 'Снимката е по-голяма от 12 MB. Избери по-малка снимка.',
   scanFailed:
-    'Неуспешно разпознаване на бележката. Опитайте отново или с по-ясна снимка.',
+    'Неуспешно разпознаване на бележката. Опитай отново или с по-ясна снимка.',
 } as const
 
 /** Why a receipt photo cannot be read, or null when it can. */

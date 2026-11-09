@@ -98,7 +98,7 @@ export function GuestPayView({
   const settled = owed > 0 && remaining === 0
   const pending = payment.transferInitiated
   const seatNames = mySeatIds.map((id) =>
-    id === payerId ? 'вас' : (labels[id] ?? 'Участник'),
+    id === payerId ? 'теб' : (labels[id] ?? 'Участник'),
   )
   const hostName = data.hostParticipantId
     ? (labels[data.hostParticipantId] ?? 'Домакинът')
@@ -165,11 +165,11 @@ export function GuestPayView({
 
             <p className="text-[12px] text-ink-muted">
               {settled
-                ? 'Платихте'
+                ? 'Плати'
                 : pending
-                  ? 'Преведохте'
+                  ? 'Преведе'
                   : readOnly
-                    ? 'Вашият дял'
+                    ? 'Твоят дял'
                     : 'За плащане'}
             </p>
             <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
@@ -215,9 +215,9 @@ export function GuestPayView({
 
             {nothingClaimed ? (
               <div className="mt-4 space-y-3 text-[12px]">
-                <p>Още не сте отбелязали нищо.</p>
+                <p>Още нищо не е отбелязано.</p>
                 <Button type="button" variant="outline" onClick={backToReceipt}>
-                  Отбележете какво сте яли
+                  Отбележи своето
                 </Button>
               </div>
             ) : (
@@ -228,7 +228,7 @@ export function GuestPayView({
                   aria-expanded={showLines}
                   className="mt-3 flex min-h-11 items-center gap-1 text-[12px] font-semibold"
                 >
-                  Какво плащате
+                  Какво плащаш
                   <ChevronDownIcon
                     className={cn(
                       'size-4 transition-transform',
@@ -280,7 +280,7 @@ export function GuestPayView({
                 {freeUnits === 1
                   ? 'бройка още не е отбелязана'
                   : 'бройки още не са отбелязани'}{' '}
-                от никого. Ако някоя е ваша, отбележете я преди да платите.
+                от никого. Ако някоя е твоя, отбележи я преди да платиш.
               </p>
             ) : null}
 
@@ -301,8 +301,8 @@ export function GuestPayView({
             {settled ? (
               <div className="space-y-3 text-[12px]">
                 <p className="leading-relaxed">
-                  {hostName} потвърди плащането. Сметката ви е чиста, можете да
-                  затворите страницата.
+                  {hostName} потвърди плащането. Сметката ти е чиста, можеш да
+                  затвориш страницата.
                 </p>
                 <Button
                   type="button"
@@ -315,7 +315,7 @@ export function GuestPayView({
               </div>
             ) : readOnly ? (
               <p className="text-[12px] leading-relaxed">
-                Сметката е приключена. Ако дължите нещо, {hostName} ще ви пише.
+                Сметката е приключена. Ако дължиш нещо, {hostName} ще ти пише.
               </p>
             ) : pending ? (
               <div className="space-y-2 text-[12px]">
@@ -383,8 +383,8 @@ export function GuestPayView({
                 !payment.hasRevolut &&
                 !payment.hasIban ? (
                   <p className="text-[12px] leading-relaxed">
-                    {hostName} още не е добавил Revolut или IBAN. Попитайте как
-                    да платите.
+                    {hostName} още не е добавил Revolut или IBAN. Питай как да
+                    платиш.
                   </p>
                 ) : payment.amountCents <= 0 ? (
                   <p className="text-[11px] text-ink-muted">
@@ -404,7 +404,7 @@ export function GuestPayView({
   )
 }
 
-/** „За кого плащате“: own and Covered seats always, other guests optional. */
+/** „За кого плащаш“: own and Covered seats always, other guests optional. */
 function PayFor({
   payment,
   payerId,
@@ -417,13 +417,13 @@ function PayFor({
   labels: Record<string, string>
 }) {
   return (
-    <section aria-label="За кого плащате" className="space-y-1">
-      <p className="text-[12px] font-semibold">За кого плащате</p>
+    <section aria-label="За кого плащаш" className="space-y-1">
+      <p className="text-[12px] font-semibold">За кого плащаш</p>
       {mySeatIds.map((id) => (
         <PayForRow
           key={id}
           label={labels[id] ?? 'Участник'}
-          hint={id === payerId ? 'вие' : 'от този телефон'}
+          hint={id === payerId ? 'ти' : 'от този телефон'}
           amountCents={payment.remainingOf(id)}
           selected
           locked
@@ -432,7 +432,7 @@ function PayFor({
       {payment.extraCandidates.length > 0 ? (
         <>
           <p className="pt-2 text-[11px] text-ink-muted">
-            Можете да платите и за:
+            Можеш да платиш и за:
           </p>
           {payment.extraCandidates.map((candidate) => (
             <PayForRow

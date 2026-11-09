@@ -150,8 +150,8 @@ export function ClaimLineDrawer({
           </div>
           <span className="text-[11px] leading-snug text-ink-muted">
             {view.myUnitCount > 0
-              ? `ваши ${formatEur(view.myShareCents)}`
-              : 'още нямате'}
+              ? `твои ${formatEur(view.myShareCents)}`
+              : 'още нямаш'}
             <br />
             свободни {view.freeUnits.length} от {view.totalUnits}
           </span>
@@ -183,7 +183,7 @@ export function ClaimLineDrawer({
                 aria-hidden
               />
               <span className="min-w-0 flex-1">
-                Делите с {names(shared.coMemberIds)}, ваши{' '}
+                Делиш с {names(shared.coMemberIds)}, твои{' '}
                 {formatEur(shared.myShareCents)}
               </span>
               <button
@@ -212,9 +212,7 @@ export function ClaimLineDrawer({
 
       <div className="rule pt-2">
         <p className="mb-1.5 text-[12px] font-semibold">
-          {editing
-            ? 'С кого делите тази бройка?'
-            : 'Делихте бройка? Сподели с:'}
+          {editing ? 'С кого делиш тази бройка?' : 'Дели ли бройка? Сподели с:'}
         </p>
         <div className="scroll-x-quiet -mx-1 flex gap-1 overflow-x-auto px-1">
           {others.map((seat) => {
@@ -265,10 +263,10 @@ export function ClaimLineDrawer({
           ) : null}
           <span className="text-[11px] text-ink-muted">
             {!canShare
-              ? 'Няма свободна или ваша бройка за делене.'
+              ? 'Няма свободна или твоя бройка за делене.'
               : withIds.length > 0
-                ? `вие плащате ${formatEur(preview)}`
-                : 'Изберете с кого.'}
+                ? `ти плащаш ${formatEur(preview)}`
+                : 'Избери с кого.'}
           </span>
         </div>
       </div>
@@ -276,7 +274,7 @@ export function ClaimLineDrawer({
       {view.joinOptions.length > 0 ? (
         <div className="rule mt-3 pt-2">
           <p className="mb-1 text-[12px] font-semibold">
-            Ядохте от чужда бройка?
+            Яде ли от чужда бройка?
           </p>
           {view.joinOptions.slice(0, 3).map((option) => (
             <div
@@ -284,7 +282,7 @@ export function ClaimLineDrawer({
               className="flex min-h-11 items-center gap-2 text-[12px]"
             >
               <span className="min-w-0 flex-1">
-                При {names(option.memberIds)}, вие ще платите{' '}
+                При {names(option.memberIds)}, ти ще платиш{' '}
                 <b>{formatEur(option.joinedShareCents)}</b>
               </span>
               <Button

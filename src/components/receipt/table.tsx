@@ -58,7 +58,7 @@ export function SeatsRail({
 }: {
   seats: RailSeat[]
   orientation?: 'row' | 'column'
-  /** The viewer's own seat, labelled „Вие“. */
+  /** The viewer's own seat, labelled „Ти“. */
   meId?: string | null
   brushId?: string | null
   /** Seats that just did something: they pulse. */
@@ -87,7 +87,7 @@ export function SeatsRail({
     >
       {seats.map(({ seat, joined, status, presence }) => {
         const brush = brushId === seat.id
-        const name = seat.id === meId ? 'Вие' : seat.label
+        const name = seat.id === meId ? 'Ти' : seat.label
         const inner = (
           <>
             <motion.span
@@ -172,8 +172,8 @@ export function SeatsRail({
             aria-pressed={brush}
             aria-label={
               brush
-                ? `Избран: ${seat.label}. Докоснете, за да спрете`
-                : `Изберете ${seat.label}. ${presence}`
+                ? `Избран: ${seat.label}. Докосни, за да спреш`
+                : `Избери ${seat.label}. ${presence}`
             }
           >
             {inner}
@@ -274,7 +274,7 @@ export function TransientTicker({
 export function ActivityFeed({
   events,
   limit = 9,
-  emptyText = 'Тук ще виждате кой какво взема, щом отворят линка.',
+  emptyText = 'Тук ще виждаш кой какво взема, щом отворят линка.',
 }: {
   events: ActivityEvent[]
   limit?: number

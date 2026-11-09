@@ -295,7 +295,7 @@ export function AppHeaderMenu({
           <DropdownMenuItem asChild>
             <a href={mailtoHref(SUPPORT_EMAIL, 'Онова за сметката')}>
               <MailIcon className={ICON.button} aria-hidden />
-              Пишете ни
+              Пиши ни
             </a>
           </DropdownMenuItem>
         </DropdownMenuContent>

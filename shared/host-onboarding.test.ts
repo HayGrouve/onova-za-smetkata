@@ -7,6 +7,10 @@ import {
   isPreparedBill,
   stepBarGuidanceLabel,
 } from './host-onboarding'
+import {
+  HOST_ONBOARDING_CONTENT_ROUTE,
+  HOST_ONBOARDING_SCAN,
+} from './host-onboarding-messages'
 
 const baseBill = {
   restaurantName: '',
@@ -62,7 +66,7 @@ describe('deriveHostOnboardingGuidance', () => {
     expect(steps[0]).toMatchObject({
       id: 'content-route',
       done: false,
-      title: 'Изберете как да въведете сметката',
+      title: HOST_ONBOARDING_CONTENT_ROUTE.title,
     })
   })
 
@@ -91,7 +95,7 @@ describe('deriveHostOnboardingGuidance', () => {
     })
     expect(guidanceForEditorStep(steps, 1, [])).toMatchObject({
       id: 'scan-run-ocr',
-      title: 'Стартирайте разпознаването',
+      title: HOST_ONBOARDING_SCAN.runOcrTitle,
     })
   })
 

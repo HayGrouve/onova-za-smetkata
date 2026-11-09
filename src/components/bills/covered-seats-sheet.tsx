@@ -69,10 +69,10 @@ export function CoveredSeatsSheet({
         className="mx-auto max-h-[85dvh] max-w-lg rounded-t-xl"
       >
         <SheetHeader>
-          <SheetTitle>За кого още отбелязвате?</SheetTitle>
+          <SheetTitle>За кого още отбелязваш?</SheetTitle>
           <SheetDescription>
-            Изберете хората, чиито артикули отбелязвате и плащате от този
-            телефон — например половинката ви.
+            Избери хората, чиито артикули отбелязваш и плащаш от този телефон,
+            например половинката си.
           </SheetDescription>
         </SheetHeader>
         <div className="min-h-0 overflow-y-auto px-4">

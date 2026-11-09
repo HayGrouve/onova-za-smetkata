@@ -105,7 +105,7 @@ export const createPortalSession = action({
     if (!account.stripeCustomerId) {
       throw new ConvexError({
         code: 'NO_BILLING_ACCOUNT',
-        message: 'Все още нямате абонамент.',
+        message: 'Все още нямаш абонамент.',
       })
     }
     const session = await stripeClient(

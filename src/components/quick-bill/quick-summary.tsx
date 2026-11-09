@@ -60,7 +60,7 @@ export function QuickSummary({
       if (result === 'copied') toast.success('Сумите са копирани')
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') return
-      toast.error('Неуспешно изпращане. Опитайте „Копирай“.')
+      toast.error('Неуспешно изпращане. Опитай „Копирай“.')
     }
   }
 
@@ -218,7 +218,7 @@ export function QuickSummary({
         {bill.roundForCash ? (
           <LeaderRow
             className="mt-1 text-[12px] text-ink-muted"
-            label="След закръгляне събирате"
+            label="След закръгляне събираш"
             value={formatEur(summary.amountsTotalCents)}
           />
         ) : null}

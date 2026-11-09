@@ -46,9 +46,9 @@ test('a bill from the first line to finalized: guest pays by Revolut, host paint
   // Боби has no phone: the Host paints the last beer for him.
   await goToBillStep(hostPage, 3)
   await hostPage
-    .getByRole('group', { name: 'Изберете човек' })
+    .getByRole('group', { name: 'Избери човек' })
     .first()
-    .getByRole('button', { name: new RegExp(`Изберете ${bobi}`) })
+    .getByRole('button', { name: new RegExp(`Избери ${bobi}`) })
     .first()
     .click()
   await hostPage

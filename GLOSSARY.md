@@ -8,7 +8,7 @@ Bulgarian mobile web PWA: a **Host** creates a bill from a restaurant receipt, a
 
 **Host journey** — sign in → create/open bill → add participants and items (manual or receipt OCR) → assign units → share join link → track guest payments → finalize bill (locks editing).
 
-**Guest journey** — open share link → pick own participant seat on join page („Кой сте вие?“, one tap, straight to claiming) → tap lines on the Live receipt to take Units (share explicitly from the line's Units) → optionally add Covered seats from the Slip („Плащам и за...“) → tear the Slip off into the Pay step (e.g. Revolut) → host confirms the payment.
+**Guest journey** — open share link → pick own participant seat on join page („Кой си ти?“, one tap, straight to claiming) → tap lines on the Live receipt to take Units (share explicitly from the line's Units) → optionally add Covered seats from the Slip („Плащам и за...“) → tear the Slip off into the Pay step (e.g. Revolut) → host confirms the payment.
 
 **Host bill phases** — the Host's bill is one Live receipt moving through three phases: **Сглобяване** (restaurant, lines from receipt scan or by hand, tip, who was at the table) → **На масата** (join link, guests claim live, the Host paints the rest with a Brush) → **Разплащане** (Slips, confirm payments, finalize). The `?step=1..4` editor steps remain underneath (steps 1 and 2 are both Сглобяване) because Напътствия count steps.
 
@@ -83,7 +83,7 @@ A Guest phone's hold on its own seat and its Covered seats, kept alive while the
 _Avoid_: Guest flow session (the phone's journey through join, claim and pay); login, account
 
 **Pay step**:
-The guest's torn-off Slip (`/bills/$billId/pay`): the amount first, „Какво плащате“ (Share lines per seat), „За кого плащате“ (own seat and Covered seats always; other Guests optional), then Revolut / IBAN. Opening Revolut or copying the IBAN records the transfer; the slip shows „Чака“ until the Host confirms and „Платено“ after. Warns when Units are still unclaimed on the bill.
+The guest's torn-off Slip (`/bills/$billId/pay`): the amount first, „Какво плащаш“ (Share lines per seat), „За кого плащаш“ (own seat and Covered seats always; other Guests optional), then Revolut / IBAN. Opening Revolut or copying the IBAN records the transfer; the slip shows „Чака“ until the Host confirms and „Платено“ after. Warns when Units are still unclaimed on the bill.
 _Avoid_: the old pull-up claim drawer
 
 **Pay request**:

@@ -27,18 +27,18 @@ test('sharing a drink puts half of it on the friend right away', async ({
   await rowA.getByRole('button', { name: 'Бройки на Голяма бира' }).click()
   const drawer = guestA.page.getByRole('region', { name: 'Голяма бира' })
   await drawer.getByRole('button', { name: bobi }).click()
-  await expect(drawer.getByText(/вие плащате 4,00/)).toBeVisible()
+  await expect(drawer.getByText(/ти плащаш 4,00/)).toBeVisible()
   await drawer.getByRole('button', { name: 'Сподели 1 бройка' }).click()
 
-  // The line's own hint („ваши 1, делите с …“), not the open drawer.
-  await expect(rowA.getByText(new RegExp(`, делите с ${bobi}`))).toBeVisible()
+  // The line's own hint („твои 1, делиш с …“), not the open drawer.
+  await expect(rowA.getByText(new RegExp(`, делиш с ${bobi}`))).toBeVisible()
   await expect(guestA.page.getByTestId('claim-pay-bar-amount')).toHaveText(
     /4,00/,
   )
 
   const guestB = await joinAsGuest(browser, joinUrl, bobi)
   await expect(
-    claimGroup(guestB.page, 'Голяма бира').getByText(`делите с ${ani}`),
+    claimGroup(guestB.page, 'Голяма бира').getByText(`делиш с ${ani}`),
   ).toBeVisible()
   await expect(guestB.page.getByTestId('claim-pay-bar-amount')).toHaveText(
     /4,00/,

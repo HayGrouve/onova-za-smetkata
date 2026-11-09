@@ -40,7 +40,7 @@ function RootError({ error }: ErrorComponentProps) {
       <div>
         <h1 className="text-lg font-semibold">Нещо се обърка</h1>
         <p className="mt-2 text-sm text-muted-foreground" role="alert">
-          {reason ?? 'Опитайте да презаредите страницата.'}
+          {reason ?? 'Опитай да презаредиш страницата.'}
         </p>
         {import.meta.env.DEV && error instanceof Error ? (
           <p className="mt-3 text-left text-xs text-destructive">

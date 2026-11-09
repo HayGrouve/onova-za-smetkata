@@ -58,7 +58,7 @@ export function ParticipantPayActions({
       </Button>
       {!revolutUsername ? (
         <p className="text-xs text-muted-foreground">
-          Добавете Revolut в настройките за плащане.
+          Добави Revolut в настройките за плащане.
         </p>
       ) : null}
     </div>

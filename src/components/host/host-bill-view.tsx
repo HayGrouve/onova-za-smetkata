@@ -260,7 +260,7 @@ function HostBillTable({
     if (group.units.every((unit) => membersOf(unit).length > 0)) {
       flashError(
         group.key,
-        'Всичко от реда е взето. Задръжте реда, за да разделите бройка.',
+        'Всичко от реда е взето. Задръж реда, за да разделиш бройка.',
       )
       return
     }
@@ -500,7 +500,7 @@ function HostBillTable({
                               })
                         : undefined
                     }
-                    label={brushable ? 'Изберете човек' : 'Хората на масата'}
+                    label={brushable ? 'Избери човек' : 'Хората на масата'}
                   />
                 </div>
               ) : null}
@@ -682,7 +682,7 @@ function TableColumn({
       <h2 className="text-[14px] font-bold">Масата</h2>
       {hint ? (
         <p className="text-[11px] leading-snug text-on-table-muted">
-          Изберете човек, после докосвайте редовете му.
+          Избери човек, после докосвай редовете му.
         </p>
       ) : null}
       <SeatsRail
@@ -692,7 +692,7 @@ function TableColumn({
         liveIds={liveIds}
         brushId={brushId}
         onSeat={onSeat}
-        label={onSeat ? 'Изберете човек' : undefined}
+        label={onSeat ? 'Избери човек' : undefined}
       />
     </section>
   )
@@ -896,7 +896,7 @@ function PhaseActions({
             </div>
           )}
           <p className="mt-1 hidden pb-1 text-[11px] leading-snug text-on-table-muted md:block">
-            Гостите отбелязват сами от линка. Вие довършвате с избрания човек.
+            Гостите отбелязват сами от линка. Ти довършваш с избрания човек.
           </p>
         </Box>
       ) : null}
@@ -929,7 +929,7 @@ function PhaseActions({
                 <li key={slip.seat.id}>
                   {slip.seat.label}{' '}
                   {slip.status === 'pending'
-                    ? 'чака вашето потвърждение'
+                    ? 'чака твоето потвърждение'
                     : `дължи ${formatEur(Math.max(0, slip.totals.balanceCents))}`}
                   .
                 </li>

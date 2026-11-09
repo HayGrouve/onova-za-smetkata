@@ -77,7 +77,7 @@ async function convertHeicToJpeg(
     return { blob: first, contentType: 'image/jpeg' }
   } catch {
     throw new Error(
-      'Неуспешно конвертиране на HEIC. Опитайте да направите JPEG снимка от камерата или галерията.',
+      'Неуспешно конвертиране на HEIC. Опитай да направиш JPEG снимка от камерата или галерията.',
     )
   }
 }

@@ -251,7 +251,7 @@ function EnsureConvexUser({ children }: { children: React.ReactNode }) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-lg items-center justify-center px-4 text-center">
         <p className="text-sm text-muted-foreground">
-          Неуспешно свързване с профила. Опитайте да презаредите страницата.
+          Неуспешно свързване с профила. Опитай да презаредиш страницата.
         </p>
       </div>
     )

@@ -15,7 +15,7 @@ export function buildLegalPageHead(pageTitle: string, path: string) {
       titleMeta(buildPageTitle(pageTitle)),
       ...buildOpenGraphMeta({
         title: pageTitle,
-        description: `${pageTitle} — Онова за сметката`,
+        description: `${pageTitle} · Онова за сметката`,
         path,
         origin,
       }),

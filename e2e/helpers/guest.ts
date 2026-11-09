@@ -11,9 +11,9 @@ export async function joinAsGuest(
   const context = await browser.newContext()
   const page = await context.newPage()
   await page.goto(joinUrl)
-  await expect(page.getByRole('heading', { name: 'Кой сте вие?' })).toBeVisible(
-    { timeout: 30_000 },
-  )
+  await expect(page.getByRole('heading', { name: 'Кой си ти?' })).toBeVisible({
+    timeout: 30_000,
+  })
   await page.getByRole('button', { name, exact: true }).click()
 
   // The claim page is the receipt with this phone's slip pinned to it.
@@ -26,7 +26,7 @@ export async function joinAsGuest(
       .getByRole('button', { name: 'Плащам и за някого' })
       .first()
       .click()
-    const sheet = page.getByRole('dialog', { name: 'За кого още отбелязвате?' })
+    const sheet = page.getByRole('dialog', { name: 'За кого още отбелязваш?' })
     for (const covered of coveredNames) {
       await sheet.getByRole('button', { name: covered, exact: true }).click()
     }

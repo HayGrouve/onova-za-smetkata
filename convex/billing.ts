@@ -75,7 +75,7 @@ export const beginCheckout = internalMutation({
     if (isLiveSubscriptionStatus(user.subscriptionStatus)) {
       throw new ConvexError({
         code: 'ALREADY_SUBSCRIBED',
-        message: 'Вече имате Pro абонамент.',
+        message: 'Вече имаш Pro абонамент.',
       })
     }
     return {

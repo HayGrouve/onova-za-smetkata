@@ -67,7 +67,7 @@ describe('MountOnFirstOpen with a lazySheet', () => {
 
     await harness.open(true)
     await vi.waitFor(() => expect(toastError).toHaveBeenCalledTimes(1))
-    expect(toastError.mock.calls[0][0]).toMatch(/Обновете страницата/)
+    expect(toastError.mock.calls[0][0]).toMatch(/Обнови страницата/)
     // One fetch per open: React's re-renders do not keep refetching.
     expect(load).toHaveBeenCalledTimes(1)
     expect(screen.getByText('Страница')).toBeTruthy()

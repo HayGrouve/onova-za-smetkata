@@ -129,7 +129,7 @@ describe('receipt scans', () => {
         selectedIndexes: [],
         updateRestaurantName: false,
       }),
-    ).rejects.toThrow('Изберете поне един артикул за импортиране.')
+    ).rejects.toThrow('Избери поне един артикул за импортиране.')
 
     const { items } = await bill.host.query(api.bills.get, {
       billId: bill.billId,

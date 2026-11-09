@@ -257,7 +257,7 @@ describe('finalizing', () => {
     const finalize = () =>
       bill.host.mutation(api.bills.finalize, { billId: bill.billId })
 
-    await expect(finalize()).rejects.toThrow('Въведете име на ресторант.')
+    await expect(finalize()).rejects.toThrow('Въведи име на ресторант.')
     await bill.host.mutation(api.bills.update, {
       billId: bill.billId,
       restaurantName: 'Механа',
@@ -265,7 +265,7 @@ describe('finalizing', () => {
     await expect(finalize()).rejects.toThrow('Има 1 неразпределен артикул.')
     await hostTakesUnits(bill, bill.itemIds[0], Object.values(bill.seats))
     await expect(finalize()).rejects.toThrow(
-      'Маркирайте всички участници като платили',
+      'Маркирай всички участници като платили',
     )
 
     await payEveryGuest(bill, 300)

@@ -158,7 +158,7 @@ export function LinkStub({
       <Dialog open={qrOpen} onOpenChange={setQrOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Покажете на масата</DialogTitle>
+            <DialogTitle>Покажи на масата</DialogTitle>
             <DialogDescription>
               Хората сканират кода, избират името си и отбелязват какво са яли.
               Само за хората на масата.
@@ -192,7 +192,7 @@ export function LinkStub({
           <DialogHeader>
             <DialogTitle>Обнови линка за покана?</DialogTitle>
             <DialogDescription>
-              Старите линкове и QR кодове ще спрат да работят. Споделете новия
+              Старите линкове и QR кодове ще спрат да работят. Сподели новия
               линк с хората на масата.
             </DialogDescription>
           </DialogHeader>

@@ -36,7 +36,7 @@ export function QuotaPaywallSheet({
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <SparklesIcon className={ICON.section} aria-hidden />
-            Надградете до Pro
+            Надгради до Pro
           </SheetTitle>
         </SheetHeader>
 

@@ -14,7 +14,7 @@ import { SeatAvatar } from '#/components/receipt/seats.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import { cn } from '#/lib/utils.ts'
 
-const START_LABEL = 'Започнете'
+const START_LABEL = 'Започни'
 
 /**
  * What the app does, in the order a table lives it. The details are the
@@ -22,12 +22,12 @@ const START_LABEL = 'Започнете'
  */
 const STEPS = [
   {
-    title: 'Снимате бележката',
+    title: 'Снимаш бележката',
     detail: 'Продуктите се въвеждат сами.',
     visual: <ScanProp />,
   },
   {
-    title: 'Пращате линка в групата',
+    title: 'Пращаш линка в групата',
     detail: 'Линк и QR код за хората на масата.',
     visual: <LinkProp />,
   },
@@ -83,14 +83,14 @@ export function LandingPage() {
         <section className="grid gap-12 pt-6 pb-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-center lg:gap-20 lg:pt-6 lg:pb-24">
           <div>
             <h1 className="font-display text-[34px] leading-[1.08] font-extrabold tracking-[-0.03em] sm:text-5xl lg:text-[56px]">
-              Разделете сметката без{' '}
+              Раздели сметката без{' '}
               <span className="underline decoration-stamp decoration-[4px] [text-decoration-skip-ink:none] underline-offset-[7px]">
                 калкулатор
               </span>
             </h1>
             <p className="mt-5 max-w-[46ch] text-[14px] leading-relaxed text-on-table-muted sm:text-[15px]">
-              Снимате бележката, пращате линка в групата, всеки отбелязва своето
-              и плаща с Revolut или по IBAN.
+              Снимаш бележката, пращаш линка в групата, всеки отбелязва своето и
+              плаща с Revolut или по IBAN.
             </p>
             <StartButton className="mt-8 w-full sm:w-auto sm:min-w-56" />
           </div>
@@ -168,7 +168,7 @@ export function LandingPage() {
                   </h2>
                 </div>
                 <p className="max-w-[44ch] text-[13px] leading-relaxed">
-                  Без линк и без чакане. Снимате бележката, подавате телефона по
+                  Без линк и без чакане. Снимаш бележката, подаваш телефона по
                   масата и всеки докосва своето.
                 </p>
                 <div
@@ -202,10 +202,10 @@ export function LandingPage() {
                 />
               </span>
               <h2 className="font-display text-[22px] leading-tight font-bold">
-                Гост сте?
+                Гост ли си?
               </h2>
               <p className="text-[13px] leading-relaxed text-on-table-muted">
-                Отворете линка от домакина. Не ви трябва профил.
+                Отвори линка от домакина. Не ти трябва профил.
               </p>
             </div>
           </Rise>
@@ -217,7 +217,7 @@ export function LandingPage() {
               <div className="stub paper grid gap-6 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-12">
                 <div>
                   <h2 className="font-display text-[24px] leading-tight font-bold sm:text-[30px]">
-                    Разделете първата си сметка
+                    Раздели първата си сметка
                   </h2>
                   <p className="mt-2 text-[13px] leading-relaxed text-ink-muted">
                     Безплатно за домакини и гости.

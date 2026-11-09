@@ -335,21 +335,21 @@ export function validateBillForFinalize(input: {
   if (!isRestaurantReady(input.restaurantName)) {
     errors.push({
       code: 'missing_restaurant',
-      message: 'Въведете име на ресторант.',
+      message: 'Въведи име на ресторант.',
     })
   }
 
   if (!hasAtLeastOneParticipant(input.participants)) {
     errors.push({
       code: 'no_participants',
-      message: 'Добавете поне един участник.',
+      message: 'Добави поне един участник.',
     })
   }
 
   if (!hasItemsWithPositiveLineTotal(input.items)) {
     errors.push({
       code: 'no_items',
-      message: 'Добавете поне един артикул с цена.',
+      message: 'Добави поне един артикул с цена.',
     })
   }
 
@@ -383,7 +383,7 @@ export function validateBillForFinalize(input: {
       errors.push({
         code: 'unpaid_participants',
         message:
-          'Маркирайте всички участници като платили, преди да завършите сметката.',
+          'Маркирай всички участници като платили, преди да завършиш сметката.',
       })
     }
   }

@@ -113,14 +113,14 @@ function BillJoinContent({
           >
             <p className="mt-2 text-[12px] leading-relaxed text-ink-muted">
               {isFinal
-                ? 'Сметката е приключена. Изберете името си, за да видите разбивката.'
-                : `${hostName} плати сметката. Изберете кой сте и отбележете какво сте яли и пили.`}
+                ? 'Сметката е приключена. Избери името си, за да видиш разбивката.'
+                : `${hostName} плати сметката. Избери кой си и отбележи своето.`}
             </p>
           </ReceiptHeader>
           <Rule />
           <section aria-labelledby="join-who">
             <h2 id="join-who" className="font-display text-[20px] font-bold">
-              Кой сте вие?
+              Кой си ти?
             </h2>
             {joinable.length === 0 ? (
               <p className="mt-3 text-[12px] leading-relaxed">
@@ -150,8 +150,8 @@ function BillJoinContent({
             )}
             {!isFinal && joinable.length > 0 ? (
               <p className="mt-3 text-[11px] leading-relaxed text-ink-muted">
-                Всяко име е за един телефон. Ако плащате и за някого, ще го
-                добавите на следващия екран.
+                Всяко име е за един телефон. Ако плащаш и за някого, ще го
+                добавиш на следващия екран.
               </p>
             ) : null}
           </section>
@@ -246,10 +246,10 @@ function NotListedTile({ hostName }: { hostName: string }) {
     <li className={cn(open && 'col-span-3')}>
       {open ? (
         <div className="border-l-[3px] border-ink bg-paper-2 p-3 text-[12px] leading-relaxed">
-          <p className="font-semibold">Няма ви в списъка?</p>
+          <p className="font-semibold">Няма те в списъка?</p>
           <p className="mt-1">
-            Помолете {hostName} да ви добави. Името ви ще се появи тук само, без
-            да презареждате.
+            Помоли {hostName} да те добави. Името ти ще се появи тук само, без
+            да презареждаш.
           </p>
           <button
             type="button"

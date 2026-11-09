@@ -141,9 +141,9 @@ function BillEditorContent({
   const guestCount = derived.guestCount
   const blockers: string[] = []
   if (!metadata.restaurantName.trim())
-    blockers.push('Въведете име на заведението.')
-  if (items.length === 0) blockers.push('Добавете поне един ред.')
-  if (guestCount === 0) blockers.push('Добавете поне един човек на масата.')
+    blockers.push('Въведи име на заведението.')
+  if (items.length === 0) blockers.push('Добави поне един ред.')
+  if (guestCount === 0) blockers.push('Добави поне един човек на масата.')
 
   const stepBarGuidanceNode =
     stepBarSignal?.kind === 'on' ? (
@@ -390,10 +390,10 @@ function BillEditorContent({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Ще изтриете сегашните редове</DialogTitle>
+            <DialogTitle>Ще изтриеш сегашните редове</DialogTitle>
             <DialogDescription>
               Някои редове вече са разпределени между хората. Замяната ще изтрие
-              редовете и отметките по тях. Продължавате ли?
+              редовете и отметките по тях. Продължаваш ли?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

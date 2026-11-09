@@ -21,7 +21,7 @@ export function LandingFooter() {
             href={mailtoHref(SUPPORT_EMAIL, 'Онова за сметката')}
             className={footerLinkClass}
           >
-            Пишете ни
+            Пиши ни
           </a>
         </nav>
       </div>

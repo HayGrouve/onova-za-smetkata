@@ -186,7 +186,7 @@ export function HostSlip({
               : status === 'paid'
                 ? `платени ${formatEur(totals.paidCents)}`
                 : status === 'host'
-                  ? `ваш дял ${formatEur(totals.owedCents)}`
+                  ? `твой дял ${formatEur(totals.owedCents)}`
                   : totals.owedCents > 0
                     ? slip.units > 0
                       ? `${slip.units} бр., дял ${formatEur(totals.owedCents)}`

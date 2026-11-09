@@ -38,7 +38,7 @@ test('host banner hidden until guest opens Revolut', async ({ browser }) => {
 
   // Bob's phone learns that Alice is paying for him.
   await expect(
-    guestB.page.getByText(`${participantA} ще плати и за вас`),
+    guestB.page.getByText(`${participantA} ще плати и за теб`),
   ).toBeVisible({
     timeout: 15_000,
   })

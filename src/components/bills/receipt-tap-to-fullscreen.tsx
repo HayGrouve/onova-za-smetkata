@@ -41,7 +41,7 @@ export function ReceiptTapToFullscreen({
         </button>
         {showHint ? (
           <p className="mt-2 text-center text-xs text-muted-foreground">
-            Докоснете за по-голям преглед
+            Докосни за по-голям преглед
           </p>
         ) : null}
       </div>

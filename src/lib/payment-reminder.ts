@@ -37,7 +37,7 @@ export function buildPaymentReminder(
 
   const lines = debtor.bills.map((bill) => {
     const url = joinUrlFor(bill)
-    const line = `• ${capitalize(describeBill(bill))} — ${formatEur(bill.outstandingCents)}`
+    const line = `• ${capitalize(describeBill(bill))} · ${formatEur(bill.outstandingCents)}`
     return url ? `${line}: ${url}` : line
   })
   return [

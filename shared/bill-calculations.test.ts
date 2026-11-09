@@ -118,7 +118,7 @@ describe('validateBillForFinalize', () => {
     })
     expect(errors).toContainEqual({
       code: 'missing_restaurant',
-      message: 'Въведете име на ресторант.',
+      message: 'Въведи име на ресторант.',
     })
   })
 
@@ -165,7 +165,7 @@ describe('validateBillForFinalize', () => {
     expect(errors).toContainEqual({
       code: 'unpaid_participants',
       message:
-        'Маркирайте всички участници като платили, преди да завършите сметката.',
+        'Маркирай всички участници като платили, преди да завършиш сметката.',
     })
   })
 

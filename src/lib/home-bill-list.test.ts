@@ -15,7 +15,7 @@ describe('home bill list constants', () => {
 describe('homeBillListEmptyMessage', () => {
   it('no bills at all', () => {
     expect(homeBillListEmptyMessage({ search: '' })).toBe(
-      'Все още нямате сметки.',
+      'Все още нямаш сметки.',
     )
   })
 
@@ -27,7 +27,7 @@ describe('homeBillListEmptyMessage', () => {
 
   it('whitespace-only search counts as no search', () => {
     expect(homeBillListEmptyMessage({ search: '  ' })).toBe(
-      'Все още нямате сметки.',
+      'Все още нямаш сметки.',
     )
   })
 })
