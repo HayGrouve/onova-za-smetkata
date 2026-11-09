@@ -3,6 +3,7 @@ import {
   CheckCircleIcon,
   ChevronDownIcon,
   CogIcon,
+  DatabaseIcon,
   Link2OffIcon,
   MailIcon,
   MoreVerticalIcon,
@@ -15,6 +16,7 @@ import {
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 import { usePaymentSettingsSheet } from '#/components/bills/payment-settings-provider.tsx'
+import { MountOnFirstOpen, lazySheet } from '#/components/lazy-sheet.tsx'
 import { useFriendGroupsSheet } from '#/components/bills/friend-groups-provider.tsx'
 import { useHostOnboarding } from '#/components/host-onboarding/host-onboarding-provider.tsx'
 import { HOST_ONBOARDING_HOME } from '../../../shared/host-onboarding-messages.ts'
@@ -43,8 +45,13 @@ import {
 } from '#/components/ui/tooltip.tsx'
 import { ICON } from '#/lib/app-icons.ts'
 import { SUPPORT_EMAIL, mailtoHref } from '#/lib/contact.ts'
+import { DELETE_MY_DATA_COPY } from '#/lib/destructive-action-copy.ts'
 import { cn } from '#/lib/utils.ts'
 import { ThemeRocker } from '#/components/layout/theme-rocker.tsx'
+
+const DataSheet = lazySheet(() =>
+  import('#/components/layout/data-sheet.tsx').then((m) => m.DataSheet),
+).Sheet
 
 const BILL_ACTION_ICONS: Record<AppHeaderMenuBillActionId, typeof Share2Icon> =
   {
@@ -110,10 +117,12 @@ function BillMenuItem({
 
 function HostSettingsMenuItems({
   onOpenPaymentSettings,
+  onOpenData,
   onOpenFriendGroups,
   onStartReplay,
 }: {
   onOpenPaymentSettings: () => void
+  onOpenData: () => void
   onOpenFriendGroups: () => void
   onStartReplay: () => void
 }) {
@@ -122,6 +131,10 @@ function HostSettingsMenuItems({
       <DropdownMenuItem onSelect={onOpenPaymentSettings}>
         <CogIcon className={ICON.button} aria-hidden />
         Настройки за плащане
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={onOpenData}>
+        <DatabaseIcon className={ICON.button} aria-hidden />
+        {DELETE_MY_DATA_COPY.menuLabel}
       </DropdownMenuItem>
       <DropdownMenuItem onSelect={onOpenFriendGroups}>
         <UsersIcon className={ICON.button} aria-hidden />
@@ -138,16 +151,11 @@ function HostSettingsMenuItems({
 function CollapsibleHostSettingsSection({
   open,
   onOpenChange,
-  onOpenPaymentSettings,
-  onOpenFriendGroups,
-  onStartReplay,
+  ...handlers
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onOpenPaymentSettings: () => void
-  onOpenFriendGroups: () => void
-  onStartReplay: () => void
-}) {
+} & React.ComponentProps<typeof HostSettingsMenuItems>) {
   return (
     <Collapsible open={open} onOpenChange={onOpenChange}>
       <CollapsibleTrigger asChild>
@@ -170,11 +178,7 @@ function CollapsibleHostSettingsSection({
         </DropdownMenuItem>
       </CollapsibleTrigger>
       <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-1 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
-        <HostSettingsMenuItems
-          onOpenPaymentSettings={onOpenPaymentSettings}
-          onOpenFriendGroups={onOpenFriendGroups}
-          onStartReplay={onStartReplay}
-        />
+        <HostSettingsMenuItems {...handlers} />
       </CollapsibleContent>
     </Collapsible>
   )
@@ -194,6 +198,7 @@ export function AppHeaderMenu({
   const [mounted, setMounted] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [moreSettingsOpen, setMoreSettingsOpen] = useState(false)
+  const [dataOpen, setDataOpen] = useState(false)
 
   const visibleBillItems = billMenuItems.filter((item) => !item.hidden)
 
@@ -210,6 +215,7 @@ export function AppHeaderMenu({
 
   const hostSettingsHandlers = {
     onOpenPaymentSettings: () => openPaymentSettings(),
+    onOpenData: () => setDataOpen(true),
     onOpenFriendGroups: () => openFriendGroups(),
     onStartReplay: () => startReplay(),
   }
@@ -277,6 +283,11 @@ export function AppHeaderMenu({
         </DropdownMenuContent>
       </DropdownMenu>
       {billMenuDialogs}
+      {showHostActions ? (
+        <MountOnFirstOpen open={dataOpen} onClose={() => setDataOpen(false)}>
+          <DataSheet open={dataOpen} onOpenChange={setDataOpen} />
+        </MountOnFirstOpen>
+      ) : null}
     </>
   )
 }

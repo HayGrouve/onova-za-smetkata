@@ -10,6 +10,7 @@ const DAY_MS = 86_400_000
 
 afterEach(() => {
   vi.unstubAllEnvs()
+  vi.useRealTimers()
 })
 
 async function hostWithStripeCustomer(t: TestConvex, customerId = 'cus_1') {
@@ -76,6 +77,9 @@ describe('Stripe webhook', () => {
   })
 
   it('handles a repeated delivery once and schedules one subscription re-fetch', async () => {
+    // Fake timers keep the scheduled re-fetch from running (and, without a
+    // Stripe key, scheduling its retry) before the count below.
+    vi.useFakeTimers()
     vi.stubEnv('STRIPE_WEBHOOK_SECRET', WEBHOOK_SECRET)
     const t = setupConvex()
 

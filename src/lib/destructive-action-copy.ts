@@ -1,9 +1,16 @@
+/** The confirm button stays disabled until the field reads exactly `expected`. */
+export type TypedConfirmation = {
+  label: string
+  expected: string
+}
+
 export type ConfirmOptions = {
   title: string
   description?: string
   confirmLabel?: string
   cancelLabel?: string
   variant?: 'destructive' | 'default'
+  typedConfirmation?: TypedConfirmation | null
 }
 
 const DEFAULTS = {
@@ -18,6 +25,7 @@ function withDefaults(options: ConfirmOptions): Required<ConfirmOptions> {
     confirmLabel: options.confirmLabel ?? DEFAULTS.confirmLabel,
     cancelLabel: options.cancelLabel ?? DEFAULTS.cancelLabel,
     variant: options.variant ?? DEFAULTS.variant,
+    typedConfirmation: options.typedConfirmation ?? null,
     title: options.title,
   }
 }
@@ -115,5 +123,30 @@ export function getScanDismissCopy(): ConfirmOptions {
       'Разпознатите артикули няма да бъдат добавени. За да ги върнете, ще трябва да снимате бележката отново.',
     confirmLabel: 'Откажи сканирането',
     cancelLabel: 'Назад',
+  })
+}
+
+/** Изтрий данните: the Данни sheet in the kebab's host settings. */
+export const DELETE_MY_DATA_COPY = {
+  menuLabel: 'Данни',
+  title: 'Изтрий данните си в онова за сметката',
+  body: 'Изтриваме всичките ти сметки, групи и настройки за плащане. Акаунтът ти остава. Ако имаш абонамент, той спира веднага, без връщане на пари за оставащия период.',
+  button: 'Изтрий данните',
+  akauntQuestion: 'Искаш да изтриеш целия си Акаунт? Това става в',
+  akauntLink: 'Акаунт',
+  akauntUrl: 'https://onovaza.com/akaunt',
+  privacyLink: 'Поверителност',
+  privacyUrl: 'https://onovaza.com/poveritelnost#smetkata',
+  done: 'Данните ти са изтрити. Започваш на чисто.',
+  failed: 'Неуспешно изтриване. Опитай пак.',
+} as const
+
+export function getDeleteMyDataCopy(): ConfirmOptions {
+  return withDefaults({
+    title: 'Изтриване на данните?',
+    description:
+      'Това не може да се отмени. Сметките, групите и настройките ти за плащане се изтриват завинаги.',
+    confirmLabel: DELETE_MY_DATA_COPY.button,
+    typedConfirmation: { label: 'Напиши ИЗТРИЙ', expected: 'ИЗТРИЙ' },
   })
 }
