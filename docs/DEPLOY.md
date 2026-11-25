@@ -195,12 +195,6 @@ Canonical production path: **merge (or push) to `main` → GitHub Actions `prefl
    npx convex run backfill:dedupeAssignments
    ```
 
-   After deploying `users.plan` (replaces the Clerk Billing-era `clerkPlanSlug`) — required once per environment before `clerkPlanSlug` is dropped from the schema; idempotent:
-
-   ```bash
-   npx convex run backfill:planFromClerkPlanSlug
-   ```
-
    After deploying `guestSessionPresence` (Guest heartbeats moved off `guestSessions`) — run once per environment right after the deploy; idempotent. Until then the minute sweep still ends old sessions, it just keeps reading them:
 
    ```bash

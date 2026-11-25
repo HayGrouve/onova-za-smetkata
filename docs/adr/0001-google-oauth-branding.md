@@ -1,6 +1,6 @@
 # Google OAuth branding strategy
 
-**Status:** Retired with the old Сметката Clerk app ([ADR 0005](./0005-sign-in-and-akaunt-on-the-hub.md)). Before that: auth **routing** superseded by [ADR 0002](./0002-clerk-auth-billing.md) (Clerk). Consent-screen branding (app name, logo, privacy/terms) still applies in Google Cloud; the callback is Clerk’s URI, not `*.convex.site`. Host Pro is Stripe — [ADR 0003](./0003-stripe-billing-beside-clerk.md).
+**Status:** Superseded by [ADR 0005](./0005-sign-in-and-akaunt-on-the-hub.md), retired with the old Сметката Clerk app (HayGrouve/onova-za-smetkata#213). Kept as history. Before that: auth **routing** superseded by [ADR 0002](./0002-clerk-auth-billing.md) (Clerk). Consent-screen branding (app name, logo, privacy/terms) still applies in Google Cloud; the callback is Clerk’s URI, not `*.convex.site`. Host Pro is Stripe — [ADR 0003](./0003-stripe-billing-beside-clerk.md).
 
 Google sign-in branding is controlled by the Google Cloud OAuth consent screen and the OAuth callback domain — not by app code. We configure one GCP project with app name **Онова за сметката**, our logo, and privacy/terms URLs.
 
