@@ -19,6 +19,7 @@ import {
   getDeleteMyDataCopy,
 } from '#/lib/destructive-action-copy.ts'
 import { focusContentInsteadOfField } from '#/lib/dialog-focus.ts'
+import { HUB_AKAUNT_URL, HUB_PRIVACY_URL } from '#/lib/hub-links.ts'
 import { api } from '../../../convex/_generated/api'
 
 export interface DataSheetProps {
@@ -73,7 +74,7 @@ export function DataSheet({ open, onOpenChange }: DataSheetProps) {
           <p>
             {DELETE_MY_DATA_COPY.akauntQuestion}{' '}
             <a
-              href={DELETE_MY_DATA_COPY.akauntUrl}
+              href={HUB_AKAUNT_URL}
               className="font-medium text-foreground underline underline-offset-4"
             >
               {DELETE_MY_DATA_COPY.akauntLink}
@@ -81,10 +82,7 @@ export function DataSheet({ open, onOpenChange }: DataSheetProps) {
             .
           </p>
           <p>
-            <a
-              href={DELETE_MY_DATA_COPY.privacyUrl}
-              className="underline underline-offset-4"
-            >
+            <a href={HUB_PRIVACY_URL} className="underline underline-offset-4">
               {DELETE_MY_DATA_COPY.privacyLink}
             </a>
           </p>

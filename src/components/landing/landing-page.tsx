@@ -16,6 +16,10 @@ import { cn } from '#/lib/utils.ts'
 
 const START_LABEL = 'Започни'
 
+/** Започни signs the Host in on the hub; Guests never need to. */
+const HOST_ONLY_SIGN_IN_NOTE =
+  'Вход е нужен само на домакина. Гостите на масата отварят линка или QR кода без регистрация.'
+
 /**
  * What the app does, in the order a table lives it. The details are the
  * product's value props; the visuals are tiny printed props, not screenshots.
@@ -93,6 +97,9 @@ export function LandingPage() {
               плаща с Revolut или по IBAN.
             </p>
             <StartButton className="mt-8 w-full sm:w-auto sm:min-w-56" />
+            <p className="mt-3 max-w-[46ch] text-[12px] leading-relaxed text-on-table-muted">
+              {HOST_ONLY_SIGN_IN_NOTE}
+            </p>
           </div>
           <motion.div
             initial={{ y: 28 }}
@@ -254,7 +261,7 @@ function LinkProp() {
           strokeWidth={1.75}
           aria-hidden
         />
-        <span className="truncate">onova-za-smetkata.com/…</span>
+        <span className="truncate">smetkata.onovaza.com/…</span>
       </span>
       <QrCodeIcon
         className="size-7 text-ink-muted"

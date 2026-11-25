@@ -1,6 +1,6 @@
 # ADR 0002: Clerk for Host authentication
 
-**Status:** Accepted for **Clerk auth**. Host Pro charging is **Stripe Billing** — [ADR 0003](./0003-stripe-billing-beside-clerk.md). This ADR supersedes [ADR 0001](./0001-google-oauth-branding.md) for where Google OAuth is configured.
+**Status:** Accepted for **Clerk auth**. Sign-in UI and the user profile are superseded by [ADR 0005](./0005-sign-in-and-akaunt-on-the-hub.md): they live on the hub (onovaza.com), and Сметката renders no Clerk component. Host Pro charging is **Stripe Billing** — [ADR 0003](./0003-stripe-billing-beside-clerk.md). This ADR supersedes [ADR 0001](./0001-google-oauth-branding.md) for where Google OAuth is configured.
 
 ## Context
 

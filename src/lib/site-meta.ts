@@ -8,7 +8,7 @@ export const JOIN_OG_TITLE = 'Присъедини се към сметката'
 export const JOIN_OG_DESCRIPTION =
   'Отвори линка, избери името си и отбележи какво си консумирал.'
 
-export const DEFAULT_SITE_ORIGIN = 'https://onova-za-smetkata.com'
+export const DEFAULT_SITE_ORIGIN = 'https://smetkata.onovaza.com'
 
 export const OG_IMAGE_PATH = '/og-image.png'
 export const OG_IMAGE_WIDTH = 1200

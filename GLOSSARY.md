@@ -23,8 +23,8 @@ The authenticated bill owner who creates and manages the bill.
 _Avoid_: bill creator (except as plain description), owner (except for auth/data ownership)
 
 **Host account**:
-The Host's Clerk sign-in identity — Auth name, emails, password or passkeys, MFA, connected accounts, sessions, account deletion. Managed in Clerk's UserButton / UserProfile. There is no in-app **Профил** sheet.
-_Avoid_: mixing this with Host Pro or Guest restaurant payments; calling Clerk UserProfile "Профил" in product copy; "user settings" as a name for this
+The Host's онова за **Акаунт**: one sign-in shared by every онова за project (Clerk app "онова за" on `clerk.onovaza.com`). It holds the Auth name, emails, connected accounts, sessions and account deletion, and is managed only on the hub's `https://onovaza.com/akaunt`. Host sign-in happens on `https://onovaza.com/vhod`; Сметката's `/login` only bounces there. In Сметката the avatar menu has exactly two items: „Акаунт“ (to `/akaunt`) and „Изход“. Сметката renders no Clerk screen and has no in-app **Профил** sheet ([ADR 0005](docs/adr/0005-sign-in-and-akaunt-on-the-hub.md)).
+_Avoid_: mixing this with Host Pro or Guest restaurant payments; "Акаунт" for anything that lives in Сметката (the Абонамент page is „Абонамент“); "user settings" as a name for this
 
 **Изтрий данните**:
 Removes everything Сметката holds about the Host: bills, groups („Моите групи“), payment settings, usage counters; a live Host Pro subscription stops at once with no refund. Started from the **Данни** sheet in the kebab's host settings with a typed `ИЗТРИЙ`. The Host account and the other онова за projects stay, and the Host stays signed in as a brand new Host. Deleting the whole Акаунт happens only on the hub's `/akaunt` and reaches Сметката through the `user.deleted` webhook; both use the same eraser.
@@ -39,7 +39,7 @@ Retired as a product field. Was an optional in-app `Потребителско �
 _Avoid_: reintroducing Потребителско име for the Host seat; using this word for Auth name or Clerk's username identifier (which stays off)
 
 **Auth name**:
-The Host's name on the Host account (Clerk) — typically from the identity provider, editable in UserProfile. This is how the Host appears as a Participant on bills they create. If unset, the seat is **домакин**.
+The Host's name on the Host account, typically from the identity provider, edited on the Профил tab of the hub's `/akaunt`. This is how the Host appears as a Participant on bills they create. If unset, the seat is **домакин**.
 _Avoid_: username, Потребителско име, display name as a separate product field
 
 **Participant**:
@@ -168,6 +168,7 @@ _Avoid_: hiding billing UI with a client-only flag; the server decides both quot
 - `.cursor/rules/context-core.mdc` — always-on summary of core terms above (for Cursor agents)
 - `README.md` — local development and scripts
 - `docs/DEPLOY.md` — production deploy, env vars, security
-- `docs/adr/0002-clerk-auth-billing.md` — Clerk for Host sign-in
+- `docs/adr/0002-clerk-auth-billing.md` — Clerk for Host sign-in (sign-in UI and profile superseded by 0005)
 - `docs/adr/0003-stripe-billing-beside-clerk.md` — Stripe Billing for Host Pro
 - `docs/adr/0004-stripe-managed-payments.md` — Stripe Managed Payments and the billing switch
+- `docs/adr/0005-sign-in-and-akaunt-on-the-hub.md` — Host sign-in and the Акаунт live on onovaza.com

@@ -1,10 +1,10 @@
-import { UserButton } from '@clerk/tanstack-react-start'
 import { useHostAuth } from '#/hooks/use-host-auth.ts'
 import { Link, useParams, useRouterState } from '@tanstack/react-router'
 import { useConvexAuth, useQuery } from 'convex/react'
 import { ChevronLeftIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { AppHeaderMenu } from '#/components/layout/app-header-menu.tsx'
+import { HostAvatarMenu } from '#/components/layout/host-avatar-menu.tsx'
 import {
   useBillHeaderSlot,
   useBillHeaderTitleValue,
@@ -82,18 +82,6 @@ function useHeaderConfig() {
   if (routeContext === 'subscription') {
     return {
       title: 'Абонамент',
-      backTo: '/' as const,
-      backParams: undefined,
-      backSearch: undefined,
-      routeContext,
-      billId,
-      bill,
-    }
-  }
-
-  if (routeContext === 'hostAccount') {
-    return {
-      title: 'Акаунт',
       backTo: '/' as const,
       backParams: undefined,
       backSearch: undefined,
@@ -196,15 +184,10 @@ export function AppHeader() {
     useHeaderConfig()
   const { isSignedIn } = useHostAuth()
   const slot = useBillHeaderSlot()
-  // The legal pages, the 404 page, the sign-in card (Clerk's own title) and
-  // the signed-out landing page heading themselves with an h1, so the title up
-  // here steps back to plain text instead of a second h1.
+  // The 404 page and the signed-out landing page heading themselves with an
+  // h1, so the title up here steps back to plain text instead of a second h1.
   const pageOwnsHeading = useRouterState({
-    select: (s) =>
-      s.matches.some((m) => m.status === 'notFound') ||
-      s.location.pathname === '/privacy' ||
-      s.location.pathname === '/terms' ||
-      s.location.pathname === '/login',
+    select: (s) => s.matches.some((m) => m.status === 'notFound'),
   })
   const TitleTag =
     pageOwnsHeading || (pathname === '/' && !isSignedIn) ? 'p' : 'h1'
@@ -305,13 +288,7 @@ export function AppHeader() {
           className={slot.active ? 'min-w-0 flex-1 lg:max-w-[460px]' : 'hidden'}
         />
         {slot.active ? <div className="hidden flex-1 lg:block" /> : null}
-        {showHostActions ? (
-          <UserButton
-            userProfileMode="navigation"
-            userProfileUrl="/user-profile"
-            showName={false}
-          />
-        ) : null}
+        {showHostActions ? <HostAvatarMenu /> : null}
         <AppHeaderMenu
           showHostActions={showHostActions}
           isHomeRoute={pathname === '/'}

@@ -1,6 +1,12 @@
 import { billIdFromUrl } from './helpers/bill-editor'
-import { expect, openHostContext, test } from './helpers/host-auth'
+import {
+  avatarTrigger,
+  expect,
+  openHostContext,
+  test,
+} from './helpers/host-auth'
 import { DELETE_MY_DATA_COPY } from '../src/lib/destructive-action-copy'
+import { HUB_AKAUNT_URL, HUB_PRIVACY_URL } from '../src/lib/hub-links'
 import { GUEST_FLOW_MESSAGES } from '../shared/guest-flow-messages'
 
 test('Изтрий данните: typed ИЗТРИЙ wipes the bills and the Host stays signed in', async ({
@@ -22,7 +28,10 @@ test('Изтрий данните: typed ИЗТРИЙ wipes the bills and the Ho
   await expect(sheet).toBeVisible({ timeout: 15_000 })
   await expect(
     sheet.getByRole('link', { name: DELETE_MY_DATA_COPY.akauntLink }),
-  ).toHaveAttribute('href', DELETE_MY_DATA_COPY.akauntUrl)
+  ).toHaveAttribute('href', HUB_AKAUNT_URL)
+  await expect(
+    sheet.getByRole('link', { name: DELETE_MY_DATA_COPY.privacyLink }),
+  ).toHaveAttribute('href', HUB_PRIVACY_URL)
   await sheet.getByRole('button', { name: DELETE_MY_DATA_COPY.button }).click()
 
   const confirm = page.getByRole('alertdialog')
@@ -48,7 +57,7 @@ test('Изтрий данните: typed ИЗТРИЙ wipes the bills and the Ho
   await expect(newBill.or(skipWelcome)).toBeVisible({ timeout: 30_000 })
   if (await skipWelcome.isVisible()) await skipWelcome.click()
   await expect(newBill).toBeVisible()
-  await expect(page.locator('.cl-userButtonTrigger')).toBeVisible()
+  await expect(avatarTrigger(page)).toBeVisible()
 
   await page.goto(`/bills/${billId}`)
   await expect(

@@ -1,6 +1,6 @@
-import { Link } from '@tanstack/react-router'
 import { Loader2Icon } from 'lucide-react'
 import { useId, useState } from 'react'
+import { HUB_TERMS_URL } from '#/lib/hub-links.ts'
 import { Button } from '#/components/ui/button.tsx'
 import { Checkbox } from '#/components/ui/checkbox.tsx'
 import { Label } from '#/components/ui/label.tsx'
@@ -66,9 +66,9 @@ export function HostProPlanPicker({ className }: { className?: string }) {
         <li>{HOST_PRO_DISCLOSURES.cancel}</li>
         <li>
           {HOST_PRO_DISCLOSURES.seller} Виж{' '}
-          <Link to="/terms" className="underline underline-offset-2">
+          <a href={HUB_TERMS_URL} className="underline underline-offset-2">
             Общите условия
-          </Link>
+          </a>
           .
         </li>
       </ul>

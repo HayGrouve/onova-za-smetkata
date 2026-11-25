@@ -1,12 +1,8 @@
 /**
- * Who provides the app and how to reach them (ЗЕТ чл. 4, GDPR чл. 13).
- * Add the address and registration once the freelancer registration is done.
+ * Where Hosts and Guests write to. Who provides the app, and the privacy
+ * address, are on the hub's legal pages (`HUB_PRIVACY_URL`, `HUB_TERMS_URL`).
  */
-export const PROVIDER_NAME = 'Цветомир Цеков'
-
 export const SUPPORT_EMAIL = 'support@onovaza.com'
-
-export const PRIVACY_EMAIL = 'privacy@onovaza.com'
 
 export function mailtoHref(email: string, subject?: string): string {
   return subject

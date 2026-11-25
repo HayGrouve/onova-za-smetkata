@@ -10,7 +10,7 @@ Use these consistently in code, UI copy, tests, and issues. Full glossary: **`GL
 | Term | Meaning | Avoid |
 | ---- | ------- | ----- |
 | **Host** | Authenticated bill owner | "member"; "guest" for the host's seat |
-| **Host account** | Clerk sign-in identity (UserButton / UserProfile), including Auth name | Mixing with Host Pro; calling UserProfile "Профил" |
+| **Host account** | The онова за Акаунт (Clerk), managed on the hub's `/akaunt`, including Auth name; sign-in on `onovaza.com/vhod` | Mixing with Host Pro; "Акаунт" for anything inside Сметката |
 | **Host profile** | Retired — no in-app `Профил` sheet | Reviving Username + usage as a product surface |
 | **Guest** | Non-host participant; money may be collected from them | Using "guest" for the host's participant seat |
 | **Participant** | Named seat on a bill (claims, tip, payment) | "member" |
@@ -38,7 +38,7 @@ Use these consistently in code, UI copy, tests, and issues. Full glossary: **`GL
 
 ## Host vs guest (auth)
 
-- **Host** routes: `/bills/$billId`, `/bills/$billId/summary`, `/user-profile` — `requireAuth` / `requireBillOwner` server-side; `useRequireHostAuth` client-side. Host participant name is **Auth name**, else **домакин**.
+- **Host** routes: `/bills/$billId`, `/bills/$billId/summary`, `/abonament` — `requireAuth` / `requireBillOwner` server-side; `useRequireHostAuth` client-side. Host participant name is **Auth name**, else **домакин**.
 - **Guest** routes: join via `?t={shareToken}` → `/join` → `/claim` → `/pay` — guest session token required for mutations (it may act for its own seat and its Covered seats); guest queries must not leak other participants' payment details.
 
 ## Host identity vs money

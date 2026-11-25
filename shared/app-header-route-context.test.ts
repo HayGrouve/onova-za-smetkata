@@ -6,19 +6,7 @@ import {
 } from './app-header-route-context'
 
 describe('resolveAppHeaderRouteContext', () => {
-  it('treats /user-profile as Host account, not home', () => {
-    expect(resolveAppHeaderRouteContext('/user-profile', '', undefined)).toBe(
-      'hostAccount',
-    )
-  })
-
-  it('treats UserProfile nested paths as Host account', () => {
-    expect(
-      resolveAppHeaderRouteContext('/user-profile/security', '', undefined),
-    ).toBe('hostAccount')
-  })
-
-  it('treats /abonament as its own Абонамент context, not Host account', () => {
+  it('treats /abonament as its own Абонамент context', () => {
     expect(resolveAppHeaderRouteContext('/abonament', '', undefined)).toBe(
       'subscription',
     )

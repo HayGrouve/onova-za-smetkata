@@ -4,4 +4,4 @@ Allow: /
 Disallow: /bills/
 Disallow: /login
 
-Sitemap: https://onova-za-smetkata.com/sitemap.xml
+Sitemap: https://smetkata.onovaza.com/sitemap.xml
