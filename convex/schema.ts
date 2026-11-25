@@ -22,11 +22,6 @@ export default defineSchema({
      * subscription, else `'free'`.
      */
     plan: v.optional(v.union(v.literal('free'), v.literal('pro'))),
-    /**
-     * Retired Clerk Billing plan slug, superseded by `plan`; cleared by
-     * `backfill:planFromClerkPlanSlug`. Drop once every environment has run it.
-     */
-    clerkPlanSlug: v.optional(v.string()),
     /** Stripe subscription status, as Stripe reports it. */
     subscriptionStatus: v.optional(v.string()),
     currentPeriodEnd: v.optional(v.number()),
