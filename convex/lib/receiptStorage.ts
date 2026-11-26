@@ -19,13 +19,6 @@ export async function isPhotoHeld(
       .query('billReceipts')
       .withIndex('by_storageId', (q) => q.eq('storageId', storageId))
       .first()) ??
-    // The legacy single photo, until `backfill:moveLegacyReceipts` has run.
-    (await ctx.db
-      .query('bills')
-      .withIndex('by_receiptStorageId', (q) =>
-        q.eq('receiptStorageId', storageId),
-      )
-      .first()) ??
     (await ctx.db
       .query('receiptScans')
       .withIndex('by_storageId', (q) => q.eq('storageId', storageId))

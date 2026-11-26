@@ -1,6 +1,6 @@
 // @vitest-environment edge-runtime
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { api, internal } from './_generated/api'
+import { api } from './_generated/api'
 import type { Id } from './_generated/dataModel'
 import { GUEST_FLOW_MESSAGES } from '../shared/guest-flow-messages'
 import {
@@ -140,6 +140,34 @@ describe('adding a receipt photo', () => {
     ).toEqual([photo])
   })
 
+  it('never takes a photo a quick scan is reading, or one already gone', async () => {
+    vi.useFakeTimers()
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const reading = await storePhoto(t)
+    const started = await bill.host.mutation(api.quickScan.start, {
+      storageId: reading,
+    })
+    expect(started.ok).toBe(true)
+    await expect(
+      bill.host.mutation(api.billReceipts.addReceipt, {
+        billId: bill.billId,
+        storageId: reading,
+      }),
+    ).rejects.toThrow()
+
+    const gone = await storePhoto(t)
+    await t.run((ctx) => ctx.storage.delete(gone))
+    await expect(
+      bill.host.mutation(api.billReceipts.addReceipt, {
+        billId: bill.billId,
+        storageId: gone,
+      }),
+    ).rejects.toThrow()
+
+    expect(await receiptRows(t, bill.billId)).toEqual([])
+  })
+
   it(`stops at ${MAX_RECEIPTS_PER_BILL} photos per bill`, async () => {
     const t = setupConvex()
     const bill = await seedBill(t)
@@ -249,7 +277,7 @@ describe('removing a receipt photo', () => {
 })
 
 describe('deleting a bill with receipt photos', () => {
-  it('deletes every receipt photo, the legacy one included', async () => {
+  it('deletes every receipt photo', async () => {
     const t = setupConvex()
     const bill = await seedBill(t)
     const photos = [await storePhoto(t), await storePhoto(t)]
@@ -259,83 +287,36 @@ describe('deleting a bill with receipt photos', () => {
         storageId,
       })
     }
-    const legacy = await storePhoto(t)
-    await t.run((ctx) =>
-      ctx.db.patch(bill.billId, { receiptStorageId: legacy }),
-    )
 
     await bill.host.mutation(api.bills.remove, { billId: bill.billId })
 
     expect(await receiptRows(t, bill.billId)).toEqual([])
-    for (const storageId of [...photos, legacy]) {
+    for (const storageId of photos) {
       expect(await photoExists(t, storageId)).toBe(false)
     }
   })
-})
 
-describe('moving legacy bill photos (backfill:moveLegacyReceipts)', () => {
-  it('moves each legacy photo into a receipt once and clears the old field', async () => {
+  it("never takes another bill's photo with it", async () => {
     const t = setupConvex()
-    const withLines = await seedBill(t)
-    const empty = await seedBill(t, { items: [] })
-    const lost = await seedBill(t)
-    const withLinesPhoto = await storePhoto(t)
-    const emptyPhoto = await storePhoto(t)
-    const lostPhoto = await storePhoto(t)
-    await t.run(async (ctx) => {
-      await ctx.db.patch(withLines.billId, { receiptStorageId: withLinesPhoto })
-      await ctx.db.patch(empty.billId, { receiptStorageId: emptyPhoto })
-      await ctx.db.patch(lost.billId, { receiptStorageId: lostPhoto })
-      await ctx.storage.delete(lostPhoto)
-    })
-
-    const first = await t.mutation(internal.backfill.moveLegacyReceipts, {})
-    const again = await t.mutation(internal.backfill.moveLegacyReceipts, {})
-
-    expect(first).toEqual({ moved: 2, cleared: 3 })
-    expect(again).toEqual({ moved: 0, cleared: 0 })
-    const bills = await t.run(async (ctx) => ({
-      withLines: await ctx.db.get(withLines.billId),
-      empty: await ctx.db.get(empty.billId),
-      lost: await ctx.db.get(lost.billId),
-    }))
-    expect(bills.withLines?.receiptStorageId).toBeUndefined()
-    expect(bills.empty?.receiptStorageId).toBeUndefined()
-    expect(bills.lost?.receiptStorageId).toBeUndefined()
-
-    const [moved] = await receiptRows(t, withLines.billId)
-    expect(moved).toMatchObject({
-      storageId: withLinesPhoto,
-      createdAt: bills.withLines?.createdAt,
-      importedAt: bills.withLines?.updatedAt,
-    })
-    const [notImported] = await receiptRows(t, empty.billId)
-    expect(notImported.storageId).toBe(emptyPhoto)
-    expect(notImported).not.toHaveProperty('importedAt')
-    expect(await receiptRows(t, lost.billId)).toEqual([])
-    // Which lines came from the photo is unknowable.
-    const { items } = await withLines.host.query(api.bills.get, {
-      billId: withLines.billId,
-    })
-    expect(items.every((item) => item.receiptId === undefined)).toBe(true)
-  })
-
-  it('does not move a photo twice when a run stopped halfway', async () => {
-    const t = setupConvex()
-    const bill = await seedBill(t)
+    const owner = await seedBill(t)
     const photo = await storePhoto(t)
-    await t.run(async (ctx) => {
-      await ctx.db.patch(bill.billId, { receiptStorageId: photo })
-      await ctx.db.insert('billReceipts', {
-        billId: bill.billId,
-        storageId: photo,
-        createdAt: Date.now(),
-      })
+    await owner.host.mutation(api.billReceipts.addReceipt, {
+      billId: owner.billId,
+      storageId: photo,
     })
+    const stranger = await seedBill(t, { hostIdentity: STRANGER })
+    await expect(
+      stranger.host.mutation(api.billReceipts.addReceipt, {
+        billId: stranger.billId,
+        storageId: photo,
+      }),
+    ).rejects.toThrow()
 
-    const result = await t.mutation(internal.backfill.moveLegacyReceipts, {})
+    await stranger.host.mutation(api.bills.remove, { billId: stranger.billId })
 
-    expect(result).toEqual({ moved: 0, cleared: 1 })
-    expect(await receiptRows(t, bill.billId)).toHaveLength(1)
+    expect(
+      (await receiptRows(t, owner.billId)).map((row) => row.storageId),
+    ).toEqual([photo])
+    expect(await photoExists(t, photo)).toBe(true)
   })
 })

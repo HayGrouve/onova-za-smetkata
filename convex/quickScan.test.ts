@@ -83,12 +83,12 @@ describe('quick bill scans', () => {
     expect(refused && (await photoExists(t, refused))).toBe(false)
 
     const billId = await host.mutation(api.bills.create, {})
-    await host.mutation(api.bills.update, {
+    const receiptId = await host.mutation(api.billReceipts.addReceipt, {
       billId,
-      receiptStorageId: await storePhoto(t),
+      storageId: await storePhoto(t),
     })
     await expect(
-      host.mutation(api.receiptScan.startScan, { billId }),
+      host.mutation(api.receiptScan.startScan, { billId, receiptId }),
     ).rejects.toThrow()
   })
 
@@ -106,9 +106,9 @@ describe('quick bill scans', () => {
     // A bill's receipt is not the scan's to delete, however fresh.
     const billId = await host.mutation(api.bills.create, {})
     const billReceipt = await storePhoto(t)
-    await host.mutation(api.bills.update, {
+    await host.mutation(api.billReceipts.addReceipt, {
       billId,
-      receiptStorageId: billReceipt,
+      storageId: billReceipt,
     })
     await expect(
       host.mutation(api.quickScan.start, { storageId: billReceipt }),

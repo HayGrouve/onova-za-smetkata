@@ -22,7 +22,6 @@ import {
   readStoredCollectionSummary,
 } from './lib/homeOverview'
 import type { HomeOverviewDraft } from './lib/homeOverview'
-import { addBillReceipt, billHoldsPhoto } from './lib/billReceipts'
 import { onBillFinalizing, pendingPayRequestOf } from './lib/payRequest'
 import { endGuestSessionsForBill, findGuest } from './lib/guestSession'
 import {
@@ -209,17 +208,10 @@ export const update = mutation({
     restaurantName: v.optional(v.string()),
     date: v.optional(v.number()),
     note: v.optional(v.string()),
-    /**
-     * Deprecated: how clients from before several receipts per bill attach
-     * their photo. It now adds a receipt (`billReceipts.addReceipt`) and never
-     * replaces one.
-     */
-    receiptStorageId: v.optional(v.id('_storage')),
     tipCents: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const { billId, restaurantName, date, note, receiptStorageId, tipCents } =
-      args
+    const { billId, restaurantName, date, note, tipCents } = args
 
     const bill = await requireBillOwner(ctx, billId)
     assertBillDraft(bill)
@@ -239,14 +231,6 @@ export const update = mutation({
     }
 
     const normalized = parsed.data
-
-    if (receiptStorageId !== undefined) {
-      // Saving the bill with one of its own photos again adds nothing; a new
-      // one must be a fresh upload, not a photo some other bill or scan holds.
-      if (!(await billHoldsPhoto(ctx, bill, receiptStorageId))) {
-        await addBillReceipt(ctx, billId, receiptStorageId)
-      }
-    }
 
     await ctx.db.patch(billId, {
       updatedAt: Date.now(),

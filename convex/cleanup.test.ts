@@ -168,12 +168,10 @@ describe('the orphan upload sweep', () => {
     const bill = await seedBill(t)
     const ownerId = (await t.run((ctx) => ctx.db.get(bill.billId)))!.ownerId
     const orphan = await store(t)
-    const onBill = await store(t)
     const onReceipt = await store(t)
     const onQuickScan = await store(t)
     const onReceiptScan = await store(t)
     await t.run(async (ctx) => {
-      await ctx.db.patch(bill.billId, { receiptStorageId: onBill })
       await ctx.db.insert('billReceipts', {
         billId: bill.billId,
         storageId: onReceipt,
@@ -203,13 +201,7 @@ describe('the orphan upload sweep', () => {
     )
     expect(left).not.toContain(orphan)
     expect(left).toEqual(
-      expect.arrayContaining([
-        onBill,
-        onReceipt,
-        onQuickScan,
-        onReceiptScan,
-        fresh,
-      ]),
+      expect.arrayContaining([onReceipt, onQuickScan, onReceiptScan, fresh]),
     )
   })
 
@@ -231,7 +223,13 @@ describe('the orphan upload sweep', () => {
     const t = setupConvex()
     const bill = await seedBill(t)
     const kept = await store(t)
-    await t.run((ctx) => ctx.db.patch(bill.billId, { receiptStorageId: kept }))
+    await t.run((ctx) =>
+      ctx.db.insert('billReceipts', {
+        billId: bill.billId,
+        storageId: kept,
+        createdAt: Date.now(),
+      }),
+    )
     for (let index = 0; index < 250; index++) await store(t)
 
     vi.setSystemTime(Date.now() + 2 * DAY_MS)
