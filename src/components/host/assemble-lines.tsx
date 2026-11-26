@@ -10,13 +10,14 @@ import {
   ScanLineIcon,
 } from 'lucide-react'
 import { ItemEditSheet } from '#/components/bills/item-edit-sheet.tsx'
-import { ReceiptTapToFullscreen } from '#/components/bills/receipt-tap-to-fullscreen.tsx'
+import { ReceiptStrip } from '#/components/host/receipt-strip.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import type { useReceiptScan } from '#/hooks/use-receipt-scan.ts'
 import { formatEur } from '#/lib/format-currency.ts'
 import { GuidanceTarget } from '#/lib/guidance-focus/guidance-target.tsx'
 import type { GuidanceFocusHandle } from '#/lib/guidance-focus/use-guidance-focus.ts'
 import { cn } from '#/lib/utils.ts'
+import { receiptsCheckTotal } from '../../../shared/bill-receipts.ts'
 import type { Doc, Id } from '../../../convex/_generated/dataModel'
 
 /**
@@ -28,7 +29,6 @@ export function AssembleLines({
   items,
   receiptScan,
   receiptUploaded,
-  receiptUrl,
   itemsSubtotalCents,
   guidanceFocus,
 }: {
@@ -36,7 +36,6 @@ export function AssembleLines({
   items: Doc<'items'>[]
   receiptScan: ReturnType<typeof useReceiptScan>
   receiptUploaded: boolean
-  receiptUrl: string | null | undefined
   itemsSubtotalCents: number
   guidanceFocus: GuidanceFocusHandle
 }) {
@@ -44,7 +43,26 @@ export function AssembleLines({
   const [adding, setAdding] = useState(false)
   const sorted = [...items].sort((a, b) => a.sortOrder - b.sortOrder)
   const hasItems = sorted.length > 0
-  const scannedTotal = receiptScan.completedScan?.receiptTotalCents
+  const receipts = receiptScan.receipts
+  const nextScan = receiptScan.nextScan
+  const checkTotal = receiptsCheckTotal(receipts)
+  const unreadCount = receipts.filter((r) => r.importedAt === undefined).length
+  const showScanButton =
+    receiptScan.isScanning || nextScan !== null || receipts.length === 0
+
+  const receiptStatus = receiptScan.isScanning
+    ? 'Четем бележката. Редовете ще се отпечатат тук.'
+    : receipts.length > 0 && nextScan === null
+      ? receipts.length === 1
+        ? 'Редовете от бележката са добавени. Докосни снимката, за да я провериш.'
+        : 'Редовете от бележките са добавени. Докосни снимка, за да я провериш.'
+      : nextScan?.othersImported
+        ? unreadCount === 1
+          ? 'Още една бележка чака да я разпознаеш.'
+          : `Още ${unreadCount} бележки чакат да ги разпознаеш.`
+        : receipts.length > 1
+          ? 'Снимките са качени. Разпознай ги една по една.'
+          : 'Снимката е качена. Разпознай редовете.'
 
   const fileInputs = (
     <>
@@ -52,6 +70,7 @@ export function AssembleLines({
         ref={receiptScan.galleryInputRef}
         type="file"
         accept="image/*,.heic,.heif"
+        multiple
         className="hidden"
         onChange={receiptScan.handleReceiptChange}
       />
@@ -93,59 +112,56 @@ export function AssembleLines({
       {fileInputs}
 
       {receiptUploaded ? (
-        <div className="mb-3 flex items-start gap-3">
-          <div
-            className={cn(
-              'w-20 shrink-0 overflow-hidden border-2 border-dashed border-rule',
-              receiptScan.isScanning && 'receipt-scan-image-active',
-            )}
-          >
-            {receiptUrl ? (
-              <ReceiptTapToFullscreen
-                receiptUrl={receiptUrl}
-                thumbnailClassName="block h-24 w-full border-0 object-cover object-top"
-              />
-            ) : (
-              <div className="skeleton-print h-24 w-full" />
-            )}
-          </div>
-          <div className="min-w-0 flex-1 text-[12px] leading-relaxed">
-            <p className="text-ink-muted">
-              {receiptScan.isScanning
-                ? 'Четем бележката. Редовете ще се отпечатат тук.'
-                : hasItems
-                  ? 'Снимката е тук, ако искаш да провериш редовете.'
-                  : 'Снимката е качена. Разпознай редовете.'}
-            </p>
-            <GuidanceTarget stepId="scan-run-ocr" focus={guidanceFocus}>
-              <Button
-                type="button"
-                size="sm"
-                variant={hasItems ? 'outline' : 'default'}
-                className="mt-2"
-                disabled={receiptScan.isOcrBusy}
-                aria-busy={receiptScan.isOcrBusy}
-                onClick={receiptScan.handleScanButtonClick}
-              >
-                {receiptScan.isScanning ? (
-                  <Loader2Icon
-                    className="size-4 animate-spin motion-reduce:animate-none"
-                    aria-hidden
-                  />
-                ) : (
-                  <ScanLineIcon
-                    className="size-4"
-                    strokeWidth={1.75}
-                    aria-hidden
-                  />
-                )}
-                {receiptScan.isScanning
-                  ? 'Разпознаване...'
-                  : hasItems
-                    ? 'Разпознай отново'
-                    : 'Разпознай редовете'}
-              </Button>
-            </GuidanceTarget>
+        <div className="mb-3">
+          <ReceiptStrip
+            receipts={receipts}
+            scanningReceiptId={receiptScan.scanningReceiptId}
+            busy={receiptScan.isOcrBusy}
+            canAdd={receiptScan.canAddReceipt}
+            onScan={(receiptId) => void receiptScan.scanReceipt(receiptId)}
+            onRemove={receiptScan.removeReceiptPhoto}
+            onTakePhoto={() => receiptScan.cameraInputRef.current?.click()}
+            onPickFromGallery={() =>
+              receiptScan.galleryInputRef.current?.click()
+            }
+          />
+          <div className="mt-2 text-[12px] leading-relaxed">
+            <p className="text-ink-muted">{receiptStatus}</p>
+            {showScanButton ? (
+              <GuidanceTarget stepId="scan-run-ocr" focus={guidanceFocus}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    hasItems && !nextScan?.othersImported
+                      ? 'outline'
+                      : 'default'
+                  }
+                  className="mt-2"
+                  disabled={receiptScan.isOcrBusy || nextScan === null}
+                  aria-busy={receiptScan.isOcrBusy}
+                  onClick={receiptScan.handleScanButtonClick}
+                >
+                  {receiptScan.isScanning ? (
+                    <Loader2Icon
+                      className="size-4 animate-spin motion-reduce:animate-none"
+                      aria-hidden
+                    />
+                  ) : (
+                    <ScanLineIcon
+                      className="size-4"
+                      strokeWidth={1.75}
+                      aria-hidden
+                    />
+                  )}
+                  {receiptScan.isScanning
+                    ? 'Разпознаване...'
+                    : nextScan?.othersImported
+                      ? 'Разпознай следващата бележка'
+                      : 'Разпознай редовете'}
+                </Button>
+              </GuidanceTarget>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -161,7 +177,9 @@ export function AssembleLines({
               въведи на ръка.
             </p>
             <div className="mt-5 flex flex-col items-center gap-2">
-              {receiptUploaded ? null : uploadButtons}
+              {receiptUploaded || receiptScan.receiptsLoading
+                ? null
+                : uploadButtons}
               <GuidanceTarget stepId="items" focus={guidanceFocus}>
                 <Button
                   type="button"
@@ -230,7 +248,7 @@ export function AssembleLines({
                 Добави ред
               </Button>
             </GuidanceTarget>
-            {!receiptUploaded ? (
+            {!receiptUploaded && !receiptScan.receiptsLoading ? (
               <Button
                 type="button"
                 variant="outline"
@@ -242,10 +260,11 @@ export function AssembleLines({
               </Button>
             ) : null}
           </div>
-          {scannedTotal !== undefined && scannedTotal > 0 ? (
+          {checkTotal ? (
             <ScanCheck
               linesCents={itemsSubtotalCents}
-              receiptCents={scannedTotal}
+              receiptCents={checkTotal.totalCents}
+              receiptCount={checkTotal.receiptCount}
             />
           ) : null}
           <p className="mt-3 text-[11px] text-ink-muted">
@@ -269,15 +288,18 @@ export function AssembleLines({
   )
 }
 
-/** Sum of the lines against the total printed on the scanned receipt. */
+/** Sum of the lines against the totals printed on the imported receipts. */
 function ScanCheck({
   linesCents,
   receiptCents,
+  receiptCount,
 }: {
   linesCents: number
   receiptCents: number
+  receiptCount: number
 }) {
   const diff = linesCents - receiptCents
+  const onPaper = receiptCount === 1 ? 'на бележката' : 'на бележките'
   return (
     <p
       className={cn(
@@ -299,8 +321,8 @@ function ScanCheck({
         />
       )}
       {diff === 0
-        ? `Редовете дават ${formatEur(receiptCents)}, колкото е и на бележката.`
-        : `Редовете дават ${formatEur(linesCents)}, а на бележката пише ${formatEur(receiptCents)}. Провери ${diff > 0 ? 'за излишен ред' : 'дали липсва ред'}.`}
+        ? `Редовете дават ${formatEur(receiptCents)}, колкото е и ${onPaper}.`
+        : `Редовете дават ${formatEur(linesCents)}, а ${onPaper} пише ${formatEur(receiptCents)}. Провери ${diff > 0 ? 'за излишен ред' : 'дали липсва ред'}.`}
     </p>
   )
 }

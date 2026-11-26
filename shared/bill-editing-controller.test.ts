@@ -4,6 +4,7 @@ import {
   buildBillEditorGuidanceInput,
   clampBillEditorStep,
   fromBillEditorDateInputValue,
+  isReceiptUploadedForEditor,
   isRestaurantFromOcr,
   resolveOcrRestaurantApply,
   shouldRedirectFinalBillToSummary,
@@ -182,5 +183,28 @@ describe('resolveOcrRestaurantApply', () => {
         currentRestaurantName: 'Бар',
       }),
     ).toBeNull()
+  })
+})
+
+describe('isReceiptUploadedForEditor', () => {
+  it('counts a receipt on the bill or one just uploaded on this phone', () => {
+    expect(
+      isReceiptUploadedForEditor({
+        receiptCount: 0,
+        receiptUploadedForGuidance: false,
+      }),
+    ).toBe(false)
+    expect(
+      isReceiptUploadedForEditor({
+        receiptCount: 2,
+        receiptUploadedForGuidance: false,
+      }),
+    ).toBe(true)
+    expect(
+      isReceiptUploadedForEditor({
+        receiptCount: 0,
+        receiptUploadedForGuidance: true,
+      }),
+    ).toBe(true)
   })
 })

@@ -91,9 +91,9 @@ export function useBillEditorController({
 
   const relations = useMemo(() => mapBillRelations(data), [data])
   const queueStepFocusRef = useRef<(stepId: string) => void>(() => {})
-  const [receiptUploadedForGuidance, setReceiptUploadedForGuidance] = useState(
-    () => Boolean(bill.receiptStorageId),
-  )
+  // Bridges an upload until the receipt list shows it.
+  const [receiptUploadedForGuidance, setReceiptUploadedForGuidance] =
+    useState(false)
 
   const receiptScan = useReceiptScan({
     billId,
@@ -103,6 +103,7 @@ export function useBillEditorController({
       setReceiptUploadedForGuidance(true)
       queueStepFocusRef.current('scan-run-ocr')
     },
+    onLastReceiptRemoved: () => setReceiptUploadedForGuidance(false),
   })
 
   const [metadata, setMetadata] = useState(() =>
@@ -123,12 +124,6 @@ export function useBillEditorController({
     billId: Id<'bills'>
     patch: BillMetadataPatchInput
   } | null>(null)
-
-  useEffect(() => {
-    if (bill.receiptStorageId) {
-      setReceiptUploadedForGuidance(true)
-    }
-  }, [bill.receiptStorageId])
 
   useEffect(() => {
     if (shouldResetBillEditorMetadata(initializedBillId.current, bill._id)) {
@@ -231,7 +226,7 @@ export function useBillEditorController({
   const onboardingActive = guidanceHintsEnabledForBill(billId)
   const contentRoute = getContentRoute(billId)
   const receiptUploaded = isReceiptUploadedForEditor({
-    receiptStorageId: bill.receiptStorageId,
+    receiptCount: receiptScan.receipts.length,
     receiptUploadedForGuidance,
   })
   const restaurantFromOcr = isRestaurantFromOcr({
