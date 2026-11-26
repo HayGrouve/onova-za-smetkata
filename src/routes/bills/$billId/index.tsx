@@ -124,8 +124,6 @@ function BillEditorContent({
     billSessionVersion,
   } = editor
 
-  const receiptUrl = useQuery(api.files.getReceiptUrl, { billId })
-
   // Step 2 is the people section of the same receipt: bring it into view.
   useEffect(() => {
     if (step !== 2) return
@@ -237,7 +235,6 @@ function BillEditorContent({
         items={items}
         receiptScan={receiptScan}
         receiptUploaded={receiptUploaded}
-        receiptUrl={receiptUrl}
         itemsSubtotalCents={derived.itemsSubtotalCents}
         guidanceFocus={guidanceFocus}
       />
@@ -373,41 +370,12 @@ function BillEditorContent({
             </Button>
             <Button
               variant="outline"
-              onClick={() => receiptScan.handlePreScanChoice('replace')}
+              onClick={() => void receiptScan.handlePreScanChoice('replace')}
             >
               Замени
             </Button>
-            <Button onClick={() => receiptScan.handlePreScanChoice('add')}>
+            <Button onClick={() => void receiptScan.handlePreScanChoice('add')}>
               Добави
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={receiptScan.replaceConfirmOpen}
-        onOpenChange={receiptScan.setReplaceConfirmOpen}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Ще изтриеш сегашните редове</DialogTitle>
-            <DialogDescription>
-              Някои редове вече са разпределени между хората. Замяната ще изтрие
-              редовете и отметките по тях. Продължаваш ли?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => receiptScan.setReplaceConfirmOpen(false)}
-            >
-              Отказ
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={receiptScan.handleReplaceConfirm}
-            >
-              Замени
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -419,6 +387,10 @@ function BillEditorContent({
           onOpenChange={receiptScan.setReviewSheetOpen}
           billId={billId}
           importMode={receiptScan.importMode}
+          receiptPosition={receiptScan.reviewReceiptPosition}
+          updateRestaurantNameByDefault={
+            receiptScan.reviewUpdatesRestaurantByDefault
+          }
           scanId={receiptScan.activeScanId}
           scanReviewGuidance={onboardingActive ? guidanceFocus : undefined}
         />

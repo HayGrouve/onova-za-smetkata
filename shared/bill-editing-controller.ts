@@ -162,11 +162,12 @@ export function shouldShowContentRouteChoice(input: {
   )
 }
 
+/** A receipt photo is on the bill, or one was just uploaded on this phone. */
 export function isReceiptUploadedForEditor(input: {
-  receiptStorageId?: string
+  receiptCount: number
   receiptUploadedForGuidance: boolean
 }): boolean {
-  return Boolean(input.receiptStorageId) || input.receiptUploadedForGuidance
+  return input.receiptCount > 0 || input.receiptUploadedForGuidance
 }
 
 export function isRestaurantFromOcr(input: {

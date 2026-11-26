@@ -201,6 +201,12 @@ Canonical production path: **merge (or push) to `main` → GitHub Actions `prefl
    npx convex run backfill:guestSessionPresence
    ```
 
+   After deploying `billReceipts` (several receipt photos per bill) — run once per environment; idempotent. Until then the legacy `bills.receiptStorageId` photo is still scanned, protected from the orphan sweep and deleted with its bill, but not listed by `billReceipts.listReceipts`:
+
+   ```bash
+   npx convex run backfill:moveLegacyReceipts
+   ```
+
 4. **Emergency / local-only Convex deploy**
 
    Prefer the Actions path. Use a manual deploy only when CI cannot (dashboard outage workaround, break-glass):

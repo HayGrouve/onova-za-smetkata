@@ -35,13 +35,21 @@ import type { GuidanceFocusHandle } from '#/lib/guidance-focus/use-guidance-focu
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { focusContentInsteadOfField } from '#/lib/dialog-focus.ts'
+import type { ScanImportMode } from '#/hooks/use-receipt-scan.ts'
 
 export interface ReceiptScanReviewSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   billId: Id<'bills'>
-  importMode: 'add' | 'replace'
+  importMode: ScanImportMode
   scanId: Id<'receiptScans'>
+  /** The scanned receipt's place on the bill; shown when there are several. */
+  receiptPosition?: { number: number; count: number } | null
+  /**
+   * Whether „Обнови името на ресторанта“ starts ticked. Off once another
+   * receipt is imported: several shops should not overwrite the name.
+   */
+  updateRestaurantNameByDefault?: boolean
   onImportSuccess?: () => void
   scanReviewGuidance?: GuidanceFocusHandle
 }
@@ -60,6 +68,8 @@ export function ReceiptScanReviewSheet({
   billId,
   importMode,
   scanId,
+  receiptPosition,
+  updateRestaurantNameByDefault = true,
   onImportSuccess,
   scanReviewGuidance,
 }: ReceiptScanReviewSheetProps) {
@@ -91,8 +101,11 @@ export function ReceiptScanReviewSheet({
       })),
     )
     setRestaurantName(scanReady.extractedRestaurantName ?? '')
-    setUpdateRestaurantName(Boolean(scanReady.extractedRestaurantName))
-  }, [scanReady])
+    setUpdateRestaurantName(
+      updateRestaurantNameByDefault &&
+        Boolean(scanReady.extractedRestaurantName),
+    )
+  }, [scanReady, updateRestaurantNameByDefault])
 
   useEffect(() => {
     if (!open) initializedScanIdRef.current = null
@@ -191,7 +204,11 @@ export function ReceiptScanReviewSheet({
         })),
       })
       await dismissScan({ scanId })
-      toast.success(`${importSelection.data.length} артикула добавени`)
+      toast.success(
+        importMode === 'add'
+          ? `${importSelection.data.length} артикула добавени`
+          : `Редовете са заменени с ${importSelection.data.length} артикула`,
+      )
       onImportSuccess?.()
       onOpenChange(false)
     } catch (error) {
@@ -234,6 +251,11 @@ export function ReceiptScanReviewSheet({
           <SheetTitle className="px-8 text-center">
             Преглед на разпознатите артикули
           </SheetTitle>
+          {receiptPosition && receiptPosition.count > 1 ? (
+            <p className="text-center text-sm text-muted-foreground">
+              Бележка {receiptPosition.number} от {receiptPosition.count}
+            </p>
+          ) : null}
         </SheetHeader>
 
         <div

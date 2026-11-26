@@ -2,7 +2,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from './_generated/api'
 import type { Id } from './_generated/dataModel'
-import { HOST_IDENTITY, seedBill, setupConvex } from './test.setup'
+import {
+  HOST_IDENTITY,
+  hostTakesUnits,
+  seedBill,
+  setupConvex,
+  unitMembers,
+} from './test.setup'
+import { BILL_RECEIPT_MESSAGES } from '../shared/bill-receipts'
 import {
   RECEIPT_IMAGE_MAX_BYTES,
   RECEIPT_IMAGE_MESSAGES,
@@ -32,26 +39,76 @@ async function insertDoneScan(
   t: TestConvex,
   billId: Id<'bills'>,
   storageId: Id<'_storage'>,
+  options: {
+    receiptId?: Id<'billReceipts'>
+    names?: string[]
+    receiptTotalCents?: number
+  } = {},
 ) {
+  const { receiptId, names = ['Шопска', 'Бира'], receiptTotalCents } = options
   return await t.run((ctx) =>
     ctx.db.insert('receiptScans', {
       billId,
+      ...(receiptId ? { receiptId } : {}),
       storageId,
       status: 'done',
-      extractedItems: [
-        {
-          name: 'Шопска',
-          unitPriceCents: 900,
-          quantity: 1,
-          confidence: 'high',
-        },
-        { name: 'Бира', unitPriceCents: 400, quantity: 2, confidence: 'high' },
-      ],
-      itemsTotalCents: 1700,
+      extractedItems: names.map((name) => ({
+        name,
+        unitPriceCents: 400,
+        quantity: 2,
+        confidence: 'high' as const,
+      })),
+      ...(receiptTotalCents !== undefined ? { receiptTotalCents } : {}),
+      itemsTotalCents: names.length * 800,
       totalsMismatch: false,
       createdAt: Date.now(),
     }),
   )
+}
+
+/** Attach a fresh photo to the bill as one more receipt. */
+async function addReceipt(
+  t: TestConvex,
+  bill: { host: ReturnType<TestConvex['withIdentity']>; billId: Id<'bills'> },
+) {
+  const storageId = await storeReceipt(t)
+  const receiptId = await bill.host.mutation(api.billReceipts.addReceipt, {
+    billId: bill.billId,
+    storageId,
+  })
+  return { receiptId, storageId }
+}
+
+/** Scan a receipt and import every line it read, as the review sheet does. */
+async function importReceipt(
+  t: TestConvex,
+  bill: { host: ReturnType<TestConvex['withIdentity']>; billId: Id<'bills'> },
+  receipt: { receiptId: Id<'billReceipts'>; storageId: Id<'_storage'> },
+  mode: 'add' | 'replace' | 'replaceReceipt',
+  names: string[],
+  receiptTotalCents?: number,
+) {
+  const scanId = await insertDoneScan(t, bill.billId, receipt.storageId, {
+    receiptId: receipt.receiptId,
+    names,
+    receiptTotalCents,
+  })
+  await bill.host.mutation(api.receiptScan.importScannedItems, {
+    scanId,
+    mode,
+    selectedIndexes: names.map((_, index) => index),
+    updateRestaurantName: false,
+  })
+}
+
+async function linesOf(bill: {
+  host: ReturnType<TestConvex['withIdentity']>
+  billId: Id<'bills'>
+}) {
+  const { items } = await bill.host.query(api.bills.get, {
+    billId: bill.billId,
+  })
+  return [...items].sort((a, b) => a.sortOrder - b.sortOrder)
 }
 
 describe('receipt scans', () => {
@@ -135,6 +192,220 @@ describe('receipt scans', () => {
       billId: bill.billId,
     })
     expect(items).toHaveLength(1)
+  })
+})
+
+describe('scanning one of several receipt photos', () => {
+  it('reads the receipt the Host picked', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    await addReceipt(t, bill)
+    const second = await addReceipt(t, bill)
+
+    await bill.host.mutation(api.receiptScan.startScan, {
+      billId: bill.billId,
+      receiptId: second.receiptId,
+    })
+
+    expect(
+      await bill.host.query(api.receiptScan.getLatestScan, {
+        billId: bill.billId,
+      }),
+    ).toMatchObject({
+      receiptId: second.receiptId,
+      storageId: second.storageId,
+      status: 'pending',
+    })
+  })
+
+  it("never reads another bill's receipt", async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    await addReceipt(t, bill)
+    const other = await seedBill(t)
+    const othersReceipt = await addReceipt(t, other)
+
+    await expect(
+      bill.host.mutation(api.receiptScan.startScan, {
+        billId: bill.billId,
+        receiptId: othersReceipt.receiptId,
+      }),
+    ).rejects.toThrow(BILL_RECEIPT_MESSAGES.notFound)
+  })
+
+  it('without a pick, reads the newest receipt not imported yet, else the newest', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const first = await addReceipt(t, bill)
+    const second = await addReceipt(t, bill)
+    const third = await addReceipt(t, bill)
+    const markImported = (receiptId: Id<'billReceipts'>) =>
+      t.run((ctx) => ctx.db.patch(receiptId, { importedAt: Date.now() }))
+    const scanWithoutPick = async () => {
+      await bill.host.mutation(api.receiptScan.startScan, {
+        billId: bill.billId,
+      })
+      const scan = await bill.host.query(api.receiptScan.getLatestScan, {
+        billId: bill.billId,
+      })
+      await bill.host.mutation(api.receiptScan.dismissScan, {
+        scanId: scan!._id,
+      })
+      return scan?.receiptId
+    }
+
+    // An old client scans the photo it just attached: the newest unread.
+    expect(await scanWithoutPick()).toBe(third.receiptId)
+
+    await markImported(third.receiptId)
+    expect(await scanWithoutPick()).toBe(second.receiptId)
+
+    await markImported(first.receiptId)
+    await markImported(second.receiptId)
+    expect(await scanWithoutPick()).toBe(third.receiptId)
+  })
+
+  it('drops the bill’s earlier scans, so a review closed unimported never comes back', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const first = await addReceipt(t, bill)
+    const second = await addReceipt(t, bill)
+
+    const leftBehind = await bill.host.mutation(api.receiptScan.startScan, {
+      billId: bill.billId,
+      receiptId: first.receiptId,
+    })
+    await t.run((ctx) => ctx.db.patch(leftBehind, { status: 'done' }))
+
+    await bill.host.mutation(api.receiptScan.startScan, {
+      billId: bill.billId,
+      receiptId: second.receiptId,
+    })
+
+    expect(await t.run((ctx) => ctx.db.get(leftBehind))).toBeNull()
+  })
+
+  it('reads the legacy bill photo of a bill with no receipts', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const legacy = await storeReceipt(t)
+    await t.run((ctx) =>
+      ctx.db.patch(bill.billId, { receiptStorageId: legacy }),
+    )
+
+    await bill.host.mutation(api.receiptScan.startScan, {
+      billId: bill.billId,
+    })
+
+    const scan = await bill.host.query(api.receiptScan.getLatestScan, {
+      billId: bill.billId,
+    })
+    expect(scan?.storageId).toBe(legacy)
+    expect(scan).not.toHaveProperty('receiptId')
+  })
+
+  it('refuses to scan a bill with no photo at all', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+
+    await expect(
+      bill.host.mutation(api.receiptScan.startScan, { billId: bill.billId }),
+    ).rejects.toThrow()
+  })
+})
+
+describe("importing one receipt's lines", () => {
+  it('adds the lines after the others and remembers the receipt and its total', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const receipt = await addReceipt(t, bill)
+
+    await importReceipt(t, bill, receipt, 'add', ['Хляб', 'Мляко'], 1600)
+
+    const lines = await linesOf(bill)
+    expect(lines.map((line) => [line.name, line.receiptId])).toEqual([
+      ['Бира', undefined],
+      ['Хляб', receipt.receiptId],
+      ['Мляко', receipt.receiptId],
+    ])
+    expect(await t.run((ctx) => ctx.db.get(receipt.receiptId))).toMatchObject({
+      importedAt: Date.now(),
+      receiptTotalCents: 1600,
+    })
+  })
+
+  it("scanning a receipt again swaps only that receipt's lines and their Units", async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const shopA = await addReceipt(t, bill)
+    const shopB = await addReceipt(t, bill)
+    await importReceipt(t, bill, shopA, 'add', ['Хляб', 'Мляко'], 1600)
+    await importReceipt(t, bill, shopB, 'add', ['Вино'], 800)
+    const before = await linesOf(bill)
+    const fromA = before.find((line) => line.name === 'Хляб')!
+    const fromB = before.find((line) => line.name === 'Вино')!
+    await hostTakesUnits(bill, fromA._id, [bill.seats['Ани']])
+    await hostTakesUnits(bill, fromB._id, [bill.seats['Ани']])
+
+    await importReceipt(t, bill, shopA, 'replaceReceipt', ['Сирене'], 800)
+
+    const after = await linesOf(bill)
+    expect(after.map((line) => [line.name, line.receiptId])).toEqual([
+      ['Бира', undefined],
+      ['Вино', shopB.receiptId],
+      ['Сирене', shopA.receiptId],
+    ])
+    expect(after.at(-1)!.sortOrder).toBeGreaterThan(fromB.sortOrder)
+    expect((await unitMembers(t, fromB._id)).get(0)).toEqual([
+      bill.seats['Ани'],
+    ])
+    expect(
+      await t.run((ctx) =>
+        ctx.db
+          .query('itemAssignments')
+          .withIndex('by_itemId', (q) => q.eq('itemId', fromA._id))
+          .collect(),
+      ),
+    ).toEqual([])
+    expect(await t.run((ctx) => ctx.db.get(shopA.receiptId))).toMatchObject({
+      receiptTotalCents: 800,
+    })
+  })
+
+  it('replacing every line forgets that the other receipts were imported', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const shopA = await addReceipt(t, bill)
+    const shopB = await addReceipt(t, bill)
+    await importReceipt(t, bill, shopA, 'add', ['Хляб'], 800)
+    await importReceipt(t, bill, shopB, 'add', ['Вино'], 800)
+
+    await importReceipt(t, bill, shopA, 'replace', ['Сирене'], 800)
+
+    expect((await linesOf(bill)).map((line) => line.name)).toEqual(['Сирене'])
+    const receiptB = await t.run((ctx) => ctx.db.get(shopB.receiptId))
+    expect(receiptB).not.toHaveProperty('importedAt')
+    expect(receiptB).not.toHaveProperty('receiptTotalCents')
+    expect(
+      (await t.run((ctx) => ctx.db.get(shopA.receiptId)))?.importedAt,
+    ).toBeDefined()
+  })
+
+  it("cannot swap a receipt's lines from a scan of the legacy photo", async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const scanId = await insertDoneScan(t, bill.billId, await storeReceipt(t))
+
+    await expect(
+      bill.host.mutation(api.receiptScan.importScannedItems, {
+        scanId,
+        mode: 'replaceReceipt',
+        selectedIndexes: [0],
+        updateRestaurantName: false,
+      }),
+    ).rejects.toThrow(BILL_RECEIPT_MESSAGES.noReceiptToReplace)
+    expect(await linesOf(bill)).toHaveLength(1)
   })
 })
 

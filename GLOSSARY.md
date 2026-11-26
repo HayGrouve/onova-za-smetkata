@@ -90,6 +90,10 @@ _Avoid_: the old pull-up claim drawer
 One Guest phone's request to pay its own Share plus its Covered seats and any other Guests it picked. A **Reservation** holds the other Guests' seats before anything is sent (it lapses when the phone leaves); once Revolut opens or the IBAN is copied it is **Sent** („Чака“) and priced from the bill as it stands, until the Host confirms it (payments recorded) or rejects it. A phone has at most one pending Pay request; a Guest whose Share someone else's request covers cannot pay it again. Module: `convex/lib/payRequest.ts`.
 _Avoid_: combined payment (also covers paying alone), transfer (the money itself), billing (Host Pro)
 
+**Receipt photo**:
+A photo of a paper receipt attached to a bill (product UI „бележка“). One bill holds up to 10, e.g. three shops for one party. Each is scanned on its own and its lines are added to the same bill; a line remembers the receipt it came from, so scanning that receipt again swaps only its lines. Removing a photo keeps its lines. Table: `billReceipts`.
+_Avoid_: Live receipt (the shared bill view, not a photo); one receipt per bill
+
 **Live receipt**:
 The bill as one shared paper that Host and Guests see with different permissions: one line per Claim group, one slot per Unit (dashed when free, seat avatars when taken), totals at the foot. Guests tap a line to take a Unit; the Host paints. Other phones' claims appear live, and a ticker derived on the client (`src/lib/bill-activity.ts`) says who took what. Every phone — the Host's claim and settle screens, a Guest's claim page and Pay step — reads the same model of lines, totals, seats and Slips; only the seat money differs, because a Guest phone gets it from the server as it may see it. Module: `shared/live-receipt.ts`. Design: `docs/design/live-receipt.md`.
 _Avoid_: claim list, editor steps (as product language); computing Shares, free Units or a Slip's status in a view; „Остават“ meaning “items I have not claimed”

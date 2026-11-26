@@ -33,6 +33,7 @@ async function countEverything(t: TestConvex) {
     const tables = [
       'users',
       'bills',
+      'billReceipts',
       'participants',
       'items',
       'itemAssignments',
@@ -93,13 +94,20 @@ async function seedFullHost(
     const photo = () =>
       ctx.storage.store(new Blob(['receipt'], { type: 'image/jpeg' }))
     const receipt = await photo()
-    await ctx.db.patch(bill.billId, { receiptStorageId: receipt })
+    const receiptId = await ctx.db.insert('billReceipts', {
+      billId: bill.billId,
+      storageId: receipt,
+      createdAt: Date.now(),
+    })
     await ctx.db.insert('receiptScans', {
       billId: bill.billId,
+      receiptId,
       storageId: receipt,
       status: 'done',
       createdAt: Date.now(),
     })
+    // A photo from before several receipts per bill.
+    await ctx.db.patch(bill.billId, { receiptStorageId: await photo() })
     await ctx.db.insert('quickScans', {
       ownerId: userId,
       storageId: await photo(),

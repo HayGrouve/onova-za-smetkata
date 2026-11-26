@@ -126,6 +126,35 @@ export function getScanDismissCopy(): ConfirmOptions {
   })
 }
 
+/** Replacing every line on the bill with a scan, when some are assigned. */
+export function getScanReplaceAllCopy(): ConfirmOptions {
+  return withDefaults({
+    title: 'Ще изтриеш сегашните редове',
+    description:
+      'Някои редове вече са разпределени между хората. Замяната ще изтрие редовете и отметките по тях. Продължаваш ли?',
+    confirmLabel: 'Замени',
+  })
+}
+
+/** Scanning a receipt again, when some of its lines are assigned. */
+export function getReceiptRescanCopy(): ConfirmOptions {
+  return withDefaults({
+    title: 'Ще замениш редовете от тази бележка',
+    description:
+      'Някои от тях вече са разпределени между хората. Новите редове ще ги заменят и отметките по тях ще се изтрият. Продължаваш ли?',
+    confirmLabel: 'Разпознай отново',
+  })
+}
+
+export function getReceiptRemoveCopy(): ConfirmOptions {
+  return withDefaults({
+    title: 'Премахване на снимката?',
+    description:
+      'Снимката на бележката ще бъде изтрита. Редовете от нея остават в сметката.',
+    confirmLabel: 'Премахни снимката',
+  })
+}
+
 /** Изтрий данните: the Данни sheet in the kebab's host settings. */
 export const DELETE_MY_DATA_COPY = {
   menuLabel: 'Данни',

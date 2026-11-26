@@ -169,10 +169,16 @@ describe('the orphan upload sweep', () => {
     const ownerId = (await t.run((ctx) => ctx.db.get(bill.billId)))!.ownerId
     const orphan = await store(t)
     const onBill = await store(t)
+    const onReceipt = await store(t)
     const onQuickScan = await store(t)
     const onReceiptScan = await store(t)
     await t.run(async (ctx) => {
       await ctx.db.patch(bill.billId, { receiptStorageId: onBill })
+      await ctx.db.insert('billReceipts', {
+        billId: bill.billId,
+        storageId: onReceipt,
+        createdAt: Date.now(),
+      })
       await ctx.db.insert('quickScans', {
         ownerId,
         storageId: onQuickScan,
@@ -197,7 +203,13 @@ describe('the orphan upload sweep', () => {
     )
     expect(left).not.toContain(orphan)
     expect(left).toEqual(
-      expect.arrayContaining([onBill, onQuickScan, onReceiptScan, fresh]),
+      expect.arrayContaining([
+        onBill,
+        onReceipt,
+        onQuickScan,
+        onReceiptScan,
+        fresh,
+      ]),
     )
   })
 

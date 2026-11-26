@@ -11,6 +11,7 @@
 import type * as accountDeletion from "../accountDeletion.js";
 import type * as assignments from "../assignments.js";
 import type * as backfill from "../backfill.js";
+import type * as billReceipts from "../billReceipts.js";
 import type * as billing from "../billing.js";
 import type * as billingStripe from "../billingStripe.js";
 import type * as bills from "../bills.js";
@@ -28,6 +29,7 @@ import type * as lib_assertBillDraft from "../lib/assertBillDraft.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_billListSearch from "../lib/billListSearch.js";
 import type * as lib_billListSummary from "../lib/billListSummary.js";
+import type * as lib_billReceipts from "../lib/billReceipts.js";
 import type * as lib_bill_ownership from "../lib/bill_ownership.js";
 import type * as lib_billingEnv from "../lib/billingEnv.js";
 import type * as lib_clerkWebhook from "../lib/clerkWebhook.js";
@@ -71,6 +73,7 @@ declare const fullApi: ApiFromModules<{
   accountDeletion: typeof accountDeletion;
   assignments: typeof assignments;
   backfill: typeof backfill;
+  billReceipts: typeof billReceipts;
   billing: typeof billing;
   billingStripe: typeof billingStripe;
   bills: typeof bills;
@@ -88,6 +91,7 @@ declare const fullApi: ApiFromModules<{
   "lib/auth": typeof lib_auth;
   "lib/billListSearch": typeof lib_billListSearch;
   "lib/billListSummary": typeof lib_billListSummary;
+  "lib/billReceipts": typeof lib_billReceipts;
   "lib/bill_ownership": typeof lib_bill_ownership;
   "lib/billingEnv": typeof lib_billingEnv;
   "lib/clerkWebhook": typeof lib_clerkWebhook;
