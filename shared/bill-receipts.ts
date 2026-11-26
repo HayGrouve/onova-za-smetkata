@@ -58,8 +58,7 @@ export function chooseReceiptScanStart(input: {
     // own is unknown, so the Host chooses as with a single receipt.
     if (
       own.length === 0 &&
-      lines.length > 0 &&
-      lines.every((line) => line.receiptId === undefined)
+      lines.some((line) => line.receiptId === undefined)
     ) {
       return { mode: 'ask' }
     }
@@ -76,11 +75,16 @@ export function chooseReceiptScanStart(input: {
 /**
  * The total printed on the imported receipts, to check the lines against.
  * Null until a receipt is imported, when one of them has no printed total, or
- * when the totals come to nothing.
+ * when the totals come to nothing. Also null when the bill mixes lines from a
+ * receipt with lines from none: those may be typed in, or left by a receipt
+ * photo since removed, so no total can be told apart from a mistake.
  */
 export function receiptsCheckTotal(
   receipts: readonly ReceiptState[],
+  lines: ReadonlyArray<{ receiptId?: string }>,
 ): { totalCents: number; receiptCount: number } | null {
+  const linked = lines.filter((line) => line.receiptId !== undefined).length
+  if (linked > 0 && linked < lines.length) return null
   const done = receipts.filter(isImported)
   if (done.length === 0) return null
   let totalCents = 0

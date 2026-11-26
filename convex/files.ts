@@ -8,7 +8,8 @@ export const generateUploadUrl = mutation({
   handler: async (ctx, args) => {
     const ownerId = await requireAuth(ctx)
     await requireBillOwner(ctx, args.billId)
-    await assertRateLimit(ctx, `upload:${ownerId}`, 30, 60 * 60 * 1000)
+    // A few bills' worth of receipts (up to 10 photos each) an hour.
+    await assertRateLimit(ctx, `upload:${ownerId}`, 60, 60 * 60 * 1000)
     return await ctx.storage.generateUploadUrl()
   },
 })

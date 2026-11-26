@@ -233,7 +233,7 @@ describe('scanning one of several receipt photos', () => {
     ).rejects.toThrow(BILL_RECEIPT_MESSAGES.notFound)
   })
 
-  it('without a pick, reads the oldest receipt not imported yet, else the newest', async () => {
+  it('without a pick, reads the newest receipt not imported yet, else the newest', async () => {
     const t = setupConvex()
     const bill = await seedBill(t)
     const first = await addReceipt(t, bill)
@@ -254,12 +254,35 @@ describe('scanning one of several receipt photos', () => {
       return scan?.receiptId
     }
 
-    await markImported(first.receiptId)
+    // An old client scans the photo it just attached: the newest unread.
+    expect(await scanWithoutPick()).toBe(third.receiptId)
+
+    await markImported(third.receiptId)
     expect(await scanWithoutPick()).toBe(second.receiptId)
 
+    await markImported(first.receiptId)
     await markImported(second.receiptId)
-    await markImported(third.receiptId)
     expect(await scanWithoutPick()).toBe(third.receiptId)
+  })
+
+  it('drops the bill’s earlier scans, so a review closed unimported never comes back', async () => {
+    const t = setupConvex()
+    const bill = await seedBill(t)
+    const first = await addReceipt(t, bill)
+    const second = await addReceipt(t, bill)
+
+    const leftBehind = await bill.host.mutation(api.receiptScan.startScan, {
+      billId: bill.billId,
+      receiptId: first.receiptId,
+    })
+    await t.run((ctx) => ctx.db.patch(leftBehind, { status: 'done' }))
+
+    await bill.host.mutation(api.receiptScan.startScan, {
+      billId: bill.billId,
+      receiptId: second.receiptId,
+    })
+
+    expect(await t.run((ctx) => ctx.db.get(leftBehind))).toBeNull()
   })
 
   it('reads the legacy bill photo of a bill with no receipts', async () => {

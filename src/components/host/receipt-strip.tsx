@@ -6,6 +6,7 @@ import {
   ScanLineIcon,
   Trash2Icon,
 } from 'lucide-react'
+import { useRef } from 'react'
 import { ReceiptTapToFullscreen } from '#/components/bills/receipt-tap-to-fullscreen.tsx'
 import { Button } from '#/components/ui/button.tsx'
 import {
@@ -38,15 +39,27 @@ export function ReceiptStrip({
   busy: boolean
   canAdd: boolean
   onScan: (receiptId: Id<'billReceipts'>) => void
-  /** Confirms first; true once the photo is gone. */
-  onRemove: (receiptId: Id<'billReceipts'>) => Promise<boolean>
+  /** Confirms first, then calls `onConfirmed`; true once the photo is gone. */
+  onRemove: (
+    receiptId: Id<'billReceipts'>,
+    onConfirmed: () => void,
+  ) => Promise<boolean>
   onTakePhoto: () => void
   onPickFromGallery: () => void
 }) {
   const count = receipts.length
+  const listRef = useRef<HTMLUListElement>(null)
+
+  /** The removed tile took focus with it: hand it to the strip's first tile. */
+  function refocusStrip() {
+    requestAnimationFrame(() => {
+      listRef.current?.querySelector<HTMLElement>('button')?.focus()
+    })
+  }
 
   return (
     <ul
+      ref={listRef}
       aria-label="Снимки на бележки"
       className="flex gap-2 overflow-x-auto overscroll-x-contain pb-1"
     >
@@ -102,8 +115,8 @@ export function ReceiptStrip({
                         variant="outline"
                         disabled={busy}
                         onClick={() => {
-                          void onRemove(receipt._id).then((removed) => {
-                            if (removed) close()
+                          void onRemove(receipt._id, close).then((removed) => {
+                            if (removed) refocusStrip()
                           })
                         }}
                       >

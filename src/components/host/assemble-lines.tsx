@@ -45,7 +45,7 @@ export function AssembleLines({
   const hasItems = sorted.length > 0
   const receipts = receiptScan.receipts
   const nextScan = receiptScan.nextScan
-  const checkTotal = receiptsCheckTotal(receipts)
+  const checkTotal = receiptsCheckTotal(receipts, items)
   const unreadCount = receipts.filter((r) => r.importedAt === undefined).length
   const showScanButton =
     receiptScan.isScanning || nextScan !== null || receipts.length === 0

@@ -59,7 +59,7 @@ export async function billHoldsPhoto(
 
 /**
  * The photo a scan reads when the phone names no receipt (clients from before
- * several receipts): the oldest one not imported yet, else the newest, else
+ * several receipts): the newest one not imported yet, else the newest at all, else
  * the legacy bill photo. Null when the bill has no photo at all.
  */
 export async function defaultScanPhoto(
@@ -70,9 +70,11 @@ export async function defaultScanPhoto(
   storageId: Id<'_storage'>
 } | null> {
   const receipts = await receiptsOfBill(ctx, bill._id)
+  // An old client scans right after attaching its photo: the newest one.
   const picked =
-    receipts.find((receipt) => receipt.importedAt === undefined) ??
-    receipts.at(-1)
+    [...receipts]
+      .reverse()
+      .find((receipt) => receipt.importedAt === undefined) ?? receipts.at(-1)
   if (picked) return { receiptId: picked._id, storageId: picked.storageId }
   if (bill.receiptStorageId) return { storageId: bill.receiptStorageId }
   return null

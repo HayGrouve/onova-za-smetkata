@@ -204,7 +204,11 @@ export function ReceiptScanReviewSheet({
         })),
       })
       await dismissScan({ scanId })
-      toast.success(`${importSelection.data.length} артикула добавени`)
+      toast.success(
+        importMode === 'add'
+          ? `${importSelection.data.length} артикула добавени`
+          : `Редовете са заменени с ${importSelection.data.length} артикула`,
+      )
       onImportSuccess?.()
       onOpenChange(false)
     } catch (error) {

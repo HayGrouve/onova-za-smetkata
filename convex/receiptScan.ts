@@ -16,7 +16,10 @@ import { touchBill } from './lib/touchBill'
 import { nextSortOrder } from '../shared/sort-order'
 import { assertHostMayStartOcr, recordOcrStart } from './lib/ocrStart'
 import { defaultScanPhoto, receiptsOfBill } from './lib/billReceipts'
-import { BILL_RECEIPT_MESSAGES } from '../shared/bill-receipts'
+import {
+  BILL_RECEIPT_MESSAGES,
+  MAX_RECEIPTS_PER_BILL,
+} from '../shared/bill-receipts'
 import type { Doc, Id } from './_generated/dataModel'
 import type { QueryCtx } from './_generated/server'
 
@@ -74,11 +77,26 @@ export const startScan = mutation({
 
     const now = Date.now()
     await assertHostMayStartOcr(ctx, owner, now)
-    await assertRateLimit(ctx, `ocr:${args.billId}`, 10, 3_600_000)
+    // Room to read every receipt of a full bill and retry each once.
+    await assertRateLimit(
+      ctx,
+      `ocr:${args.billId}`,
+      2 * MAX_RECEIPTS_PER_BILL,
+      3_600_000,
+    )
     const photo = await scanPhotoFor(ctx, bill, args.receiptId)
     if (!photo) {
       throw new Error('Няма прикачена снимка на бележка за тази сметка')
     }
+
+    // Only the newest scan of a bill is ever shown. An older one left behind
+    // (a review closed without import) would come back once this one is
+    // imported and reopen the review, possibly replacing lines.
+    const earlier = await ctx.db
+      .query('receiptScans')
+      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
+      .collect()
+    for (const scan of earlier) await ctx.db.delete(scan._id)
 
     const scanId = await ctx.db.insert('receiptScans', {
       billId: args.billId,

@@ -87,6 +87,8 @@ export function useReceiptScan({
   )
   const handledScanIdRef = useRef<Id<'receiptScans'> | null>(null)
   const erroredScanIdRef = useRef<Id<'receiptScans'> | null>(null)
+  /** Set while the add/replace choice is being acted on (double taps). */
+  const choosingRef = useRef(false)
   /** The receipt and mode this phone asked to read, until its scan lands. */
   const requestRef = useRef<{
     receiptId: Id<'billReceipts'>
@@ -115,6 +117,15 @@ export function useReceiptScan({
       if (listedReceipts === undefined) return
       handledScanIdRef.current = latestScan._id
       const request = requestRef.current
+      const receipt = listedReceipts.find((r) => r._id === latestScan.receiptId)
+      if (
+        !request &&
+        receipt?.importedAt !== undefined &&
+        receipt.importedAt > latestScan.createdAt
+      ) {
+        // Read before the receipt's last import: nothing new to review.
+        return
+      }
       setImportMode(
         request && request.receiptId === latestScan.receiptId
           ? request.mode
@@ -139,12 +150,16 @@ export function useReceiptScan({
   const isOcrBusy = isUploading || isScanning
 
   function beginScan(receiptId: Id<'billReceipts'>, mode: ScanImportMode) {
-    requestRef.current = { receiptId, mode }
+    // A second tap before the first scan lands must not start (and, once
+    // refused, clear) the request that carries the Host's chosen mode.
+    if (requestRef.current) return
+    const request = { receiptId, mode }
+    requestRef.current = request
     setImportMode(mode)
     setRequestedReceiptId(receiptId)
     setScanRequested(true)
     void startScan({ billId, receiptId }).catch((error: unknown) => {
-      clearRequest()
+      if (requestRef.current === request) clearRequest()
       if (!handleMutationError(error)) {
         toast.error(
           getConvexErrorData(error) ?? 'Неуспешно стартиране на разпознаването',
@@ -184,18 +199,30 @@ export function useReceiptScan({
   async function handlePreScanChoice(mode: 'add' | 'replace') {
     setPreScanDialogOpen(false)
     const receiptId = preScanReceiptId
-    if (!receiptId) return
-    if (mode === 'replace' && assignments.length > 0) {
-      if (!(await confirm(getScanReplaceAllCopy()))) return
+    if (!receiptId || choosingRef.current) return
+    choosingRef.current = true
+    setPreScanReceiptId(null)
+    try {
+      if (mode === 'replace' && assignments.length > 0) {
+        if (!(await confirm(getScanReplaceAllCopy()))) return
+      }
+      beginScan(receiptId, mode)
+    } finally {
+      choosingRef.current = false
     }
-    beginScan(receiptId, mode)
   }
 
-  /** Confirm, then take the photo off the bill. True once it is gone. */
+  /**
+   * Confirm, then take the photo off the bill. `onConfirmed` runs before the
+   * removal (e.g. to close the viewer while its tile still exists). True once
+   * the photo is gone.
+   */
   async function removeReceiptPhoto(
     receiptId: Id<'billReceipts'>,
+    onConfirmed?: () => void,
   ): Promise<boolean> {
     if (!(await confirm(getReceiptRemoveCopy()))) return false
+    onConfirmed?.()
     const wasLast = receipts.length === 1 && receipts[0]._id === receiptId
     try {
       await removeReceipt({ receiptId })

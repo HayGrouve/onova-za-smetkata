@@ -61,6 +61,7 @@ Run these locally before merge when you touch guest/host browser flows. In CI, t
 | `sign-in-bounce.spec.ts`              | Signed-out Започни, deep links, old `/login` links bounce to Clerk sign-in         |
 | `not-found.spec.ts`                   | 404 page; `/privacy`, `/terms`, `/user-profile/*` answer 308                       |
 | `host-onboarding.spec.ts`             | Host replay hints; welcome dismiss                                                 |
+| `bill-receipts.spec.ts`               | Several receipt photos on one bill: multi-pick, remove (lines stay), 10-photo cap  |
 | `delete-my-data.spec.ts`              | Изтрий данните: Данни from the kebab, typed ИЗТРИЙ, bills gone, still signed in    |
 
 ## Common failures

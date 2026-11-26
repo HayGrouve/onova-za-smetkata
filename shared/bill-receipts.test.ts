@@ -111,6 +111,18 @@ describe('chooseReceiptScanStart', () => {
     ).toEqual({ mode: 'ask' })
   })
 
+  it('asks for a moved-over receipt even once another receipt’s lines are tracked', () => {
+    // Replacing would find none of its lines and add them a second time.
+    expect(
+      chooseReceiptScanStart({
+        receipt: imported('a'),
+        receipts: [imported('a'), imported('b')],
+        lines: [{ _id: 'old' }, { _id: 'l2', receiptId: 'b' }],
+        assignments: [],
+      }),
+    ).toEqual({ mode: 'ask' })
+  })
+
   it('replaces the receipt’s lines when the Host removed all of them by hand', () => {
     expect(
       chooseReceiptScanStart({
@@ -124,26 +136,50 @@ describe('chooseReceiptScanStart', () => {
 })
 
 describe('receiptsCheckTotal', () => {
+  it('is nothing when lines from a receipt sit beside lines from none', () => {
+    // E.g. a removed receipt photo left its lines: they no longer have a total.
+    expect(
+      receiptsCheckTotal(
+        [imported('b', 800)],
+        [{ receiptId: 'b' }, { receiptId: undefined }],
+      ),
+    ).toBeNull()
+  })
+
+  it('checks lines that all came from receipts', () => {
+    expect(
+      receiptsCheckTotal([imported('b', 800)], [{ receiptId: 'b' }]),
+    ).toEqual({ totalCents: 800, receiptCount: 1 })
+  })
+
+  it('checks a bill whose lines remember no receipt (from before)', () => {
+    expect(receiptsCheckTotal([imported('a', 800)], [{}, {}])).toEqual({
+      totalCents: 800,
+      receiptCount: 1,
+    })
+  })
+
   it('is nothing before any receipt is imported', () => {
-    expect(receiptsCheckTotal([unread('a')])).toBeNull()
+    expect(receiptsCheckTotal([unread('a')], [])).toBeNull()
   })
 
   it('sums the printed totals of the imported receipts', () => {
     expect(
-      receiptsCheckTotal([
-        imported('a', 1250),
-        unread('b'),
-        imported('c', 800),
-      ]),
+      receiptsCheckTotal(
+        [imported('a', 1250), unread('b'), imported('c', 800)],
+        [],
+      ),
     ).toEqual({ totalCents: 2050, receiptCount: 2 })
   })
 
   it('is nothing when an imported receipt has no printed total', () => {
-    expect(receiptsCheckTotal([imported('a', 1250), imported('b')])).toBeNull()
+    expect(
+      receiptsCheckTotal([imported('a', 1250), imported('b')], []),
+    ).toBeNull()
   })
 
   it('is nothing when the totals add up to zero', () => {
-    expect(receiptsCheckTotal([imported('a', 0)])).toBeNull()
+    expect(receiptsCheckTotal([imported('a', 0)], [])).toBeNull()
   })
 })
 
