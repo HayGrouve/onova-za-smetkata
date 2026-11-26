@@ -1,16 +1,14 @@
 import type { Doc } from '../_generated/dataModel'
 import type { MutationCtx } from '../_generated/server'
+import { deleteReceiptsOfBill } from './billReceipts'
 import { loadBillRelations } from './billListSummary'
 import { endGuestSessionsForBill } from './guestSession'
 import { clearGuidedBillReference } from './hostOnboardingBillHooks'
 import { onBillDeleted } from './payRequest'
-import {
-  deleteReceiptScansForBill,
-  deleteReceiptStorageFile,
-} from './receiptStorage'
+import { deleteReceiptScansForBill, deleteStoredPhoto } from './receiptStorage'
 
 /**
- * Deletes a bill and everything that hangs off it: receipt scans and photo,
+ * Deletes a bill and everything that hangs off it: receipt scans and photos,
  * Guest sessions, Pay requests, lines with their Unit memberships, seats and
  * payments. Callers check who may delete it.
  */
@@ -41,7 +39,8 @@ export async function deleteBillWithRelations(
 
   await clearGuidedBillReference(ctx, bill.ownerId, bill._id)
 
+  await deleteReceiptsOfBill(ctx, bill._id)
   if (bill.receiptStorageId) {
-    await deleteReceiptStorageFile(ctx, bill.receiptStorageId)
+    await deleteStoredPhoto(ctx, bill.receiptStorageId)
   }
 }

@@ -49,6 +49,11 @@ export default defineSchema({
     restaurantName: v.string(),
     date: v.number(),
     note: v.optional(v.string()),
+    /**
+     * Deprecated: the single receipt photo from before `billReceipts`. Nothing
+     * writes it any more; `backfill:moveLegacyReceipts` moves old rows over.
+     * Until then whatever protects or deletes photos still honours it.
+     */
     receiptStorageId: v.optional(v.id('_storage')),
     status: v.union(v.literal('draft'), v.literal('final')),
     tipCents: v.optional(v.number()),
@@ -87,6 +92,22 @@ export default defineSchema({
     // A photo id from the phone must never be a bill's receipt already.
     .index('by_receiptStorageId', ['receiptStorageId']),
 
+  /**
+   * A receipt photo on a bill; a bill holds several (e.g. three shops for one
+   * party). Each is scanned on its own and its lines imported into the bill.
+   */
+  billReceipts: defineTable({
+    billId: v.id('bills'),
+    storageId: v.id('_storage'),
+    createdAt: v.number(),
+    /** When this receipt's lines were last imported. */
+    importedAt: v.optional(v.number()),
+    /** The total printed on the receipt, from the scan last imported. */
+    receiptTotalCents: v.optional(v.number()),
+  })
+    .index('by_billId', ['billId', 'createdAt'])
+    .index('by_storageId', ['storageId']),
+
   participants: defineTable({
     billId: v.id('bills'),
     name: v.string(),
@@ -100,7 +121,11 @@ export default defineSchema({
     quantity: v.number(),
     note: v.optional(v.string()),
     sortOrder: v.number(),
-  }).index('by_billId', ['billId']),
+    /** The receipt this line was imported from; unset for lines typed in. */
+    receiptId: v.optional(v.id('billReceipts')),
+  })
+    .index('by_billId', ['billId'])
+    .index('by_receiptId', ['receiptId']),
 
   itemAssignments: defineTable({
     billId: v.id('bills'),
@@ -216,6 +241,8 @@ export default defineSchema({
 
   receiptScans: defineTable({
     billId: v.id('bills'),
+    /** The receipt being read; unset on scans of the legacy bill photo. */
+    receiptId: v.optional(v.id('billReceipts')),
     storageId: v.id('_storage'),
     status: v.union(
       v.literal('pending'),

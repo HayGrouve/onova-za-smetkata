@@ -519,7 +519,7 @@ describe('deleting a bill', () => {
   })
 })
 
-describe("a bill's receipt photo", () => {
+describe("a bill's receipt photo from an old client (bills.update)", () => {
   const MINUTE_MS = 60 * 1000
 
   afterEach(() => {
@@ -539,13 +539,19 @@ describe("a bill's receipt photo", () => {
     )
   }
 
-  async function receiptOf(t: TestConvex, billId: Id<'bills'>) {
-    return await t.run(
-      async (ctx) => (await ctx.db.get(billId))?.receiptStorageId ?? null,
+  /** The bill's receipt photos, oldest first. */
+  async function receiptsOf(t: TestConvex, billId: Id<'bills'>) {
+    return await t.run(async (ctx) =>
+      (
+        await ctx.db
+          .query('billReceipts')
+          .withIndex('by_billId', (q) => q.eq('billId', billId))
+          .collect()
+      ).map((receipt) => receipt.storageId),
     )
   }
 
-  it('is a fresh upload, kept when the bill is saved with it again', async () => {
+  it('is a fresh upload added as a receipt, kept when the bill is saved with it again', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     const t = setupConvex()
     const host = t.withIdentity(HOST_IDENTITY)
@@ -561,8 +567,28 @@ describe("a bill's receipt photo", () => {
       receiptStorageId: photo,
     })
 
-    expect(await receiptOf(t, billId)).toBe(photo)
+    expect(await receiptsOf(t, billId)).toEqual([photo])
     expect(await photoExists(t, photo)).toBe(true)
+    // The legacy single-photo field is no longer written.
+    expect(
+      (await t.run((ctx) => ctx.db.get(billId)))?.receiptStorageId,
+    ).toBeUndefined()
+  })
+
+  it('adds a second photo beside the first instead of replacing it', async () => {
+    const t = setupConvex()
+    const host = t.withIdentity(HOST_IDENTITY)
+    const billId = await host.mutation(api.bills.create, {})
+    const first = await storePhoto(t)
+    const second = await storePhoto(t)
+    await host.mutation(api.bills.update, { billId, receiptStorageId: first })
+    await host.mutation(api.bills.update, { billId, receiptStorageId: second })
+
+    expect(await receiptsOf(t, billId)).toEqual([first, second])
+    expect(await photoExists(t, first)).toBe(true)
+    expect(await host.query(api.files.getReceiptUrl, { billId })).toBe(
+      await t.run((ctx) => ctx.storage.getUrl(second)),
+    )
   })
 
   it('is never a photo another bill holds', async () => {
@@ -586,7 +612,7 @@ describe("a bill's receipt photo", () => {
 
     // Deleting the stranger's bill must not take the owner's photo with it.
     await stranger.mutation(api.bills.remove, { billId: strangersBill })
-    expect(await receiptOf(t, ownersBill)).toBe(photo)
+    expect(await receiptsOf(t, ownersBill)).toEqual([photo])
     expect(await photoExists(t, photo)).toBe(true)
   })
 
@@ -606,7 +632,7 @@ describe("a bill's receipt photo", () => {
     await expect(
       host.mutation(api.bills.update, { billId, receiptStorageId: photo }),
     ).rejects.toThrow()
-    expect(await receiptOf(t, billId)).toBeNull()
+    expect(await receiptsOf(t, billId)).toEqual([])
   })
 
   it('is never an old upload or a missing one, and a refusal keeps the current photo', async () => {
@@ -630,7 +656,7 @@ describe("a bill's receipt photo", () => {
       host.mutation(api.bills.update, { billId, receiptStorageId: gone }),
     ).rejects.toThrow()
 
-    expect(await receiptOf(t, billId)).toBe(current)
+    expect(await receiptsOf(t, billId)).toEqual([current])
     expect(await photoExists(t, current)).toBe(true)
   })
 })

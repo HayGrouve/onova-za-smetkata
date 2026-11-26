@@ -5,7 +5,7 @@ import type { MutationCtx } from '../_generated/server'
 /** A photo older than this was not uploaded for whatever is taking it now. */
 const UPLOAD_MAX_AGE_MS = 10 * 60 * 1000
 
-/** Whether a bill, receipt scan or quick scan keeps this stored photo. */
+/** Whether a bill receipt, receipt scan or quick scan keeps this stored photo. */
 export async function isPhotoHeld(
   ctx: MutationCtx,
   storageId: Id<'_storage'>,
@@ -15,6 +15,11 @@ export async function isPhotoHeld(
       .query('quickScans')
       .withIndex('by_storageId', (q) => q.eq('storageId', storageId))
       .first()) ??
+    (await ctx.db
+      .query('billReceipts')
+      .withIndex('by_storageId', (q) => q.eq('storageId', storageId))
+      .first()) ??
+    // The legacy single photo, until `backfill:moveLegacyReceipts` has run.
     (await ctx.db
       .query('bills')
       .withIndex('by_receiptStorageId', (q) =>
@@ -30,7 +35,7 @@ export async function isPhotoHeld(
 
 /**
  * Photo ids come from the phone, and whatever takes one may later delete it
- * (a quick scan once read, a bill when its receipt is replaced or the bill is
+ * (a quick scan once read, a bill when its receipt is removed or the bill is
  * deleted). So only take a fresh upload nothing holds yet: never a bill's
  * receipt or a quick scan's photo. An upload nothing took within a day can
  * never be taken (this check refuses it), so the cleanup cron deletes it.
@@ -47,17 +52,6 @@ export async function assertFreshUpload(
   }
 }
 
-export function shouldDeleteReplacedReceiptStorage(
-  currentStorageId: Id<'_storage'> | undefined,
-  nextStorageId: Id<'_storage'> | undefined,
-): currentStorageId is Id<'_storage'> {
-  return (
-    nextStorageId !== undefined &&
-    currentStorageId !== undefined &&
-    currentStorageId !== nextStorageId
-  )
-}
-
 export async function deleteReceiptScansForBill(
   ctx: MutationCtx,
   billId: Id<'bills'>,
@@ -70,22 +64,6 @@ export async function deleteReceiptScansForBill(
   for (const scan of scans) {
     await ctx.db.delete(scan._id)
   }
-}
-
-export async function deleteReceiptStorageFile(
-  ctx: MutationCtx,
-  storageId: Id<'_storage'>,
-): Promise<void> {
-  await ctx.storage.delete(storageId)
-}
-
-export async function cleanupBillReceiptStorage(
-  ctx: MutationCtx,
-  billId: Id<'bills'>,
-  storageId: Id<'_storage'>,
-): Promise<void> {
-  await deleteReceiptScansForBill(ctx, billId)
-  await deleteReceiptStorageFile(ctx, storageId)
 }
 
 /** Delete a photo that may already be gone: the second delete must not throw. */

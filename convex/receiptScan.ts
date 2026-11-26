@@ -15,6 +15,10 @@ import { assertRateLimit } from './lib/rateLimit'
 import { touchBill } from './lib/touchBill'
 import { nextSortOrder } from '../shared/sort-order'
 import { assertHostMayStartOcr, recordOcrStart } from './lib/ocrStart'
+import { defaultScanPhoto, receiptsOfBill } from './lib/billReceipts'
+import { BILL_RECEIPT_MESSAGES } from '../shared/bill-receipts'
+import type { Doc, Id } from './_generated/dataModel'
+import type { QueryCtx } from './_generated/server'
 
 /** A scan still pending/processing after this long is treated as dead. */
 const SCAN_IN_FLIGHT_MS = 3 * 60 * 1000
@@ -25,8 +29,26 @@ const editedItemValidator = v.object({
   quantity: v.number(),
 })
 
+/** The photo to read: the named receipt, or a default for old clients. */
+async function scanPhotoFor(
+  ctx: QueryCtx,
+  bill: Doc<'bills'>,
+  receiptId: Id<'billReceipts'> | undefined,
+) {
+  if (receiptId === undefined) return await defaultScanPhoto(ctx, bill)
+  const receipt = await ctx.db.get(receiptId)
+  if (receipt?.billId !== bill._id) {
+    throw new ConvexError(BILL_RECEIPT_MESSAGES.notFound)
+  }
+  return { receiptId: receipt._id, storageId: receipt.storageId }
+}
+
 export const startScan = mutation({
-  args: { billId: v.id('bills') },
+  args: {
+    billId: v.id('bills'),
+    /** Optional only for clients from before several receipts per bill. */
+    receiptId: v.optional(v.id('billReceipts')),
+  },
   handler: async (ctx, args) => {
     const bill = await requireBillOwner(ctx, args.billId)
     assertBillDraft(bill)
@@ -53,13 +75,15 @@ export const startScan = mutation({
     const now = Date.now()
     await assertHostMayStartOcr(ctx, owner, now)
     await assertRateLimit(ctx, `ocr:${args.billId}`, 10, 3_600_000)
-    if (!bill.receiptStorageId) {
+    const photo = await scanPhotoFor(ctx, bill, args.receiptId)
+    if (!photo) {
       throw new Error('Няма прикачена снимка на бележка за тази сметка')
     }
 
     const scanId = await ctx.db.insert('receiptScans', {
       billId: args.billId,
-      storageId: bill.receiptStorageId,
+      ...(photo.receiptId ? { receiptId: photo.receiptId } : {}),
+      storageId: photo.storageId,
       status: 'pending',
       createdAt: Date.now(),
     })
@@ -89,7 +113,16 @@ export const getLatestScan = query({
 export const importScannedItems = mutation({
   args: {
     scanId: v.id('receiptScans'),
-    mode: v.union(v.literal('add'), v.literal('replace')),
+    /**
+     * `add` appends the lines; `replace` swaps every line on the bill;
+     * `replaceReceipt` swaps only the lines imported from this scan's receipt
+     * (a receipt scanned again).
+     */
+    mode: v.union(
+      v.literal('add'),
+      v.literal('replace'),
+      v.literal('replaceReceipt'),
+    ),
     selectedIndexes: v.array(v.number()),
     updateRestaurantName: v.boolean(),
     restaurantName: v.optional(v.string()),
@@ -103,6 +136,12 @@ export const importScannedItems = mutation({
 
     const bill = await requireBillOwner(ctx, scan.billId)
     assertBillDraft(bill)
+
+    // Removing a receipt deletes its scans, so a scan's receipt is still here.
+    const receipt = scan.receiptId ? await ctx.db.get(scan.receiptId) : null
+    if (args.mode === 'replaceReceipt' && !receipt) {
+      throw new ConvexError(BILL_RECEIPT_MESSAGES.noReceiptToReplace)
+    }
 
     const selectedIndexSet = new Set(args.selectedIndexes)
     const itemsToImport =
@@ -125,19 +164,24 @@ export const importScannedItems = mutation({
       .withIndex('by_billId', (q) => q.eq('billId', scan.billId))
       .collect()
 
-    let sortOrderOffset = nextSortOrder(existing)
-
-    if (args.mode === 'replace') {
-      for (const item of existing) {
-        const assignments = await ctx.db
-          .query('itemAssignments')
-          .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
-          .collect()
-        for (const a of assignments) await ctx.db.delete(a._id)
-        await ctx.db.delete(item._id)
-      }
-      sortOrderOffset = 0
+    const replaced =
+      args.mode === 'replace'
+        ? existing
+        : args.mode === 'replaceReceipt'
+          ? existing.filter((item) => item.receiptId === receipt?._id)
+          : []
+    for (const item of replaced) {
+      const assignments = await ctx.db
+        .query('itemAssignments')
+        .withIndex('by_itemId', (q) => q.eq('itemId', item._id))
+        .collect()
+      for (const a of assignments) await ctx.db.delete(a._id)
+      await ctx.db.delete(item._id)
     }
+    const replacedIds = new Set(replaced.map((item) => item._id))
+    const sortOrderOffset = nextSortOrder(
+      existing.filter((item) => !replacedIds.has(item._id)),
+    )
 
     for (const [index, item] of validated.data.entries()) {
       await ctx.db.insert('items', {
@@ -146,6 +190,31 @@ export const importScannedItems = mutation({
         unitPriceCents: item.unitPriceCents,
         quantity: item.quantity,
         sortOrder: sortOrderOffset + index,
+        ...(receipt ? { receiptId: receipt._id } : {}),
+      })
+    }
+
+    const now = Date.now()
+    if (args.mode === 'replace') {
+      // Every other receipt's lines are gone with the rest.
+      for (const other of await receiptsOfBill(ctx, scan.billId)) {
+        if (other._id === receipt?._id) continue
+        if (
+          other.importedAt === undefined &&
+          other.receiptTotalCents === undefined
+        ) {
+          continue
+        }
+        await ctx.db.patch(other._id, {
+          importedAt: undefined,
+          receiptTotalCents: undefined,
+        })
+      }
+    }
+    if (receipt) {
+      await ctx.db.patch(receipt._id, {
+        importedAt: now,
+        receiptTotalCents: scan.receiptTotalCents,
       })
     }
 
@@ -196,7 +265,7 @@ export const getScanInternal = internalQuery({
 export const markProcessing = internalMutation({
   args: { scanId: v.id('receiptScans') },
   handler: async (ctx, args) => {
-    // The Host may dismiss the scan (or replace the photo) mid-flight.
+    // The Host may dismiss the scan (or remove the receipt) mid-flight.
     if (!(await ctx.db.get(args.scanId))) return
     await ctx.db.patch(args.scanId, { status: 'processing' })
   },

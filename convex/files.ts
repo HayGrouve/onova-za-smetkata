@@ -13,11 +13,22 @@ export const generateUploadUrl = mutation({
   },
 })
 
+/**
+ * Deprecated: the one photo clients from before several receipts per bill
+ * show. The newest receipt, else the legacy bill photo. Use
+ * `billReceipts.listReceipts`.
+ */
 export const getReceiptUrl = query({
   args: { billId: v.id('bills') },
   handler: async (ctx, args) => {
     const bill = await requireBillOwner(ctx, args.billId)
-    if (!bill.receiptStorageId) return null
-    return await ctx.storage.getUrl(bill.receiptStorageId)
+    const newest = await ctx.db
+      .query('billReceipts')
+      .withIndex('by_billId', (q) => q.eq('billId', args.billId))
+      .order('desc')
+      .first()
+    const storageId = newest?.storageId ?? bill.receiptStorageId
+    if (!storageId) return null
+    return await ctx.storage.getUrl(storageId)
   },
 })
