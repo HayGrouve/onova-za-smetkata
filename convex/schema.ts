@@ -49,12 +49,6 @@ export default defineSchema({
     restaurantName: v.string(),
     date: v.number(),
     note: v.optional(v.string()),
-    /**
-     * Deprecated: the single receipt photo from before `billReceipts`. Nothing
-     * writes it any more; `backfill:moveLegacyReceipts` moves old rows over.
-     * Until then whatever protects or deletes photos still honours it.
-     */
-    receiptStorageId: v.optional(v.id('_storage')),
     status: v.union(v.literal('draft'), v.literal('final')),
     tipCents: v.optional(v.number()),
     shareToken: v.optional(v.string()),
@@ -88,9 +82,7 @@ export default defineSchema({
     .index('by_updatedAt', ['updatedAt'])
     .index('by_ownerId_updatedAt', ['ownerId', 'updatedAt'])
     .index('by_ownerId_status_updatedAt', ['ownerId', 'status', 'updatedAt'])
-    .index('by_shareToken', ['shareToken'])
-    // A photo id from the phone must never be a bill's receipt already.
-    .index('by_receiptStorageId', ['receiptStorageId']),
+    .index('by_shareToken', ['shareToken']),
 
   /**
    * A receipt photo on a bill; a bill holds several (e.g. three shops for one
@@ -241,7 +233,10 @@ export default defineSchema({
 
   receiptScans: defineTable({
     billId: v.id('bills'),
-    /** The receipt being read; unset on scans of the legacy bill photo. */
+    /**
+     * The receipt being read. Every new scan names one; scans from before
+     * several receipts per bill lack it until the 30-day cleanup drops them.
+     */
     receiptId: v.optional(v.id('billReceipts')),
     storageId: v.id('_storage'),
     status: v.union(

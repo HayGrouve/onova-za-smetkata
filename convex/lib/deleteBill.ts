@@ -5,7 +5,7 @@ import { loadBillRelations } from './billListSummary'
 import { endGuestSessionsForBill } from './guestSession'
 import { clearGuidedBillReference } from './hostOnboardingBillHooks'
 import { onBillDeleted } from './payRequest'
-import { deleteReceiptScansForBill, deleteStoredPhoto } from './receiptStorage'
+import { deleteReceiptScansForBill } from './receiptStorage'
 
 /**
  * Deletes a bill and everything that hangs off it: receipt scans and photos,
@@ -40,7 +40,4 @@ export async function deleteBillWithRelations(
   await clearGuidedBillReference(ctx, bill.ownerId, bill._id)
 
   await deleteReceiptsOfBill(ctx, bill._id)
-  if (bill.receiptStorageId) {
-    await deleteStoredPhoto(ctx, bill.receiptStorageId)
-  }
 }

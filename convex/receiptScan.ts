@@ -15,13 +15,11 @@ import { assertRateLimit } from './lib/rateLimit'
 import { touchBill } from './lib/touchBill'
 import { nextSortOrder } from '../shared/sort-order'
 import { assertHostMayStartOcr, recordOcrStart } from './lib/ocrStart'
-import { defaultScanPhoto, receiptsOfBill } from './lib/billReceipts'
+import { receiptsOfBill } from './lib/billReceipts'
 import {
   BILL_RECEIPT_MESSAGES,
   MAX_RECEIPTS_PER_BILL,
 } from '../shared/bill-receipts'
-import type { Doc, Id } from './_generated/dataModel'
-import type { QueryCtx } from './_generated/server'
 
 /** A scan still pending/processing after this long is treated as dead. */
 const SCAN_IN_FLIGHT_MS = 3 * 60 * 1000
@@ -32,25 +30,10 @@ const editedItemValidator = v.object({
   quantity: v.number(),
 })
 
-/** The photo to read: the named receipt, or a default for old clients. */
-async function scanPhotoFor(
-  ctx: QueryCtx,
-  bill: Doc<'bills'>,
-  receiptId: Id<'billReceipts'> | undefined,
-) {
-  if (receiptId === undefined) return await defaultScanPhoto(ctx, bill)
-  const receipt = await ctx.db.get(receiptId)
-  if (receipt?.billId !== bill._id) {
-    throw new ConvexError(BILL_RECEIPT_MESSAGES.notFound)
-  }
-  return { receiptId: receipt._id, storageId: receipt.storageId }
-}
-
 export const startScan = mutation({
   args: {
     billId: v.id('bills'),
-    /** Optional only for clients from before several receipts per bill. */
-    receiptId: v.optional(v.id('billReceipts')),
+    receiptId: v.id('billReceipts'),
   },
   handler: async (ctx, args) => {
     const bill = await requireBillOwner(ctx, args.billId)
@@ -84,9 +67,9 @@ export const startScan = mutation({
       2 * MAX_RECEIPTS_PER_BILL,
       3_600_000,
     )
-    const photo = await scanPhotoFor(ctx, bill, args.receiptId)
-    if (!photo) {
-      throw new Error('Няма прикачена снимка на бележка за тази сметка')
+    const receipt = await ctx.db.get(args.receiptId)
+    if (receipt?.billId !== bill._id) {
+      throw new ConvexError(BILL_RECEIPT_MESSAGES.notFound)
     }
 
     // Only the newest scan of a bill is ever shown. An older one left behind
@@ -100,8 +83,8 @@ export const startScan = mutation({
 
     const scanId = await ctx.db.insert('receiptScans', {
       billId: args.billId,
-      ...(photo.receiptId ? { receiptId: photo.receiptId } : {}),
-      storageId: photo.storageId,
+      receiptId: receipt._id,
+      storageId: receipt.storageId,
       status: 'pending',
       createdAt: Date.now(),
     })
